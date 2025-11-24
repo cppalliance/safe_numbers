@@ -1,0 +1,155 @@
+= Boost.SafeTypes: A Proposal
+Matt Borland <matt@mattborland.come>
+:toc:
+:icons: font
+
+== Introduction
+
+Much recent effort in improving the safety of pass:[C++] has revolved around memory safety and library hardening [1][2][4].
+These are incredibly important undertakings in light of the US Government's recommendations to move to memory safe languages [5].
+Another source of errors in pass:[C++] come from the behavior of arithmetic.
+It is legal to compare a signed integer to an unsigned integer yet the resulting behavior can be unexpected.
+Take for example: -99 < 340282366920938463463374607431768211408. This should obviously evaluate to `true`, but it is in fact `false` because these values are bitwise equal (as unsigned 128-bit integers).
+
+== Boost.SafeTypes
+
+[quote,u/RoyBellingan[3]]
+____
+I do not want to see any longer a bool became an int.
+____
+
+The aim of Boost.SafeTypes is to be used as a complete replacement for the builtin numeric types of pass:[C++].
+We have several goals that align with this desire.
+
+== Goals
+
+=== Provide Concrete Types
+
+The concrete types the library will provide are:
+
+. Unsigned Integers: u8, u16, u32, u64, and u128
+. Signed Integers: i8, i16, i32, i64, and i128
+. Floating Point: f32 and f64
+
+Each of these types will have the following properties:
+
+. No implicit "Truthiness"
+. No implicit narrowing
+. No mixed sign operations
+. No operators defined between Boost.SafeTypes and builtin numeric types except for explicit, and non-narrowing construction
+. Any numerical error such as overflow will `throw` on error by default.
+. An `std::string_view` constructor and user-defined literals for easy and correct construction
+
+=== Provide Options for Runtime Behavior
+
+The first option is to allow for `-fno-exceptions` environments.
+To do this we will internally use `boost.throw_exception` which already has well-defined results depending on the mode of operations
+
+Second the types will have a number of different operators much like they do in Rust[8]:
+
+[source,c++]
+----
+class u32
+{
+    // Throws/terminates on overflow
+    friend constexpr u32 operator+(u32 lhs, u32 rhs);
+
+    // Saturates to std::numeric_limits<u32>::max()
+    friend constexpr u32 saturating_add(u32 lhs, u32 rhs) noexcept;
+
+    // Allows well defined wrapping behavior
+    friend constexpr u32 wrapping_add(u32 lhs, u32 rhs) noexcept;
+
+    ...
+};
+----
+
+=== Complete Standard Library Support
+
+Since our goal is to provide a complete replacement for the built-in numeric types we need to provide a complete standard library including support for: `<charconv>`, `<format>`, `<iostream>`, `<cmath>`, pass:[{fmt}], etc.
+
+=== Acceptable Runtime Penalty
+
+Experimentation with Boost.Unordered with shows that Fil-C come with an ~2.5x runtime [9].
+By leveraging existing compiler intrinsics to detect overflow (e.g. `__builtin_add_overflow`) the goal is to have a runtime penalty of less than 2x.
+If the runtime penalty is too great the additional safety offered by this library may not be sufficiently convincing for use.
+
+=== Human-Readable Error Messages
+
+In many cases such as mixed sign operations we intend to emit a compiler error.
+To make these compiler errors useful they must be trivially human-readable instead of emitting the template spaghetti that pass:[C++] and Boost are known for.
+
+== Analysis of Alternatives
+
+=== Boost.Safe_Numerics
+
+Boost.safe_numerics [7] offers a users the ability to wrap types before an operation at runtime, with policy based results on error.
+
+.This example shows how to use Boost.safe_numerics
+====
+[source, c++]
+----
+try
+{
+    using namespace boost::safe_numerics;
+    safe<std::int8_t> x = INT_MAX;
+    safe<std::int8_t> y = 2;
+    safe<std::int8_t> z;
+    // rather than producing an invalid result an exception is thrown
+    z = x + y;
+}
+catch(const std::exception & e)
+{
+// which we can catch here
+std::cout << "error detected:" << e.what() << std::endl;
+}
+----
+====
+
+This example when using our proposal would instead look something like:
+
+.An annotated version of the Example 1 except using Boost.SafeTypes instead
+====
+[source, c++]
+----
+
+try
+{
+    using namespace boost::safetypes;
+    i8 x = INT_MAX; // Compile error: implicit narrowing is not allowed
+    i8 y = 2;       // Compile error: implicit narrowing is not allowed
+    i8 z = x + y;   // Good since x and y are both of type i8
+}
+catch(const std::exception & e)
+{
+    std::cout << "error detected:" << e.what() << std::endl;
+}
+
+----
+====
+
+Moving the errors from run time to compile time should be far easier to debug, and lead to fewer instances where exceptions are possible.
+
+=== Existing Compiler Flags and Sanitizers
+
+GCC, Clang, and other offer "-Wsign-conversion",  "-Wconversion", and "-Wfloat-equal" can be used today to avoid large classes of bugs, and we highly recommend their use.
+These flags along with UBSan will catch large classes of bugs.
+Boost.SaftTypes aims to take this a step further in rigidity of rules.
+For example, UBSan will allow rollover of an unsigned integer, whereas by default Boost.SaftTypes will throw.
+
+== Conclusion
+
+In conclusion, Boost.SafeTypes aims to offer a library level solution to issues of arithmetic safety in pass:[C++].
+By offering solid performance, an expansive standard library, and readable compiler errors it should be viewed as an acceptable alternative to the built-in types and STL.
+
+== Sources
+
+. https://spawn-queue.acm.org/doi/pdf/10.1145/3773097
+. https://isocpp.org/files/papers/P3471R1.html
+. https://www.reddit.com/r/cpp/comments/1oqd01r/what_do_you_dislike_the_most_about_current_c/
+. https://fil-c.org
+. https://www.cisa.gov/resources-tools/resources/product-security-bad-practices
+. https://en.cppreference.com/w/cpp/header/stdfloat.html
+. https://github.com/boostorg/safe_numerics/tree/develop
+. https://doc.rust-lang.org/std/primitive.u32.html
+. https://bannalia.blogspot.com/2025/11/some-experiments-with-boostunordered-on.html
