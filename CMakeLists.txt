@@ -17,7 +17,6 @@ target_link_libraries(boost_safe_numbers
         INTERFACE
         Boost::assert
         Boost::config
-        Boost::core
         Boost::throw_exception
 )
 
