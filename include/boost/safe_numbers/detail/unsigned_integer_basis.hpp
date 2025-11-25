@@ -8,6 +8,7 @@
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 #include <boost/throw_exception.hpp>
+#include <boost/safe_numbers/detail/config.hpp>
 #include <concepts>
 #include <compare>
 #include <limits>
@@ -46,17 +47,9 @@ template <typename BasisType>
 [[nodiscard]] constexpr auto operator+(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
-    if (std::is_constant_evaluated())
-    {
-        const auto res {lhs.basis_ + rhs.basis_};
-        if (res < lhs.basis_)
-        {
-            BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
-        }
+    #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow)
 
-        return unsigned_integer_basis<BasisType>(res);
-    }
-    else
+    if (!std::is_constant_evaluated())
     {
         BasisType res;
         const bool overflow_detected {__builtin_add_overflow(lhs.basis_, rhs.basis_, &res)};
@@ -64,11 +57,21 @@ template <typename BasisType>
         return overflow_detected ? BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition")) :
                                    unsigned_integer_basis<BasisType>(res);
     }
+
+    #endif // __has_builtin(__builtin_add_overflow)
+
+    const auto res {lhs.basis_ + rhs.basis_};
+    if (res < lhs.basis_)
+    {
+        BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
+    }
+
+    return unsigned_integer_basis<BasisType>(res);
 }
 
 template <typename LHSBasis, typename RHSBasis>
-[[noreturn]] constexpr void operator+(const unsigned_integer_basis<LHSBasis> lhs,
-                                      const unsigned_integer_basis<RHSBasis> rhs)
+constexpr void operator+(const unsigned_integer_basis<LHSBasis> lhs,
+                         const unsigned_integer_basis<RHSBasis> rhs)
 {
     constexpr auto error_msg = "Can not add types " + lhs.name_ + " and " + rhs.name_;
     BOOST_THROW_EXCEPTION(std::logic_error(error_msg));
