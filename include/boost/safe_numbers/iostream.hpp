@@ -19,14 +19,11 @@ namespace boost::safe_numbers {
 
 namespace detail {
 
-template <typename T>
+template <typename>
 struct is_library_type : std::false_type {};
 
-template <>
-struct is_library_type<u32> : std::true_type {};
-
-template <>
-struct is_library_type<u64> : std::true_type {};
+template <typename T>
+struct is_library_type<unsigned_integer_basis<T>> : std::true_type {};
 
 template <typename T>
 inline constexpr bool is_library_type_v = is_library_type<T>::value;
@@ -37,16 +34,10 @@ concept library_type = is_library_type_v<T>;
 template <typename T>
 struct underlying;
 
-template <>
-struct underlying<u32>
+template <typename T>
+struct underlying<unsigned_integer_basis<T>>
 {
-    using type = std::uint32_t;
-};
-
-template <>
-struct underlying<u64>
-{
-    using type = std::uint64_t;
+    using type = T;
 };
 
 template <typename T>
