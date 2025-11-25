@@ -6,5 +6,6 @@
 #define BOOST_SAFENUMBERS_HPP
 
 #include <boost/safe_numbers/unsigned_integers.hpp>
+#include <boost/safe_numbers/iostream.hpp>
 
 #endif //BOOST_SAFENUMBERS_HPP
