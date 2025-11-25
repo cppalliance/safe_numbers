@@ -7,6 +7,7 @@
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
+#include <boost/throw_exception.hpp>
 #include <concepts>
 #include <compare>
 #include <limits>
@@ -21,6 +22,7 @@ class unsigned_integer_basis
 private:
 
     BasisType basis_;
+
     static constexpr auto name_ {
         std::is_same_v<BasisType, std::uint8_t> ? "u8" :
         std::is_same_v<BasisType, std::uint16_t> ? "u16" :
@@ -33,7 +35,44 @@ public:
     explicit constexpr unsigned_integer_basis(const BasisType val) : basis_{val} {}
 
     explicit constexpr operator BasisType() const { return basis_; }
+
+    friend constexpr auto operator+(unsigned_integer_basis lhs, unsigned_integer_basis rhs);
+
+    template <typename LHSBasis, typename RHSBasis>
+    friend constexpr void operator+(unsigned_integer_basis<LHSBasis> lhs, unsigned_integer_basis<RHSBasis> rhs);
 };
+
+template <typename BasisType>
+[[nodiscard]] constexpr auto operator+(const unsigned_integer_basis<BasisType> lhs,
+                                       const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
+{
+    if (std::is_constant_evaluated())
+    {
+        const auto res {lhs.basis_ + rhs.basis_};
+        if (res < lhs.basis_)
+        {
+            BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
+        }
+
+        return unsigned_integer_basis<BasisType>(res);
+    }
+    else
+    {
+        BasisType res;
+        const bool overflow_detected {__builtin_add_overflow(lhs.basis_, rhs.basis_, &res)};
+
+        return overflow_detected ? BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition")) :
+                                   unsigned_integer_basis<BasisType>(res);
+    }
+}
+
+template <typename LHSBasis, typename RHSBasis>
+[[noreturn]] constexpr void operator+(const unsigned_integer_basis<LHSBasis> lhs,
+                                      const unsigned_integer_basis<RHSBasis> rhs)
+{
+    constexpr auto error_msg = "Can not add types " + lhs.name_ + " and " + rhs.name_;
+    BOOST_THROW_EXCEPTION(std::logic_error(error_msg));
+}
 
 } // namespace boost::safe_numbers::detail
 
