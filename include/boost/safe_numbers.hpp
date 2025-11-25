@@ -5,4 +5,6 @@
 #ifndef BOOST_SAFENUMBERS_HPP
 #define BOOST_SAFENUMBERS_HPP
 
+#include <boost/safe_numbers/unsigned_integers.hpp>
+
 #endif //BOOST_SAFENUMBERS_HPP
