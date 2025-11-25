@@ -4,16 +4,16 @@
 
 cmake_minimum_required(VERSION 3.12...3.20)
 
-project(boost_safenumbers VERSION "${BOOST_SUPERPROJECT_VERSION}" LANGUAGES CXX)
+project(boost_safe_numbers VERSION "${BOOST_SUPERPROJECT_VERSION}" LANGUAGES CXX)
 
-add_library(boost_safenumbers INTERFACE)
-add_library(Boost::safenumbers ALIAS boost_safenumbers)
+add_library(boost_safe_numbers INTERFACE)
+add_library(Boost::safe_numbers ALIAS boost_safe_numbers)
 
-target_compile_features(boost_safenumbers INTERFACE cxx_std_20)
+target_compile_features(boost_safe_numbers INTERFACE cxx_std_20)
 
-target_include_directories(boost_safenumbers INTERFACE include)
+target_include_directories(boost_safe_numbers INTERFACE include)
 
-target_link_libraries(boost_safenumbers
+target_link_libraries(boost_safe_numbers
         INTERFACE
         Boost::assert
         Boost::config
