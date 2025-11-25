@@ -40,7 +40,7 @@ public:
     friend constexpr auto operator+(unsigned_integer_basis lhs, unsigned_integer_basis rhs);
 
     template <typename LHSBasis, typename RHSBasis>
-    friend constexpr void operator+(unsigned_integer_basis<LHSBasis> lhs, unsigned_integer_basis<RHSBasis> rhs);
+    friend constexpr auto operator+(unsigned_integer_basis<LHSBasis> lhs, unsigned_integer_basis<RHSBasis> rhs);
 };
 
 template <typename BasisType>
@@ -70,11 +70,28 @@ template <typename BasisType>
 }
 
 template <typename LHSBasis, typename RHSBasis>
-constexpr void operator+(const unsigned_integer_basis<LHSBasis> lhs,
-                         const unsigned_integer_basis<RHSBasis> rhs)
+constexpr auto operator+(const unsigned_integer_basis<LHSBasis>,
+                         const unsigned_integer_basis<RHSBasis>)
 {
-    constexpr auto error_msg = "Can not add types " + lhs.name_ + " and " + rhs.name_;
-    BOOST_THROW_EXCEPTION(std::logic_error(error_msg));
+    // TODO(mborland): Expand this completely
+    if constexpr (std::is_same_v<LHSBasis, std::uint32_t>)
+    {
+        if constexpr (std::is_same_v<RHSBasis, std::uint64_t>)
+        {
+            static_assert(false, "Can not perform addition between u32 and u64");
+            return unsigned_integer_basis<RHSBasis>(0);
+        }
+        else
+        {
+            static_assert(false, "Can not perform addition between u32 and unknown type");
+            return unsigned_integer_basis<RHSBasis>(0);
+        }
+    }
+    else
+    {
+        static_assert(false, "Can not perform addition on mixed width unsigned integer types");
+        return unsigned_integer_basis<RHSBasis>(0);
+    }
 }
 
 } // namespace boost::safe_numbers::detail
