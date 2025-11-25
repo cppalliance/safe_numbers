@@ -5,10 +5,11 @@
 #ifndef BOOST_SAFE_NUMBERS_DETAIL_UNSIGNED_INTEGER_BASIS_HPP
 #define BOOST_SAFE_NUMBERS_DETAIL_UNSIGNED_INTEGER_BASIS_HPP
 
-#ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
-
 #include <boost/throw_exception.hpp>
 #include <boost/safe_numbers/detail/config.hpp>
+
+#ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
+
 #include <concepts>
 #include <compare>
 #include <limits>
@@ -52,6 +53,43 @@ template <typename BasisType>
     return lhs.basis_ <=> rhs.basis_;
 }
 
+namespace impl {
+
+#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow)
+
+template <typename T>
+bool intrin_add(T lhs, T rhs, T& result)
+{
+    return __builtin_add_overflow(lhs, rhs, &result);
+}
+
+#elif BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64)
+
+template <typename T>
+bool intrin_add(T lhs, T rhs, T& result)
+{
+    if constexpr (std::is_same_v<T, std::uint8_t>)
+    {
+        return _addcarry_u8(0, lhs, rhs, &result);
+    }
+    else if constexpr (std::is_same_v<T, std::uint16_t>)
+    {
+        return _addcarry_u16(0, lhs, rhs, &result);
+    }
+    else if constexpr (std::is_same_v<T, std::uint32_t>)
+    {
+        return _addcarry_u32(0, lhs, rhs, &result);
+    }
+    else if constexpr (std::is_same_v<T, std::uint64_t>)
+    {
+        return _addcarry_u64(0, lhs, rhs, &result);
+    }
+}
+
+#endif
+
+} // namespace impl
+
 template <typename BasisType>
 [[nodiscard]] constexpr auto operator+(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
@@ -61,7 +99,7 @@ template <typename BasisType>
     if (!std::is_constant_evaluated())
     {
         BasisType res;
-        const bool overflow_detected {__builtin_add_overflow(lhs.basis_, rhs.basis_, &res)};
+        const bool overflow_detected {impl::intrin_add(lhs.basis_, rhs.basis_, res)};
 
         return overflow_detected ? BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition")) :
                                    unsigned_integer_basis<BasisType>(res);

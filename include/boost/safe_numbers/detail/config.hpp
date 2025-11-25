@@ -5,8 +5,6 @@
 #ifndef BOOST_SAFENUMBERS_CONFIG_HPP
 #define BOOST_SAFENUMBERS_CONFIG_HPP
 
-#include <boost/config.hpp>
-
 #ifdef BOOST_SAFE_NUMBERS_BUILD_MODULE
 #  define BOOST_SAFE_NUMBERS_EXPORT export
 #else
@@ -19,5 +17,19 @@
 #  define BOOST_SAFE_NUMBERS_HAS_BUILTIN(x) 0
 #endif // __has_builtin
 
+#ifdef __x86_64__
+
+#ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
+#  include <x86intrin.h>
+#  include <emmintrin.h>
+#endif
+
+#elif defined(_M_AMD64)
+
+#ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
+#  include <intrin.h>
+#endif
+
+#endif
 
 #endif // BOOST_SAFENUMBERS_CONFIG_HPP
