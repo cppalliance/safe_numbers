@@ -2,7 +2,7 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-#include <boost/safenumbers.hpp>
+#include <boost/safe_numbers.hpp>
 
 int main()
 {
