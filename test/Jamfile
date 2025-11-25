@@ -50,3 +50,5 @@ project : requirements
 run quick.cpp ;
 
 run test_construct_unsigned_type.cpp ;
+
+compile-fail test_unsigned_addition_fail.cpp ;
