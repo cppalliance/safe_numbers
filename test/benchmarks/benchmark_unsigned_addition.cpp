@@ -15,7 +15,7 @@
 using namespace boost::safe_numbers;
 using namespace std::chrono;
 
-inline constexpr std::size_t N {10'000'000};
+inline constexpr std::size_t N {100'000'000};
 inline std::mt19937_64 rng(42);
 
 template <typename T>
@@ -44,7 +44,7 @@ BOOST_NOINLINE auto benchmark_addition(const std::vector<T>& values, const char*
 
     using value_type = std::conditional_t<detail::is_library_type_v<T>, detail::underlying_type_t<T>, T>;
 
-    value_type counter {};
+    volatile value_type counter {};
 
     for (std::size_t j {}; j < 10; ++j)
     {
@@ -56,7 +56,20 @@ BOOST_NOINLINE auto benchmark_addition(const std::vector<T>& values, const char*
 
     const auto t2 = steady_clock::now();
 
-    std::cout << std::setw(15) << label << ": " << std::setw(8) << (t2 - t1) / 1ns << " ns " << counter << std::endl;
+    const auto runtime_ns = (t2 - t1) / 1ns;
+
+    std::cout << std::setw(15) << label << ": " << std::setw(10) << runtime_ns << " ns " << counter << std::endl;
+
+    return runtime_ns;
+
+}
+
+template <typename T>
+void print_runtime_ratio(T lib, T builtin)
+{
+    std::cout << std::setprecision(3) << std::setw(17)
+              << "Runtime ratio: " << std::setw(10) << static_cast<double>(lib) / static_cast<double>(builtin)
+              << std::endl;
 }
 
 int main()
@@ -64,8 +77,9 @@ int main()
     const auto builtin_values {generate_vector<std::uint32_t>()};
     const auto u32_values {generate_vector<u32>()};
 
-    benchmark_addition(builtin_values, "std::uint32_t");
-    benchmark_addition(u32_values, "boost::sn::u32");
+    const auto builtin_runtime = benchmark_addition(builtin_values, "std::uint32_t");
+    const auto u32_runtime = benchmark_addition(u32_values, "boost::sn::u32");
+    print_runtime_ratio(u32_runtime, builtin_runtime);
 
     return 1;
 }
