@@ -4,6 +4,7 @@
 
 #include <boost/safe_numbers.hpp>
 #include <boost/core/lightweight_test.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 
 // Ignore [[nodiscard]] on the test that we know are going to throw
 #ifdef __GNUC__
@@ -37,14 +38,14 @@ template <typename T>
 void test_valid_addition()
 {
     using basis_type = detail::underlying_type_t<T>;
-    std::uniform_int_distribution<basis_type> dist {std::numeric_limits<basis_type>::min() / 2U,
-                                                    std::numeric_limits<basis_type>::max() / 2U};
+    boost::random::uniform_int_distribution<basis_type> dist {std::numeric_limits<basis_type>::min() / 2U,
+                                                              std::numeric_limits<basis_type>::max() / 2U};
 
     for (std::size_t i = 0; i < N; ++i)
     {
         const auto lhs_value {dist(rng)};
         const auto rhs_value {dist(rng)};
-        const T ref_value {lhs_value + rhs_value};
+        const auto ref_value {static_cast<T>(lhs_value + rhs_value)};
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
@@ -58,7 +59,7 @@ template <typename T>
 void test_throwing_addition()
 {
     using basis_type = detail::underlying_type_t<T>;
-    std::uniform_int_distribution<basis_type> dist {2U, std::numeric_limits<basis_type>::max()};
+    boost::random::uniform_int_distribution<basis_type> dist {2U, std::numeric_limits<basis_type>::max()};
 
     for (std::size_t i = 0; i < N; ++i)
     {
