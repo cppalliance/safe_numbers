@@ -53,3 +53,5 @@ run test_construct_unsigned_type.cpp ;
 
 run test_unsigned_addition.cpp ;
 compile-fail test_unsigned_addition_fail.cpp ;
+
+run-fail benchmarks/benchmark_unsigned_addition.cpp ;
