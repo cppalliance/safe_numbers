@@ -7,6 +7,6 @@ include(BoostTestJamfile OPTIONAL RESULT_VARIABLE HAVE_BOOST_TEST)
 
 if(HAVE_BOOST_TEST)
 
-    boost_test_jamfile(FILE Jamfile LINK_LIBRARIES Boost::safe_numbers Boost::core)
+    boost_test_jamfile(FILE Jamfile LINK_LIBRARIES Boost::safe_numbers Boost::core Boost::random)
 
 endif()

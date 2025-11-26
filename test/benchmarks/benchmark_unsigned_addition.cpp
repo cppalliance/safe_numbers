@@ -3,6 +3,7 @@
 // https://www.boost.org/LICENSE_1_0.txt
 
 #include <boost/config.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
 #include <random>
@@ -26,8 +27,8 @@ BOOST_NOINLINE auto generate_vector()
     std::vector<T> values;
     values.reserve(N);
 
-    std::uniform_int_distribution<value_type> dist {std::numeric_limits<value_type>::min(),
-                                                    std::numeric_limits<value_type>::max() / 2U - 1U};
+    boost::random::uniform_int_distribution<value_type> dist {std::numeric_limits<value_type>::min(),
+                                                              std::numeric_limits<value_type>::max() / 2U - 1U};
 
     for (std::size_t i {}; i < N; ++i)
     {
