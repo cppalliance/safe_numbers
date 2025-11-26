@@ -74,12 +74,24 @@ void print_runtime_ratio(T lib, T builtin)
 
 int main()
 {
-    const auto builtin_values {generate_vector<std::uint32_t>()};
-    const auto u32_values {generate_vector<u32>()};
+    {
+        std::cout << "32-bit Unsigned Integers\n";
+        const auto builtin_values{generate_vector<std::uint32_t>()};
+        const auto u32_values{generate_vector<u32>()};
 
-    const auto builtin_runtime = benchmark_addition(builtin_values, "std::uint32_t");
-    const auto u32_runtime = benchmark_addition(u32_values, "boost::sn::u32");
-    print_runtime_ratio(u32_runtime, builtin_runtime);
+        const auto builtin_runtime = benchmark_addition(builtin_values, "std::uint32_t");
+        const auto u32_runtime = benchmark_addition(u32_values, "boost::sn::u32");
+        print_runtime_ratio(u32_runtime, builtin_runtime);
+    }
+    {
+        std::cout << "\n64-bit Unsigned Integers\n";
+        const auto builtin_values{generate_vector<std::uint64_t>()};
+        const auto u32_values{generate_vector<u64>()};
+
+        const auto builtin_runtime = benchmark_addition(builtin_values, "std::uint64_t");
+        const auto u32_runtime = benchmark_addition(u32_values, "boost::sn::u64");
+        print_runtime_ratio(u32_runtime, builtin_runtime);
+    }
 
     return 1;
 }
