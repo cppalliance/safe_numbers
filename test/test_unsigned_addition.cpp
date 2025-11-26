@@ -74,6 +74,12 @@ void test_throwing_addition()
 
 int main()
 {
+    test_valid_addition<u8>();
+    test_throwing_addition<u8>();
+
+    test_valid_addition<u16>();
+    test_throwing_addition<u16>();
+
     test_valid_addition<u32>();
     test_throwing_addition<u32>();
 
