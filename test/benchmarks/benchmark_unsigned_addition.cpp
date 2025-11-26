@@ -38,7 +38,17 @@ BOOST_NOINLINE auto generate_vector()
 }
 
 template <typename T>
-BOOST_NOINLINE auto benchmark_addition(const std::vector<T>& values, const char* label)
+BOOST_NOINLINE
+#ifdef _MSC_VER
+#pragma optimize("t", off)
+#endif
+auto
+#if defined(__clang__)
+__attribute__((optnone))
+#elif defined(__GNUC__)
+__attribute__((optimize("O0")))
+#endif
+benchmark_addition(const std::vector<T>& values, const char* label)
 {
     const auto t1 = steady_clock::now();
 
@@ -46,7 +56,7 @@ BOOST_NOINLINE auto benchmark_addition(const std::vector<T>& values, const char*
 
     value_type counter {};
 
-    for (std::size_t j {}; j < 100; ++j)
+    for (std::size_t j {}; j < 10; ++j)
     {
         for (std::size_t i {}; i < N - 1U; ++i)
         {
@@ -63,8 +73,11 @@ BOOST_NOINLINE auto benchmark_addition(const std::vector<T>& values, const char*
     std::cout << std::setw(15) << label << ": " << std::setw(13) << runtime_ns << " ns " << static_cast<std::uint64_t>(sink) << std::endl;
 
     return runtime_ns;
-
 }
+
+#ifdef _MSC_VER
+#pragma optimize("", on)
+#endif
 
 template <typename T>
 void print_runtime_ratio(T lib, T builtin)
