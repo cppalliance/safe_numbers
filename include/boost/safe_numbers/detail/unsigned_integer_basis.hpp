@@ -51,7 +51,22 @@ namespace impl {
 template <typename T>
 bool intrin_add(T lhs, T rhs, T& result)
 {
-    return __builtin_add_overflow(lhs, rhs, &result);
+    if constexpr (std::is_same_v<T, unsigned long long int>)
+    {
+        return __builtin_uaddll_overflow(lhs, rhs, &result);
+    }
+    else if constexpr (std::is_same_v<T, unsigned long int>)
+    {
+        return __builtin_uaddl_overflow(lhs, rhs, &result);
+    }
+    else if constexpr (std::is_same_v<T, unsigned int>)
+    {
+        return __builtin_uadd_overflow(lhs, rhs, &result);
+    }
+    else
+    {
+        return __builtin_add_overflow(lhs, rhs, &result);
+    }
 }
 
 #elif BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64)
