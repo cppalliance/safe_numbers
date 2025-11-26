@@ -108,7 +108,7 @@ template <typename BasisType>
         BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
     }
 
-    return result_type{res};
+    return result_type{static_cast<BasisType>(res)};
 }
 
 template <typename LHSBasis, typename RHSBasis>
