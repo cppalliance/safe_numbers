@@ -38,9 +38,9 @@ public:
 
     explicit constexpr operator BasisType() const { return basis_; }
 
-    friend constexpr auto operator<=>(unsigned_integer_basis lhs, unsigned_integer_basis rhs) noexcept;
+    friend constexpr auto operator<=>(unsigned_integer_basis lhs, unsigned_integer_basis rhs) noexcept -> std::strong_ordering;
 
-    friend constexpr auto operator+(unsigned_integer_basis lhs, unsigned_integer_basis rhs);
+    friend constexpr auto operator+(unsigned_integer_basis lhs, unsigned_integer_basis rhs) -> unsigned_integer_basis;
 
     template <typename LHSBasis, typename RHSBasis>
     friend constexpr auto operator+(unsigned_integer_basis<LHSBasis> lhs, unsigned_integer_basis<RHSBasis> rhs);
