@@ -44,9 +44,9 @@ BOOST_NOINLINE auto benchmark_addition(const std::vector<T>& values, const char*
 
     using value_type = std::conditional_t<detail::is_library_type_v<T>, detail::underlying_type_t<T>, T>;
 
-    volatile value_type counter {};
+    value_type counter {};
 
-    for (std::size_t j {}; j < 10; ++j)
+    for (std::size_t j {}; j < 100; ++j)
     {
         for (std::size_t i {}; i < N - 1U; ++i)
         {
@@ -56,9 +56,11 @@ BOOST_NOINLINE auto benchmark_addition(const std::vector<T>& values, const char*
 
     const auto t2 = steady_clock::now();
 
+    volatile auto sink {counter};
+
     const auto runtime_ns = (t2 - t1) / 1ns;
 
-    std::cout << std::setw(15) << label << ": " << std::setw(10) << runtime_ns << " ns " << counter << std::endl;
+    std::cout << std::setw(15) << label << ": " << std::setw(13) << runtime_ns << " ns " << static_cast<std::uint64_t>(sink) << std::endl;
 
     return runtime_ns;
 
@@ -67,30 +69,48 @@ BOOST_NOINLINE auto benchmark_addition(const std::vector<T>& values, const char*
 template <typename T>
 void print_runtime_ratio(T lib, T builtin)
 {
-    std::cout << std::setprecision(3) << std::setw(17)
-              << "Runtime ratio: " << std::setw(10) << static_cast<double>(lib) / static_cast<double>(builtin)
+    std::cout << std::setprecision(2) << std::fixed << std::setw(17)
+              << "Runtime ratio: " << std::setw(13) << static_cast<double>(lib) / static_cast<double>(builtin)
               << std::endl;
 }
 
 int main()
 {
     {
-        std::cout << "32-bit Unsigned Integers\n";
+        std::cout << "8-bit Unsigned Integers\n";
+        const auto builtin_values{generate_vector<std::uint8_t>()};
+        const auto lib_values{generate_vector<u8>()};
+
+        const auto builtin_runtime = benchmark_addition(builtin_values, "std::uint8_t");
+        const auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u8");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
+    }
+    {
+        std::cout << "\n16-bit Unsigned Integers\n";
+        const auto builtin_values{generate_vector<std::uint16_t>()};
+        const auto lib_values{generate_vector<u16>()};
+
+        const auto builtin_runtime = benchmark_addition(builtin_values, "std::uint16_t");
+        const auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u16");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
+    }
+    {
+        std::cout << "\n32-bit Unsigned Integers\n";
         const auto builtin_values{generate_vector<std::uint32_t>()};
-        const auto u32_values{generate_vector<u32>()};
+        const auto lib_values{generate_vector<u32>()};
 
         const auto builtin_runtime = benchmark_addition(builtin_values, "std::uint32_t");
-        const auto u32_runtime = benchmark_addition(u32_values, "boost::sn::u32");
-        print_runtime_ratio(u32_runtime, builtin_runtime);
+        const auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u32");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
     }
     {
         std::cout << "\n64-bit Unsigned Integers\n";
         const auto builtin_values{generate_vector<std::uint64_t>()};
-        const auto u32_values{generate_vector<u64>()};
+        const auto lib_values{generate_vector<u64>()};
 
         const auto builtin_runtime = benchmark_addition(builtin_values, "std::uint64_t");
-        const auto u32_runtime = benchmark_addition(u32_values, "boost::sn::u64");
-        print_runtime_ratio(u32_runtime, builtin_runtime);
+        const auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u64");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
     }
 
     return 1;
