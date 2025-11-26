@@ -7,7 +7,6 @@
 
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
-#include <boost/safe_numbers/unsigned_integers.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -20,7 +19,7 @@ namespace boost::safe_numbers {
 BOOST_SAFE_NUMBERS_EXPORT template <typename charT, typename traits, detail::library_type LibType>
 auto operator>>(std::basic_istream<charT, traits>& is, LibType& v)
 {
-    using underlying_type = detail::underlying_type_t<charT>::type;
+    using underlying_type = detail::underlying_type_t<LibType>::type;
 
     underlying_type temp;
     is >> temp;
@@ -32,7 +31,7 @@ auto operator>>(std::basic_istream<charT, traits>& is, LibType& v)
 BOOST_SAFE_NUMBERS_EXPORT template <typename charT, typename traits, detail::library_type LibType>
 auto operator<<(std::basic_ostream<charT, traits>& os, const LibType& v)
 {
-    using underlying_type = detail::underlying_type_t<charT>::type;
+    using underlying_type = detail::underlying_type_t<LibType>::type;
 
     const auto temp {static_cast<underlying_type>(v)};
     os << temp;
