@@ -5,6 +5,15 @@
 #include <boost/safe_numbers.hpp>
 #include <boost/core/lightweight_test.hpp>
 
+// Ignore [[nodiscard]] on the test that we know are going to throw
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunused-result"
+#elif defined(_MSC_VER)
+#  pragma warning (push)
+#  pragma warning (disable: 4834)
+#endif
+
 #ifdef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 import boost.safe_numbers;
@@ -15,6 +24,7 @@ import boost.safe_numbers;
 #include <cstring>
 #include <limits>
 #include <type_traits>
+#include <iostream>
 
 #endif
 
@@ -40,7 +50,7 @@ void test_valid_addition()
         const T rhs {rhs_value};
         const T res {lhs + rhs};
 
-        BOOST_TEST_EQ(ref_value, res);
+        BOOST_TEST(ref_value == res);
     }
 }
 
