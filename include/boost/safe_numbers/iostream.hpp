@@ -6,44 +6,16 @@
 #define BOOST_SAFENUMBERS_IOSTREAM_HPP
 
 #include <boost/safe_numbers/detail/config.hpp>
+#include <boost/safe_numbers/detail/type_traits.hpp>
 #include <boost/safe_numbers/unsigned_integers.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 #include <concepts>
-#include <type_traits>
 
 #endif // ifdef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 namespace boost::safe_numbers {
-
-namespace detail {
-
-template <typename>
-struct is_library_type : std::false_type {};
-
-template <typename T>
-struct is_library_type<unsigned_integer_basis<T>> : std::true_type {};
-
-template <typename T>
-inline constexpr bool is_library_type_v = is_library_type<T>::value;
-
-template <typename T>
-concept library_type = is_library_type_v<T>;
-
-template <typename T>
-struct underlying;
-
-template <typename T>
-struct underlying<unsigned_integer_basis<T>>
-{
-    using type = T;
-};
-
-template <typename T>
-using underlying_type_t = underlying<T>::type;
-
-} // namespace detail
 
 BOOST_SAFE_NUMBERS_EXPORT template <typename charT, typename traits, detail::library_type LibType>
 auto operator>>(std::basic_istream<charT, traits>& is, LibType& v)
