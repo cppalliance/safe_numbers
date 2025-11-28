@@ -26,6 +26,14 @@
 
 #elif defined(_M_AMD64)
 
+#define BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN
+#ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
+#  include <intrin.h>
+#endif
+
+#elif defined(_M_IX86)
+
+#define BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 #  include <intrin.h>
 #endif
