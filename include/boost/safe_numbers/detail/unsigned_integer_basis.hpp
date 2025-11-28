@@ -94,11 +94,36 @@ bool intrin_add(T lhs, T rhs, T& result)
     }
 }
 
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+template <std::unsigned_integral T>
+bool intrin_add(T lhs, T rhs, T& result)
+{
+    if constexpr (std::is_same_v<T, std::uint8_t>)
+    {
+        return _addcarry_u8(0, lhs, rhs, &result);
+    }
+    else if constexpr (std::is_same_v<T, std::uint16_t>)
+    {
+        return _addcarry_u16(0, lhs, rhs, &result);
+    }
+    else if constexpr (std::is_same_v<T, std::uint32_t>)
+    {
+        return _addcarry_u32(0, lhs, rhs, &result);
+    }
+    else
+    {
+        // x86 windows does not provide _addcarry_u64 so fall back to normal impl
+        result = lhs + rhs;
+        return result < lhs;
+    }
+}
+
 #endif
 
 } // namespace impl
 
-template <typename BasisType>
+template <std::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator+(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
