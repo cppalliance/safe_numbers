@@ -6,6 +6,7 @@
 #define BOOST_SAFE_NUMBERS_DETAIL_TYPE_TRAITS_HPP
 
 #include <boost/safe_numbers/detail/config.hpp>
+#include <boost/safe_numbers/detail/unsigned_integer_basis.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
