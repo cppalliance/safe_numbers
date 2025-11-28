@@ -50,6 +50,7 @@ project : requirements
 run quick.cpp ;
 
 run test_construct_unsigned_type.cpp ;
+compile test_integer_type_properties.cpp ;
 
 run test_unsigned_addition.cpp ;
 compile-fail test_unsigned_addition_fail.cpp ;
