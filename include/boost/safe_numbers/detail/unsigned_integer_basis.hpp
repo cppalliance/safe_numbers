@@ -20,7 +20,7 @@
 
 namespace boost::safe_numbers::detail {
 
-template <typename BasisType>
+template <std::unsigned_integral BasisType>
 class unsigned_integer_basis
 {
 private:
@@ -50,7 +50,7 @@ namespace impl {
 
 #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow)
 
-template <typename T>
+template <std::unsigned_integral T>
 bool intrin_add(T lhs, T rhs, T& result)
 {
     if constexpr (std::is_same_v<T, unsigned long long int>)
@@ -73,7 +73,7 @@ bool intrin_add(T lhs, T rhs, T& result)
 
 #elif BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64)
 
-template <typename T>
+template <std::unsigned_integral T>
 bool intrin_add(T lhs, T rhs, T& result)
 {
     if constexpr (std::is_same_v<T, std::uint8_t>)
@@ -153,7 +153,7 @@ template <std::unsigned_integral BasisType>
     return result_type{static_cast<BasisType>(res)};
 }
 
-template <typename LHSBasis, typename RHSBasis>
+template <std::unsigned_integral LHSBasis, std::unsigned_integral RHSBasis>
 constexpr auto operator+(const unsigned_integer_basis<LHSBasis>,
                          const unsigned_integer_basis<RHSBasis>)
 {
