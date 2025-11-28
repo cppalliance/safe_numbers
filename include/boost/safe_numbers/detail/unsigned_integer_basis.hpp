@@ -36,7 +36,9 @@ private:
 
 public:
 
-    explicit constexpr unsigned_integer_basis(const BasisType val) : basis_{val} {}
+    constexpr unsigned_integer_basis() noexcept = default;
+
+    explicit constexpr unsigned_integer_basis(const BasisType val) noexcept : basis_{val} {}
 
     [[nodiscard]] explicit constexpr operator BasisType() const { return basis_; }
 
