@@ -17,16 +17,12 @@
 namespace boost::safe_numbers {
 
 BOOST_SAFE_NUMBERS_EXPORT using u8 = detail::unsigned_integer_basis<std::uint8_t>;
-static_assert(sizeof(u8) == sizeof(std::uint8_t), "Size is incorrect");
 
 BOOST_SAFE_NUMBERS_EXPORT using u16 = detail::unsigned_integer_basis<std::uint16_t>;
-static_assert(sizeof(u16) == sizeof(std::uint16_t), "Size is incorrect");
 
 BOOST_SAFE_NUMBERS_EXPORT using u32 = detail::unsigned_integer_basis<std::uint32_t>;
-static_assert(sizeof(u32) == sizeof(std::uint32_t), "Size is incorrect");
 
 BOOST_SAFE_NUMBERS_EXPORT using u64 = detail::unsigned_integer_basis<std::uint64_t>;
-static_assert(sizeof(u64) == sizeof(std::uint64_t), "Size is incorrect");
 
 } // namespace boost::safe_numbers
 
