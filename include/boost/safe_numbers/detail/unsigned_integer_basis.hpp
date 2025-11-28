@@ -157,12 +157,76 @@ template <std::unsigned_integral LHSBasis, std::unsigned_integral RHSBasis>
 constexpr auto operator+(const unsigned_integer_basis<LHSBasis>,
                          const unsigned_integer_basis<RHSBasis>)
 {
-    // TODO(mborland): Expand this completely
-    if constexpr (std::is_same_v<LHSBasis, std::uint32_t>)
+    if constexpr (std::is_same_v<LHSBasis, std::uint8_t>)
     {
-        if constexpr (std::is_same_v<RHSBasis, std::uint64_t>)
+        if constexpr (std::is_same_v<RHSBasis, std::uint16_t>)
+        {
+            static_assert(false, "Can not perform addition between u8 and u16");
+        }
+        else if constexpr (std::is_same_v<RHSBasis, std::uint32_t>)
+        {
+            static_assert(false, "Can not perform addition between u8 and u32");
+        }
+        else if constexpr (std::is_same_v<RHSBasis, std::uint64_t>)
+        {
+            static_assert(false, "Can not perform addition between u8 and u64");
+        }
+        else
+        {
+            static_assert(false, "Can not perform addition between u8 and unknown type");
+        }
+    }
+    else if constexpr (std::is_same_v<LHSBasis, std::uint16_t>)
+    {
+        if constexpr (std::is_same_v<RHSBasis, std::uint8_t>)
+        {
+            static_assert(false, "Can not perform addition between u16 and u8");
+        }
+        else if constexpr (std::is_same_v<RHSBasis, std::uint32_t>)
+        {
+            static_assert(false, "Can not perform addition between u16 and u32");
+        }
+        else if constexpr (std::is_same_v<RHSBasis, std::uint64_t>)
+        {
+            static_assert(false, "Can not perform addition between u16 and u64");
+        }
+        else
+        {
+            static_assert(false, "Can not perform addition between u16 and unknown type");
+        }
+    }
+    else if constexpr (std::is_same_v<LHSBasis, std::uint32_t>)
+    {
+        if constexpr (std::is_same_v<RHSBasis, std::uint8_t>)
+        {
+            static_assert(false, "Can not perform addition between u32 and u8");
+        }
+        else if constexpr (std::is_same_v<RHSBasis, std::uint16_t>)
+        {
+            static_assert(false, "Can not perform addition between u32 and u16");
+        }
+        else if constexpr (std::is_same_v<RHSBasis, std::uint64_t>)
         {
             static_assert(false, "Can not perform addition between u32 and u64");
+        }
+        else
+        {
+            static_assert(false, "Can not perform addition between u32 and unknown type");
+        }
+    }
+    else if constexpr (std::is_same_v<LHSBasis, std::uint64_t>)
+    {
+        if constexpr (std::is_same_v<RHSBasis, std::uint8_t>)
+        {
+            static_assert(false, "Can not perform addition between u64 and u8");
+        }
+        else if constexpr (std::is_same_v<RHSBasis, std::uint16_t>)
+        {
+            static_assert(false, "Can not perform addition between u64 and u16");
+        }
+        else if constexpr (std::is_same_v<RHSBasis, std::uint32_t>)
+        {
+            static_assert(false, "Can not perform addition between u64 and u32");
         }
         else
         {
