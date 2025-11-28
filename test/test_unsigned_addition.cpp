@@ -73,19 +73,44 @@ void test_throwing_addition()
     }
 }
 
+template <typename T>
+void test_valid_compound_addition()
+{
+    using basis_type = detail::underlying_type_t<T>;
+    boost::random::uniform_int_distribution<basis_type> dist {std::numeric_limits<basis_type>::min() / 2U,
+                                                              std::numeric_limits<basis_type>::max() / 2U};
+
+    for (std::size_t i = 0; i < N; ++i)
+    {
+        const auto lhs_value {dist(rng)};
+        const auto rhs_value {dist(rng)};
+        const auto ref_value {static_cast<T>(lhs_value + rhs_value)};
+
+        T lhs {lhs_value};
+        const T rhs {rhs_value};
+        lhs += rhs;
+
+        BOOST_TEST(ref_value == lhs);
+    }
+}
+
 int main()
 {
     test_valid_addition<u8>();
     test_throwing_addition<u8>();
+    test_valid_compound_addition<u8>();
 
     test_valid_addition<u16>();
     test_throwing_addition<u16>();
+    test_valid_compound_addition<u16>();
 
     test_valid_addition<u32>();
     test_throwing_addition<u32>();
+    test_valid_compound_addition<u32>();
 
     test_valid_addition<u64>();
     test_throwing_addition<u64>();
+    test_valid_compound_addition<u64>();
 
     return boost::report_errors();
 }
