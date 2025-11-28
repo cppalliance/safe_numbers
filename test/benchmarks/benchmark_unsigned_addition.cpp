@@ -90,6 +90,8 @@ void print_runtime_ratio(T lib, T builtin)
 
 int main()
 {
+    #ifdef BOOST_SAFE_NUMBERS_RUN_BENCHMARKS
+
     {
         std::cout << "8-bit Unsigned Integers\n";
         const auto builtin_values{generate_vector<std::uint8_t>()};
@@ -126,6 +128,12 @@ int main()
         const auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u64");
         print_runtime_ratio(lib_runtime, builtin_runtime);
     }
+
+    #else
+
+    std::cerr << "Benchmarks not run" << std::endl;
+
+    #endif
 
     return 1;
 }
