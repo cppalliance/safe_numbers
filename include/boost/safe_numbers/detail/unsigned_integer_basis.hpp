@@ -147,13 +147,16 @@ template <std::unsigned_integral BasisType>
 
     #endif // __has_builtin(__builtin_add_overflow)
 
-    const auto res {static_cast<BasisType>(lhs) + static_cast<BasisType>(rhs)};
-    if (res < static_cast<BasisType>(lhs))
+    const auto lhs_basis {static_cast<BasisType>(lhs)};
+    const auto rhs_basis {static_cast<BasisType>(rhs)};
+    const auto res {static_cast<BasisType>(lhs_basis + rhs_basis)};
+
+    if (res < lhs_basis)
     {
         BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
     }
 
-    return result_type{static_cast<BasisType>(res)};
+    return result_type{res};
 }
 
 template <std::unsigned_integral LHSBasis, std::unsigned_integral RHSBasis>
