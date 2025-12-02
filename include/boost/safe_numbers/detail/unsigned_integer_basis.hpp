@@ -40,6 +40,8 @@ public:
 
     explicit constexpr unsigned_integer_basis(const BasisType val) noexcept : basis_{val} {}
 
+    explicit constexpr unsigned_integer_basis(bool) noexcept = delete;
+
     [[nodiscard]] explicit constexpr operator BasisType() const { return basis_; }
 
     [[nodiscard]] friend constexpr auto operator<=>(unsigned_integer_basis lhs, unsigned_integer_basis rhs) noexcept
