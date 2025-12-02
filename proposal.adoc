@@ -37,8 +37,8 @@ Each of these types will have the following properties:
 
 . No implicit conversions (to include to boolean values)
 . No mixed sign operations
-. No operators defined between Boost.SafeNumbers and builtin numeric types except for explicit, and non-narrowing construction
-. Any numerical error such as overflow will `throw` on error by default.
+. No operators defined between Boost.SafeNumbers and builtin arithmetic types except for explicit  construction
+. Any numerical error such as overflow will `throw` on error by default at runtime, and fail at compile time when possible.
 
 These types offer alternatives to all the standard numerical types in pass:[C++] as well as the often requested 128-bit integer types.
 
