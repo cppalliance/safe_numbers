@@ -40,7 +40,7 @@ BOOST_NOINLINE auto generate_vector()
 
 template <typename T>
 BOOST_NOINLINE
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__clang__)
 #pragma optimize("t", off)
 #endif
 auto
