@@ -56,6 +56,7 @@ run test_unsigned_addition.cpp ;
 compile-fail test_unsigned_addition_fail.cpp ;
 run-fail benchmarks/benchmark_unsigned_addition.cpp ;
 run test_limits.cpp ;
+run limits_link_1.cpp limits_link_2.cpp limits_link_3.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
