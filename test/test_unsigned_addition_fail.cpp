@@ -39,6 +39,7 @@ void test_mixed_add()
         RHSType rhs {rhs_val};
 
         const auto res {lhs + rhs};
+        BOOST_TEST(res > LHSType{0});
     }
 }
 
