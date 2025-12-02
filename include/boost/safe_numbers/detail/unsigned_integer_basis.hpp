@@ -151,7 +151,16 @@ template <std::unsigned_integral BasisType>
 
     const auto lhs_basis {static_cast<BasisType>(lhs)};
     const auto rhs_basis {static_cast<BasisType>(rhs)};
-    const auto res {static_cast<BasisType>(lhs_basis + rhs_basis)};
+
+    BasisType res {};
+    if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
+    {
+        res = static_cast<BasisType>(static_cast<std::uint32_t>(lhs_basis + rhs_basis));
+    }
+    else
+    {
+        res = static_cast<BasisType>(lhs_basis + rhs_basis);
+    }
 
     if (res < lhs_basis)
     {
