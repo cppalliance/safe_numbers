@@ -32,6 +32,6 @@ add_executable(quick ../quick.cpp)
 target_link_libraries(quick Boost::safe_numbers)
 
 enable_testing()
-add_test(quick quick)
+add_test(NAME quick COMMAND $<TARGET_FILE:quick>)
 
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -C $<CONFIG>)
