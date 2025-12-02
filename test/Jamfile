@@ -61,3 +61,6 @@ run-fail benchmarks/benchmark_unsigned_addition.cpp ;
 compile compile_tests/compile_test_unsigned_integers.cpp ;
 compile compile_tests/compile_test_iostream.cpp ;
 compile compile_tests/compile_test_main_header.cpp ;
+
+# Run the examples
+run ../examples/basic_usage.cpp ;
