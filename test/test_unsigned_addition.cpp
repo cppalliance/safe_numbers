@@ -48,7 +48,10 @@
 #endif
 
 // Ignore [[nodiscard]] on the test that we know are going to throw
-#ifdef __GNUC__
+#ifdef __clang__
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wunused-result"
+#elif defined(__GNUC__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wunused-result"
 #elif defined(_MSC_VER)
