@@ -89,7 +89,16 @@ void test_valid_addition()
     {
         const auto lhs_value {dist(rng)};
         const auto rhs_value {dist(rng)};
-        const auto ref_value {static_cast<T>(lhs_value + rhs_value)};
+
+        T ref_value {};
+        if constexpr (std::is_same_v<basis_type, std::uint8_t> || std::is_same_v<basis_type, std::uint16_t>)
+        {
+            ref_value = static_cast<T>(static_cast<basis_type>(static_cast<std::uint32_t>(lhs_value + rhs_value)));
+        }
+        else
+        {
+            ref_value = static_cast<T>(lhs_value + rhs_value);
+        }
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
@@ -128,7 +137,16 @@ void test_valid_compound_addition()
     {
         const auto lhs_value {dist(rng)};
         const auto rhs_value {dist(rng)};
-        const auto ref_value {static_cast<T>(lhs_value + rhs_value)};
+
+        T ref_value {};
+        if constexpr (std::is_same_v<basis_type, std::uint8_t> || std::is_same_v<basis_type, std::uint16_t>)
+        {
+            ref_value = static_cast<T>(static_cast<basis_type>(static_cast<std::uint32_t>(lhs_value + rhs_value)));
+        }
+        else
+        {
+            ref_value = static_cast<T>(lhs_value + rhs_value);
+        }
 
         T lhs {lhs_value};
         const T rhs {rhs_value};
