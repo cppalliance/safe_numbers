@@ -40,7 +40,12 @@ public:
 
     explicit constexpr unsigned_integer_basis(const BasisType val) noexcept : basis_{val} {}
 
-    explicit constexpr unsigned_integer_basis(bool) noexcept = delete;
+    template <typename T>
+        requires std::is_same_v<T, bool>
+    explicit constexpr unsigned_integer_basis(T) noexcept
+    {
+        static_assert(false, "Construction from bool is not allowed");
+    }
 
     [[nodiscard]] explicit constexpr operator BasisType() const { return basis_; }
 
