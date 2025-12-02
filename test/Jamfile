@@ -64,3 +64,4 @@ compile compile_tests/compile_test_main_header.cpp ;
 
 # Run the examples
 run ../examples/basic_usage.cpp ;
+compile-fail ../examples/basic_usage_constexpr_fail.cpp ;

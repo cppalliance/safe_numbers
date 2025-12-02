@@ -13,9 +13,9 @@ int main()
 
     try
     {
-        const u8 x {UINT8_MAX};
-        const u8 y {2};
-        const u8 z {x + y};
+        constexpr u8 x {UINT8_MAX};
+        constexpr u8 y {2};
+        constexpr u8 z {x + y};
 
         std::cout << "Value of z: " << z << std::endl;
     }
