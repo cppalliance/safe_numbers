@@ -1,0 +1,15 @@
+{
+  "key": "safe_numbers",
+  "name": "safe_numbers",
+  "authors": [
+    "Matt Borland"
+  ],
+  "maintainers": [
+    "Matt Borland <matt -at- mattborland.com>"
+  ],
+  "description": "Safe Numerical Types for C++20",
+  "category": [
+    "Math and numerics"
+  ],
+  "cxxstd": "20"
+}
