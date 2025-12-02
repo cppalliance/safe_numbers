@@ -87,7 +87,7 @@ To make these compiler errors useful they must be trivially human-readable inste
 
 Boost.safe_numerics [7] offers a users the ability to wrap types before an operation at runtime, with policy based results on error.
 
-.This example shows how to use Boost.safe_numerics
+.This example on how to use Boost.safe_numerics is directly from the library documentation
 ====
 [source, c++]
 ----
@@ -102,8 +102,8 @@ try
 }
 catch(const std::exception & e)
 {
-// which we can catch here
-std::cout << "error detected:" << e.what() << std::endl;
+    // which we can catch here
+    std::cout << "error detected:" << e.what() << std::endl;
 }
 ----
 ====
@@ -118,19 +118,29 @@ This example when using our proposal would instead look something like:
 try
 {
     using namespace boost::safenumbers;
-    i8 x = INT_MAX; // Compile error: implicit narrowing is not allowed
-    i8 y = 2;       // Compile error: implicit narrowing is not allowed
-    i8 z = x + y;   // Good since x and y are both of type i8
+    //u8 x = INT_MAX; // Compile error: implicit narrowing is not allowed
+
+    const u8 x {UINT8_MAX};
+    const u8 y {2};
+    const u8 z {x + y};
+
+    std::cout << "Value of z: " << z << std::endl;
 }
 catch(const std::exception & e)
 {
-    std::cout << "error detected:" << e.what() << std::endl;
+    std::cerr << "Error Detected: " << e.what() << std::endl;
 }
 
 ----
+.Expected Output
+....
+Error Detected: Overflow detected in unsigned addition
+....
 ====
 
 Moving the errors from run time to compile time should be far easier to debug, and lead to fewer instances where exceptions are possible.
+
+== Analysis of Alternatives
 
 === Intel Safe Arithmetic
 
