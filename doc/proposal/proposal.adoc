@@ -78,8 +78,11 @@ If the runtime penalty is too great the additional safety offered by this librar
 
 === Human-Readable Error Messages
 
-In many cases such as mixed sign operations we intend to emit a compiler error.
-To make these compiler errors useful they must be trivially human-readable instead of emitting the template spaghetti that pass:[C++] and Boost are known for.
+In many cases such as mixed type operations we intend to emit a compiler error.
+To make these compiler errors useful they must be trivially human-readable.
+
+.An example of an error from mixed type operations that is easily read through ones IDE
+image::assert_msg.png[]
 
 == Analysis of Alternatives
 
