@@ -117,8 +117,8 @@ This example when using our proposal would instead look something like:
 
 try
 {
-    using namespace boost::safenumbers;
-    //u8 x = INT_MAX; // Compile error: implicit narrowing is not allowed
+    using namespace boost::safe_numbers;
+    // u8 x = INT_MAX; // Compile error: implicit narrowing is not allowed
 
     const u8 x {UINT8_MAX};
     const u8 y {2};
@@ -138,9 +138,40 @@ Error Detected: Overflow detected in unsigned addition
 ....
 ====
 
-Moving the errors from run time to compile time should be far easier to debug, and lead to fewer instances where exceptions are possible.
+By making the values constexpr in the above example we can move the errors from run time to compile time.
+This should lead to fewer instances where exceptions are possible.
 
-== Analysis of Alternatives
+.Our safe_numbers examples from above but with constexpr evaluation of addition instead of runtime
+====
+[source, c++]
+----
+
+try
+{
+    using namespace boost::safe_numbers;
+
+    constexpr u8 x {UINT8_MAX};
+    constexpr u8 y {2};
+    constexpr u8 z {x + y};
+
+    std::cout << "Value of z: " << z << std::endl;
+}
+catch(const std::exception & e)
+{
+    std::cerr << "Error Detected: " << e.what() << std::endl;
+}
+
+----
+.Expected Output
+....
+error: constexpr variable 'z' must be initialized by a constant expression
+   19 |         constexpr u8 z {x + y};
+      |                      ^ ~~~~~~~
+
+note: non-literal type 'std::overflow_error' cannot be used in a constant expression
+  156 |         BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
+....
+====
 
 === Intel Safe Arithmetic
 
