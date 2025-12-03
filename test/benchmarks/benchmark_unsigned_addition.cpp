@@ -3,7 +3,6 @@
 // https://www.boost.org/LICENSE_1_0.txt
 
 #include <boost/config.hpp>
-#include <boost/random/uniform_int_distribution.hpp>
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
 #include <random>
@@ -12,6 +11,48 @@
 #include <chrono>
 #include <iostream>
 #include <iomanip>
+
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wold-style-cast"
+#  pragma clang diagnostic ignored "-Wundef"
+#  pragma clang diagnostic ignored "-Wconversion"
+#  pragma clang diagnostic ignored "-Wsign-conversion"
+#  pragma clang diagnostic ignored "-Wfloat-equal"
+#  pragma clang diagnostic ignored "-Wsign-compare"
+#  pragma clang diagnostic ignored "-Woverflow"
+
+#  if (__clang_major__ >= 10 && !defined(__APPLE__)) || __clang_major__ >= 13
+#    pragma clang diagnostic ignored "-Wdeprecated-copy"
+#  endif
+
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+#  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wsign-compare"
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+#  pragma GCC diagnostic ignored "-Woverflow"
+
+#elif defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable : 4389)
+#  pragma warning(disable : 4127)
+#  pragma warning(disable : 4305)
+#  pragma warning(disable : 4309)
+#endif
+
+#include <boost/random/uniform_int_distribution.hpp>
+
+#ifdef __clang__
+#  pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#  pragma warning(pop)
+#endif
 
 using namespace boost::safe_numbers;
 using namespace std::chrono;
