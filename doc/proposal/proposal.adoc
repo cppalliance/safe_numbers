@@ -31,7 +31,6 @@ The concrete types the library will provide are:
 . Unsigned Integers: u8, u16, u32, u64, and u128
 . Signed Integers: i8, i16, i32, i64, and i128
 . Floating Point: f32 and f64
-. Bool: boolean
 
 Each of these types will have the following properties:
 
