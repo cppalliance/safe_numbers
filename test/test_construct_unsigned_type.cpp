@@ -43,7 +43,10 @@ int main()
 {
     using namespace boost::safe_numbers;
 
+    test<u8, std::uint8_t>();
+    test<u16, std::uint16_t>();
     test<u32, std::uint32_t>();
+    test<u64, std::uint64_t>();
 
     return boost::report_errors();
 }
