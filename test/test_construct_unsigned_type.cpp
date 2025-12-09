@@ -4,6 +4,7 @@
 
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/core/lightweight_test.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 
 #ifdef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -24,8 +25,8 @@ inline constexpr std::size_t N {1024};
 template <typename T, typename BasisType>
 void test()
 {
-    std::uniform_int_distribution<BasisType> dist {std::numeric_limits<BasisType>::min(),
-                                                   std::numeric_limits<BasisType>::max()};
+    boost::random::uniform_int_distribution<BasisType> dist {std::numeric_limits<BasisType>::min(),
+                                                             std::numeric_limits<BasisType>::max()};
 
     for (std::size_t i {}; i < N; ++i)
     {
