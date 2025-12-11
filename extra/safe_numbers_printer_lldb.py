@@ -1,4 +1,6 @@
-# safe_numbers_printer.py
+# Copyright 2025 Matt Borland
+# Distributed under the Boost Software License, Version 1.0.
+# https://www.boost.org/LICENSE_1_0.txt
 
 import lldb
 
@@ -61,37 +63,37 @@ def __lldb_init_module(debugger, internal_dict):
     u64_pattern = r"^(const )?(boost::safe_numbers::detail::unsigned_integer_basis<unsigned long>|boost::safe_numbers::detail::unsigned_integer_basis<unsigned long long>|(\w+::)*u64)( &| \*)?$"
 
     debugger.HandleCommand(
-        f'type summary add -x "{u8_pattern}" -e -F safe_numbers_printer.u8_summary'
+        f'type summary add -x "{u8_pattern}" -e -F safe_numbers_printer_lldb.u8_summary'
     )
     debugger.HandleCommand(
-        f'type synthetic add -x "{u8_pattern}" -l safe_numbers_printer.UintSyntheticProvider'
+        f'type synthetic add -x "{u8_pattern}" -l safe_numbers_printer_lldb.UintSyntheticProvider'
     )
 
     print("u8 printer loaded successfully")
 
     debugger.HandleCommand(
-        f'type summary add -x "{u16_pattern}" -e -F safe_numbers_printer.u16_summary'
+        f'type summary add -x "{u16_pattern}" -e -F safe_numbers_printer_lldb.u16_summary'
     )
     debugger.HandleCommand(
-        f'type synthetic add -x "{u16_pattern}" -l safe_numbers_printer.UintSyntheticProvider'
+        f'type synthetic add -x "{u16_pattern}" -l safe_numbers_printer_lldb.UintSyntheticProvider'
     )
 
     print("u16 printer loaded successfully")
 
     debugger.HandleCommand(
-        f'type summary add -x "{u32_pattern}" -e -F safe_numbers_printer.u32_summary'
+        f'type summary add -x "{u32_pattern}" -e -F safe_numbers_printer_lldb.u32_summary'
     )
     debugger.HandleCommand(
-        f'type synthetic add -x "{u32_pattern}" -l safe_numbers_printer.UintSyntheticProvider'
+        f'type synthetic add -x "{u32_pattern}" -l safe_numbers_printer_lldb.UintSyntheticProvider'
     )
 
     print("u32 printer loaded successfully")
 
     debugger.HandleCommand(
-        f'type summary add -x "{u64_pattern}" -e -F safe_numbers_printer.u64_summary'
+        f'type summary add -x "{u64_pattern}" -e -F safe_numbers_printer_lldb.u64_summary'
     )
     debugger.HandleCommand(
-        f'type synthetic add -x "{u64_pattern}" -l safe_numbers_printer.UintSyntheticProvider'
+        f'type synthetic add -x "{u64_pattern}" -l safe_numbers_printer_lldb.UintSyntheticProvider'
     )
 
     print("u64 printer loaded successfully")
