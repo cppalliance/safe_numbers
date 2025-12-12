@@ -5,11 +5,11 @@
 #ifndef BOOST_SAFE_NUMBERS_DETAIL_UNSIGNED_INTEGER_BASIS_HPP
 #define BOOST_SAFE_NUMBERS_DETAIL_UNSIGNED_INTEGER_BASIS_HPP
 
-#include <boost/throw_exception.hpp>
 #include <boost/safe_numbers/detail/config.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
+#include <boost/throw_exception.hpp>
 #include <concepts>
 #include <compare>
 #include <limits>

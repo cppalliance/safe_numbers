@@ -8,6 +8,12 @@
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
 
+#ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
+
+#include <iostream>
+
+#endif // ifdef BOOST_SAFE_NUMBERS_BUILD_MODULE
+
 namespace boost::safe_numbers::detail {
 
 BOOST_SAFE_NUMBERS_EXPORT template <typename charT, typename traits, library_type LibType>
