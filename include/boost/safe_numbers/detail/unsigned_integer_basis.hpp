@@ -27,13 +27,6 @@ private:
 
     BasisType basis_;
 
-    static constexpr auto name_ {
-        std::is_same_v<BasisType, std::uint8_t> ? "u8" :
-        std::is_same_v<BasisType, std::uint16_t> ? "u16" :
-        std::is_same_v<BasisType, std::uint32_t> ? "u32" :
-        std::is_same_v<BasisType, std::uint64_t> ? "u64" : "u128"
-     };
-
 public:
 
     constexpr unsigned_integer_basis() noexcept = default;
