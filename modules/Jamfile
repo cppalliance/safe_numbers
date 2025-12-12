@@ -28,3 +28,12 @@ project
 obj safe_numbers : safe_numbers.cxx : <toolset>msvc:<cxxflags>-interface ;
 
 run quick_test.cpp safe_numbers : : : <dependency>safe_numbers ;
+
+# Run the regular test suite
+run ../test/quick.cpp safe_numbers : : : <dependency>safe_numbers ;
+run ../test/test_construct_unsigned_type.cpp safe_numbers : : : <dependency>safe_numbers ;
+run ../test/test_integer_type_properties.cpp safe_numbers : : : <dependency>safe_numbers ;
+run ../test/test_limits.cpp safe_numbers : : : <dependency>safe_numbers ;
+run ../test/test_unsigned_addition.cpp safe_numbers : : : <dependency>safe_numbers ;
+compile-fail ../test/test_unsigned_addition_fail.cpp safe_numbers : <dependency>safe_numbers ;
+compile-fail ../test/test_unsigned_construction_from_bool.cpp safe_numbers : <dependency>safe_numbers ;
