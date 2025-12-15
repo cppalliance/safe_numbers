@@ -46,7 +46,7 @@ public:
         -> std::strong_ordering = default;
 
     template <std::unsigned_integral OtherBasis>
-    constexpr auto operator+=(unsigned_integer_basis<OtherBasis> rhs) noexcept -> unsigned_integer_basis&;
+    constexpr auto operator+=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 };
 
 namespace impl {
@@ -258,7 +258,7 @@ constexpr auto operator+(const unsigned_integer_basis<LHSBasis>,
 
 template <std::unsigned_integral BasisType>
 template <std::unsigned_integral OtherBasisType>
-constexpr auto unsigned_integer_basis<BasisType>::operator+=(const unsigned_integer_basis<OtherBasisType> rhs) noexcept
+constexpr auto unsigned_integer_basis<BasisType>::operator+=(const unsigned_integer_basis<OtherBasisType> rhs)
     -> unsigned_integer_basis&
 {
     *this = *this + rhs;
