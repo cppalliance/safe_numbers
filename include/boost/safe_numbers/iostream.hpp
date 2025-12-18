@@ -10,6 +10,7 @@
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
+#include <boost/throw_exception.hpp>
 #include <iostream>
 
 #endif // ifdef BOOST_SAFE_NUMBERS_BUILD_MODULE
@@ -21,17 +22,25 @@ auto operator>>(std::basic_istream<charT, traits>& is, LibType& v) -> std::basic
 {
     using underlying_type = underlying_type_t<LibType>;
 
-    if constexpr (std::is_same_v<underlying_type, std::uint8_t>)
+    if (is.peek() == static_cast<charT>('-'))
     {
-        std::uint32_t temp;
-        is >> temp;
-        v = static_cast<LibType>(static_cast<std::uint8_t>(temp));
+        BOOST_THROW_EXCEPTION(std::domain_error("Attempting to construct negative value with unsigned safe integer"));
+        v = std::numeric_limits<LibType>::max();
     }
     else
     {
-        underlying_type temp;
-        is >> temp;
-        v = static_cast<LibType>(temp);
+        if constexpr (std::is_same_v<underlying_type, std::uint8_t>)
+        {
+            std::uint32_t temp;
+            is >> temp;
+            v = static_cast<LibType>(static_cast<std::uint8_t>(temp));
+        }
+        else
+        {
+            underlying_type temp;
+            is >> temp;
+            v = static_cast<LibType>(temp);
+        }
     }
 
     return is;
