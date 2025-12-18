@@ -68,3 +68,4 @@ compile compile_tests/compile_test_main_header.cpp ;
 run ../examples/basic_usage.cpp ;
 compile-fail ../examples/compile_fail_basic_usage_constexpr.cpp ;
 run ../examples/debugger.cpp ;
+run ../examples/construction_and_conversion.cpp ;
