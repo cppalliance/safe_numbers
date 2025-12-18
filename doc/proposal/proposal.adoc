@@ -35,9 +35,9 @@ The concrete types the library will provide are:
 Each of these types will have the following properties:
 
 . No implicit conversions (to include to boolean values)
-. No mixed sign operations
-. No operators defined between Boost.SafeNumbers and builtin arithmetic types except for explicit  construction
-. Any numerical error such as overflow will `throw` on error by default at runtime, and fail at compile time when possible.
+. No mixed type operations
+. No operators defined between Boost.SafeNumbers and builtin arithmetic types except for explicit construction
+. Any numerical or conversion error such as overflow will `throw` on error by default at runtime, and fail at compile time when possible.
 
 These types offer alternatives to all the standard numerical types in pass:[C++] as well as the often requested 128-bit integer types.
 
@@ -82,6 +82,10 @@ To make these compiler errors useful they must be trivially human-readable.
 
 .An example of an error from mixed type operations that is easily read through ones IDE
 image::assert_msg.png[]
+
+=== Consumable as a Module
+
+As the ecosystem for module consumption continues to mature, new libraries, such as this one, should take advantage of such capability.
 
 == Analysis of Alternatives
 
@@ -205,3 +209,4 @@ By offering solid performance, an expansive standard library, and readable compi
 . https://bannalia.blogspot.com/2025/11/some-experiments-with-boostunordered-on.html
 . https://doc.rust-lang.org/std/#primitives
 . https://github.com/intel/safe-arithmetic
+. https://www.reddit.com/r/cpp/s/PYUXScfueB
