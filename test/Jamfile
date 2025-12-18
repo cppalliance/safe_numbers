@@ -50,14 +50,14 @@ project : requirements
 run quick.cpp ;
 
 run test_construct_unsigned_type.cpp ;
-compile test_integer_type_properties.cpp ;
+compile compile_integer_type_properties.cpp ;
 
 run test_unsigned_addition.cpp ;
-compile-fail test_unsigned_addition_fail.cpp ;
+compile-fail compile_fail_unsigned_addition.cpp ;
 run-fail benchmarks/benchmark_unsigned_addition.cpp ;
 run test_limits.cpp ;
 run limits_link_1.cpp limits_link_2.cpp limits_link_3.cpp ;
-compile-fail test_unsigned_construction_from_bool.cpp ;
+compile-fail compile_fail_unsigned_construction_from_bool.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
@@ -66,5 +66,5 @@ compile compile_tests/compile_test_main_header.cpp ;
 
 # Run the examples
 run ../examples/basic_usage.cpp ;
-compile-fail ../examples/basic_usage_constexpr_fail.cpp ;
+compile-fail ../examples/compile_fail_basic_usage_constexpr.cpp ;
 run ../examples/debugger.cpp ;
