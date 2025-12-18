@@ -29,12 +29,47 @@ void test()
     BOOST_TEST_CSTR_EQ(out.str().c_str(), "42");
 }
 
+#ifndef BOOST_DISABLE_EXCEPTIONS
+
+template <typename T>
+void test_negative_value_handling()
+{
+    bool thrown{};
+
+    try
+    {
+        T val;
+        std::stringstream in;
+        in.str("-42");
+        in >> val;
+
+        BOOST_TEST_EQ(val, T{42});
+    }
+    catch (std::domain_error&)
+    {
+        thrown = true;
+    }
+
+    BOOST_TEST(thrown);
+}
+
+#endif
+
 int main()
 {
     test<u8>();
     test<u16>();
     test<u32>();
     test<u64>();
+
+    #ifndef BOOST_DISABLE_EXCEPTIONS
+
+    test_negative_value_handling<u8>();
+    test_negative_value_handling<u16>();
+    test_negative_value_handling<u32>();
+    test_negative_value_handling<u64>();
+
+    #endif
 
     return boost::report_errors();
 }
