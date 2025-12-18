@@ -17,6 +17,11 @@
 
 namespace boost::safe_numbers::literals {
 
+#ifdef _MSC_VER
+#  warning(push)
+#  pragma warning(disable:4702) // Unreachable code is only true with exceptions enabled
+#endif
+
 BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u8(const unsigned long long int val) -> u8
 {
     if (constexpr unsigned long long int max_value {std::numeric_limits<std::uint8_t>::max()}; val > max_value)
@@ -49,6 +54,10 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u32(const unsigned long lon
 
     return static_cast<u32>(static_cast<std::uint32_t>(val));
 }
+
+#ifdef _MSC_VER
+#  warning(pop)
+#endif
 
 BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u64(const unsigned long long int val) -> u64
 {
