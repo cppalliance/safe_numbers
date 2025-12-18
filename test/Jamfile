@@ -60,6 +60,7 @@ run limits_link_1.cpp limits_link_2.cpp limits_link_3.cpp ;
 compile-fail compile_fail_unsigned_construction_from_bool.cpp ;
 run test_unsigned_streaming.cpp ;
 run test_unsigned_literals.cpp ;
+compile-fail compile_fail_unsigned_literals.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;

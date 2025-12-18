@@ -40,3 +40,4 @@ run ../test/compile_integer_type_properties.cpp safe_numbers : : : <dependency>s
 
 compile-fail ../test/compile_fail_unsigned_addition.cpp safe_numbers : <dependency>safe_numbers ;
 compile-fail ../test/compile_fail_unsigned_construction_from_bool.cpp safe_numbers : <dependency>safe_numbers ;
+compile-fail ../test/compile_fail_unsigned_literals.cpp : <dependency>safe_numbers ;
