@@ -8,5 +8,6 @@
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/iostream.hpp>
 #include <boost/safe_numbers/limits.hpp>
+#include <boost/safe_numbers/literals.hpp>
 
 #endif //BOOST_SAFENUMBERS_HPP
