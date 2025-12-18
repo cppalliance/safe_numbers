@@ -23,6 +23,11 @@ namespace boost::safe_numbers::detail {
 template <std::unsigned_integral BasisType>
 class unsigned_integer_basis
 {
+public:
+
+    // This is exposed to the user so that they can convert back to built-in
+    using basis_type = BasisType;
+
 private:
 
     BasisType basis_;
