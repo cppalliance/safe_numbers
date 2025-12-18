@@ -17,6 +17,11 @@
 
 namespace boost::safe_numbers::detail {
 
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable:4702) // Unreachable code is only true with exceptions enabled
+#endif
+
 BOOST_SAFE_NUMBERS_EXPORT template <typename charT, typename traits, library_type LibType>
 auto operator>>(std::basic_istream<charT, traits>& is, LibType& v) -> std::basic_istream<charT, traits>&
 {
@@ -45,6 +50,10 @@ auto operator>>(std::basic_istream<charT, traits>& is, LibType& v) -> std::basic
 
     return is;
 }
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 
 BOOST_SAFE_NUMBERS_EXPORT template <typename charT, typename traits, library_type LibType>
 auto operator<<(std::basic_ostream<charT, traits>& os, const LibType& v) -> std::basic_ostream<charT, traits>&
