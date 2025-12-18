@@ -45,7 +45,8 @@ public:
         static_assert(false, "Construction from bool is not allowed");
     }
 
-    [[nodiscard]] explicit constexpr operator BasisType() const { return basis_; }
+    template <std::unsigned_integral OtherBasis>
+    [[nodiscard]] explicit constexpr operator OtherBasis() const noexcept;
 
     [[nodiscard]] friend constexpr auto operator<=>(unsigned_integer_basis lhs, unsigned_integer_basis rhs) noexcept
         -> std::strong_ordering = default;
@@ -259,6 +260,18 @@ constexpr auto operator+(const unsigned_integer_basis<LHSBasis>,
     }
 
     return unsigned_integer_basis<LHSBasis>(0);
+}
+
+template <std::unsigned_integral BasisType>
+template <std::unsigned_integral OtherBasis>
+constexpr unsigned_integer_basis<BasisType>::operator OtherBasis() const noexcept
+{
+    if constexpr (sizeof(OtherBasis) < sizeof(BasisType))
+    {
+        static_assert(false, "Narrowing conversions are not allowed");
+    }
+
+    return static_cast<OtherBasis>(basis_);
 }
 
 template <std::unsigned_integral BasisType>
