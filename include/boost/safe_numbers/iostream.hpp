@@ -23,7 +23,7 @@ auto operator>>(std::basic_istream<charT, traits>& is, LibType& v) -> std::basic
 
     underlying_type temp;
     is >> temp;
-    v = temp;
+        v = static_cast<LibType>(temp);
 
     return is;
 }
