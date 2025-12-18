@@ -18,7 +18,7 @@
 namespace boost::safe_numbers::literals {
 
 #ifdef _MSC_VER
-#  warning(push)
+#  pragma warning(push)
 #  pragma warning(disable:4702) // Unreachable code is only true with exceptions enabled
 #endif
 
@@ -56,7 +56,7 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u32(const unsigned long lon
 }
 
 #ifdef _MSC_VER
-#  warning(pop)
+#  pragma warning(pop)
 #endif
 
 BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u64(const unsigned long long int val) -> u64
