@@ -154,7 +154,7 @@ template <std::unsigned_integral BasisType>
 {
     using result_type = unsigned_integer_basis<BasisType>;
 
-    #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow)
+    #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
     if (!std::is_constant_evaluated())
     {
