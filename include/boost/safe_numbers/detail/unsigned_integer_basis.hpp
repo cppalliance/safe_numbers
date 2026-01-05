@@ -30,7 +30,7 @@ public:
 
 private:
 
-    BasisType basis_;
+    BasisType basis_ {0U};
 
 public:
 
