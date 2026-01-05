@@ -53,6 +53,9 @@ public:
 
     template <std::unsigned_integral OtherBasis>
     constexpr auto operator+=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
+
+    template <std::unsigned_integral OtherBasis>
+    constexpr auto operator-=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 };
 
 template <std::unsigned_integral BasisType>
@@ -415,6 +418,15 @@ template <std::unsigned_integral BasisType>
 }
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("subtraction", -)
+
+template <std::unsigned_integral BasisType>
+template <std::unsigned_integral OtherBasisType>
+constexpr auto unsigned_integer_basis<BasisType>::operator-=(const unsigned_integer_basis<OtherBasisType> rhs)
+    -> unsigned_integer_basis&
+{
+    *this = *this - rhs;
+    return *this;
+}
 
 // ------------------------------
 // Multiplication
