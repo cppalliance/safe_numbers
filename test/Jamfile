@@ -54,7 +54,7 @@ compile compile_integer_type_properties.cpp ;
 
 run test_unsigned_addition.cpp ;
 compile-fail compile_fail_unsigned_addition.cpp ;
-run-fail benchmarks/benchmark_unsigned_addition.cpp ;
+run-fail benchmarks/benchmark_unsigned_operations.cpp ;
 run test_limits.cpp ;
 run limits_link_1.cpp limits_link_2.cpp limits_link_3.cpp ;
 compile-fail compile_fail_unsigned_construction_from_bool.cpp ;

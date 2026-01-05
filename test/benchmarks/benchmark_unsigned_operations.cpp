@@ -57,7 +57,7 @@
 using namespace boost::safe_numbers;
 using namespace std::chrono;
 
-inline constexpr std::size_t N {100'000'000};
+inline constexpr std::size_t N {10'000'000};
 inline std::mt19937_64 rng(42);
 
 template <typename T>
@@ -76,10 +76,12 @@ BOOST_NOINLINE auto generate_vector()
         values.emplace_back(dist(rng));
     }
 
+    std::sort(values.begin(), values.end(), std::greater<>());
+
     return values;
 }
 
-template <typename T>
+template <typename T, typename Func>
 BOOST_NOINLINE
 #if defined(_MSC_VER) && !defined(__clang__)
 #pragma optimize("t", off)
@@ -90,7 +92,7 @@ __attribute__((optnone))
 #elif defined(__GNUC__)
 __attribute__((optimize("O0")))
 #endif
-benchmark_addition(const std::vector<T>& values, const char* label)
+benchmark_op(const std::vector<T>& values, Func op, const char* type, const char* operation)
 {
     const auto t1 = steady_clock::now();
 
@@ -102,7 +104,7 @@ benchmark_addition(const std::vector<T>& values, const char* label)
     {
         for (std::size_t i {}; i < N - 1U; ++i)
         {
-            counter += static_cast<value_type>(values[i] + values[i + 1]);
+            counter += static_cast<value_type>(op(values[i], values[i + 1]));
         }
     }
 
@@ -112,9 +114,21 @@ benchmark_addition(const std::vector<T>& values, const char* label)
 
     const auto runtime_ns = (t2 - t1) / 1ns;
 
-    std::cout << std::setw(15) << label << ": " << std::setw(13) << runtime_ns << " ns " << static_cast<std::uint64_t>(sink) << std::endl;
+    std::cerr << operation << "<" << std::left << std::setw(15) << type << ">: " << std::setw( 10 ) << ( t2 - t1 ) / 1us << " us (s=" << static_cast<std::uint64_t>(sink) << ")\n";
 
     return runtime_ns;
+}
+
+template <typename T>
+auto benchmark_addition(const std::vector<T>& values, const char* type)
+{
+    return benchmark_op(values, std::plus<>(), type, "add");
+}
+
+template <typename T>
+auto benchmark_subtraction(const std::vector<T>& values, const char* type)
+{
+    return benchmark_op(values, std::minus<>(), type, "sub");
 }
 
 #ifdef _MSC_VER
@@ -124,8 +138,8 @@ benchmark_addition(const std::vector<T>& values, const char* label)
 template <typename T>
 void print_runtime_ratio(T lib, T builtin)
 {
-    std::cout << std::setprecision(2) << std::fixed << std::setw(17)
-              << "Runtime ratio: " << std::setw(13) << static_cast<double>(lib) / static_cast<double>(builtin)
+    std::cout << std::setprecision(2) << std::fixed << std::setw(27)
+              << "Runtime ratio: " << std::setw(3) << static_cast<double>(lib) / static_cast<double>(builtin)
               << std::endl;
 }
 
@@ -138,8 +152,12 @@ int main()
         const auto builtin_values{generate_vector<std::uint8_t>()};
         const auto lib_values{generate_vector<u8>()};
 
-        const auto builtin_runtime = benchmark_addition(builtin_values, "std::uint8_t");
-        const auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u8");
+        auto builtin_runtime = benchmark_addition(builtin_values, "std::uint8_t");
+        auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u8");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_subtraction(builtin_values, "std::uint8_t");
+        lib_runtime = benchmark_subtraction(lib_values, "boost::sn::u8");
         print_runtime_ratio(lib_runtime, builtin_runtime);
     }
     {
@@ -147,8 +165,12 @@ int main()
         const auto builtin_values{generate_vector<std::uint16_t>()};
         const auto lib_values{generate_vector<u16>()};
 
-        const auto builtin_runtime = benchmark_addition(builtin_values, "std::uint16_t");
-        const auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u16");
+        auto builtin_runtime = benchmark_addition(builtin_values, "std::uint16_t");
+        auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u16");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_subtraction(builtin_values, "std::uint16_t");
+        lib_runtime = benchmark_subtraction(lib_values, "boost::sn::u16");
         print_runtime_ratio(lib_runtime, builtin_runtime);
     }
     {
@@ -156,8 +178,12 @@ int main()
         const auto builtin_values{generate_vector<std::uint32_t>()};
         const auto lib_values{generate_vector<u32>()};
 
-        const auto builtin_runtime = benchmark_addition(builtin_values, "std::uint32_t");
-        const auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u32");
+        auto builtin_runtime = benchmark_addition(builtin_values, "std::uint32_t");
+        auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u32");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_subtraction(builtin_values, "std::uint32_t");
+        lib_runtime = benchmark_subtraction(lib_values, "boost::sn::u32");
         print_runtime_ratio(lib_runtime, builtin_runtime);
     }
     {
@@ -165,8 +191,12 @@ int main()
         const auto builtin_values{generate_vector<std::uint64_t>()};
         const auto lib_values{generate_vector<u64>()};
 
-        const auto builtin_runtime = benchmark_addition(builtin_values, "std::uint64_t");
-        const auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u64");
+        auto builtin_runtime = benchmark_addition(builtin_values, "std::uint64_t");
+        auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u64");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_subtraction(builtin_values, "std::uint64_t");
+        lib_runtime = benchmark_subtraction(lib_values, "boost::sn::u64");
         print_runtime_ratio(lib_runtime, builtin_runtime);
     }
 
