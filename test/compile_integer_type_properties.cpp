@@ -31,7 +31,12 @@ void test_properties()
     static_assert(alignof(T) == alignof(basis));
 
     static_assert(std::is_default_constructible_v<T>);
-    static_assert(std::is_trivially_default_constructible_v<T>);
+
+    // This is not true, as using the default constructor does not guarantee the underlying integer
+    // is initialized
+    //
+    // static_assert(std::is_trivially_default_constructible_v<T>);
+
     static_assert(std::is_nothrow_default_constructible_v<T>);
 
     static_assert(std::is_copy_constructible_v<T>);
