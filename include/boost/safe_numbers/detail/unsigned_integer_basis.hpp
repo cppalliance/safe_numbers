@@ -79,7 +79,7 @@ namespace impl {
 #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow)
 
 template <std::unsigned_integral T>
-bool intrin_add(T lhs, T rhs, T& result)
+bool unsigned_intrin_add(T lhs, T rhs, T& result)
 {
     return __builtin_add_overflow(lhs, rhs, &result);
 }
@@ -87,7 +87,7 @@ bool intrin_add(T lhs, T rhs, T& result)
 #elif BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64)
 
 template <std::unsigned_integral T>
-bool intrin_add(T lhs, T rhs, T& result)
+bool unsigned_intrin_add(T lhs, T rhs, T& result)
 {
     if constexpr (std::is_same_v<T, std::uint8_t>)
     {
@@ -110,7 +110,7 @@ bool intrin_add(T lhs, T rhs, T& result)
 #elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
 template <std::unsigned_integral T>
-bool intrin_add(T lhs, T rhs, T& result)
+bool unsigned_intrin_add(T lhs, T rhs, T& result)
 {
     if constexpr (std::is_same_v<T, std::uint8_t>)
     {
@@ -147,7 +147,7 @@ template <std::unsigned_integral BasisType>
     if (!std::is_constant_evaluated())
     {
         BasisType res;
-        if (impl::intrin_add(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
+        if (impl::unsigned_intrin_add(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
         {
             BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
         }
@@ -288,7 +288,7 @@ namespace impl {
 #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow)
 
 template <std::unsigned_integral T>
-bool intrin_sub(T lhs, T rhs, T& result)
+bool unsigned_intrin_sub(T lhs, T rhs, T& result)
 {
     return __builtin_sub_overflow(lhs, rhs, &result);
 }
@@ -296,7 +296,7 @@ bool intrin_sub(T lhs, T rhs, T& result)
 #elif BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64)
 
 template <std::unsigned_integral T>
-bool intrin_sub(T lhs, T rhs, T& result)
+bool unsigned_intrin_sub(T lhs, T rhs, T& result)
 {
     if constexpr (std::is_same_v<T, std::uint8_t>)
     {
@@ -319,7 +319,7 @@ bool intrin_sub(T lhs, T rhs, T& result)
 #elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
 template <std::unsigned_integral T>
-bool intrin_sub(T lhs, T rhs, T& result)
+bool unsigned_intrin_sub(T lhs, T rhs, T& result)
 {
     if constexpr (std::is_same_v<T, std::uint8_t>)
     {
@@ -356,7 +356,7 @@ template <std::unsigned_integral BasisType>
     if (!std::is_constant_evaluated())
     {
         BasisType res;
-        if (impl::intrin_sub(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
+        if (impl::unsigned_intrin_sub(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
         {
             BOOST_THROW_EXCEPTION(std::underflow_error("Underflow detected in unsigned subtraction"));
         }
