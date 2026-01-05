@@ -399,22 +399,32 @@ template <std::unsigned_integral BasisType>
     BasisType res {};
     if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
     {
-        res = static_cast<BasisType>(static_cast<std::uint32_t>(lhs_basis + rhs_basis));
+        res = static_cast<BasisType>(static_cast<std::uint32_t>(lhs_basis - rhs_basis));
     }
     else
     {
-        res = static_cast<BasisType>(lhs_basis + rhs_basis);
+        res = static_cast<BasisType>(lhs_basis - rhs_basis);
     }
 
-    if (res < lhs_basis)
+    if (res > lhs_basis)
     {
-        BOOST_THROW_EXCEPTION(std::underflow_error("Overflow detected in unsigned subtraction"));
+        BOOST_THROW_EXCEPTION(std::underflow_error("Underflow detected in unsigned subtraction"));
     }
 
     return result_type{res};
 }
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("subtraction", -)
+
+// ------------------------------
+// Multiplication
+// ------------------------------
+
+// ------------------------------
+// Division
+// ------------------------------
+
+#undef BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP
 
 } // namespace boost::safe_numbers::detail
 
