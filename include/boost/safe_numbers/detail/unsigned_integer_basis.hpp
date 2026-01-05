@@ -81,22 +81,7 @@ namespace impl {
 template <std::unsigned_integral T>
 bool intrin_add(T lhs, T rhs, T& result)
 {
-    if constexpr (std::is_same_v<T, unsigned long long int>)
-    {
-        return __builtin_uaddll_overflow(lhs, rhs, &result);
-    }
-    else if constexpr (std::is_same_v<T, unsigned long int>)
-    {
-        return __builtin_uaddl_overflow(lhs, rhs, &result);
-    }
-    else if constexpr (std::is_same_v<T, unsigned int>)
-    {
-        return __builtin_uadd_overflow(lhs, rhs, &result);
-    }
-    else
-    {
-        return __builtin_add_overflow(lhs, rhs, &result);
-    }
+    return __builtin_add_overflow(lhs, rhs, &result);
 }
 
 #elif BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64)
@@ -305,22 +290,7 @@ namespace impl {
 template <std::unsigned_integral T>
 bool intrin_sub(T lhs, T rhs, T& result)
 {
-    if constexpr (std::is_same_v<T, unsigned long long int>)
-    {
-        return __builtin_usubll_overflow(lhs, rhs, &result);
-    }
-    else if constexpr (std::is_same_v<T, unsigned long int>)
-    {
-        return __builtin_usubl_overflow(lhs, rhs, &result);
-    }
-    else if constexpr (std::is_same_v<T, unsigned int>)
-    {
-        return __builtin_usub_overflow(lhs, rhs, &result);
-    }
-    else
-    {
-        return __builtin_sub_overflow(lhs, rhs, &result);
-    }
+    return __builtin_sub_overflow(lhs, rhs, &result);
 }
 
 #elif BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64)
