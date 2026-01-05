@@ -402,6 +402,51 @@ constexpr auto unsigned_integer_basis<BasisType>::operator-=(const unsigned_inte
 // Multiplication
 // ------------------------------
 
+#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow)
+
+template <std::unsigned_integral T>
+bool unsigned_intrin_mul(T lhs, T rhs, T& result)
+{
+    return __builtin_mul_overflow(lhs, rhs, &result);
+}
+
+#elif BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)
+
+template <std::unsigned_integral T>
+bool unsigned_intrin_mul(T lhs, T rhs, T& result)
+{
+    if constexpr (std::is_same_v<T, std::uint64_t>)
+    {
+        std::uint64_t high;
+        result = _umul128(lhs, rhs, &high);
+        return high != 0U;
+    }
+    else if constexpr (std::is_same_v<T, std::uint32_t>)
+    {
+        const auto temp {static_cast<std::uint64_t>(lhs) * rhs};
+        result = static_cast<std::uint32_t>(temp);
+        return temp > static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max());
+    }
+    else if constexpr (std::is_same_v<T, std::uint16_t>)
+    {
+        const auto temp {static_cast<std::uint_fast32_t>(lhs) * rhs};
+        result = static_cast<std::uint16_t>(temp);
+        return temp > static_cast<std::uint_fast32_t>(std::numeric_limits<std::uint16_t>::max());
+    }
+    else if constexpr (std::is_same_v<T, std::uint8_t>)
+    {
+        const auto temp {static_cast<std::uint_fast16_t>(lhs) * rhs};
+        result = static_cast<std::uint8_t>(temp);
+        return temp > static_cast<std::uint_fast16_t>(std::numeric_limits<std::uint8_t>::max());
+    }
+    else
+    {
+        static_assert(false, "Unsupported type");
+    }
+}
+
+#endif
+
 // ------------------------------
 // Division
 // ------------------------------
