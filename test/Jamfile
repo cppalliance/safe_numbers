@@ -62,6 +62,7 @@ run test_unsigned_streaming.cpp ;
 run test_unsigned_literals.cpp ;
 compile-fail compile_fail_unsigned_literals.cpp ;
 run test_unsigned_subtraction.cpp ;
+run test_unsigned_multiplication.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
