@@ -55,6 +55,22 @@ public:
     constexpr auto operator+=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 };
 
+template <std::unsigned_integral BasisType>
+template <std::unsigned_integral OtherBasis>
+constexpr unsigned_integer_basis<BasisType>::operator OtherBasis() const noexcept
+{
+    if constexpr (sizeof(OtherBasis) < sizeof(BasisType))
+    {
+        static_assert(false, "Narrowing conversions are not allowed");
+    }
+
+    return static_cast<OtherBasis>(basis_);
+}
+
+// ------------------------------
+// Addition
+// ------------------------------
+
 namespace impl {
 
 #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow)
@@ -263,18 +279,6 @@ constexpr auto operator+(const unsigned_integer_basis<LHSBasis>,
 }
 
 template <std::unsigned_integral BasisType>
-template <std::unsigned_integral OtherBasis>
-constexpr unsigned_integer_basis<BasisType>::operator OtherBasis() const noexcept
-{
-    if constexpr (sizeof(OtherBasis) < sizeof(BasisType))
-    {
-        static_assert(false, "Narrowing conversions are not allowed");
-    }
-
-    return static_cast<OtherBasis>(basis_);
-}
-
-template <std::unsigned_integral BasisType>
 template <std::unsigned_integral OtherBasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator+=(const unsigned_integer_basis<OtherBasisType> rhs)
     -> unsigned_integer_basis&
@@ -282,6 +286,12 @@ constexpr auto unsigned_integer_basis<BasisType>::operator+=(const unsigned_inte
     *this = *this + rhs;
     return *this;
 }
+
+// ------------------------------
+// Subtraction
+// ------------------------------
+
+
 
 } // namespace boost::safe_numbers::detail
 
