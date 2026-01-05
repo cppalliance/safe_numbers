@@ -56,6 +56,9 @@ public:
 
     template <std::unsigned_integral OtherBasis>
     constexpr auto operator-=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
+
+    template <std::unsigned_integral OtherBasis>
+    constexpr auto operator*=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 };
 
 template <std::unsigned_integral BasisType>
@@ -404,6 +407,8 @@ constexpr auto unsigned_integer_basis<BasisType>::operator-=(const unsigned_inte
 
 #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow)
 
+namespace impl {
+
 template <std::unsigned_integral T>
 bool unsigned_intrin_mul(T lhs, T rhs, T& result)
 {
@@ -421,31 +426,97 @@ bool unsigned_intrin_mul(T lhs, T rhs, T& result)
         result = _umul128(lhs, rhs, &high);
         return high != 0U;
     }
-    else if constexpr (std::is_same_v<T, std::uint32_t>)
-    {
-        const auto temp {static_cast<std::uint64_t>(lhs) * rhs};
-        result = static_cast<std::uint32_t>(temp);
-        return temp > static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max());
-    }
-    else if constexpr (std::is_same_v<T, std::uint16_t>)
-    {
-        const auto temp {static_cast<std::uint_fast32_t>(lhs) * rhs};
-        result = static_cast<std::uint16_t>(temp);
-        return temp > static_cast<std::uint_fast32_t>(std::numeric_limits<std::uint16_t>::max());
-    }
-    else if constexpr (std::is_same_v<T, std::uint8_t>)
-    {
-        const auto temp {static_cast<std::uint_fast16_t>(lhs) * rhs};
-        result = static_cast<std::uint8_t>(temp);
-        return temp > static_cast<std::uint_fast16_t>(std::numeric_limits<std::uint8_t>::max());
-    }
     else
     {
-        static_assert(false, "Unsupported type");
+        static_assert(sizeof(T) < sizeof(std::uint64_t));
+
+        using promoted_type = std::conditional_t<std::is_same_v<T, std::uint8_t>, std::uint_fast16_t,
+                                 std::conditional_t<std::is_same_v<T, std::uint16_t>, std::uint_fast32_t, std::uint_fast64_t>>;
+
+        const auto temp {static_cast<promoted_type>(lhs) * rhs};
+        result = static_cast<T>(temp);
+        return temp > static_cast<promoted_type>(std::numeric_limits<T>::max());
     }
 }
 
 #endif
+
+template <std::unsigned_integral T>
+constexpr bool no_intrin_mul(T lhs, T rhs, T& result)
+{
+    using promoted_type = std::conditional_t<std::is_same_v<T, std::uint8_t>, std::uint_fast16_t,
+                             std::conditional_t<std::is_same_v<T, std::uint16_t>, std::uint_fast32_t, std::uint_fast64_t>>;
+
+    if constexpr (sizeof(T) < sizeof(std::uint64_t))
+    {
+        const auto temp {static_cast<promoted_type>(lhs) * rhs};
+        result = static_cast<T>(temp);
+        return temp > static_cast<promoted_type>(std::numeric_limits<T>::max());
+    }
+    else
+    {
+        // Fall back to division check for 64-bit
+        if (rhs == 0U)
+        {
+            result = 0U;
+            return false;
+        }
+
+        if (lhs > (std::numeric_limits<T>::max() / rhs))
+        {
+            result = std::numeric_limits<T>::max();
+            return true;
+        }
+        else
+        {
+            result = lhs * rhs;
+            return false;
+        }
+    }
+}
+
+} // namespace impl
+
+template <std::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto operator*(const unsigned_integer_basis<BasisType> lhs,
+                                       const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
+{
+    using result_type = unsigned_integer_basis<BasisType>;
+
+    BasisType res;
+
+    #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)
+
+    if (!std::is_constant_evaluated())
+    {
+        if (impl::unsigned_intrin_mul(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
+        {
+            BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned multiplication"));
+        }
+
+        return result_type{res};
+    }
+
+    #endif // Use builtins
+
+    if (impl::no_intrin_mul(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
+    {
+        BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned multiplication"));
+    }
+
+    return result_type{res};
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("multiplication", *)
+
+template <std::unsigned_integral BasisType>
+template <std::unsigned_integral OtherBasisType>
+constexpr auto unsigned_integer_basis<BasisType>::operator*=(const unsigned_integer_basis<OtherBasisType> rhs)
+    -> unsigned_integer_basis&
+{
+    *this = *this * rhs;
+    return *this;
+}
 
 // ------------------------------
 // Division
