@@ -291,7 +291,82 @@ constexpr auto unsigned_integer_basis<BasisType>::operator+=(const unsigned_inte
 // Subtraction
 // ------------------------------
 
+namespace impl {
 
+#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow)
+
+template <std::unsigned_integral T>
+bool intrin_sub(T lhs, T rhs, T& result)
+{
+    if constexpr (std::is_same_v<T, unsigned long long int>)
+    {
+        return __builtin_usubll_overflow(lhs, rhs, &result);
+    }
+    else if constexpr (std::is_same_v<T, unsigned long int>)
+    {
+        return __builtin_usubl_overflow(lhs, rhs, &result);
+    }
+    else if constexpr (std::is_same_v<T, unsigned int>)
+    {
+        return __builtin_usub_overflow(lhs, rhs, &result);
+    }
+    else
+    {
+        return __builtin_sub_overflow(lhs, rhs, &result);
+    }
+}
+
+#elif BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64)
+
+template <std::unsigned_integral T>
+bool intrin_sub(T lhs, T rhs, T& result)
+{
+    if constexpr (std::is_same_v<T, std::uint8_t>)
+    {
+        return _subborrow_u8(0, lhs, rhs, &result);
+    }
+    else if constexpr (std::is_same_v<T, std::uint16_t>)
+    {
+        return _subborrow_u16(0, lhs, rhs, &result);
+    }
+    else if constexpr (std::is_same_v<T, std::uint32_t>)
+    {
+        return _subborrow_u32(0, lhs, rhs, &result);
+    }
+    else if constexpr (std::is_same_v<T, std::uint64_t>)
+    {
+        return _subborrow_u64(0, lhs, rhs, &result);
+    }
+}
+
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+template <std::unsigned_integral T>
+bool intrin_sub(T lhs, T rhs, T& result)
+{
+    if constexpr (std::is_same_v<T, std::uint8_t>)
+    {
+        return _subborrow_u8(0, lhs, rhs, &result);
+    }
+    else if constexpr (std::is_same_v<T, std::uint16_t>)
+    {
+        return _subborrow_u16(0, lhs, rhs, &result);
+    }
+    else if constexpr (std::is_same_v<T, std::uint32_t>)
+    {
+        return _subborrow_u32(0, lhs, rhs, &result);
+    }
+    else
+    {
+        // x86 windows does not provide _subborrow_u64 so fall back to normal impl
+        result = lhs - rhs;
+        return result > lhs;
+    }
+}
+
+#endif
+
+} // namespace impl
 
 } // namespace boost::safe_numbers::detail
 
