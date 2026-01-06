@@ -65,6 +65,10 @@ public:
 
     template <std::unsigned_integral OtherBasis>
     constexpr auto operator%=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
+
+    constexpr auto operator++() -> unsigned_integer_basis&;
+
+    constexpr auto operator++(int) -> unsigned_integer_basis;
 };
 
 template <std::unsigned_integral BasisType>
@@ -616,6 +620,37 @@ constexpr auto unsigned_integer_basis<BasisType>::operator%=(const unsigned_inte
 }
 
 #undef BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP
+
+// ------------------------------
+// Pre and post increment
+// ------------------------------
+
+template <std::unsigned_integral BasisType>
+constexpr auto unsigned_integer_basis<BasisType>::operator++()
+    -> unsigned_integer_basis&
+{
+    if (this->basis_ == std::numeric_limits<BasisType>::max()) [[unlikely]]
+    {
+        BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned increment"));
+    }
+
+    this->basis_ += 1U;
+    return *this;
+}
+
+template <std::unsigned_integral BasisType>
+constexpr auto unsigned_integer_basis<BasisType>::operator++(int)
+    -> unsigned_integer_basis
+{
+    if (this->basis_ == std::numeric_limits<BasisType>::max()) [[unlikely]]
+    {
+        BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned increment"));
+    }
+
+    const auto temp {*this};
+    this->basis_ += 1U;
+    return temp;
+}
 
 } // namespace boost::safe_numbers::detail
 
