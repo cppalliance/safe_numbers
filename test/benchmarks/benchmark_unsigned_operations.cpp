@@ -156,6 +156,12 @@ auto benchmark_division(const std::vector<T>& values, const char* type)
     return benchmark_op(values, std::divides<>(), type, "div");
 }
 
+template <typename T>
+auto benchmark_modulo(const std::vector<T>& values, const char* type)
+{
+    return benchmark_op(values, std::modulus<>(), type, "mod");
+}
+
 #ifdef _MSC_VER
 #pragma optimize("", on)
 #endif
@@ -192,6 +198,10 @@ int main()
         builtin_runtime = benchmark_division(builtin_values, "std::uint8_t");
         lib_runtime = benchmark_division(lib_values, "boost::sn::u8");
         print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_modulo(builtin_values, "std::uint8_t");
+        lib_runtime = benchmark_modulo(lib_values, "boost::sn::u8");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
     }
     {
         std::cout << "\n16-bit Unsigned Integers\n";
@@ -212,6 +222,10 @@ int main()
 
         builtin_runtime = benchmark_division(builtin_values, "std::uint16_t");
         lib_runtime = benchmark_division(lib_values, "boost::sn::u16");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_modulo(builtin_values, "std::uint16_t");
+        lib_runtime = benchmark_modulo(lib_values, "boost::sn::u16");
         print_runtime_ratio(lib_runtime, builtin_runtime);
     }
     {
@@ -234,6 +248,10 @@ int main()
         builtin_runtime = benchmark_division(builtin_values, "std::uint32_t");
         lib_runtime = benchmark_division(lib_values, "boost::sn::u32");
         print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_modulo(builtin_values, "std::uint32_t");
+        lib_runtime = benchmark_modulo(lib_values, "boost::sn::u32");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
     }
     {
         std::cout << "\n64-bit Unsigned Integers\n";
@@ -254,6 +272,10 @@ int main()
 
         builtin_runtime = benchmark_division(builtin_values, "std::uint64_t");
         lib_runtime = benchmark_division(lib_values, "boost::sn::u64");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_modulo(builtin_values, "std::uint64_t");
+        lib_runtime = benchmark_modulo(lib_values, "boost::sn::u64");
         print_runtime_ratio(lib_runtime, builtin_runtime);
     }
 
