@@ -68,7 +68,7 @@ auto generate_vector()
     std::vector<T> values;
     values.reserve(N);
 
-    boost::random::uniform_int_distribution<value_type> dist {0, static_cast<value_type>(std::sqrt(std::numeric_limits<value_type>::max()) - 1U)};
+    boost::random::uniform_int_distribution<value_type> dist {1, static_cast<value_type>(std::sqrt(std::numeric_limits<value_type>::max()) - 1U)};
 
     for (std::size_t i {}; i < N; ++i)
     {
@@ -150,6 +150,12 @@ auto benchmark_multiplication(const std::vector<T>& values, const char* type)
     return benchmark_op(values, std::multiplies<>(), type, "mul");
 }
 
+template <typename T>
+auto benchmark_division(const std::vector<T>& values, const char* type)
+{
+    return benchmark_op(values, std::divides<>(), type, "div");
+}
+
 #ifdef _MSC_VER
 #pragma optimize("", on)
 #endif
@@ -182,6 +188,10 @@ int main()
         builtin_runtime = benchmark_multiplication(builtin_values, "std::uint8_t");
         lib_runtime = benchmark_multiplication(lib_values, "boost::sn::u8");
         print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_division(builtin_values, "std::uint8_t");
+        lib_runtime = benchmark_division(lib_values, "boost::sn::u8");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
     }
     {
         std::cout << "\n16-bit Unsigned Integers\n";
@@ -198,6 +208,10 @@ int main()
 
         builtin_runtime = benchmark_multiplication(builtin_values, "std::uint16_t");
         lib_runtime = benchmark_multiplication(lib_values, "boost::sn::u16");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_division(builtin_values, "std::uint16_t");
+        lib_runtime = benchmark_division(lib_values, "boost::sn::u16");
         print_runtime_ratio(lib_runtime, builtin_runtime);
     }
     {
@@ -216,6 +230,10 @@ int main()
         builtin_runtime = benchmark_multiplication(builtin_values, "std::uint32_t");
         lib_runtime = benchmark_multiplication(lib_values, "boost::sn::u32");
         print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_division(builtin_values, "std::uint32_t");
+        lib_runtime = benchmark_division(lib_values, "boost::sn::u32");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
     }
     {
         std::cout << "\n64-bit Unsigned Integers\n";
@@ -232,6 +250,10 @@ int main()
 
         builtin_runtime = benchmark_multiplication(builtin_values, "std::uint64_t");
         lib_runtime = benchmark_multiplication(lib_values, "boost::sn::u64");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_division(builtin_values, "std::uint64_t");
+        lib_runtime = benchmark_division(lib_values, "boost::sn::u64");
         print_runtime_ratio(lib_runtime, builtin_runtime);
     }
 
