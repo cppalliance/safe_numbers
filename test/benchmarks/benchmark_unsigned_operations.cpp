@@ -11,6 +11,7 @@
 #include <chrono>
 #include <iostream>
 #include <iomanip>
+#include <functional>
 
 #if defined(__clang__)
 #  pragma clang diagnostic push
