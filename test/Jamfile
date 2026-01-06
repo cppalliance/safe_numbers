@@ -64,6 +64,7 @@ compile-fail compile_fail_unsigned_literals.cpp ;
 run test_unsigned_subtraction.cpp ;
 run test_unsigned_multiplication.cpp ;
 run test_unsigned_division.cpp ;
+run test_unsigned_modulo.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;

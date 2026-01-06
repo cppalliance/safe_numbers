@@ -80,7 +80,7 @@ inline std::mt19937_64 rng{42};
 inline constexpr std::size_t N {1024};
 
 template <typename T>
-void test_valid_division()
+void test_valid_modulo()
 {
     using basis_type = detail::underlying_type_t<T>;
     boost::random::uniform_int_distribution<basis_type> dist {1, std::numeric_limits<basis_type>::max()};
@@ -93,23 +93,23 @@ void test_valid_division()
         T ref_value {};
         if constexpr (std::is_same_v<basis_type, std::uint8_t> || std::is_same_v<basis_type, std::uint16_t>)
         {
-            ref_value = static_cast<T>(static_cast<basis_type>(static_cast<std::uint32_t>(lhs_value / rhs_value)));
+            ref_value = static_cast<T>(static_cast<basis_type>(static_cast<std::uint32_t>(lhs_value % rhs_value)));
         }
         else
         {
-            ref_value = static_cast<T>(lhs_value / rhs_value);
+            ref_value = static_cast<T>(lhs_value % rhs_value);
         }
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
-        const T res {lhs / rhs};
+        const T res {lhs % rhs};
 
         BOOST_TEST_EQ(ref_value, res);
     }
 }
 
 template <typename T>
-void test_throwing_division()
+void test_throwing_modulo()
 {
     using basis_type = detail::underlying_type_t<T>;
     boost::random::uniform_int_distribution<basis_type> dist {1, std::numeric_limits<basis_type>::max()};
@@ -122,12 +122,12 @@ void test_throwing_division()
         const T lhs {lhs_value};
         const T rhs {rhs_value};
 
-        BOOST_TEST_THROWS(lhs / rhs, std::domain_error);
+        BOOST_TEST_THROWS(lhs % rhs, std::domain_error);
     }
 }
 
 template <typename T>
-void test_valid_compound_division()
+void test_valid_compound_modulo()
 {
     using basis_type = detail::underlying_type_t<T>;
     boost::random::uniform_int_distribution<basis_type> dist {1, std::numeric_limits<basis_type>::max()};
@@ -140,16 +140,16 @@ void test_valid_compound_division()
         T ref_value {};
         if constexpr (std::is_same_v<basis_type, std::uint8_t> || std::is_same_v<basis_type, std::uint16_t>)
         {
-            ref_value = static_cast<T>(static_cast<basis_type>(static_cast<std::uint32_t>(lhs_value / rhs_value)));
+            ref_value = static_cast<T>(static_cast<basis_type>(static_cast<std::uint32_t>(lhs_value % rhs_value)));
         }
         else
         {
-            ref_value = static_cast<T>(lhs_value / rhs_value);
+            ref_value = static_cast<T>(lhs_value % rhs_value);
         }
 
         T lhs {lhs_value};
         const T rhs {rhs_value};
-        lhs /= rhs;
+        lhs %= rhs;
 
         BOOST_TEST_EQ(ref_value, lhs);
     }
@@ -157,21 +157,21 @@ void test_valid_compound_division()
 
 int main()
 {
-    test_valid_division<u8>();
-    test_throwing_division<u8>();
-    test_valid_compound_division<u8>();
+    test_valid_modulo<u8>();
+    test_throwing_modulo<u8>();
+    test_valid_compound_modulo<u8>();
 
-    test_valid_division<u16>();
-    test_throwing_division<u16>();
-    test_valid_compound_division<u16>();
+    test_valid_modulo<u16>();
+    test_throwing_modulo<u16>();
+    test_valid_compound_modulo<u16>();
 
-    test_valid_division<u32>();
-    test_throwing_division<u32>();
-    test_valid_compound_division<u32>();
+    test_valid_modulo<u32>();
+    test_throwing_modulo<u32>();
+    test_valid_compound_modulo<u32>();
 
-    test_valid_division<u64>();
-    test_throwing_division<u64>();
-    test_valid_compound_division<u64>();
+    test_valid_modulo<u64>();
+    test_throwing_modulo<u64>();
+    test_valid_compound_modulo<u64>();
 
     return boost::report_errors();
 }

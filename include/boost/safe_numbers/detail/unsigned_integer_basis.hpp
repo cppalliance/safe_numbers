@@ -594,7 +594,7 @@ template <std::unsigned_integral OtherBasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator%=(const unsigned_integer_basis<OtherBasisType> rhs)
     -> unsigned_integer_basis&
 {
-    *this = *this / rhs;
+    *this = *this % rhs;
     return *this;
 }
 
