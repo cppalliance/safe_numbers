@@ -462,13 +462,7 @@ constexpr bool no_intrin_mul(T lhs, T rhs, T& result)
     else
     {
         // Fall back to division check for 64-bit
-        if (rhs == 0U)
-        {
-            result = 0U;
-            return false;
-        }
-
-        if (lhs > (std::numeric_limits<T>::max() / rhs))
+        if (rhs != 0U && lhs > (std::numeric_limits<T>::max() / rhs))
         {
             result = std::numeric_limits<T>::max();
             return true;
