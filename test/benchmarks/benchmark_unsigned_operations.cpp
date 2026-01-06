@@ -169,7 +169,7 @@ auto benchmark_modulo(const std::vector<T>& values, const char* type)
 template <typename T>
 void print_runtime_ratio(T lib, T builtin)
 {
-    std::cout << std::setprecision(2) << std::fixed << std::setw(27)
+    std::cout << std::setprecision(2) << std::fixed << std::setw(22)
               << "Runtime ratio: " << std::setw(3) << static_cast<double>(lib) / static_cast<double>(builtin)
               << std::endl;
 }
