@@ -93,7 +93,7 @@ bool unsigned_intrin_add(T lhs, T rhs, T& result)
     return __builtin_add_overflow(lhs, rhs, &result);
 }
 
-#elif BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64)
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN)
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_add(T lhs, T rhs, T& result)
@@ -302,7 +302,7 @@ bool unsigned_intrin_sub(T lhs, T rhs, T& result)
     return __builtin_sub_overflow(lhs, rhs, &result);
 }
 
-#elif BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64)
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN)
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_sub(T lhs, T rhs, T& result)
@@ -421,7 +421,7 @@ bool unsigned_intrin_mul(T lhs, T rhs, T& result)
     return __builtin_mul_overflow(lhs, rhs, &result);
 }
 
-#elif BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN)
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_mul(T lhs, T rhs, T& result)
