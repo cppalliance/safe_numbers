@@ -527,8 +527,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator*=(const unsigned_inte
 
 template <std::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator/(const unsigned_integer_basis<BasisType> lhs,
-                                       const unsigned_integer_basis<BasisType> rhs) noexcept
-    -> unsigned_integer_basis<BasisType>
+                                       const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
     using result_type = unsigned_integer_basis<BasisType>;
 
