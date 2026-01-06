@@ -69,6 +69,10 @@ public:
     constexpr auto operator++() -> unsigned_integer_basis&;
 
     constexpr auto operator++(int) -> unsigned_integer_basis;
+
+    constexpr auto operator--() -> unsigned_integer_basis&;
+
+    constexpr auto operator--(int) -> unsigned_integer_basis;
 };
 
 template <std::unsigned_integral BasisType>
@@ -634,7 +638,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator++()
         BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned increment"));
     }
 
-    this->basis_ += 1U;
+    ++this->basis_;
     return *this;
 }
 
@@ -648,7 +652,38 @@ constexpr auto unsigned_integer_basis<BasisType>::operator++(int)
     }
 
     const auto temp {*this};
-    this->basis_ += 1U;
+    ++this->basis_;
+    return temp;
+}
+
+// ------------------------------
+// Pre and post decrement
+// ------------------------------
+
+template <std::unsigned_integral BasisType>
+constexpr auto unsigned_integer_basis<BasisType>::operator--()
+    -> unsigned_integer_basis&
+{
+    if (this->basis_ == 0U) [[unlikely]]
+    {
+        BOOST_THROW_EXCEPTION(std::underflow_error("Underflow detected in unsigned decrement"));
+    }
+
+    --this->basis_;
+    return *this;
+}
+
+template <std::unsigned_integral BasisType>
+constexpr auto unsigned_integer_basis<BasisType>::operator--(int)
+    -> unsigned_integer_basis
+{
+    if (this->basis_ == 0U) [[unlikely]]
+    {
+        BOOST_THROW_EXCEPTION(std::underflow_error("Underflow detected in unsigned decrement"));
+    }
+
+    const auto temp {*this};
+    --this->basis_;
     return temp;
 }
 
