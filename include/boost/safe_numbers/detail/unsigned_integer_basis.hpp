@@ -411,9 +411,9 @@ constexpr auto unsigned_integer_basis<BasisType>::operator-=(const unsigned_inte
 // Multiplication
 // ------------------------------
 
-#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow)
-
 namespace impl {
+
+#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow)
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_mul(T lhs, T rhs, T& result)
