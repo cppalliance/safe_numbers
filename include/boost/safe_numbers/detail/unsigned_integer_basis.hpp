@@ -445,6 +445,29 @@ bool unsigned_intrin_mul(T lhs, T rhs, T& result)
     }
 }
 
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_ARM64_INTRIN)
+
+template <std::unsigned_integral T>
+bool unsigned_intrin_mul(T lhs, T rhs, T& result)
+{
+    if constexpr (std::is_same_v<T, std::uint64_t>)
+    {
+        result = lhs * rhs;
+        return __umulh(lhs, rhs) != 0U;
+    }
+    else
+    {
+        static_assert(sizeof(T) < sizeof(std::uint64_t));
+
+        using promoted_type = std::conditional_t<std::is_same_v<T, std::uint8_t>, std::uint_fast16_t,
+                                 std::conditional_t<std::is_same_v<T, std::uint16_t>, std::uint_fast32_t, std::uint_fast64_t>>;
+
+        const auto temp {static_cast<promoted_type>(lhs) * rhs};
+        result = static_cast<T>(temp);
+        return temp > static_cast<promoted_type>(std::numeric_limits<T>::max());
+    }
+}
+
 #endif
 
 template <std::unsigned_integral T>

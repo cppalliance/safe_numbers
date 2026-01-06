@@ -38,6 +38,14 @@
 #  include <intrin.h>
 #endif
 
+#elif defined(_M_ARM64)
+
+#define BOOST_SAFENUMBERS_HAS_WINDOWS_ARM64_INTRIN
+#ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
+#  include <intrin.h>
+#endif
+
+
 #endif
 
 #endif // BOOST_SAFENUMBERS_CONFIG_HPP
