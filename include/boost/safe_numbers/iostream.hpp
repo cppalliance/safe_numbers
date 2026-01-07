@@ -30,7 +30,6 @@ auto operator>>(std::basic_istream<charT, traits>& is, LibType& v) -> std::basic
     if (is.peek() == static_cast<charT>('-'))
     {
         BOOST_THROW_EXCEPTION(std::domain_error("Attempting to construct negative value with unsigned safe integer"));
-        v = std::numeric_limits<LibType>::max();
     }
     else
     {
