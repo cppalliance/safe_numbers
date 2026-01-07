@@ -73,6 +73,10 @@ public:
     constexpr auto operator--() -> unsigned_integer_basis&;
 
     constexpr auto operator--(int) -> unsigned_integer_basis;
+
+    // Now the permutations of the operators
+
+    constexpr auto saturating_add(unsigned_integer_basis x) noexcept -> unsigned_integer_basis;
 };
 
 template <std::unsigned_integral BasisType>
@@ -690,6 +694,51 @@ constexpr auto unsigned_integer_basis<BasisType>::operator--(int)
     const auto temp {*this};
     --this->basis_;
     return temp;
+}
+
+// ------------------------------
+// Saturating Math
+// ------------------------------
+
+// ------------------------------
+// saturating_add
+// ------------------------------
+
+template <std::unsigned_integral BasisType>
+constexpr auto unsigned_integer_basis<BasisType>::saturating_add(const unsigned_integer_basis x) noexcept -> unsigned_integer_basis
+{
+    const auto lhs_basis {basis_};
+    const auto rhs_basis {x.basis_};
+    BasisType res {};
+
+    #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+    if (!std::is_constant_evaluated())
+    {
+        if (impl::unsigned_intrin_add(lhs_basis, rhs_basis, res))
+        {
+            basis_ = std::numeric_limits<BasisType>::max();
+        }
+        else
+        {
+            basis_ = res;
+        }
+
+        return *this;
+    }
+
+    #endif // __has_builtin(__builtin_add_overflow)
+
+    if (impl::unsigned_no_intrin_add(lhs_basis, rhs_basis, res))
+    {
+        basis_ = std::numeric_limits<BasisType>::max();
+    }
+    else
+    {
+        basis_ = res;
+    }
+
+    return *this;
 }
 
 } // namespace boost::safe_numbers::detail
