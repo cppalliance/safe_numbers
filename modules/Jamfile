@@ -35,6 +35,12 @@ run ../test/test_construct_unsigned_type.cpp safe_numbers : : : <dependency>safe
 run ../test/test_limits.cpp safe_numbers : : : <dependency>safe_numbers ;
 run ../test/test_unsigned_addition.cpp safe_numbers : : : <dependency>safe_numbers ;
 run ../test/test_unsigned_literals.cpp safe_numbers : : : <dependency>safe_numbers ;
+run ../test/test_unsigned_subtraction.cpp safe_numbers : : : <dependency>safe_numbers ;
+run ../test/test_unsigned_multiplication.cpp safe_numbers : : : <dependency>safe_numbers ;
+run ../test/test_unsigned_division.cpp safe_numbers : : : <dependency>safe_numbers ;
+run ../test/test_unsigned_modulo.cpp safe_numbers : : : <dependency>safe_numbers ;
+run ../test/test_unsigned_inc_dec.cpp safe_numbers : : : <dependency>safe_numbers ;
+run ../test/test_unsigned_std_format.cpp safe_numbers : : : <dependency>safe_numbers ;
 
 run ../test/compile_integer_type_properties.cpp safe_numbers : : : <dependency>safe_numbers ;
 

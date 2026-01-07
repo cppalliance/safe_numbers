@@ -2,9 +2,18 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-#include <boost/core/lightweight_test.hpp>
+#ifdef BOOST_SAFE_NUMBERS_BUILD_MODULE
+
+import boost.safe_numbers;
+
+#else
+
 #include <boost/safe_numbers.hpp>
 #include <format>
+
+#endif
+
+#include <boost/core/lightweight_test.hpp>
 
 using namespace boost::safe_numbers;
 
