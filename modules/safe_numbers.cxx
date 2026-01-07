@@ -13,6 +13,7 @@ module;
 #include <concepts>
 #include <type_traits>
 #include <stdexcept>
+#include <format>
 
 #include <cstdint>
 
