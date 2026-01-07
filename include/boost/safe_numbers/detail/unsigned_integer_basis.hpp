@@ -151,6 +151,21 @@ bool unsigned_intrin_add(T lhs, T rhs, T& result)
 
 #endif
 
+template <std::unsigned_integral T>
+constexpr bool unsigned_no_intrin_add(const T lhs, const T rhs, T& result) noexcept
+{
+    if constexpr (std::is_same_v<T, std::uint8_t> || std::is_same_v<T, std::uint16_t>)
+    {
+        result = static_cast<T>(static_cast<std::uint32_t>(lhs + rhs));
+    }
+    else
+    {
+        result = static_cast<T>(lhs + rhs);
+    }
+
+    return result < lhs;
+}
+
 } // namespace impl
 
 template <std::unsigned_integral BasisType>
@@ -159,12 +174,15 @@ template <std::unsigned_integral BasisType>
 {
     using result_type = unsigned_integer_basis<BasisType>;
 
+    const auto lhs_basis {static_cast<BasisType>(lhs)};
+    const auto rhs_basis {static_cast<BasisType>(rhs)};
+    BasisType res {};
+
     #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
     if (!std::is_constant_evaluated())
     {
-        BasisType res;
-        if (impl::unsigned_intrin_add(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
+        if (impl::unsigned_intrin_add(lhs_basis, rhs_basis, res))
         {
             BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
         }
@@ -174,20 +192,7 @@ template <std::unsigned_integral BasisType>
 
     #endif // __has_builtin(__builtin_add_overflow)
 
-    const auto lhs_basis {static_cast<BasisType>(lhs)};
-    const auto rhs_basis {static_cast<BasisType>(rhs)};
-
-    BasisType res {};
-    if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
-    {
-        res = static_cast<BasisType>(static_cast<std::uint32_t>(lhs_basis + rhs_basis));
-    }
-    else
-    {
-        res = static_cast<BasisType>(lhs_basis + rhs_basis);
-    }
-
-    if (res < lhs_basis)
+    if (impl::unsigned_no_intrin_add(lhs_basis, rhs_basis, res))
     {
         BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
     }
