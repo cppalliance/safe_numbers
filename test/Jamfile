@@ -67,6 +67,7 @@ run test_unsigned_division.cpp ;
 run test_unsigned_modulo.cpp ;
 run test_unsigned_inc_dec.cpp ;
 run test_unsigned_std_format.cpp ;
+run test_unsigned_fmt_format.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
