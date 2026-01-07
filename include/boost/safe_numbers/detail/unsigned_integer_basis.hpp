@@ -19,7 +19,6 @@
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 namespace boost::safe_numbers::detail {
-
 template <std::unsigned_integral BasisType>
 class unsigned_integer_basis
 {
@@ -73,10 +72,6 @@ public:
     constexpr auto operator--() -> unsigned_integer_basis&;
 
     constexpr auto operator--(int) -> unsigned_integer_basis;
-
-    // Now the permutations of the operators
-
-    constexpr auto saturating_add(unsigned_integer_basis x) noexcept -> unsigned_integer_basis;
 };
 
 template <std::unsigned_integral BasisType>
@@ -204,11 +199,13 @@ template <std::unsigned_integral BasisType>
     return result_type{res};
 }
 
+} // namespace boost::safe_numbers::detail
+
 #define BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP(OP_NAME, OP_SYMBOL)                    \
 template <std::unsigned_integral LHSBasis, std::unsigned_integral RHSBasis>                        \
     requires (!std::is_same_v<LHSBasis, RHSBasis>)                                                 \
-constexpr auto operator OP_SYMBOL(const unsigned_integer_basis<LHSBasis>,                          \
-                                  const unsigned_integer_basis<RHSBasis>)                          \
+constexpr auto OP_SYMBOL(const boost::safe_numbers::detail::unsigned_integer_basis<LHSBasis>,      \
+                         const boost::safe_numbers::detail::unsigned_integer_basis<RHSBasis>)      \
 {                                                                                                  \
     if constexpr (std::is_same_v<LHSBasis, std::uint8_t>)                                          \
     {                                                                                              \
@@ -291,10 +288,12 @@ constexpr auto operator OP_SYMBOL(const unsigned_integer_basis<LHSBasis>,       
         static_assert(false, "Can not perform " OP_NAME " on mixed width unsigned integer types"); \
     }                                                                                              \
                                                                                                    \
-    return unsigned_integer_basis<LHSBasis>(0);                                                    \
+    return boost::safe_numbers::detail::unsigned_integer_basis<LHSBasis>(0);                       \
 }
 
-BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("addition", +)
+namespace boost::safe_numbers::detail {
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("addition", operator+)
 
 template <std::unsigned_integral BasisType>
 template <std::unsigned_integral OtherBasisType>
@@ -413,7 +412,7 @@ template <std::unsigned_integral BasisType>
     return result_type{res};
 }
 
-BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("subtraction", -)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("subtraction", operator-)
 
 template <std::unsigned_integral BasisType>
 template <std::unsigned_integral OtherBasisType>
@@ -547,7 +546,7 @@ template <std::unsigned_integral BasisType>
     return result_type{res};
 }
 
-BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("multiplication", *)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("multiplication", operator*)
 
 template <std::unsigned_integral BasisType>
 template <std::unsigned_integral OtherBasisType>
@@ -584,7 +583,7 @@ template <std::unsigned_integral BasisType>
     }
 }
 
-BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("division", /)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("division", operator/)
 
 template <std::unsigned_integral BasisType>
 template <std::unsigned_integral OtherBasisType>
@@ -621,7 +620,7 @@ template <std::unsigned_integral BasisType>
     }
 }
 
-BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("modulo", %)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("modulo", operator%)
 
 template <std::unsigned_integral BasisType>
 template <std::unsigned_integral OtherBasisType>
@@ -631,8 +630,6 @@ constexpr auto unsigned_integer_basis<BasisType>::operator%=(const unsigned_inte
     *this = *this % rhs;
     return *this;
 }
-
-#undef BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP
 
 // ------------------------------
 // Pre and post increment
@@ -696,51 +693,54 @@ constexpr auto unsigned_integer_basis<BasisType>::operator--(int)
     return temp;
 }
 
+} // namespace boost::safe_numbers::detail
+
 // ------------------------------
 // Saturating Math
 // ------------------------------
 
 // ------------------------------
-// saturating_add
+// add_sat
 // ------------------------------
 
+namespace boost::safe_numbers {
+
 template <std::unsigned_integral BasisType>
-constexpr auto unsigned_integer_basis<BasisType>::saturating_add(const unsigned_integer_basis x) noexcept -> unsigned_integer_basis
+[[nodiscard]] constexpr auto add_sat(const detail::unsigned_integer_basis<BasisType> lhs,
+                                     const detail::unsigned_integer_basis<BasisType> rhs) noexcept -> detail::unsigned_integer_basis<BasisType>
 {
-    const auto lhs_basis {basis_};
-    const auto rhs_basis {x.basis_};
+    using result_type = detail::unsigned_integer_basis<BasisType>;
+
+    const auto lhs_basis {static_cast<BasisType>(lhs)};
+    const auto rhs_basis {static_cast<BasisType>(rhs)};
     BasisType res {};
 
     #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
     if (!std::is_constant_evaluated())
     {
-        if (impl::unsigned_intrin_add(lhs_basis, rhs_basis, res))
+        if (detail::impl::unsigned_intrin_add(lhs_basis, rhs_basis, res))
         {
-            basis_ = std::numeric_limits<BasisType>::max();
-        }
-        else
-        {
-            basis_ = res;
+            res = std::numeric_limits<BasisType>::max();
         }
 
-        return *this;
+        return result_type{res};
     }
 
     #endif // __has_builtin(__builtin_add_overflow)
 
-    if (impl::unsigned_no_intrin_add(lhs_basis, rhs_basis, res))
+    if (detail::impl::unsigned_no_intrin_add(lhs_basis, rhs_basis, res))
     {
-        basis_ = std::numeric_limits<BasisType>::max();
-    }
-    else
-    {
-        basis_ = res;
+        res = std::numeric_limits<BasisType>::max();
     }
 
-    return *this;
+    return result_type{res};
 }
 
-} // namespace boost::safe_numbers::detail
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating_add", add_sat)
+
+} // namespace boost::safe_numbers
+
+#undef BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_UNSIGNED_INTEGER_BASIS_HPP
