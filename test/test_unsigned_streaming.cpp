@@ -34,23 +34,10 @@ void test()
 template <typename T>
 void test_negative_value_handling()
 {
-    bool thrown{};
-
-    try
-    {
-        T val;
-        std::stringstream in;
-        in.str("-42");
-        in >> val;
-
-        BOOST_TEST_EQ(val, T{42});
-    }
-    catch (std::domain_error&)
-    {
-        thrown = true;
-    }
-
-    BOOST_TEST(thrown);
+    T val;
+    std::stringstream in;
+    in.str("-42");
+    BOOST_TEST_THROWS(in >> val, std::domain_error);
 }
 
 #endif
