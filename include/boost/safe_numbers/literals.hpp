@@ -27,7 +27,6 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u8(const unsigned long long
     if (constexpr unsigned long long int max_value {std::numeric_limits<std::uint8_t>::max()}; val > max_value)
     {
         BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in literal construction"));
-        return std::numeric_limits<u8>::max();
     }
 
     return static_cast<u8>(static_cast<std::uint8_t>(val));
@@ -38,7 +37,6 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u16(const unsigned long lon
     if (constexpr unsigned long long int max_value {std::numeric_limits<std::uint16_t>::max()}; val > max_value)
     {
         BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in literal construction"));
-        return std::numeric_limits<u16>::max();
     }
 
     return static_cast<u16>(static_cast<std::uint16_t>(val));
@@ -49,7 +47,6 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u32(const unsigned long lon
     if (constexpr unsigned long long int max_value {std::numeric_limits<std::uint32_t>::max()}; val > max_value)
     {
         BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in literal construction"));
-        return std::numeric_limits<u32>::max();
     }
 
     return static_cast<u32>(static_cast<std::uint32_t>(val));
