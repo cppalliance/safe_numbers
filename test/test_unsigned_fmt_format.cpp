@@ -13,6 +13,9 @@
 #endif
 
 #define FMT_HEADER_ONLY
+
+#if __has_include(<fmt/format.h>)
+
 #include <boost/core/lightweight_test.hpp>
 #include <boost/safe_numbers.hpp>
 #include <boost/safe_numbers/fmt_format.hpp>
@@ -39,3 +42,12 @@ int main()
 
     return boost::report_errors();
 }
+
+#else
+
+int main()
+{
+    return 0;
+}
+
+#endif
