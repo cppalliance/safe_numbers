@@ -14,6 +14,7 @@ module;
 #include <type_traits>
 #include <stdexcept>
 #include <format>
+#include <charconv>
 
 #include <cstdint>
 

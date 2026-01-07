@@ -10,5 +10,6 @@
 #include <boost/safe_numbers/limits.hpp>
 #include <boost/safe_numbers/literals.hpp>
 #include <boost/safe_numbers/format.hpp>
+#include <boost/safe_numbers/charconv.hpp>
 
 #endif //BOOST_SAFENUMBERS_HPP
