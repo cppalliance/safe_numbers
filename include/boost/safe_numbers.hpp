@@ -9,5 +9,6 @@
 #include <boost/safe_numbers/iostream.hpp>
 #include <boost/safe_numbers/limits.hpp>
 #include <boost/safe_numbers/literals.hpp>
+#include <boost/safe_numbers/format.hpp>
 
 #endif //BOOST_SAFENUMBERS_HPP
