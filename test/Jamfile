@@ -49,7 +49,7 @@ project : requirements
 
 run quick.cpp ;
 
-run test_construct_unsigned_type.cpp ;
+run test_unsigned_construction.cpp ;
 compile compile_integer_type_properties.cpp ;
 
 run test_unsigned_addition.cpp ;
