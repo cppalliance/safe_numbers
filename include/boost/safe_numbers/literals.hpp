@@ -6,6 +6,7 @@
 #define BOOST_SAFE_NUMBERS_LITERALS_HPP
 
 #include <boost/safe_numbers/unsigned_integers.hpp>
+#include <boost/safe_numbers/detail/int128/literals.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -59,6 +60,42 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u32(const unsigned long lon
 BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u64(const unsigned long long int val) -> u64
 {
     return static_cast<u64>(static_cast<std::uint64_t>(val));
+}
+
+BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u128(const char* str) -> u128
+{
+    int128::uint128_t result;
+    const auto r {int128::detail::from_chars(str, str + int128::detail::strlen(str), result)};
+
+    switch (r)
+    {
+        case EDOM:
+            BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in literal construction"));
+        case EINVAL:
+            BOOST_THROW_EXCEPTION(std::invalid_argument("Invalid conversion from literal"));
+        default:
+            [[fallthrough]];
+    }
+
+    return u128{result};
+}
+
+BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u128(const char* str, const std::size_t len) -> u128
+{
+    int128::uint128_t result;
+    const auto r {int128::detail::from_chars(str, str + len, result)};
+
+    switch (r)
+    {
+        case EDOM:
+            BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in literal construction"));
+        case EINVAL:
+            BOOST_THROW_EXCEPTION(std::invalid_argument("Invalid conversion from literal"));
+        default:
+            [[fallthrough]];
+    }
+
+    return u128{result};
 }
 
 }  // boost::safe_numbers::literals
