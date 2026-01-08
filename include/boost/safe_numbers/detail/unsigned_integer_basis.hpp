@@ -430,7 +430,7 @@ template <unsigned_integral BasisType>
         #endif // Use builtins
     }
 
-    if (impl::unsigned_intrin_sub(lhs_basis, rhs_basis, res))
+    if (impl::unsigned_no_intrin_sub(lhs_basis, rhs_basis, res))
     {
         BOOST_THROW_EXCEPTION(std::underflow_error("Underflow detected in unsigned subtraction"));
     }
