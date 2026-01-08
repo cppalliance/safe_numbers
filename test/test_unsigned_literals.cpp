@@ -31,7 +31,7 @@ void test<u8>()
 template <>
 void test<u16>()
 {
-    const auto good_value {42_u16};
+    constexpr auto good_value {42_u16};
     BOOST_TEST_EQ(good_value, u16{42u});
     BOOST_TEST_THROWS(18446744073709551615_u16, std::overflow_error);
 }
@@ -39,7 +39,7 @@ void test<u16>()
 template <>
 void test<u32>()
 {
-    const auto good_value {42_u32};
+    constexpr auto good_value {42_u32};
     BOOST_TEST_EQ(good_value, u32{42u});
     BOOST_TEST_THROWS(18446744073709551615_u32, std::overflow_error);
 }
@@ -47,7 +47,7 @@ void test<u32>()
 template <>
 void test<u64>()
 {
-    const auto good_value {42_u64};
+    constexpr auto good_value {42_u64};
     BOOST_TEST_EQ(good_value, u64{42u});
     BOOST_TEST_NO_THROW(BOOST_TEST_EQ(18446744073709551615_u64, u64{18446744073709551615ULL}));
 }
@@ -55,7 +55,7 @@ void test<u64>()
 template <>
 void test<u128>()
 {
-    const auto good_value {42_u128};
+    constexpr auto good_value {42_u128};
     BOOST_TEST_EQ(good_value, u128{42u});
     BOOST_TEST_THROWS(18446744073709551615184467440737095516151844674407370955161518446744073709551615_u128, std::overflow_error);
 }
