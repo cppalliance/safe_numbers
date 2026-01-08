@@ -2,6 +2,9 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
+#define BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
+#define BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
+
 #include <boost/config.hpp>
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
@@ -69,7 +72,7 @@ auto generate_vector()
     std::vector<T> values;
     values.reserve(N);
 
-    boost::random::uniform_int_distribution<value_type> dist {1, static_cast<value_type>(std::sqrt(std::numeric_limits<value_type>::max()) - 1U)};
+    boost::random::uniform_int_distribution<value_type> dist {1, sizeof(T) * 8U - 1U};
 
     for (std::size_t i {}; i < N; ++i)
     {
@@ -124,11 +127,11 @@ benchmark_op(const std::vector<T>& values, Func op, const char* type, const char
 
     const auto t2 = steady_clock::now();
 
-    volatile auto sink {counter};
+    const volatile auto sink {static_cast<std::uint64_t>(counter)};
 
     const auto runtime_ns = (t2 - t1) / 1ns;
 
-    std::cerr << operation << "<" << std::left << std::setw(15) << type << ">: " << std::setw( 10 ) << ( t2 - t1 ) / 1us << " us (s=" << static_cast<std::uint64_t>(sink) << ")\n";
+    std::cerr << operation << "<" << std::left << std::setw(15) << type << ">: " << std::setw( 10 ) << ( t2 - t1 ) / 1us << " us (s=" << sink << ")\n";
 
     return runtime_ns;
 }
@@ -277,6 +280,31 @@ int main()
 
         builtin_runtime = benchmark_modulo(builtin_values, "std::uint64_t");
         lib_runtime = benchmark_modulo(lib_values, "boost::sn::u64");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
+    }
+    {
+        std::cout << "\n128-bit Unsigned Integers\n";
+        const auto builtin_values{generate_vector<boost::int128::uint128_t>()};
+        const auto lib_values{generate_vector<u128>(builtin_values)};
+
+        auto builtin_runtime = benchmark_addition(builtin_values, "uint128_t");
+        auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u128");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_subtraction(builtin_values, "uint128_t");
+        lib_runtime = benchmark_subtraction(lib_values, "boost::sn::u128");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_multiplication(builtin_values, "uint128_t");
+        lib_runtime = benchmark_multiplication(lib_values, "boost::sn::u128");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_division(builtin_values, "uint128_t");
+        lib_runtime = benchmark_division(lib_values, "boost::sn::u128");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_modulo(builtin_values, "uint128_t");
+        lib_runtime = benchmark_modulo(lib_values, "boost::sn::u128");
         print_runtime_ratio(lib_runtime, builtin_runtime);
     }
 
