@@ -97,7 +97,7 @@ namespace impl {
 #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow)
 
 template <std::unsigned_integral T>
-bool unsigned_intrin_add(T lhs, T rhs, T& result)
+bool unsigned_intrin_add(const T lhs, const T rhs, T& result)
 {
     return __builtin_add_overflow(lhs, rhs, &result);
 }
@@ -105,7 +105,7 @@ bool unsigned_intrin_add(T lhs, T rhs, T& result)
 #elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN)
 
 template <std::unsigned_integral T>
-bool unsigned_intrin_add(T lhs, T rhs, T& result)
+bool unsigned_intrin_add(const T lhs, const T rhs, T& result)
 {
     if constexpr (std::is_same_v<T, std::uint8_t>)
     {
@@ -128,7 +128,7 @@ bool unsigned_intrin_add(T lhs, T rhs, T& result)
 #elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
 template <std::unsigned_integral T>
-bool unsigned_intrin_add(T lhs, T rhs, T& result)
+bool unsigned_intrin_add(const T lhs, const T rhs, T& result)
 {
     if constexpr (std::is_same_v<T, std::uint8_t>)
     {
@@ -152,7 +152,7 @@ bool unsigned_intrin_add(T lhs, T rhs, T& result)
 
 #endif
 
-template <unsigned_integral T>
+template <std::unsigned_integral T>
 constexpr bool unsigned_no_intrin_add(const T lhs, const T rhs, T& result) noexcept
 {
     if constexpr (std::is_same_v<T, std::uint8_t> || std::is_same_v<T, std::uint16_t>)
@@ -164,6 +164,12 @@ constexpr bool unsigned_no_intrin_add(const T lhs, const T rhs, T& result) noexc
         result = static_cast<T>(lhs + rhs);
     }
 
+    return result < lhs;
+}
+
+constexpr bool unsigned_no_intrin_add(const int128::uint128_t& lhs, const int128::uint128_t& rhs, int128::uint128_t& result) noexcept
+{
+    result = lhs + rhs;
     return result < lhs;
 }
 
@@ -374,18 +380,24 @@ bool unsigned_intrin_sub(T lhs, T rhs, T& result)
 
 #endif
 
-template <unsigned_integral BasisType>
-constexpr bool unsigned_no_intrin_sub(BasisType lhs, BasisType rhs, BasisType& result) noexcept
+template <std::unsigned_integral T>
+constexpr bool unsigned_no_intrin_sub(const T lhs, const T rhs, T& result) noexcept
 {
-    if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
+    if constexpr (std::is_same_v<T, std::uint8_t> || std::is_same_v<T, std::uint16_t>)
     {
-        result = static_cast<BasisType>(static_cast<std::uint32_t>(lhs - rhs));
+        result = static_cast<T>(static_cast<std::uint32_t>(lhs - rhs));
     }
     else
     {
-        result = static_cast<BasisType>(lhs - rhs);
+        result = static_cast<T>(lhs - rhs);
     }
 
+    return result > lhs;
+}
+
+constexpr bool unsigned_no_intrin_sub(const int128::uint128_t& lhs, const int128::uint128_t& rhs, int128::uint128_t& result) noexcept
+{
+    result = lhs - rhs;
     return result > lhs;
 }
 
