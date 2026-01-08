@@ -52,12 +52,21 @@ void test<u64>()
     BOOST_TEST_NO_THROW(BOOST_TEST_EQ(18446744073709551615_u64, u64{18446744073709551615ULL}));
 }
 
+template <>
+void test<u128>()
+{
+    const auto good_value {42_u128};
+    BOOST_TEST_EQ(good_value, u128{42u});
+    BOOST_TEST_THROWS(18446744073709551615184467440737095516151844674407370955161518446744073709551615_u128, std::overflow_error);
+}
+
 int main()
 {
     test<u8>();
     test<u16>();
     test<u32>();
     test<u64>();
+    test<u128>();
 
     return boost::report_errors();
 }
