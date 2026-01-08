@@ -96,7 +96,7 @@ namespace impl {
 
 #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow)
 
-template <unsigned_integral T>
+template <std::unsigned_integral T>
 bool unsigned_intrin_add(T lhs, T rhs, T& result)
 {
     return __builtin_add_overflow(lhs, rhs, &result);
@@ -104,7 +104,7 @@ bool unsigned_intrin_add(T lhs, T rhs, T& result)
 
 #elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN)
 
-template <unsigned_integral T>
+template <std::unsigned_integral T>
 bool unsigned_intrin_add(T lhs, T rhs, T& result)
 {
     if constexpr (std::is_same_v<T, std::uint8_t>)
@@ -127,7 +127,7 @@ bool unsigned_intrin_add(T lhs, T rhs, T& result)
 
 #elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
-template <unsigned_integral T>
+template <std::unsigned_integral T>
 bool unsigned_intrin_add(T lhs, T rhs, T& result)
 {
     if constexpr (std::is_same_v<T, std::uint8_t>)
@@ -179,9 +179,11 @@ template <unsigned_integral BasisType>
     const auto rhs_basis {static_cast<BasisType>(rhs)};
     BasisType res {};
 
-    #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+    if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
+    {
+        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
-    if (!std::is_constant_evaluated())
+        if (!std::is_constant_evaluated())
     {
         if (impl::unsigned_intrin_add(lhs_basis, rhs_basis, res))
         {
@@ -189,9 +191,10 @@ template <unsigned_integral BasisType>
         }
 
         return result_type{res};
-    }
+        }
 
-    #endif // __has_builtin(__builtin_add_overflow)
+        #endif // __has_builtin(__builtin_add_overflow)
+    }
 
     if (impl::unsigned_no_intrin_add(lhs_basis, rhs_basis, res))
     {
