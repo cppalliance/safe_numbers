@@ -184,13 +184,13 @@ template <unsigned_integral BasisType>
         #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
         if (!std::is_constant_evaluated())
-    {
-        if (impl::unsigned_intrin_add(lhs_basis, rhs_basis, res))
         {
-            BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
-        }
+            if (impl::unsigned_intrin_add(lhs_basis, rhs_basis, res))
+            {
+                BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
+            }
 
-        return result_type{res};
+            return result_type{res};
         }
 
         #endif // __has_builtin(__builtin_add_overflow)
@@ -318,7 +318,7 @@ namespace impl {
 
 #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow)
 
-template <unsigned_integral T>
+template <std::unsigned_integral T>
 bool unsigned_intrin_sub(T lhs, T rhs, T& result)
 {
     return __builtin_sub_overflow(lhs, rhs, &result);
@@ -326,7 +326,7 @@ bool unsigned_intrin_sub(T lhs, T rhs, T& result)
 
 #elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN)
 
-template <unsigned_integral T>
+template <std::unsigned_integral T>
 bool unsigned_intrin_sub(T lhs, T rhs, T& result)
 {
     if constexpr (std::is_same_v<T, std::uint8_t>)
@@ -349,7 +349,7 @@ bool unsigned_intrin_sub(T lhs, T rhs, T& result)
 
 #elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
-template <unsigned_integral T>
+template <std::unsigned_integral T>
 bool unsigned_intrin_sub(T lhs, T rhs, T& result)
 {
     if constexpr (std::is_same_v<T, std::uint8_t>)
@@ -374,6 +374,21 @@ bool unsigned_intrin_sub(T lhs, T rhs, T& result)
 
 #endif
 
+template <unsigned_integral BasisType>
+constexpr bool unsigned_no_intrin_sub(BasisType lhs, BasisType rhs, BasisType& result) noexcept
+{
+    if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
+    {
+        result = static_cast<BasisType>(static_cast<std::uint32_t>(lhs - rhs));
+    }
+    else
+    {
+        result = static_cast<BasisType>(lhs - rhs);
+    }
+
+    return result > lhs;
+}
+
 } // namespace impl
 
 template <unsigned_integral BasisType>
@@ -382,35 +397,28 @@ template <unsigned_integral BasisType>
 {
     using result_type = unsigned_integer_basis<BasisType>;
 
-    #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
-
-    if (!std::is_constant_evaluated())
-    {
-        BasisType res;
-        if (impl::unsigned_intrin_sub(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
-        {
-            BOOST_THROW_EXCEPTION(std::underflow_error("Underflow detected in unsigned subtraction"));
-        }
-
-        return result_type{res};
-    }
-
-    #endif // Use builtins
-
     const auto lhs_basis {static_cast<BasisType>(lhs)};
     const auto rhs_basis {static_cast<BasisType>(rhs)};
+    BasisType res;
 
-    BasisType res {};
-    if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
+    if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
     {
-        res = static_cast<BasisType>(static_cast<std::uint32_t>(lhs_basis - rhs_basis));
-    }
-    else
-    {
-        res = static_cast<BasisType>(lhs_basis - rhs_basis);
+        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+        if (!std::is_constant_evaluated())
+        {
+            if (impl::unsigned_intrin_sub(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
+            {
+                BOOST_THROW_EXCEPTION(std::underflow_error("Underflow detected in unsigned subtraction"));
+            }
+
+            return result_type{res};
+        }
+
+        #endif // Use builtins
     }
 
-    if (res > lhs_basis)
+    if (impl::unsigned_intrin_sub(lhs_basis, rhs_basis, res))
     {
         BOOST_THROW_EXCEPTION(std::underflow_error("Underflow detected in unsigned subtraction"));
     }
