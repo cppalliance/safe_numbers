@@ -9,5 +9,10 @@
 #include "detail/int128_imp.hpp"
 #include "detail/uint128_imp.hpp"
 #include "detail/conversions.hpp"
+#include "iostream.hpp"
+#include "literals.hpp"
+#include "numeric.hpp"
+#include "bit.hpp"
+#include "cstdlib.hpp"
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_INT128_INT128_HPP

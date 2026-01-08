@@ -48,6 +48,7 @@ int main()
     test<u16>();
     test<u32>();
     test<u64>();
+    test<u128>();
 
     #ifndef BOOST_DISABLE_EXCEPTIONS
 
@@ -55,6 +56,7 @@ int main()
     test_negative_value_handling<u16>();
     test_negative_value_handling<u32>();
     test_negative_value_handling<u64>();
+    test_negative_value_handling<u128>();
 
     #endif
 
