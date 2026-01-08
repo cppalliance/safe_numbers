@@ -230,4 +230,6 @@ using builtin_u128 = std::_Unsigned128;
 #  define BOOST_SAFE_NUMBERS_DETAIL_INT128_UNREACHABLE std::abort()
 #endif
 
+#define BOOST_SAFE_NUMBERS_INLINE_CONSTEXPR_VARIABLE inline constexpr
+
 #endif // BOOST_SAFE_NUMBERS_DETAIL_INT128_DETAIL_CONFIG_HPP

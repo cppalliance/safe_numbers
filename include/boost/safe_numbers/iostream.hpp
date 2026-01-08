@@ -12,6 +12,7 @@
 
 #include <boost/throw_exception.hpp>
 #include <iostream>
+#include <cstdint>
 
 #endif // ifdef BOOST_SAFE_NUMBERS_BUILD_MODULE
 

@@ -6,7 +6,7 @@
 #define BOOST_SAFE_NUMBERS_DETAIL_TYPE_TRAITS_HPP
 
 #include <boost/safe_numbers/detail/config.hpp>
-#include <boost/safe_numbers/detail/unsigned_integer_basis.hpp>
+#include <boost/safe_numbers/detail/concepts.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -16,6 +16,9 @@
 #endif // ifdef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 namespace boost::safe_numbers::detail {
+
+template <unsigned_integral BasisType>
+class unsigned_integer_basis;
 
 namespace impl {
 

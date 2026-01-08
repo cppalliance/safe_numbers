@@ -6,6 +6,7 @@
 #define BOOST_SAFE_NUMBERS_DETAIL_UNSIGNED_INTEGER_BASIS_HPP
 
 #include <boost/safe_numbers/detail/config.hpp>
+#include <boost/safe_numbers/detail/concepts.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -19,7 +20,8 @@
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 namespace boost::safe_numbers::detail {
-template <std::unsigned_integral BasisType>
+
+template <unsigned_integral BasisType>
 class unsigned_integer_basis
 {
 public:
@@ -44,25 +46,25 @@ public:
         static_assert(false, "Construction from bool is not allowed");
     }
 
-    template <std::unsigned_integral OtherBasis>
+    template <unsigned_integral OtherBasis>
     [[nodiscard]] explicit constexpr operator OtherBasis() const noexcept;
 
     [[nodiscard]] friend constexpr auto operator<=>(unsigned_integer_basis lhs, unsigned_integer_basis rhs) noexcept
         -> std::strong_ordering = default;
 
-    template <std::unsigned_integral OtherBasis>
+    template <unsigned_integral OtherBasis>
     constexpr auto operator+=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
-    template <std::unsigned_integral OtherBasis>
+    template <unsigned_integral OtherBasis>
     constexpr auto operator-=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
-    template <std::unsigned_integral OtherBasis>
+    template <unsigned_integral OtherBasis>
     constexpr auto operator*=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
-    template <std::unsigned_integral OtherBasis>
+    template <unsigned_integral OtherBasis>
     constexpr auto operator/=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
-    template <std::unsigned_integral OtherBasis>
+    template <unsigned_integral OtherBasis>
     constexpr auto operator%=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
     constexpr auto operator++() -> unsigned_integer_basis&;
@@ -74,8 +76,8 @@ public:
     constexpr auto operator--(int) -> unsigned_integer_basis;
 };
 
-template <std::unsigned_integral BasisType>
-template <std::unsigned_integral OtherBasis>
+template <unsigned_integral BasisType>
+template <unsigned_integral OtherBasis>
 constexpr unsigned_integer_basis<BasisType>::operator OtherBasis() const noexcept
 {
     if constexpr (sizeof(OtherBasis) < sizeof(BasisType))
@@ -94,7 +96,7 @@ namespace impl {
 
 #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow)
 
-template <std::unsigned_integral T>
+template <unsigned_integral T>
 bool unsigned_intrin_add(T lhs, T rhs, T& result)
 {
     return __builtin_add_overflow(lhs, rhs, &result);
@@ -102,7 +104,7 @@ bool unsigned_intrin_add(T lhs, T rhs, T& result)
 
 #elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN)
 
-template <std::unsigned_integral T>
+template <unsigned_integral T>
 bool unsigned_intrin_add(T lhs, T rhs, T& result)
 {
     if constexpr (std::is_same_v<T, std::uint8_t>)
@@ -125,7 +127,7 @@ bool unsigned_intrin_add(T lhs, T rhs, T& result)
 
 #elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
-template <std::unsigned_integral T>
+template <unsigned_integral T>
 bool unsigned_intrin_add(T lhs, T rhs, T& result)
 {
     if constexpr (std::is_same_v<T, std::uint8_t>)
@@ -150,7 +152,7 @@ bool unsigned_intrin_add(T lhs, T rhs, T& result)
 
 #endif
 
-template <std::unsigned_integral T>
+template <unsigned_integral T>
 constexpr bool unsigned_no_intrin_add(const T lhs, const T rhs, T& result) noexcept
 {
     if constexpr (std::is_same_v<T, std::uint8_t> || std::is_same_v<T, std::uint16_t>)
@@ -167,7 +169,7 @@ constexpr bool unsigned_no_intrin_add(const T lhs, const T rhs, T& result) noexc
 
 } // namespace impl
 
-template <std::unsigned_integral BasisType>
+template <unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator+(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
@@ -202,7 +204,8 @@ template <std::unsigned_integral BasisType>
 } // namespace boost::safe_numbers::detail
 
 #define BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP(OP_NAME, OP_SYMBOL)                    \
-template <std::unsigned_integral LHSBasis, std::unsigned_integral RHSBasis>                        \
+template <boost::safe_numbers::detail::unsigned_integral LHSBasis,                                 \
+          boost::safe_numbers::detail::unsigned_integral RHSBasis>                                 \
     requires (!std::is_same_v<LHSBasis, RHSBasis>)                                                 \
 constexpr auto OP_SYMBOL(const boost::safe_numbers::detail::unsigned_integer_basis<LHSBasis>,      \
                          const boost::safe_numbers::detail::unsigned_integer_basis<RHSBasis>)      \
@@ -295,8 +298,8 @@ namespace boost::safe_numbers::detail {
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("addition", operator+)
 
-template <std::unsigned_integral BasisType>
-template <std::unsigned_integral OtherBasisType>
+template <unsigned_integral BasisType>
+template <unsigned_integral OtherBasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator+=(const unsigned_integer_basis<OtherBasisType> rhs)
     -> unsigned_integer_basis&
 {
@@ -312,7 +315,7 @@ namespace impl {
 
 #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow)
 
-template <std::unsigned_integral T>
+template <unsigned_integral T>
 bool unsigned_intrin_sub(T lhs, T rhs, T& result)
 {
     return __builtin_sub_overflow(lhs, rhs, &result);
@@ -320,7 +323,7 @@ bool unsigned_intrin_sub(T lhs, T rhs, T& result)
 
 #elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN)
 
-template <std::unsigned_integral T>
+template <unsigned_integral T>
 bool unsigned_intrin_sub(T lhs, T rhs, T& result)
 {
     if constexpr (std::is_same_v<T, std::uint8_t>)
@@ -343,7 +346,7 @@ bool unsigned_intrin_sub(T lhs, T rhs, T& result)
 
 #elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
-template <std::unsigned_integral T>
+template <unsigned_integral T>
 bool unsigned_intrin_sub(T lhs, T rhs, T& result)
 {
     if constexpr (std::is_same_v<T, std::uint8_t>)
@@ -370,7 +373,7 @@ bool unsigned_intrin_sub(T lhs, T rhs, T& result)
 
 } // namespace impl
 
-template <std::unsigned_integral BasisType>
+template <unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator-(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
@@ -414,8 +417,8 @@ template <std::unsigned_integral BasisType>
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("subtraction", operator-)
 
-template <std::unsigned_integral BasisType>
-template <std::unsigned_integral OtherBasisType>
+template <unsigned_integral BasisType>
+template <unsigned_integral OtherBasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator-=(const unsigned_integer_basis<OtherBasisType> rhs)
     -> unsigned_integer_basis&
 {
@@ -431,7 +434,7 @@ namespace impl {
 
 #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow)
 
-template <std::unsigned_integral T>
+template <unsigned_integral T>
 bool unsigned_intrin_mul(T lhs, T rhs, T& result)
 {
     return __builtin_mul_overflow(lhs, rhs, &result);
@@ -439,7 +442,7 @@ bool unsigned_intrin_mul(T lhs, T rhs, T& result)
 
 #elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN)
 
-template <std::unsigned_integral T>
+template <unsigned_integral T>
 bool unsigned_intrin_mul(T lhs, T rhs, T& result)
 {
     if constexpr (std::is_same_v<T, std::uint64_t>)
@@ -463,7 +466,7 @@ bool unsigned_intrin_mul(T lhs, T rhs, T& result)
 
 #elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_ARM64_INTRIN)
 
-template <std::unsigned_integral T>
+template <unsigned_integral T>
 bool unsigned_intrin_mul(T lhs, T rhs, T& result)
 {
     if constexpr (std::is_same_v<T, std::uint64_t>)
@@ -486,7 +489,7 @@ bool unsigned_intrin_mul(T lhs, T rhs, T& result)
 
 #endif
 
-template <std::unsigned_integral T>
+template <unsigned_integral T>
 constexpr bool no_intrin_mul(T lhs, T rhs, T& result)
 {
     using promoted_type = std::conditional_t<std::is_same_v<T, std::uint8_t>, std::uint_fast16_t,
@@ -516,7 +519,7 @@ constexpr bool no_intrin_mul(T lhs, T rhs, T& result)
 
 } // namespace impl
 
-template <std::unsigned_integral BasisType>
+template <unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator*(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
@@ -548,8 +551,8 @@ template <std::unsigned_integral BasisType>
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("multiplication", operator*)
 
-template <std::unsigned_integral BasisType>
-template <std::unsigned_integral OtherBasisType>
+template <unsigned_integral BasisType>
+template <unsigned_integral OtherBasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator*=(const unsigned_integer_basis<OtherBasisType> rhs)
     -> unsigned_integer_basis&
 {
@@ -561,7 +564,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator*=(const unsigned_inte
 // Division
 // ------------------------------
 
-template <std::unsigned_integral BasisType>
+template <unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator/(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
@@ -585,8 +588,8 @@ template <std::unsigned_integral BasisType>
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("division", operator/)
 
-template <std::unsigned_integral BasisType>
-template <std::unsigned_integral OtherBasisType>
+template <unsigned_integral BasisType>
+template <unsigned_integral OtherBasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator/=(const unsigned_integer_basis<OtherBasisType> rhs)
     -> unsigned_integer_basis&
 {
@@ -598,7 +601,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator/=(const unsigned_inte
 // Modulo
 // ------------------------------
 
-template <std::unsigned_integral BasisType>
+template <unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator%(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
@@ -622,8 +625,8 @@ template <std::unsigned_integral BasisType>
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("modulo", operator%)
 
-template <std::unsigned_integral BasisType>
-template <std::unsigned_integral OtherBasisType>
+template <unsigned_integral BasisType>
+template <unsigned_integral OtherBasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator%=(const unsigned_integer_basis<OtherBasisType> rhs)
     -> unsigned_integer_basis&
 {
@@ -635,7 +638,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator%=(const unsigned_inte
 // Pre and post increment
 // ------------------------------
 
-template <std::unsigned_integral BasisType>
+template <unsigned_integral BasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator++()
     -> unsigned_integer_basis&
 {
@@ -648,7 +651,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator++()
     return *this;
 }
 
-template <std::unsigned_integral BasisType>
+template <unsigned_integral BasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator++(int)
     -> unsigned_integer_basis
 {
@@ -666,7 +669,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator++(int)
 // Pre and post decrement
 // ------------------------------
 
-template <std::unsigned_integral BasisType>
+template <unsigned_integral BasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator--()
     -> unsigned_integer_basis&
 {
@@ -679,7 +682,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator--()
     return *this;
 }
 
-template <std::unsigned_integral BasisType>
+template <unsigned_integral BasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator--(int)
     -> unsigned_integer_basis
 {
@@ -705,7 +708,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator--(int)
 
 namespace boost::safe_numbers {
 
-template <std::unsigned_integral BasisType>
+template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto add_sat(const detail::unsigned_integer_basis<BasisType> lhs,
                                      const detail::unsigned_integer_basis<BasisType> rhs) noexcept -> detail::unsigned_integer_basis<BasisType>
 {
