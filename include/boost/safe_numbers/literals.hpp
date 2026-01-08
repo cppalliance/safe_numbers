@@ -74,25 +74,7 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u128(const char* str) -> u1
         case EINVAL:
             BOOST_THROW_EXCEPTION(std::invalid_argument("Invalid conversion from literal"));
         default:
-            [[fallthrough]];
-    }
-
-    return u128{result};
-}
-
-BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u128(const char* str, const std::size_t len) -> u128
-{
-    int128::uint128_t result;
-    const auto r {int128::detail::from_chars(str, str + len, result)};
-
-    switch (r)
-    {
-        case EDOM:
-            BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in literal construction"));
-        case EINVAL:
-            BOOST_THROW_EXCEPTION(std::invalid_argument("Invalid conversion from literal"));
-        default:
-            [[fallthrough]];
+            static_cast<void>(r);
     }
 
     return u128{result};
