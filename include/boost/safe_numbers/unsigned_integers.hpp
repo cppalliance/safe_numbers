@@ -7,6 +7,7 @@
 
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/unsigned_integer_basis.hpp>
+#include "detail/int128/int128.hpp"
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -23,6 +24,8 @@ BOOST_SAFE_NUMBERS_EXPORT using u16 = detail::unsigned_integer_basis<std::uint16
 BOOST_SAFE_NUMBERS_EXPORT using u32 = detail::unsigned_integer_basis<std::uint32_t>;
 
 BOOST_SAFE_NUMBERS_EXPORT using u64 = detail::unsigned_integer_basis<std::uint64_t>;
+
+BOOST_SAFE_NUMBERS_EXPORT using u128 = detail::unsigned_integer_basis<int128::uint128_t>;
 
 } // namespace boost::safe_numbers
 
