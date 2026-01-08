@@ -36,6 +36,9 @@
 #  pragma warning(disable : 4309)
 #endif
 
+#define BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
+#define BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
+
 #include <boost/random/uniform_int_distribution.hpp>
 
 #ifdef __clang__
@@ -141,6 +144,9 @@ int main()
 
     test_valid_addition<u64>();
     test_saturated_addition<u64>();
+
+    test_valid_addition<u128>();
+    test_saturated_addition<u128>();
 
     return boost::report_errors();
 }
