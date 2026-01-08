@@ -86,7 +86,7 @@ template <typename T>
 void test_valid_multiplication()
 {
     using basis_type = detail::underlying_type_t<T>;
-    boost::random::uniform_int_distribution<basis_type> dist {0, static_cast<basis_type>(std::sqrt(std::numeric_limits<basis_type>::max()) - 1U)};
+    boost::random::uniform_int_distribution<basis_type> dist {0, sizeof(basis_type) * 8U - 1U};
 
     for (std::size_t i = 0; i < N; ++i)
     {
@@ -133,7 +133,7 @@ template <typename T>
 void test_valid_compound_multiplication()
 {
     using basis_type = detail::underlying_type_t<T>;
-    boost::random::uniform_int_distribution<basis_type> dist {0, static_cast<basis_type>(std::sqrt(std::numeric_limits<basis_type>::max()) - 1U)};
+    boost::random::uniform_int_distribution<basis_type> dist {0, sizeof(basis_type) * 8U - 1U};
 
     for (std::size_t i = 0; i < N; ++i)
     {
