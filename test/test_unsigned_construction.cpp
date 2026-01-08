@@ -66,6 +66,11 @@ import boost.safe_numbers;
 inline std::mt19937_64 rng{42};
 inline constexpr std::size_t N {1024};
 
+#if defined(__GNUC__) && !defined(__clang__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wclass-memaccess"
+#endif
+
 template <typename T>
 void test()
 {
