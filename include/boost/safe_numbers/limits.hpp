@@ -85,6 +85,10 @@ template <>
 class numeric_limits<boost::safe_numbers::u64> :
     public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::u64> {};
 
+template <>
+class numeric_limits<boost::safe_numbers::u128> :
+    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::u128> {};
+
 #ifdef __clang__
 #  pragma clang diagnostic pop
 #endif
