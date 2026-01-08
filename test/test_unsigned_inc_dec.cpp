@@ -79,11 +79,13 @@ int main()
     test_increment<u16>();
     test_increment<u32>();
     test_increment<u64>();
+    test_increment<u128>();
 
     test_decrement<u8>();
     test_decrement<u16>();
     test_decrement<u32>();
     test_decrement<u64>();
+    test_decrement<u128>();
 
     return boost::report_errors();
 }
