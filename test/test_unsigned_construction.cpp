@@ -36,6 +36,9 @@
 #  pragma warning(disable : 4309)
 #endif
 
+#define BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
+#define BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
+
 #include <boost/random/uniform_int_distribution.hpp>
 
 #ifdef __clang__
@@ -52,7 +55,7 @@ import boost.safe_numbers;
 
 #else
 
-#include <boost/safe_numbers/unsigned_integers.hpp>
+#include <boost/safe_numbers.hpp>
 #include <random>
 #include <cstring>
 #include <limits>
@@ -63,9 +66,11 @@ import boost.safe_numbers;
 inline std::mt19937_64 rng{42};
 inline constexpr std::size_t N {1024};
 
-template <typename T, typename BasisType>
+template <typename T>
 void test()
 {
+    using BasisType = boost::safe_numbers::detail::underlying_type_t<T>;
+
     boost::random::uniform_int_distribution<BasisType> dist {std::numeric_limits<BasisType>::min(),
                                                              std::numeric_limits<BasisType>::max()};
 
@@ -85,10 +90,11 @@ int main()
 {
     using namespace boost::safe_numbers;
 
-    test<u8, std::uint8_t>();
-    test<u16, std::uint16_t>();
-    test<u32, std::uint32_t>();
-    test<u64, std::uint64_t>();
+    test<u8>();
+    test<u16>();
+    test<u32>();
+    test<u64>();
+    test<u128>();
 
     return boost::report_errors();
 }
