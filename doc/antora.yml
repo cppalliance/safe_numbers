@@ -1,0 +1,6 @@
+name: safe_numbers
+version: ~
+title: Boost.safe_numbers
+nav:
+  - modules/ROOT/nav.adoc
+start_page: overview.adoc
