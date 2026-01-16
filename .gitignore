@@ -42,3 +42,6 @@
 
 # Modules
 **/gcm.cache/
+
+# Mac
+*.DS_Store
