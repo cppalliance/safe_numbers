@@ -11,7 +11,7 @@ output:
 ui:
   bundle:
     url: https://github.com/boostorg/website-v2-docs/releases/download/ui-develop/ui-bundle.zip
-  output_dir: int128/_
+  output_dir: safe_numbers/_
 antora:
   extensions:
     - '@antora/lunr-extension'

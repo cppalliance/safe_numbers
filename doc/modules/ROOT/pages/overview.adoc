@@ -13,18 +13,16 @@ Matt Borland
 == Description
 
 Safe_numbers strives to enhance the type safety of fundamental numeric types, with an acceptable performance degradation.
-https://github.com/cppalliance/safe_numbers/blob/master/doc/proposal/proposal.pdf[Read the proposal here].
 
 The library is header-only, minimal dependencies (Boost.Assert, Config, and Throw_Exception), and requires only C++20.
 
 == Motivation
 
-128-bit integers are remarkably useful in a number of domains, but portability is often an issue.
-An example is a 64-bit machine running Linux (say Ubuntu 24.04) has `__int128`, but the same exact machine running Windows does not have this type.
+https://github.com/cppalliance/safe_numbers/blob/master/doc/proposal/proposal.pdf[Read the proposal here].
 
 == Use Cases
 
-Anywhere 128-bit integers are needed.
+Safety critical applications
 
 == Supported Compilers
 
