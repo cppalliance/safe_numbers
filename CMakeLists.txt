@@ -16,6 +16,7 @@ target_include_directories(boost_safe_numbers INTERFACE include)
 target_link_libraries(boost_safe_numbers
         INTERFACE
         Boost::assert
+        Boost::charconv
         Boost::config
         Boost::throw_exception
 )
