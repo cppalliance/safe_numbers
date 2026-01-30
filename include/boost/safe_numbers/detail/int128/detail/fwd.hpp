@@ -5,11 +5,13 @@
 #ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_DETAIL_FWD_HPP
 #define BOOST_SAFE_NUMBERS_DETAIL_INT128_DETAIL_FWD_HPP
 
+#include <boost/safe_numbers/detail/int128/detail/config.hpp>
+
 namespace boost {
 namespace int128 {
 
-struct uint128_t;
-struct int128_t;
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT struct uint128_t;
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT struct int128_t;
 
 } // namespace int128
 } // namespace boost

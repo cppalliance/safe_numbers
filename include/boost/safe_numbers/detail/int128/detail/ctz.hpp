@@ -5,9 +5,14 @@
 #ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_DETAIL_CTZ_HPP
 #define BOOST_SAFE_NUMBERS_DETAIL_INT128_DETAIL_CTZ_HPP
 
-#include "config.hpp"
+#include <boost/safe_numbers/detail/int128/detail/config.hpp>
+
+#ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILD_MODULE
+
 #include <limits>
 #include <cstdint>
+
+#endif
 
 namespace boost {
 namespace int128 {
@@ -34,7 +39,7 @@ constexpr int countr_impl(unsigned long long x) noexcept
 
 #endif
 
-BOOST_SAFE_NUMBERS_INLINE_CONSTEXPR_VARIABLE int countr_mod37[37] = {
+BOOST_SAFE_NUMBERS_DETAIL_INT128_INLINE_CONSTEXPR int countr_mod37[37] = {
     32, 0, 1, 26, 2, 23, 27, 0,
     3, 16, 24, 30, 28, 11, 0, 13,
     4, 7, 17, 0, 25, 22, 31, 15,

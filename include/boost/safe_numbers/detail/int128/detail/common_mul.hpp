@@ -5,9 +5,14 @@
 #ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_DETAIL_COMMON_MUL_HPP
 #define BOOST_SAFE_NUMBERS_DETAIL_INT128_DETAIL_COMMON_MUL_HPP
 
-#include "config.hpp"
+#include <boost/safe_numbers/detail/int128/detail/config.hpp>
+
+#ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILD_MODULE
+
 #include <cstdint>
 #include <cstring>
+
+#endif
 
 namespace boost {
 namespace int128 {
@@ -60,7 +65,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void to_words(const T& x
 
     if (!BOOST_SAFE_NUMBERS_DETAIL_INT128_IS_CONSTANT_EVALUATED(x))
     {
-        std::memcpy(words, &x, sizeof(T));
+        std::memcpy(&words, &x, sizeof(T));
         return;
     }
 
@@ -79,7 +84,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void to_words(const std:
 
     if (!BOOST_SAFE_NUMBERS_DETAIL_INT128_IS_CONSTANT_EVALUATED(x))
     {
-        std::memcpy(words, &x, sizeof(std::uint64_t));
+        std::memcpy(&words, &x, sizeof(std::uint64_t));
         return;
     }
 

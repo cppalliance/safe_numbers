@@ -5,14 +5,9 @@
 #ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_INT128_HPP
 #define BOOST_SAFE_NUMBERS_DETAIL_INT128_INT128_HPP
 
-#include "detail/fwd.hpp"
-#include "detail/int128_imp.hpp"
-#include "detail/uint128_imp.hpp"
-#include "detail/conversions.hpp"
-#include "iostream.hpp"
-#include "literals.hpp"
-#include "numeric.hpp"
-#include "bit.hpp"
-#include "cstdlib.hpp"
+#include <boost/safe_numbers/detail/int128/detail/fwd.hpp>
+#include <boost/safe_numbers/detail/int128/detail/int128_imp.hpp>
+#include <boost/safe_numbers/detail/int128/detail/uint128_imp.hpp>
+#include <boost/safe_numbers/detail/int128/detail/conversions.hpp>
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_INT128_INT128_HPP

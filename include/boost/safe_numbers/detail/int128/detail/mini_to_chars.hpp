@@ -6,21 +6,20 @@
 #ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_DETAIL_MINI_TO_CHARS_HPP
 #define BOOST_SAFE_NUMBERS_DETAIL_INT128_DETAIL_MINI_TO_CHARS_HPP
 
-#include "uint128_imp.hpp"
-#include "int128_imp.hpp"
+#include <boost/safe_numbers/detail/int128/int128.hpp>
 
 namespace boost {
 namespace int128 {
 namespace detail {
 
-BOOST_SAFE_NUMBERS_INLINE_CONSTEXPR_VARIABLE char lower_case_digit_table[] = {
+BOOST_SAFE_NUMBERS_DETAIL_INT128_INLINE_CONSTEXPR char lower_case_digit_table[] = {
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
     'a', 'b', 'c', 'd', 'e', 'f'
 };
 
 static_assert(sizeof(lower_case_digit_table) == sizeof(char) * 16, "10 numbers, and 6 letters");
 
-BOOST_SAFE_NUMBERS_INLINE_CONSTEXPR_VARIABLE char upper_case_digit_table[] = {
+BOOST_SAFE_NUMBERS_DETAIL_INT128_INLINE_CONSTEXPR char upper_case_digit_table[] = {
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
     'A', 'B', 'C', 'D', 'E', 'F'
 };
@@ -42,6 +41,14 @@ constexpr char* mini_to_chars(char (&buffer)[64], uint128_t v, const int base, c
 
     switch (base)
     {
+        case 2:
+            while (v != 0U)
+            {
+                *--last = v.low & 1U ? '1' : '0';
+                v >>= 1U;
+            }
+            break;
+
         case 8:
             while (v != 0U)
             {

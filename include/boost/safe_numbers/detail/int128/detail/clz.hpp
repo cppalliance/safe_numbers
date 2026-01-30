@@ -5,9 +5,14 @@
 #ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_DETAIL_CLZ_HPP
 #define BOOST_SAFE_NUMBERS_DETAIL_INT128_DETAIL_CLZ_HPP
 
-#include "config.hpp"
+#include <boost/safe_numbers/detail/int128/detail/config.hpp>
+
+#ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILD_MODULE
+
 #include <limits>
 #include <cstdint>
+
+#endif
 
 namespace boost {
 namespace int128 {
@@ -16,7 +21,7 @@ namespace detail {
 namespace impl {
 
 // See: http://graphics.stanford.edu/~seander/bithacks.html#IntegerLogDeBruijn
-BOOST_SAFE_NUMBERS_INLINE_CONSTEXPR_VARIABLE int index64[64] = {
+BOOST_SAFE_NUMBERS_DETAIL_INT128_INLINE_CONSTEXPR int index64[64] = {
     0, 47,  1, 56, 48, 27,  2, 60,
     57, 49, 41, 37, 28, 16,  3, 61,
     54, 58, 35, 52, 50, 42, 21, 44,
@@ -43,7 +48,7 @@ constexpr int bit_scan_reverse(std::uint64_t bb) noexcept
     return index64[(bb * debruijn64) >> 58];
 }
 
-BOOST_SAFE_NUMBERS_INLINE_CONSTEXPR_VARIABLE int countl_mod37[37] = {
+BOOST_SAFE_NUMBERS_DETAIL_INT128_INLINE_CONSTEXPR int countl_mod37[37] = {
     32, 31, 6, 30, 9, 5, 0, 29,
     16, 8, 2, 4, 21, 0, 19, 28,
     25, 15, 0, 7, 10, 1, 17, 3,

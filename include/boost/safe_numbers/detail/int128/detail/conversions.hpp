@@ -5,8 +5,8 @@
 #ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_CONVERSIONS_HPP
 #define BOOST_SAFE_NUMBERS_DETAIL_INT128_CONVERSIONS_HPP
 
-#include "int128_imp.hpp"
-#include "uint128_imp.hpp"
+#include <boost/safe_numbers/detail/int128/detail/int128_imp.hpp>
+#include <boost/safe_numbers/detail/int128/detail/uint128_imp.hpp>
 
 namespace boost {
 namespace int128 {
@@ -20,7 +20,7 @@ struct valid_overload
 };
 
 template <typename T>
-BOOST_SAFE_NUMBERS_INLINE_CONSTEXPR_VARIABLE bool is_valid_overload_v = valid_overload<T>::value;
+BOOST_SAFE_NUMBERS_DETAIL_INT128_INLINE_CONSTEXPR bool is_valid_overload_v = valid_overload<T>::value;
 
 } // namespace detail
 

@@ -5,7 +5,7 @@
 #ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_CSTDLIB_HPP
 #define BOOST_SAFE_NUMBERS_DETAIL_INT128_CSTDLIB_HPP
 
-#include "int128.hpp"
+#include <boost/safe_numbers/detail/int128/int128.hpp>
 
 namespace boost {
 namespace int128 {
@@ -81,11 +81,7 @@ constexpr i128div_t div(const int128_t x, const int128_t y) noexcept
     const auto unsigned_res {div(abs_lhs, abs_rhs)};
 
     const auto negative_quot {(x.high < 0) != (y.high < 0)};
-    #if defined(_MSC_VER) && !defined(__GNUC__)
-    const auto negative_rem {static_cast<bool>(x.high < 0)};
-    #else
-    const auto negative_rem {static_cast<bool>((x.high < 0) != (y.high < 0))};
-    #endif
+    const auto negative_rem {x.high < 0};
 
     i128div_t res {static_cast<int128_t>(unsigned_res.quot), static_cast<int128_t>(unsigned_res.rem)};
 

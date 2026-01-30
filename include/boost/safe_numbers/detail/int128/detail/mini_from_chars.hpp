@@ -6,18 +6,23 @@
 #ifndef MINI_FROM_CHARS_HPP
 #define MINI_FROM_CHARS_HPP
 
-#include "uint128_imp.hpp"
-#include "int128_imp.hpp"
+#include <boost/safe_numbers/detail/int128/detail/uint128_imp.hpp>
+#include <boost/safe_numbers/detail/int128/detail/int128_imp.hpp>
+
+#ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILD_MODULE
+
 #include <cerrno>
 #include <limits>
 #include <cstddef>
+
+#endif
 
 namespace boost {
 namespace int128 {
 namespace detail {
 
 namespace impl {
-BOOST_SAFE_NUMBERS_INLINE_CONSTEXPR_VARIABLE unsigned char uchar_values[] =
+BOOST_SAFE_NUMBERS_DETAIL_INT128_INLINE_CONSTEXPR unsigned char uchar_values[] =
      {255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
       255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
       255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
@@ -165,7 +170,9 @@ constexpr int from_chars_integer_impl(const char* first, const char* last, Integ
         }
     }
 
-    return 0;
+    // This value will be negative to differentiate from errno values
+    // since they are in the range of acceptable distances
+    return static_cast<int>(first - next);
 }
 } // namespace impl
 

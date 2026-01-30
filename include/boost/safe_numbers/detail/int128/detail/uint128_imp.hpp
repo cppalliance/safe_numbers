@@ -5,21 +5,26 @@
 #ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_DETAIL_UINT128_IMP_HPP
 #define BOOST_SAFE_NUMBERS_DETAIL_INT128_DETAIL_UINT128_IMP_HPP
 
-#include "fwd.hpp"
-#include "config.hpp"
-#include "traits.hpp"
-#include "constants.hpp"
-#include "clz.hpp"
-#include "common_mul.hpp"
-#include "common_div.hpp"
+#include <boost/safe_numbers/detail/int128/detail/fwd.hpp>
+#include <boost/safe_numbers/detail/int128/detail/config.hpp>
+#include <boost/safe_numbers/detail/int128/detail/traits.hpp>
+#include <boost/safe_numbers/detail/int128/detail/constants.hpp>
+#include <boost/safe_numbers/detail/int128/detail/clz.hpp>
+#include <boost/safe_numbers/detail/int128/detail/common_mul.hpp>
+#include <boost/safe_numbers/detail/int128/detail/common_div.hpp>
+
+#ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILD_MODULE
+
 #include <cstdint>
 #include <cstring>
 #include <climits>
 
+#endif
+
 namespace boost {
 namespace int128 {
 
-struct
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT struct
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128
     alignas(alignof(detail::builtin_u128))
     #else
@@ -267,7 +272,7 @@ uint128_t
 // Absolute Value function
 //=====================================
 
-constexpr uint128_t abs(const uint128_t value) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t abs(const uint128_t value) noexcept
 {
     return value;
 }
@@ -300,12 +305,12 @@ constexpr uint128_t::operator long double() const noexcept
 // Unary Operators
 //=====================================
 
-constexpr uint128_t operator+(const uint128_t value) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator+(const uint128_t value) noexcept
 {
     return value;
 }
 
-constexpr uint128_t operator-(const uint128_t value) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator-(const uint128_t value) noexcept
 {
     return {~value.high + static_cast<std::uint64_t>(value.low == UINT64_C(0)), ~value.low + UINT64_C(1)};
 }
@@ -314,12 +319,12 @@ constexpr uint128_t operator-(const uint128_t value) noexcept
 // Equality Operators
 //=====================================
 
-constexpr bool operator==(const uint128_t lhs, const bool rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr bool operator==(const uint128_t lhs, const bool rhs) noexcept
 {
     return lhs.high == UINT64_C(0) && lhs.low == static_cast<std::uint64_t>(rhs);
 }
 
-constexpr bool operator==(const bool lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr bool operator==(const bool lhs, const uint128_t rhs) noexcept
 {
     return rhs.high == UINT64_C(0) && rhs.low == static_cast<std::uint64_t>(lhs);
 }
@@ -332,7 +337,7 @@ constexpr bool operator==(const bool lhs, const uint128_t rhs) noexcept
 #  pragma GCC diagnostic ignored "-Wsign-conversion"
 #endif
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr bool operator==(const uint128_t lhs, const SignedInteger rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
@@ -349,7 +354,7 @@ constexpr bool operator==(const uint128_t lhs, const SignedInteger rhs) noexcept
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr bool operator==(const SignedInteger lhs, const uint128_t rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
@@ -366,22 +371,20 @@ constexpr bool operator==(const SignedInteger lhs, const uint128_t rhs) noexcept
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr bool operator==(const uint128_t lhs, const UnsignedInteger rhs) noexcept
 {
     return lhs.high == UINT64_C(0) && lhs.low == static_cast<std::uint64_t>(rhs);
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr bool operator==(const UnsignedInteger lhs, const uint128_t rhs) noexcept
 {
     return rhs.high == UINT64_C(0) && rhs.low == static_cast<std::uint64_t>(lhs);
 }
 
-constexpr bool operator==(const uint128_t lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr bool operator==(const uint128_t lhs, const uint128_t rhs) noexcept
 {
-    // Intel and ARM like the values in opposite directions
-
     #if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_AMD64)
 
     return lhs.low == rhs.low && lhs.high == rhs.high;
@@ -416,26 +419,26 @@ constexpr bool operator==(const uint128_t lhs, const uint128_t rhs) noexcept
 
 #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator==(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator==(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
 {
     return lhs == static_cast<uint128_t>(rhs);
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator==(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator==(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) == rhs;
 }
 
 #else
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator==(const uint128_t, const T) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Compare Error");
     return true;
 }
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator==(const T, const uint128_t) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Compare Error");
@@ -444,12 +447,12 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator==(const T, cons
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator==(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator==(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
 {
     return lhs == static_cast<uint128_t>(rhs);
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator==(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator==(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) == rhs;
 }
@@ -460,17 +463,17 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator==(const detail:
 // Inequality Operators
 //=====================================
 
-constexpr bool operator!=(const uint128_t lhs, const bool rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr bool operator!=(const uint128_t lhs, const bool rhs) noexcept
 {
     return lhs.high != UINT64_C(0) || lhs.low != static_cast<std::uint64_t>(rhs);
 }
 
-constexpr bool operator!=(const bool lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr bool operator!=(const bool lhs, const uint128_t rhs) noexcept
 {
     return rhs.high != UINT64_C(0) || rhs.low != static_cast<std::uint64_t>(lhs);
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr bool operator!=(const uint128_t lhs, const SignedInteger rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
@@ -487,7 +490,7 @@ constexpr bool operator!=(const uint128_t lhs, const SignedInteger rhs) noexcept
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr bool operator!=(const SignedInteger lhs, const uint128_t rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
@@ -504,19 +507,19 @@ constexpr bool operator!=(const SignedInteger lhs, const uint128_t rhs) noexcept
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr bool operator!=(const uint128_t lhs, const UnsignedInteger rhs) noexcept
 {
     return lhs.high != UINT64_C(0) || lhs.low != static_cast<std::uint64_t>(rhs);
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr bool operator!=(const UnsignedInteger lhs, const uint128_t rhs) noexcept
 {
     return rhs.high != UINT64_C(0) || rhs.low != static_cast<std::uint64_t>(lhs);
 }
 
-constexpr bool operator!=(const uint128_t lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr bool operator!=(const uint128_t lhs, const uint128_t rhs) noexcept
 {
     #if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_AMD64)
 
@@ -552,26 +555,26 @@ constexpr bool operator!=(const uint128_t lhs, const uint128_t rhs) noexcept
 
 #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator!=(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator!=(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
 {
     return lhs != static_cast<uint128_t>(rhs);
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator!=(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator!=(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) != rhs;
 }
 
 #else
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator!=(const uint128_t, const T) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Compare Error");
     return true;
 }
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator!=(const T, const uint128_t) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Compare Error");
@@ -580,12 +583,12 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator!=(const T, cons
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator!=(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator!=(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
 {
     return lhs != static_cast<uint128_t>(rhs);
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator!=(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator!=(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) != rhs;
 }
@@ -596,7 +599,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator!=(const detail:
 // Less than Operators
 //=====================================
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr bool operator<(const uint128_t lhs, const SignedInteger rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
@@ -613,7 +616,7 @@ constexpr bool operator<(const uint128_t lhs, const SignedInteger rhs) noexcept
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr bool operator<(const SignedInteger lhs, const uint128_t rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
@@ -630,19 +633,19 @@ constexpr bool operator<(const SignedInteger lhs, const uint128_t rhs) noexcept
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr bool operator<(const uint128_t lhs, const UnsignedInteger rhs) noexcept
 {
     return lhs.high == UINT64_C(0) && lhs.low < static_cast<std::uint64_t>(rhs);
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr bool operator<(const UnsignedInteger lhs, const uint128_t rhs) noexcept
 {
     return rhs.high > UINT64_C(0) || static_cast<std::uint64_t>(lhs) < rhs.low;
 }
 
-constexpr bool operator<(const uint128_t lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr bool operator<(const uint128_t lhs, const uint128_t rhs) noexcept
 {
     // On ARM macs only with the clang compiler is casting to unsigned __int128 uniformly better (and seemingly cost free)
     #if defined(__clang__) && defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128)
@@ -708,26 +711,26 @@ constexpr bool operator<(const uint128_t lhs, const uint128_t rhs) noexcept
 
 #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
 {
     return lhs < static_cast<uint128_t>(rhs);
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) < rhs;
 }
 
 #else
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<(const uint128_t, const T) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Compare Error");
     return true;
 }
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<(const T, const uint128_t) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Compare Error");
@@ -736,12 +739,12 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<(const T, const
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
 {
     return lhs < static_cast<uint128_t>(rhs);
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) < rhs;
 }
@@ -752,7 +755,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<(const detail::
 // Less Equal Operators
 //=====================================
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr bool operator<=(const uint128_t lhs, const SignedInteger rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
@@ -769,7 +772,7 @@ constexpr bool operator<=(const uint128_t lhs, const SignedInteger rhs) noexcept
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr bool operator<=(const SignedInteger lhs, const uint128_t rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
@@ -786,19 +789,19 @@ constexpr bool operator<=(const SignedInteger lhs, const uint128_t rhs) noexcept
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr bool operator<=(const uint128_t lhs, const UnsignedInteger rhs) noexcept
 {
     return lhs.high == UINT64_C(0) && lhs.low <= static_cast<std::uint64_t>(rhs);
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr bool operator<=(const UnsignedInteger lhs, const uint128_t rhs) noexcept
 {
     return rhs.high > UINT64_C(0) || static_cast<std::uint64_t>(lhs) <= rhs.low;
 }
 
-constexpr bool operator<=(const uint128_t lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr bool operator<=(const uint128_t lhs, const uint128_t rhs) noexcept
 {
     #if defined(__clang__) && defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128)
 
@@ -863,36 +866,36 @@ constexpr bool operator<=(const uint128_t lhs, const uint128_t rhs) noexcept
 
 #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<=(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<=(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
 {
     return lhs <= static_cast<uint128_t>(rhs);
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<=(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<=(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) <= rhs;
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<=(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<=(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
 {
     return lhs <= static_cast<uint128_t>(rhs);
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<=(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<=(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) <= rhs;
 }
 
 #else
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<=(const uint128_t, const T) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Compare Error");
     return true;
 }
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<=(const T, const uint128_t) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Compare Error");
@@ -907,7 +910,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator<=(const T, cons
 // Greater Than Operators
 //=====================================
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr bool operator>(const uint128_t lhs, const SignedInteger rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
@@ -924,7 +927,7 @@ constexpr bool operator>(const uint128_t lhs, const SignedInteger rhs) noexcept
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr bool operator>(const SignedInteger lhs, const uint128_t rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
@@ -941,19 +944,19 @@ constexpr bool operator>(const SignedInteger lhs, const uint128_t rhs) noexcept
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr bool operator>(const uint128_t lhs, const UnsignedInteger rhs) noexcept
 {
     return lhs.high > UINT64_C(0) || lhs.low > static_cast<std::uint64_t>(rhs);
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr bool operator>(const UnsignedInteger lhs, const uint128_t rhs) noexcept
 {
     return rhs.high == UINT64_C(0) && static_cast<std::uint64_t>(lhs) > rhs.low;
 }
 
-constexpr bool operator>(const uint128_t lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr bool operator>(const uint128_t lhs, const uint128_t rhs) noexcept
 {
     #if defined(__clang__) && defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128)
 
@@ -1018,36 +1021,36 @@ constexpr bool operator>(const uint128_t lhs, const uint128_t rhs) noexcept
 
 #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
 {
     return lhs > static_cast<uint128_t>(rhs);
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) > rhs;
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
 {
     return lhs > static_cast<uint128_t>(rhs);
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) > rhs;
 }
 
 #else
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>(const uint128_t, const T) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Compare Error");
     return true;
 }
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>(const T, const uint128_t) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Compare Error");
@@ -1062,7 +1065,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>(const T, const
 // Greater-equal Operators
 //=====================================
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr bool operator>=(const uint128_t lhs, const SignedInteger rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
@@ -1079,7 +1082,7 @@ constexpr bool operator>=(const uint128_t lhs, const SignedInteger rhs) noexcept
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr bool operator>=(const SignedInteger lhs, const uint128_t rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
@@ -1096,19 +1099,19 @@ constexpr bool operator>=(const SignedInteger lhs, const uint128_t rhs) noexcept
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr bool operator>=(const uint128_t lhs, const UnsignedInteger rhs) noexcept
 {
     return lhs.high > UINT64_C(0) || lhs.low >= static_cast<std::uint64_t>(rhs);
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr bool operator>=(const UnsignedInteger lhs, const uint128_t rhs) noexcept
 {
     return rhs.high == UINT64_C(0) && static_cast<std::uint64_t>(lhs) >= rhs.low;
 }
 
-constexpr bool operator>=(const uint128_t lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr bool operator>=(const uint128_t lhs, const uint128_t rhs) noexcept
 {
     #if defined(__clang__) && defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128)
 
@@ -1171,38 +1174,38 @@ constexpr bool operator>=(const uint128_t lhs, const uint128_t rhs) noexcept
 
 #if defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128) || defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_MSVC_INT128)
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>=(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>=(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
 {
     return lhs >= static_cast<uint128_t>(rhs);
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>=(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>=(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) >= rhs;
 }
 
 #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>=(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>=(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
 {
     return lhs >= static_cast<uint128_t>(rhs);
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>=(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>=(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) >= rhs;
 }
 
 #else
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>=(const uint128_t, const T) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Compare Error");
     return true;
 }
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>=(const T, const uint128_t) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Compare Error");
@@ -1217,7 +1220,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>=(const T, cons
 // Not Operator
 //=====================================
 
-constexpr uint128_t operator~(const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator~(const uint128_t rhs) noexcept
 {
     return {~rhs.high, ~rhs.low};
 }
@@ -1226,7 +1229,7 @@ constexpr uint128_t operator~(const uint128_t rhs) noexcept
 // OR Operator
 //=====================================
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator|(const uint128_t lhs, const SignedInteger rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
@@ -1243,7 +1246,7 @@ constexpr uint128_t operator|(const uint128_t lhs, const SignedInteger rhs) noex
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator|(const SignedInteger lhs, const uint128_t rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
@@ -1260,19 +1263,19 @@ constexpr uint128_t operator|(const SignedInteger lhs, const uint128_t rhs) noex
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator|(const uint128_t lhs, const UnsignedInteger rhs) noexcept
 {
     return {lhs.high, lhs.low | static_cast<std::uint64_t>(rhs)};
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator|(const UnsignedInteger lhs, const uint128_t rhs) noexcept
 {
     return {rhs.high, rhs.low | static_cast<std::uint64_t>(lhs)};
 }
 
-constexpr uint128_t operator|(const uint128_t lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator|(const uint128_t lhs, const uint128_t rhs) noexcept
 {
     return {lhs.high | rhs.high, lhs.low | rhs.low};
 }
@@ -1281,26 +1284,26 @@ constexpr uint128_t operator|(const uint128_t lhs, const uint128_t rhs) noexcept
 
 #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
-constexpr uint128_t operator|(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator|(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
 {
     return lhs | static_cast<uint128_t>(rhs);
 }
 
-constexpr uint128_t operator|(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator|(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) | rhs;
 }
 
 #else
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 constexpr uint128_t operator|(const uint128_t, const T) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Conversion Error");
     return {0, 0};
 }
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 constexpr uint128_t operator|(const T, const uint128_t) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Conversion Error");
@@ -1309,12 +1312,12 @@ constexpr uint128_t operator|(const T, const uint128_t) noexcept
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
-constexpr uint128_t operator|(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator|(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
 {
     return lhs | static_cast<uint128_t>(rhs);
 }
 
-constexpr uint128_t operator|(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator|(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) | rhs;
 }
@@ -1331,7 +1334,6 @@ constexpr uint128_t& uint128_t::operator|=(const Integer rhs) noexcept
     *this = *this | rhs;
     return *this;
 }
-
 constexpr uint128_t& uint128_t::operator|=(const uint128_t rhs) noexcept
 {
     *this = *this | rhs;
@@ -1357,7 +1359,7 @@ inline uint128_t& uint128_t::operator|=(const Integer rhs) noexcept
 // AND Operator
 //=====================================
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator&(const uint128_t lhs, const SignedInteger rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
@@ -1391,19 +1393,19 @@ constexpr uint128_t operator&(const SignedInteger lhs, const uint128_t rhs) noex
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator&(const uint128_t lhs, const UnsignedInteger rhs) noexcept
 {
     return {lhs.high, lhs.low & static_cast<std::uint64_t>(rhs)};
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator&(const UnsignedInteger lhs, const uint128_t rhs) noexcept
 {
     return {rhs.high, rhs.low & static_cast<std::uint64_t>(lhs)};
 }
 
-constexpr uint128_t operator&(const uint128_t lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator&(const uint128_t lhs, const uint128_t rhs) noexcept
 {
     return {lhs.high & rhs.high, lhs.low & rhs.low};
 }
@@ -1412,26 +1414,26 @@ constexpr uint128_t operator&(const uint128_t lhs, const uint128_t rhs) noexcept
 
 #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
-constexpr uint128_t operator&(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator&(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
 {
     return lhs & static_cast<uint128_t>(rhs);
 }
 
-constexpr uint128_t operator&(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator&(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) & rhs;
 }
 
 #else
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 constexpr uint128_t operator&(const uint128_t, const T) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Conversion Error");
     return {0, 0};
 }
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 constexpr uint128_t operator&(const T, const uint128_t) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Conversion Error");
@@ -1440,12 +1442,12 @@ constexpr uint128_t operator&(const T, const uint128_t) noexcept
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
-constexpr uint128_t operator&(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator&(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
 {
     return lhs & static_cast<uint128_t>(rhs);
 }
 
-constexpr uint128_t operator&(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator&(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) & rhs;
 }
@@ -1489,7 +1491,7 @@ inline uint128_t& uint128_t::operator&=(Integer rhs) noexcept
 // XOR Operator
 //=====================================
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator^(const uint128_t lhs, const SignedInteger rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
@@ -1506,7 +1508,7 @@ constexpr uint128_t operator^(const uint128_t lhs, const SignedInteger rhs) noex
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator^(const SignedInteger lhs, const uint128_t rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
@@ -1523,19 +1525,19 @@ constexpr uint128_t operator^(const SignedInteger lhs, const uint128_t rhs) noex
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator^(const uint128_t lhs, const UnsignedInteger rhs) noexcept
 {
     return {lhs.high, lhs.low ^ static_cast<std::uint64_t>(rhs)};
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator^(const UnsignedInteger lhs, const uint128_t rhs) noexcept
 {
     return {rhs.high, rhs.low ^ static_cast<std::uint64_t>(lhs)};
 }
 
-constexpr uint128_t operator^(const uint128_t lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator^(const uint128_t lhs, const uint128_t rhs) noexcept
 {
     return {lhs.high ^ rhs.high, lhs.low ^ rhs.low};
 }
@@ -1544,26 +1546,26 @@ constexpr uint128_t operator^(const uint128_t lhs, const uint128_t rhs) noexcept
 
 #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
-constexpr uint128_t operator^(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator^(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
 {
     return lhs ^ static_cast<uint128_t>(rhs);
 }
 
-constexpr uint128_t operator^(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator^(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) ^ rhs;
 }
 
 #else
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 constexpr uint128_t operator^(const uint128_t, const T) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Conversion Error");
     return {0, 0};
 }
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 constexpr uint128_t operator^(const T, const uint128_t) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Conversion Error");
@@ -1572,12 +1574,12 @@ constexpr uint128_t operator^(const T, const uint128_t) noexcept
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
-constexpr uint128_t operator^(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator^(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
 {
     return lhs ^ static_cast<uint128_t>(rhs);
 }
 
-constexpr uint128_t operator^(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator^(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) ^ rhs;
 }
@@ -1625,6 +1627,8 @@ namespace detail {
 template <typename Integer>
 constexpr uint128_t default_ls_impl(const uint128_t lhs, const Integer rhs) noexcept
 {
+    static_assert(std::is_integral<Integer>::value, "Needs to be a builtin type");
+
     if (rhs < 0 || rhs >= 128)
     {
         return {0, 0};
@@ -1712,7 +1716,7 @@ uint128_t intrinsic_ls_impl(const uint128_t lhs, const T rhs) noexcept
 
 } // namespace detail
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_INTEGER_CONCEPT>
 constexpr uint128_t operator<<(const uint128_t lhs, const Integer rhs) noexcept
 {
     #ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_NO_CONSTEVAL_DETECTION
@@ -1735,10 +1739,21 @@ constexpr uint128_t operator<<(const uint128_t lhs, const Integer rhs) noexcept
 
 // A number of different overloads to ensure that we return the same type as the builtins would
 
-template <typename Integer, std::enable_if_t<std::is_integral<Integer>::value && (sizeof(Integer) * 8 > 16), bool> = true>
-constexpr Integer operator<<(const Integer lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator<<(const uint128_t lhs, const uint128_t rhs) noexcept
 {
-    constexpr auto bit_width {sizeof(Integer) * 8};
+    if (rhs.high > UINT64_C(0) || rhs.low >= UINT64_C(128))
+    {
+        return 0;
+    }
+
+    return lhs << rhs.low;
+}
+
+#ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128
+
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr detail::builtin_u128 operator<<(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
+{
+    constexpr auto bit_width {sizeof(detail::builtin_u128 ) * 8};
 
     if (rhs.high > UINT64_C(0) || rhs.low >= bit_width)
     {
@@ -1748,7 +1763,21 @@ constexpr Integer operator<<(const Integer lhs, const uint128_t rhs) noexcept
     return lhs << rhs.low;
 }
 
-template <typename SignedInteger, std::enable_if_t<detail::is_signed_integer_v<SignedInteger> && (sizeof(SignedInteger) * 8 <= 16), bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr detail::builtin_i128 operator<<(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
+{
+    constexpr auto bit_width {sizeof(detail::builtin_u128) * 8};
+
+    if (rhs.high > UINT64_C(0) || rhs.low >= bit_width)
+    {
+        return 0;
+    }
+
+    return lhs << rhs.low;
+}
+
+#endif
+
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename SignedInteger, std::enable_if_t<detail::is_signed_integer_v<SignedInteger> && (sizeof(SignedInteger) * 8 <= 16), bool> = true>
 constexpr int operator<<(const SignedInteger lhs, const uint128_t rhs) noexcept
 {
     constexpr auto bit_width {sizeof(SignedInteger) * 8};
@@ -1761,7 +1790,7 @@ constexpr int operator<<(const SignedInteger lhs, const uint128_t rhs) noexcept
     return static_cast<int>(lhs) << rhs.low;
 }
 
-template <typename UnsignedInteger, std::enable_if_t<detail::is_unsigned_integer_v<UnsignedInteger> && (sizeof(UnsignedInteger) * 8 <= 16), bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename UnsignedInteger, std::enable_if_t<detail::is_unsigned_integer_v<UnsignedInteger> && (sizeof(UnsignedInteger) * 8 <= 16), bool> = true>
 constexpr unsigned int operator<<(const UnsignedInteger lhs, const uint128_t rhs) noexcept
 {
     constexpr auto bit_width {sizeof(UnsignedInteger) * 8};
@@ -1772,26 +1801,6 @@ constexpr unsigned int operator<<(const UnsignedInteger lhs, const uint128_t rhs
     }
 
     return static_cast<unsigned int>(lhs) << rhs.low;
-}
-
-constexpr uint128_t operator<<(const uint128_t lhs, const uint128_t rhs) noexcept
-{
-    #ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_NO_CONSTEVAL_DETECTION
-
-    if (BOOST_SAFE_NUMBERS_DETAIL_INT128_IS_CONSTANT_EVALUATED(lhs))
-    {
-        return detail::default_ls_impl(lhs, rhs.low); // LCOV_EXCL_LINE
-    }
-    else
-    {
-        return detail::intrinsic_ls_impl(lhs, rhs.low);
-    }
-
-    #else
-
-    return detail::default_ls_impl(lhs, rhs.low);
-
-    #endif
 }
 
 template <BOOST_SAFE_NUMBERS_DETAIL_INT128_INTEGER_CONCEPT>
@@ -1911,7 +1920,7 @@ uint128_t intrinsic_rs_impl(const uint128_t lhs, const Integer rhs) noexcept
 
 } // namespace detail
 
-template <typename Integer, std::enable_if_t<std::is_integral<Integer>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename Integer, std::enable_if_t<std::is_integral<Integer>::value, bool> = true>
 constexpr uint128_t operator>>(const uint128_t lhs, const Integer rhs) noexcept
 {
     #ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_NO_CONSTEVAL_DETECTION
@@ -1932,10 +1941,21 @@ constexpr uint128_t operator>>(const uint128_t lhs, const Integer rhs) noexcept
     #endif
 }
 
-template <typename Integer, std::enable_if_t<std::is_integral<Integer>::value && (sizeof(Integer) * 8 > 16), bool> = true>
-constexpr Integer operator>>(const Integer lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator>>(const uint128_t lhs, const uint128_t rhs) noexcept
 {
-    constexpr auto bit_width = sizeof(Integer) * 8;
+    if (rhs.high > UINT64_C(0) || rhs.low >= UINT64_C(128))
+    {
+        return 0;
+    }
+
+    return lhs >> rhs.low;
+}
+
+#ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128
+
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr detail::builtin_u128 operator>>(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
+{
+    constexpr auto bit_width = sizeof(detail::builtin_u128) * 8;
 
     if (rhs.high > UINT64_C(0) || rhs.low >= bit_width)
     {
@@ -1945,7 +1965,21 @@ constexpr Integer operator>>(const Integer lhs, const uint128_t rhs) noexcept
     return lhs >> rhs.low;
 }
 
-template <typename SignedInteger, std::enable_if_t<detail::is_signed_integer_v<SignedInteger> && (sizeof(SignedInteger) * 8 <= 16), bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr detail::builtin_i128 operator>>(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
+{
+    constexpr auto bit_width = sizeof(detail::builtin_i128) * 8;
+
+    if (rhs.high > UINT64_C(0) || rhs.low >= bit_width)
+    {
+        return 0;
+    }
+
+    return lhs >> rhs.low;
+}
+
+#endif
+
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename SignedInteger, std::enable_if_t<detail::is_signed_integer_v<SignedInteger> && (sizeof(SignedInteger) * 8 <= 16), bool> = true>
 constexpr int operator>>(const SignedInteger lhs, const uint128_t rhs) noexcept
 {
     constexpr auto bit_width = sizeof(SignedInteger) * 8;
@@ -1958,7 +1992,7 @@ constexpr int operator>>(const SignedInteger lhs, const uint128_t rhs) noexcept
     return static_cast<int>(lhs) >> rhs.low;
 }
 
-template <typename UnsignedInteger, std::enable_if_t<detail::is_unsigned_integer_v<UnsignedInteger> && (sizeof(UnsignedInteger) * 8 <= 16), bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename UnsignedInteger, std::enable_if_t<detail::is_unsigned_integer_v<UnsignedInteger> && (sizeof(UnsignedInteger) * 8 <= 16), bool> = true>
 constexpr unsigned operator>>(UnsignedInteger lhs, const uint128_t rhs) noexcept
 {
     constexpr auto bit_width = sizeof(UnsignedInteger) * 8;
@@ -1969,31 +2003,6 @@ constexpr unsigned operator>>(UnsignedInteger lhs, const uint128_t rhs) noexcept
     }
 
     return static_cast<unsigned>(lhs) >> rhs.low;
-}
-
-constexpr uint128_t operator>>(const uint128_t lhs, const uint128_t rhs) noexcept
-{
-    if (BOOST_SAFE_NUMBERS_DETAIL_INT128_UNLIKELY(rhs.high != 0U))
-    {
-        return {0, 0};
-    }
-
-    #ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_NO_CONSTEVAL_DETECTION
-
-    if (BOOST_SAFE_NUMBERS_DETAIL_INT128_IS_CONSTANT_EVALUATED(lhs))
-    {
-        return detail::default_rs_impl(lhs, rhs.low); // LCOV_EXCL_LINE
-    }
-    else
-    {
-        return detail::intrinsic_rs_impl(lhs, rhs.low);
-    }
-
-    #else
-
-    return detail::default_rs_impl(lhs, rhs.low);
-
-    #endif
 }
 
 template <BOOST_SAFE_NUMBERS_DETAIL_INT128_INTEGER_CONCEPT>
@@ -2037,7 +2046,7 @@ constexpr uint128_t& uint128_t::operator++() noexcept
 constexpr uint128_t uint128_t::operator++(int) noexcept
 {
     const auto temp {*this};
-    ++*this;
+    ++(*this);
     return temp;
 }
 
@@ -2058,7 +2067,7 @@ constexpr uint128_t& uint128_t::operator--() noexcept
 constexpr uint128_t uint128_t::operator--(int) noexcept
 {
     const auto temp {*this};
-    --*this;
+    --(*this);
     return temp;
 }
 
@@ -2173,7 +2182,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr uint128_t default_sub(co
 #  pragma warning(disable : 4146)
 #endif
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator+(const uint128_t lhs, const SignedInteger rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
@@ -2191,7 +2200,7 @@ constexpr uint128_t operator+(const uint128_t lhs, const SignedInteger rhs) noex
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator+(const SignedInteger lhs, const uint128_t rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
@@ -2213,19 +2222,19 @@ constexpr uint128_t operator+(const SignedInteger lhs, const uint128_t rhs) noex
 #  pragma warning(pop)
 #endif
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator+(const uint128_t lhs, const UnsignedInteger rhs) noexcept
 {
     return impl::default_add(lhs, static_cast<std::uint64_t>(rhs));
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator+(const UnsignedInteger lhs, const uint128_t rhs) noexcept
 {
     return impl::default_add(rhs, static_cast<std::uint64_t>(lhs));
 }
 
-constexpr uint128_t operator+(const uint128_t lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator+(const uint128_t lhs, const uint128_t rhs) noexcept
 {
     return impl::default_add(lhs, rhs);
 }
@@ -2234,26 +2243,26 @@ constexpr uint128_t operator+(const uint128_t lhs, const uint128_t rhs) noexcept
 
 #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator+(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator+(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
 {
     return impl::default_add(lhs, static_cast<uint128_t>(rhs));
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator+(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator+(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
 {
     return impl::default_add(static_cast<uint128_t>(lhs), rhs);
 }
 
 #else
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator+(const uint128_t, const T) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Conversion Error");
     return {0, 0};
 }
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator+(const T, const uint128_t) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Conversion Error");
@@ -2262,12 +2271,12 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator+(const T, 
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator+(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator+(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
 {
     return impl::default_add(lhs, static_cast<uint128_t>(rhs));
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator+(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator+(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
 {
     return impl::default_add(static_cast<uint128_t>(lhs), rhs);
 }
@@ -2316,7 +2325,7 @@ inline uint128_t& uint128_t::operator+=(const Integer rhs) noexcept
 #  pragma warning(disable : 4146)
 #endif
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator-(const uint128_t lhs, const SignedInteger rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
@@ -2334,7 +2343,7 @@ constexpr uint128_t operator-(const uint128_t lhs, const SignedInteger rhs) noex
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator-(const SignedInteger lhs, const uint128_t rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
@@ -2356,19 +2365,19 @@ constexpr uint128_t operator-(const SignedInteger lhs, const uint128_t rhs) noex
 #  pragma warning(pop)
 #endif
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator-(const uint128_t lhs, const UnsignedInteger rhs) noexcept
 {
     return impl::default_sub(lhs, static_cast<std::uint64_t>(rhs));
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator-(const UnsignedInteger lhs, const uint128_t rhs) noexcept
 {
     return impl::default_add(-rhs, static_cast<std::uint64_t>(lhs));
 }
 
-constexpr uint128_t operator-(const uint128_t lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator-(const uint128_t lhs, const uint128_t rhs) noexcept
 {
     return impl::default_sub(lhs, rhs);
 }
@@ -2377,26 +2386,26 @@ constexpr uint128_t operator-(const uint128_t lhs, const uint128_t rhs) noexcept
 
 #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator-(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator-(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
 {
     return lhs - static_cast<uint128_t>(rhs);
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator-(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator-(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) - rhs;
 }
 
 #else
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator-(const uint128_t, const T) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Conversion Error");
     return {0, 0};
 }
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator-(const T, const uint128_t) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Conversion Error");
@@ -2405,12 +2414,12 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator-(const T, 
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator-(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator-(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
 {
     return lhs - static_cast<uint128_t>(rhs);
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator-(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator-(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) - rhs;
 }
@@ -2600,7 +2609,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr uint128_t default_mul(co
 #  pragma warning(disable : 4146)
 #endif
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator*(const uint128_t lhs, const SignedInteger rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
@@ -2622,7 +2631,7 @@ constexpr uint128_t operator*(const uint128_t lhs, const SignedInteger rhs) noex
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator*(const SignedInteger lhs, const uint128_t rhs) noexcept
 {
     #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
@@ -2644,7 +2653,7 @@ constexpr uint128_t operator*(const SignedInteger lhs, const uint128_t rhs) noex
     #endif
 }
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator*(const uint128_t lhs, const UnsignedInteger rhs) noexcept
 {
     return detail::default_mul(lhs, static_cast<std::uint64_t>(rhs));
@@ -2654,13 +2663,13 @@ constexpr uint128_t operator*(const uint128_t lhs, const UnsignedInteger rhs) no
 #  pragma warning(pop)
 #endif
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator*(const UnsignedInteger lhs, const uint128_t rhs) noexcept
 {
     return detail::default_mul(rhs, static_cast<std::uint64_t>(lhs));
 }
 
-constexpr uint128_t operator*(const uint128_t lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator*(const uint128_t lhs, const uint128_t rhs) noexcept
 {
     return detail::default_mul(lhs, rhs);
 }
@@ -2669,7 +2678,7 @@ constexpr uint128_t operator*(const uint128_t lhs, const uint128_t rhs) noexcept
 
 #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
-constexpr uint128_t operator*(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator*(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
 {
     const auto abs_rhs {rhs < 0 ? -static_cast<uint128_t>(rhs) : static_cast<uint128_t>(rhs)};
     const auto res {lhs * abs_rhs};
@@ -2677,7 +2686,7 @@ constexpr uint128_t operator*(const uint128_t lhs, const detail::builtin_i128 rh
     return rhs < 0 ? -res : res;
 }
 
-constexpr uint128_t operator*(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator*(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
 {
     const auto abs_lhs {lhs < 0 ? -static_cast<uint128_t>(lhs) : static_cast<uint128_t>(lhs)};
     const auto res {abs_lhs * rhs};
@@ -2687,14 +2696,14 @@ constexpr uint128_t operator*(const detail::builtin_i128 lhs, const uint128_t rh
 
 #else
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 constexpr uint128_t operator*(const uint128_t, const T) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Conversion Error");
     return {0, 0};
 }
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 constexpr uint128_t operator*(const T, const uint128_t) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Conversion Error");
@@ -2703,12 +2712,12 @@ constexpr uint128_t operator*(const T, const uint128_t) noexcept
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
-constexpr uint128_t operator*(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator*(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
 {
     return lhs * static_cast<uint128_t>(rhs);
 }
 
-constexpr uint128_t operator*(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator*(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) * rhs;
 }
@@ -2752,19 +2761,19 @@ inline uint128_t& uint128_t::operator*=(const Integer rhs) noexcept
 //=====================================
 
 // For div we need forward declarations since we mix and match the arguments
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator/(uint128_t lhs, SignedInteger rhs) noexcept;
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator/(SignedInteger lhs, uint128_t rhs) noexcept;
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator/(uint128_t lhs, UnsignedInteger rhs) noexcept;
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator/(UnsignedInteger lhs, uint128_t rhs) noexcept;
 
-constexpr uint128_t operator/(uint128_t lhs, uint128_t rhs) noexcept;
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator/(uint128_t lhs, uint128_t rhs) noexcept;
 
 template <BOOST_SAFE_NUMBERS_DETAIL_INT128_SIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator/(const uint128_t lhs, const SignedInteger rhs) noexcept
@@ -2859,7 +2868,7 @@ constexpr uint128_t operator/(const uint128_t lhs, const uint128_t rhs) noexcept
         return static_cast<uint128_t>(static_cast<detail::builtin_u128>(lhs) / static_cast<detail::builtin_u128>(rhs));
     }
     #else
-    else if (rhs.high != 0)
+    else if (rhs.high != 0U)
     {
         return detail::knuth_div(lhs, rhs);
     }
@@ -2883,38 +2892,38 @@ constexpr uint128_t operator/(const uint128_t lhs, const uint128_t rhs) noexcept
 
 #if defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128) || defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_MSVC_INT128)
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator/(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator/(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
 {
     return lhs / static_cast<uint128_t>(rhs);
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator/(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator/(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) / rhs;
 }
 
 #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator/(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator/(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
 {
     return lhs / static_cast<uint128_t>(rhs);
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator/(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator/(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) / rhs;
 }
 
 #else
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator/(const uint128_t, const T) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Conversion Error");
     return {0, 0};
 }
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator/(const T, const uint128_t) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Conversion Error");
@@ -2962,19 +2971,19 @@ inline uint128_t& uint128_t::operator/=(const Integer rhs) noexcept
 //=====================================
 
 // For div we need forward declarations since we mix and match the arguments
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator%(uint128_t lhs, SignedInteger rhs) noexcept;
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_SIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator%(SignedInteger lhs, uint128_t rhs) noexcept;
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator%(uint128_t lhs, UnsignedInteger rhs) noexcept;
 
-template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <BOOST_SAFE_NUMBERS_DETAIL_INT128_DEFAULTED_UNSIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator%(UnsignedInteger lhs, uint128_t rhs) noexcept;
 
-constexpr uint128_t operator%(uint128_t lhs, uint128_t rhs) noexcept;
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr uint128_t operator%(uint128_t lhs, uint128_t rhs) noexcept;
 
 template <BOOST_SAFE_NUMBERS_DETAIL_INT128_SIGNED_INTEGER_CONCEPT>
 constexpr uint128_t operator%(const uint128_t lhs, const SignedInteger rhs) noexcept
@@ -3070,7 +3079,7 @@ constexpr uint128_t operator%(const uint128_t lhs, const uint128_t rhs) noexcept
         return static_cast<uint128_t>(static_cast<detail::builtin_u128>(lhs) % static_cast<detail::builtin_u128>(rhs));
     }
     #else
-    else if (rhs.high != 0)
+    else if (rhs.high != 0U)
     {
         uint128_t remainder {};
         detail::knuth_div(lhs, rhs, remainder);
@@ -3097,38 +3106,38 @@ constexpr uint128_t operator%(const uint128_t lhs, const uint128_t rhs) noexcept
 
 #if defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128) || defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_MSVC_INT128)
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator%(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator%(const uint128_t lhs, const detail::builtin_u128 rhs) noexcept
 {
     return lhs % static_cast<uint128_t>(rhs);
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator%(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator%(const detail::builtin_u128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) % rhs;
 }
 
 #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator%(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator%(const uint128_t lhs, const detail::builtin_i128 rhs) noexcept
 {
     return lhs % static_cast<uint128_t>(rhs);
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator%(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator%(const detail::builtin_i128 lhs, const uint128_t rhs) noexcept
 {
     return static_cast<uint128_t>(lhs) % rhs;
 }
 
 #else
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator%(const uint128_t, const T) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Conversion Error");
     return {0, 0};
 }
 
-template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename T, std::enable_if_t<std::is_same<T, detail::builtin_i128>::value, bool> = true>
 BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR uint128_t operator%(const T, const uint128_t) noexcept
 {
     static_assert(detail::is_unsigned_integer_v<T>, "Sign Conversion Error");

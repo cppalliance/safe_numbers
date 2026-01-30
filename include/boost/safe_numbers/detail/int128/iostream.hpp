@@ -5,14 +5,20 @@
 #ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_IOSTREAM_HPP
 #define BOOST_SAFE_NUMBERS_DETAIL_INT128_IOSTREAM_HPP
 
-#include "int128.hpp"
-#include "detail/mini_from_chars.hpp"
-#include "detail/mini_to_chars.hpp"
-#include "detail/utilities.hpp"
+#include <boost/safe_numbers/detail/int128/int128.hpp>
+#include <boost/safe_numbers/detail/int128/detail/mini_from_chars.hpp>
+#include <boost/safe_numbers/detail/int128/detail/mini_to_chars.hpp>
+#include <boost/safe_numbers/detail/int128/detail/utilities.hpp>
+#include <boost/safe_numbers/detail/int128/detail/config.hpp>
+
+#ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILD_MODULE
+
 #include <type_traits>
 #include <iostream>
 #include <iomanip>
 #include <cstring>
+
+#endif
 
 namespace boost {
 namespace int128 {
@@ -26,16 +32,18 @@ struct streamable_overload
 };
 
 template <typename T>
-BOOST_SAFE_NUMBERS_INLINE_CONSTEXPR_VARIABLE bool is_streamable_overload_v = streamable_overload<T>::value;
+BOOST_SAFE_NUMBERS_DETAIL_INT128_INLINE_CONSTEXPR bool is_streamable_overload_v = streamable_overload<T>::value;
 
 } // namespace detail
 
-template <typename charT, typename traits, typename LibIntegerType>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename charT, typename traits, typename LibIntegerType>
 auto operator>>(std::basic_istream<charT, traits>& is, LibIntegerType& v)
     -> std::enable_if_t<detail::is_streamable_overload_v<LibIntegerType>, std::basic_istream<charT, traits>&>
 {
     charT t_buffer[64] {};
     is >> std::ws >> std::setw(63) >> t_buffer;
+
+    const auto t_buffer_len {std::char_traits<charT>::length(t_buffer)};
 
     char buffer[64] {};
     auto buffer_start {buffer};
@@ -75,12 +83,23 @@ auto operator>>(std::basic_istream<charT, traits>& is, LibIntegerType& v)
         }
     }
 
-    detail::from_chars(buffer_start, buffer + detail::strlen(buffer), v, base);
+    const auto r {detail::from_chars(buffer_start, buffer + detail::strlen(buffer), v, base)};
+
+    // Put back unconsumed characters
+    // If r is greater than 0 then an errno values has been hit
+    const auto consumed {static_cast<std::size_t>(r > 0 ? 0 : -r)};
+    BOOST_SAFE_NUMBERS_DETAIL_INT128_ASSERT(t_buffer_len >= consumed);
+    const auto return_chars {static_cast<std::size_t>(t_buffer_len - consumed)};
+
+    for (std::size_t i {}; i < return_chars; ++i)
+    {
+        is.putback(t_buffer[t_buffer_len - i - 1]);
+    }
 
     return is;
 }
 
-template <typename charT, typename traits, typename LibIntegerType>
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT template <typename charT, typename traits, typename LibIntegerType>
 auto operator<<(std::basic_ostream<charT, traits>& os, const LibIntegerType& v)
     -> std::enable_if_t<detail::is_streamable_overload_v<LibIntegerType>, std::basic_ostream<charT, traits>&>
 {
