@@ -1,0 +1,347 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#unsigned_integers]
+
+= Unsigned Integer Types
+
+== Overview
+
+The library provides safe unsigned integer types that detect overflow, underflow, and other undefined behavior at runtime.
+These types are drop-in replacements for the standard unsigned integer types with added safety guarantees.
+
+== Available Types
+
+The following types are provided in the `boost::safe_numbers` namespace:
+
+[source,cpp]
+----
+namespace boost::safe_numbers {
+
+using u8   = detail::unsigned_integer_basis<std::uint8_t>;
+using u16  = detail::unsigned_integer_basis<std::uint16_t>;
+using u32  = detail::unsigned_integer_basis<std::uint32_t>;
+using u64  = detail::unsigned_integer_basis<std::uint64_t>;
+using u128 = detail::unsigned_integer_basis<int128::uint128_t>;
+
+} // namespace boost::safe_numbers
+----
+
+Each type exposes a `basis_type` member type alias that refers to the underlying integer type, allowing conversion back to built-in types when needed.
+
+== Construction
+
+=== Default Construction
+
+Values are default-initialized to zero:
+
+[source,cpp]
+----
+boost::safe_numbers::u32 x; // x == 0
+----
+
+=== Explicit Construction from Underlying Type
+
+Construction from the underlying type is explicit to prevent accidental conversions:
+
+[source,cpp]
+----
+boost::safe_numbers::u32 x{42};           // OK
+boost::safe_numbers::u32 y = 42;          // Error: implicit conversion not allowed
+auto z = boost::safe_numbers::u32{100};   // OK
+----
+
+=== Construction from bool is Prohibited
+
+Constructing from `bool` is a compile-time error:
+
+[source,cpp]
+----
+boost::safe_numbers::u32 x{true};   // Compile error: Construction from bool is not allowed
+boost::safe_numbers::u32 y{false};  // Compile error: Construction from bool is not allowed
+----
+
+== Type Conversions
+
+=== Explicit Conversion to Underlying Types
+
+Conversion to other unsigned integral types is explicit:
+
+[source,cpp]
+----
+boost::safe_numbers::u32 x{42};
+
+auto val = static_cast<std::uint32_t>(x);  // OK: same width
+auto wider = static_cast<std::uint64_t>(x); // OK: widening conversion
+----
+
+=== Narrowing Conversions are Prohibited
+
+Narrowing conversions cause a compile-time error:
+
+[source,cpp]
+----
+boost::safe_numbers::u32 x{42};
+
+auto narrow = static_cast<std::uint16_t>(x); // Compile error: Narrowing conversions are not allowed
+----
+
+== Comparison Operators
+
+Full three-way comparison is supported via `operator<=>`, which returns `std::strong_ordering`:
+
+[source,cpp]
+----
+boost::safe_numbers::u32 a{10};
+boost::safe_numbers::u32 b{20};
+
+if (a < b)  { /* ... */ }  // true
+if (a <= b) { /* ... */ }  // true
+if (a > b)  { /* ... */ }  // false
+if (a >= b) { /* ... */ }  // false
+if (a == b) { /* ... */ }  // false
+if (a != b) { /* ... */ }  // true
+
+auto result = a <=> b;     // std::strong_ordering::less
+----
+
+== Arithmetic Operators
+
+All arithmetic operators perform runtime checks and throw exceptions when undefined behavior would occur.
+
+=== Addition (`operator+`, `operator+=`)
+
+Throws `std::overflow_error` if the result would exceed the maximum representable value:
+
+[source,cpp]
+----
+boost::safe_numbers::u8 a{200};
+boost::safe_numbers::u8 b{100};
+
+try {
+    auto c = a + b;  // Throws: 200 + 100 > 255
+} catch (const std::overflow_error& e) {
+    // "Overflow detected in unsigned addition"
+}
+
+boost::safe_numbers::u32 x{10};
+x += boost::safe_numbers::u32{5};  // OK: x == 15
+----
+
+=== Subtraction (`operator-`, `operator-=`)
+
+Throws `std::underflow_error` if the result would be negative (wrap around):
+
+[source,cpp]
+----
+boost::safe_numbers::u32 a{10};
+boost::safe_numbers::u32 b{20};
+
+try {
+    auto c = a - b;  // Throws: 10 - 20 would underflow
+} catch (const std::underflow_error& e) {
+    // "Underflow detected in unsigned subtraction"
+}
+
+boost::safe_numbers::u32 x{100};
+x -= boost::safe_numbers::u32{50};  // OK: x == 50
+----
+
+=== Multiplication (`operator*`, `operator*=`)
+
+Throws `std::overflow_error` if the result would exceed the maximum representable value:
+
+[source,cpp]
+----
+boost::safe_numbers::u8 a{20};
+boost::safe_numbers::u8 b{20};
+
+try {
+    auto c = a * b;  // Throws: 20 * 20 = 400 > 255
+} catch (const std::overflow_error& e) {
+    // "Overflow detected in unsigned multiplication"
+}
+
+boost::safe_numbers::u32 x{10};
+x *= boost::safe_numbers::u32{5};  // OK: x == 50
+----
+
+=== Division (`operator/`, `operator/=`)
+
+Throws `std::domain_error` if dividing by zero:
+
+[source,cpp]
+----
+boost::safe_numbers::u32 a{100};
+boost::safe_numbers::u32 b{0};
+
+try {
+    auto c = a / b;  // Throws: division by zero
+} catch (const std::domain_error& e) {
+    // "Unsigned division by zero"
+}
+
+boost::safe_numbers::u32 x{100};
+x /= boost::safe_numbers::u32{5};  // OK: x == 20
+----
+
+=== Modulo (`operator%`, `operator%=`)
+
+Throws `std::domain_error` if the divisor is zero:
+
+[source,cpp]
+----
+boost::safe_numbers::u32 a{100};
+boost::safe_numbers::u32 b{0};
+
+try {
+    auto c = a % b;  // Throws: modulo by zero
+} catch (const std::domain_error& e) {
+    // "Unsigned modulo by zero"
+}
+
+boost::safe_numbers::u32 x{17};
+x %= boost::safe_numbers::u32{5};  // OK: x == 2
+----
+
+== Increment and Decrement Operators
+
+=== Pre-increment and Post-increment (`++`)
+
+Throws `std::overflow_error` if the value is already at the maximum:
+
+[source,cpp]
+----
+boost::safe_numbers::u8 x{255};
+
+try {
+    ++x;  // Throws: would overflow
+} catch (const std::overflow_error& e) {
+    // "Overflow detected in unsigned increment"
+}
+
+boost::safe_numbers::u8 y{254};
+++y;      // OK: y == 255
+auto z = y++;  // Throws: y is at max, post-increment would overflow
+----
+
+=== Pre-decrement and Post-decrement (`--`)
+
+Throws `std::underflow_error` if the value is already zero:
+
+[source,cpp]
+----
+boost::safe_numbers::u32 x{0};
+
+try {
+    --x;  // Throws: would underflow
+} catch (const std::underflow_error& e) {
+    // "Underflow detected in unsigned decrement"
+}
+
+boost::safe_numbers::u32 y{1};
+--y;      // OK: y == 0
+auto z = y--;  // Throws: y is 0, post-decrement would underflow
+----
+
+== Mixed-Width Operations are Prohibited
+
+Operations between different width safe integer types are compile-time errors:
+
+[source,cpp]
+----
+boost::safe_numbers::u8 a{10};
+boost::safe_numbers::u16 b{20};
+
+auto c = a + b;  // Compile error: Can not perform addition between u8 and u16
+auto d = a - b;  // Compile error: Can not perform subtraction between u8 and u16
+auto e = a * b;  // Compile error: Can not perform multiplication between u8 and u16
+auto f = a / b;  // Compile error: Can not perform division between u8 and u16
+auto g = a % b;  // Compile error: Can not perform modulo between u8 and u16
+----
+
+To perform operations between different widths, explicitly convert to the same type first:
+
+[source,cpp]
+----
+boost::safe_numbers::u8 a{10};
+boost::safe_numbers::u16 b{20};
+
+// Convert a to u16 first
+auto a_wide = boost::safe_numbers::u16{static_cast<std::uint16_t>(static_cast<std::uint8_t>(a))};
+auto result = a_wide + b;  // OK
+----
+
+== Saturating Arithmetic
+
+For cases where throwing exceptions is not desired, saturating arithmetic functions are provided.
+These functions clamp the result to the representable range instead of throwing.
+
+=== add_sat
+
+Returns the sum of two values, saturating at the maximum value on overflow:
+
+[source,cpp]
+----
+boost::safe_numbers::u8 a{200};
+boost::safe_numbers::u8 b{100};
+
+auto c = boost::safe_numbers::add_sat(a, b);  // c == 255 (saturated, no exception)
+
+boost::safe_numbers::u8 x{10};
+boost::safe_numbers::u8 y{20};
+auto z = boost::safe_numbers::add_sat(x, y);  // z == 30 (no saturation needed)
+----
+
+== Exception Summary
+
+|===
+| Operation | Exception Type | Condition
+
+| `+`, `+=`
+| `std::overflow_error`
+| Result exceeds maximum value
+
+| `-`, `-=`
+| `std::underflow_error`
+| Result would be negative
+
+| `*`, `*=`
+| `std::overflow_error`
+| Result exceeds maximum value
+
+| `/`, `/=`
+| `std::domain_error`
+| Division by zero
+
+| `%`, `%=`
+| `std::domain_error`
+| Modulo by zero
+
+| `++` (pre/post)
+| `std::overflow_error`
+| Value is at maximum
+
+| `--` (pre/post)
+| `std::underflow_error`
+| Value is zero
+|===
+
+== Constexpr Support
+
+All operations are `constexpr`-compatible when evaluated at compile time:
+
+[source,cpp]
+----
+constexpr boost::safe_numbers::u32 a{10};
+constexpr boost::safe_numbers::u32 b{20};
+constexpr auto c = a + b;  // OK: evaluated at compile time
+
+// Overflow at compile time is a compile error:
+// constexpr boost::safe_numbers::u8 x{200};
+// constexpr boost::safe_numbers::u8 y{100};
+// constexpr auto z = x + y;  // Compile error: overflow in constant expression
+----
