@@ -1,0 +1,48 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#api_reference]
+= API Reference
+:idprefix: api_ref_
+
+[#api_types]
+== Types
+
+=== Unsigned Integer Types
+
+[cols="1,2", options="header"]
+|===
+| Type | Description
+
+| xref:unsigned_integers.adoc[`u8`]
+| Safe unsigned 8-bit integer
+
+| xref:unsigned_integers.adoc[`u16`]
+| Safe unsigned 16-bit integer
+
+| xref:unsigned_integers.adoc[`u32`]
+| Safe unsigned 32-bit integer
+
+| xref:unsigned_integers.adoc[`u64`]
+| Safe unsigned 64-bit integer
+
+| xref:unsigned_integers.adoc[`u128`]
+| Safe unsigned 128-bit integer
+|===
+
+[#api_headers]
+== Headers
+
+[cols="1,2", options="header"]
+|===
+| Header | Contents
+
+| `<boost/safe_numbers/unsigned_integers.hpp>`
+| All unsigned safe integer types (`u8`, `u16`, `u32`, `u64`, `u128`)
+
+| `<boost/safe_numbers/safe_numbers.hpp>`
+| Convenience header including all library components
+|===
