@@ -39,6 +39,7 @@ int main()
     test<u16>();
     test<u32>();
     test<u64>();
+    test<u128>();
 
     return boost::report_errors();
 }

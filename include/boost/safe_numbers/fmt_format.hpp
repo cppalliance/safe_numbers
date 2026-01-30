@@ -6,15 +6,16 @@
 #define BOOST_SAFE_NUMBERS_FMT_FORMAT_HPP
 
 #include <boost/safe_numbers/detail/unsigned_integer_basis.hpp>
+#include <boost/safe_numbers/detail/concepts.hpp>
+#include <boost/safe_numbers/detail/int128/fmt_format.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 #include <fmt/format.h>
-#include <concepts>
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
-template <std::unsigned_integral BasisType>
+template <boost::safe_numbers::detail::unsigned_integral BasisType>
 struct fmt::formatter<boost::safe_numbers::detail::unsigned_integer_basis<BasisType>>
     : fmt::formatter<BasisType>
 {
