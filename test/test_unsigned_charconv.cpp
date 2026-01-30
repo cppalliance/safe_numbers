@@ -117,6 +117,7 @@ int main()
     test_roundtrip<u16>();
     test_roundtrip<u32>();
     test_roundtrip<u64>();
+    test_roundtrip<u128>();
 
     return boost::report_errors();
 }
