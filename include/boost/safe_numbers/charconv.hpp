@@ -7,12 +7,11 @@
 
 #include <boost/safe_numbers/detail/unsigned_integer_basis.hpp>
 #include <boost/safe_numbers/detail/concepts.hpp>
+#include <boost/safe_numbers/detail/int128/charconv.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 #include <boost/charconv.hpp>
-#include <charconv>
-#include <concepts>
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
