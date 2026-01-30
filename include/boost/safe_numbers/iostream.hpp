@@ -7,6 +7,7 @@
 
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
+#include <boost/safe_numbers/detail/int128/iostream.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
