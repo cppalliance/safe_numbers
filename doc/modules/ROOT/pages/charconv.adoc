@@ -1,0 +1,101 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#charconv]
+= `<charconv>`
+:idprefix: charconv_
+
+The following functions provide character conversion support for safe integer types using https://www.boost.org/doc/libs/master/libs/charconv/doc/html/charconv.html[Boost.Charconv].
+
+IMPORTANT: Using this header requires Boost.Charconv headers to be present.
+
+[#to_chars]
+== to_chars
+
+`to_chars` converts a safe integer value into a character buffer specified by `[first, last)`.
+
+[source,c++]
+----
+#include <boost/safe_numbers/charconv.hpp>
+
+namespace boost::safe_numbers {
+
+template <detail::unsigned_integral BasisType>
+constexpr auto to_chars(char* first, char* last,
+                        const detail::unsigned_integer_basis<BasisType> value,
+                        int base = 10) -> charconv::to_chars_result;
+
+} // namespace boost::safe_numbers
+----
+
+=== Parameters
+
+* `first`, `last` - character buffer to write to
+* `value` - the safe integer value to convert
+* `base` - integer base (default: 10), must be between 2 and 36
+
+=== Return Value
+
+Returns `boost::charconv::to_chars_result`:
+
+[source,c++]
+----
+struct to_chars_result
+{
+    char* ptr;
+    std::errc ec;
+
+    friend constexpr bool operator==(const to_chars_result& lhs, const to_chars_result& rhs) noexcept = default;
+    constexpr explicit operator bool() const noexcept { return ec == std::errc{}; }
+};
+----
+
+* `ptr` - pointer to one past the last character written on success, or `last` on failure
+* `ec` - error code (`std::errc{}` on success, `std::errc::value_too_large` if buffer is too small)
+
+[#from_chars]
+== from_chars
+
+`from_chars` parses a string from `[first, last)` and converts it into a safe integer value.
+
+[source,c++]
+----
+#include <boost/safe_numbers/charconv.hpp>
+
+namespace boost::safe_numbers {
+
+template <detail::unsigned_integral BasisType>
+constexpr auto from_chars(const char* first, const char* last,
+                          detail::unsigned_integer_basis<BasisType>& value,
+                          int base = 10) -> charconv::from_chars_result;
+
+} // namespace boost::safe_numbers
+----
+
+=== Parameters
+
+* `first`, `last` - character range to parse
+* `value` - reference to safe integer to store the result
+* `base` - integer base (default: 10), must be between 2 and 36
+
+=== Return Value
+
+Returns `boost::charconv::from_chars_result`:
+
+[source,c++]
+----
+struct from_chars_result
+{
+    const char* ptr;
+    std::errc ec;
+
+    friend constexpr bool operator==(const from_chars_result& lhs, const from_chars_result& rhs) noexcept = default;
+    constexpr explicit operator bool() const noexcept { return ec == std::errc{}; }
+};
+----
+
+* `ptr` - pointer to the first character not matching the pattern, or `last` if all characters matched
+* `ec` - error code (`std::errc{}` on success, `std::errc::invalid_argument` if no valid conversion, `std::errc::result_out_of_range` if value overflows)
