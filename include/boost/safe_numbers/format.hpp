@@ -6,6 +6,8 @@
 #define BOOST_SAFE_NUMBERS_FORMAT_HPP
 
 #include <boost/safe_numbers/detail/unsigned_integer_basis.hpp>
+#include <boost/safe_numbers/detail/int128/format.hpp>
+#include <boost/safe_numbers/detail/concepts.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -14,7 +16,7 @@
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
-template <std::unsigned_integral BasisType>
+template <boost::safe_numbers::detail::unsigned_integral BasisType>
 struct std::formatter<boost::safe_numbers::detail::unsigned_integer_basis<BasisType>>
     : std::formatter<BasisType>
 {
