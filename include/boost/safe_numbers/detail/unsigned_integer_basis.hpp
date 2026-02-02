@@ -427,7 +427,7 @@ constexpr bool unsigned_no_intrin_sub(const int128::uint128_t& lhs, const int128
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto sub_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy != overflow_policy::saturate)
+    noexcept(Policy != overflow_policy::throw_exception)
     -> unsigned_integer_basis<BasisType>
 {
     using result_type = unsigned_integer_basis<BasisType>;
