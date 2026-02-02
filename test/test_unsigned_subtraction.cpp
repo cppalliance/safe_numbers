@@ -173,24 +173,26 @@ void test_valid_compound_subtraction()
 int main()
 {
     test_valid_subtraction<u8>();
-    test_throwing_subtraction<u8>();
     test_valid_compound_subtraction<u8>();
 
     test_valid_subtraction<u16>();
-    test_throwing_subtraction<u16>();
     test_valid_compound_subtraction<u16>();
 
     test_valid_subtraction<u32>();
-    test_throwing_subtraction<u32>();
     test_valid_compound_subtraction<u32>();
 
     test_valid_subtraction<u64>();
-    test_throwing_subtraction<u64>();
     test_valid_compound_subtraction<u64>();
 
     test_valid_subtraction<u128>();
-    test_throwing_subtraction<u128>();
     test_valid_compound_subtraction<u128>();
+
+    // These are all at the end because they kill the debugger
+    test_throwing_subtraction<u8>();
+    test_throwing_subtraction<u16>();
+    test_throwing_subtraction<u32>();
+    test_throwing_subtraction<u64>();
+    test_throwing_subtraction<u128>();
 
     return boost::report_errors();
 }
