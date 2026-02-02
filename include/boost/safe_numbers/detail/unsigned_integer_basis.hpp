@@ -193,9 +193,13 @@ template <overflow_policy Policy, unsigned_integral BasisType>
         {
             BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
         }
-        else
+        else if constexpr (Policy == overflow_policy::saturate)
         {
             res = std::numeric_limits<BasisType>::max();
+        }
+        else
+        {
+            BOOST_SAFE_NUMBERS_UNREACHABLE;
         }
     };
 
@@ -442,9 +446,13 @@ template <overflow_policy Policy, unsigned_integral BasisType>
         {
             BOOST_THROW_EXCEPTION(std::underflow_error("Underflow detected in unsigned subtraction"));
         }
-        else
+        else if constexpr (Policy == overflow_policy::saturate)
         {
             res = std::numeric_limits<BasisType>::min();
+        }
+        else
+        {
+            BOOST_SAFE_NUMBERS_UNREACHABLE;
         }
     };
 
@@ -600,9 +608,13 @@ template <overflow_policy Policy, unsigned_integral BasisType>
         {
             BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned multiplication"));
         }
-        else
+        else if constexpr (Policy == overflow_policy::saturate)
         {
             res = std::numeric_limits<BasisType>::max();
+        }
+        else
+        {
+            BOOST_SAFE_NUMBERS_UNREACHABLE;
         }
     };
 
@@ -668,9 +680,13 @@ template <overflow_policy Policy, unsigned_integral BasisType>
         {
             BOOST_THROW_EXCEPTION(std::domain_error("Unsigned division by zero"));
         }
-        else
+        else if constexpr (Policy == overflow_policy::saturate)
         {
             return result_type{std::numeric_limits<BasisType>::max()};
+        }
+        else
+        {
+            BOOST_SAFE_NUMBERS_UNREACHABLE;
         }
     }
 
@@ -721,9 +737,13 @@ template <overflow_policy Policy, unsigned_integral BasisType>
         {
             BOOST_THROW_EXCEPTION(std::domain_error("Unsigned modulo by zero"));
         }
-        else
+        else if constexpr (Policy == overflow_policy::saturate)
         {
             return result_type{0U};
+        }
+        else
+        {
+            BOOST_SAFE_NUMBERS_UNREACHABLE;
         }
     }
 
