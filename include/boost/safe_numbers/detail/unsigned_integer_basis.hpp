@@ -823,10 +823,6 @@ constexpr auto unsigned_integer_basis<BasisType>::operator--(int)
 // Saturating Math
 // ------------------------------
 
-// ------------------------------
-// add_sat
-// ------------------------------
-
 namespace boost::safe_numbers {
 
 template <detail::unsigned_integral BasisType>
@@ -837,6 +833,8 @@ template <detail::unsigned_integral BasisType>
     return detail::add_impl<detail::overflow_policy::saturate>(lhs, rhs);
 }
 
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating addition", add_sat)
+
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto sub_sat(const detail::unsigned_integer_basis<BasisType> lhs,
                                      const detail::unsigned_integer_basis<BasisType> rhs) noexcept
@@ -845,7 +843,27 @@ template <detail::unsigned_integral BasisType>
     return detail::sub_impl<detail::overflow_policy::saturate>(lhs, rhs);
 }
 
-BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating_add", add_sat)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating subtraction", sub_sat)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto mul_sat(const detail::unsigned_integer_basis<BasisType> lhs,
+                                     const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::mul_impl<detail::overflow_policy::saturate>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating multiplication", mul_sat)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto div_sat(const detail::unsigned_integer_basis<BasisType> lhs,
+                                     const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::div_impl<detail::overflow_policy::saturate>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating division", div_sat)
 
 } // namespace boost::safe_numbers
 
