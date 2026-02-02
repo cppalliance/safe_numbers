@@ -7,6 +7,7 @@
 
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/concepts.hpp>
+#include <boost/safe_numbers/detail/overflow_policy.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -175,15 +176,28 @@ constexpr bool unsigned_no_intrin_add(const int128::uint128_t& lhs, const int128
 
 } // namespace impl
 
-template <unsigned_integral BasisType>
-[[nodiscard]] constexpr auto operator+(const unsigned_integer_basis<BasisType> lhs,
-                                       const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
+template <overflow_policy Policy, unsigned_integral BasisType>
+[[nodiscard]] constexpr auto add_impl(const unsigned_integer_basis<BasisType> lhs,
+                                      const unsigned_integer_basis<BasisType> rhs)
+    noexcept(Policy != overflow_policy::throw_exception) -> unsigned_integer_basis<BasisType>
 {
     using result_type = unsigned_integer_basis<BasisType>;
 
     const auto lhs_basis {static_cast<BasisType>(lhs)};
     const auto rhs_basis {static_cast<BasisType>(rhs)};
     BasisType res {};
+
+    auto handle_overflow = [&res]
+    {
+        if constexpr (Policy == overflow_policy::throw_exception)
+        {
+            BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
+        }
+        else
+        {
+            res = std::numeric_limits<BasisType>::max();
+        }
+    };
 
     if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
     {
@@ -193,7 +207,7 @@ template <unsigned_integral BasisType>
         {
             if (impl::unsigned_intrin_add(lhs_basis, rhs_basis, res))
             {
-                BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
+                handle_overflow();
             }
 
             return result_type{res};
@@ -204,10 +218,17 @@ template <unsigned_integral BasisType>
 
     if (impl::unsigned_no_intrin_add(lhs_basis, rhs_basis, res))
     {
-        BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
+        handle_overflow();
     }
 
     return result_type{res};
+}
+
+template <unsigned_integral BasisType>
+[[nodiscard]] constexpr auto operator+(const unsigned_integer_basis<BasisType> lhs,
+                                       const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
+{
+    return add_impl<overflow_policy::throw_exception>(lhs, rhs);
 }
 
 } // namespace boost::safe_numbers::detail
@@ -403,15 +424,29 @@ constexpr bool unsigned_no_intrin_sub(const int128::uint128_t& lhs, const int128
 
 } // namespace impl
 
-template <unsigned_integral BasisType>
-[[nodiscard]] constexpr auto operator-(const unsigned_integer_basis<BasisType> lhs,
-                                       const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
+template <overflow_policy Policy, unsigned_integral BasisType>
+[[nodiscard]] constexpr auto sub_impl(const unsigned_integer_basis<BasisType> lhs,
+                                      const unsigned_integer_basis<BasisType> rhs)
+    noexcept(Policy != overflow_policy::saturate)
+    -> unsigned_integer_basis<BasisType>
 {
     using result_type = unsigned_integer_basis<BasisType>;
 
     const auto lhs_basis {static_cast<BasisType>(lhs)};
     const auto rhs_basis {static_cast<BasisType>(rhs)};
-    BasisType res;
+    BasisType res {};
+
+    auto handle_underflow = [&res]
+    {
+        if constexpr (Policy == overflow_policy::throw_exception)
+        {
+            BOOST_THROW_EXCEPTION(std::underflow_error("Underflow detected in unsigned subtraction"));
+        }
+        else
+        {
+            res = std::numeric_limits<BasisType>::min();
+        }
+    };
 
     if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
     {
@@ -419,9 +454,9 @@ template <unsigned_integral BasisType>
 
         if (!std::is_constant_evaluated())
         {
-            if (impl::unsigned_intrin_sub(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
+            if (impl::unsigned_intrin_sub(lhs_basis, rhs_basis, res))
             {
-                BOOST_THROW_EXCEPTION(std::underflow_error("Underflow detected in unsigned subtraction"));
+                handle_underflow();
             }
 
             return result_type{res};
@@ -432,10 +467,17 @@ template <unsigned_integral BasisType>
 
     if (impl::unsigned_no_intrin_sub(lhs_basis, rhs_basis, res))
     {
-        BOOST_THROW_EXCEPTION(std::underflow_error("Underflow detected in unsigned subtraction"));
+        handle_underflow();
     }
 
     return result_type{res};
+}
+
+template <unsigned_integral BasisType>
+[[nodiscard]] constexpr auto operator-(const unsigned_integer_basis<BasisType> lhs,
+                                       const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
+{
+    return sub_impl<overflow_policy::throw_exception>(lhs, rhs);
 }
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("subtraction", operator-)
@@ -541,15 +583,28 @@ constexpr bool no_intrin_mul(const int128::uint128_t& lhs, const int128::uint128
 
 } // namespace impl
 
-template <unsigned_integral BasisType>
-[[nodiscard]] constexpr auto operator*(const unsigned_integer_basis<BasisType> lhs,
-                                       const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
+template <overflow_policy Policy, unsigned_integral BasisType>
+[[nodiscard]] constexpr auto mul_impl(const unsigned_integer_basis<BasisType> lhs,
+                                      const unsigned_integer_basis<BasisType> rhs)
+    noexcept(Policy == overflow_policy::saturate)
+    -> unsigned_integer_basis<BasisType>
 {
     using result_type = unsigned_integer_basis<BasisType>;
 
     const auto lhs_basis {static_cast<BasisType>(lhs)};
     const auto rhs_basis {static_cast<BasisType>(rhs)};
-    BasisType res;
+    BasisType res {};
+
+    auto handle_overflow = [&res]() {
+        if constexpr (Policy == overflow_policy::throw_exception)
+        {
+            BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned multiplication"));
+        }
+        else
+        {
+            res = std::numeric_limits<BasisType>::max();
+        }
+    };
 
     if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
     {
@@ -559,7 +614,7 @@ template <unsigned_integral BasisType>
         {
             if (impl::unsigned_intrin_mul(lhs_basis, rhs_basis, res))
             {
-                BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned multiplication"));
+                handle_overflow();
             }
 
             return result_type{res};
@@ -570,10 +625,17 @@ template <unsigned_integral BasisType>
 
     if (impl::no_intrin_mul(lhs_basis, rhs_basis, res))
     {
-        BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned multiplication"));
+        handle_overflow();
     }
 
     return result_type{res};
+}
+
+template <unsigned_integral BasisType>
+[[nodiscard]] constexpr auto operator*(const unsigned_integer_basis<BasisType> lhs,
+                                       const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
+{
+    return mul_impl<overflow_policy::throw_exception>(lhs, rhs);
 }
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("multiplication", operator*)
@@ -591,26 +653,42 @@ constexpr auto unsigned_integer_basis<BasisType>::operator*=(const unsigned_inte
 // Division
 // ------------------------------
 
-template <unsigned_integral BasisType>
-[[nodiscard]] constexpr auto operator/(const unsigned_integer_basis<BasisType> lhs,
-                                       const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
+template <overflow_policy Policy, unsigned_integral BasisType>
+[[nodiscard]] constexpr auto div_impl(const unsigned_integer_basis<BasisType> lhs,
+                                      const unsigned_integer_basis<BasisType> rhs)
+    noexcept(Policy == overflow_policy::saturate)
+    -> unsigned_integer_basis<BasisType>
 {
     using result_type = unsigned_integer_basis<BasisType>;
 
     // Normally this should trap, but throwing an exception is more elegant
     if (static_cast<BasisType>(rhs) == 0U) [[unlikely]]
     {
-        BOOST_THROW_EXCEPTION(std::domain_error("Unsigned division by zero"));
+        if constexpr (Policy == overflow_policy::throw_exception)
+        {
+            BOOST_THROW_EXCEPTION(std::domain_error("Unsigned division by zero"));
+        }
+        else
+        {
+            return result_type{std::numeric_limits<BasisType>::max()};
+        }
     }
 
     if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
     {
-        return static_cast<result_type>(static_cast<BasisType>(static_cast<BasisType>(lhs) / static_cast<BasisType>(rhs)));
+        return result_type{static_cast<BasisType>(static_cast<BasisType>(lhs) / static_cast<BasisType>(rhs))};
     }
     else
     {
-        return static_cast<result_type>(static_cast<BasisType>(lhs) / static_cast<BasisType>(rhs));
+        return result_type{static_cast<BasisType>(lhs) / static_cast<BasisType>(rhs)};
     }
+}
+
+template <unsigned_integral BasisType>
+[[nodiscard]] constexpr auto operator/(const unsigned_integer_basis<BasisType> lhs,
+                                       const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
+{
+    return div_impl<overflow_policy::throw_exception>(lhs, rhs);
 }
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("division", operator/)
@@ -628,26 +706,42 @@ constexpr auto unsigned_integer_basis<BasisType>::operator/=(const unsigned_inte
 // Modulo
 // ------------------------------
 
-template <unsigned_integral BasisType>
-[[nodiscard]] constexpr auto operator%(const unsigned_integer_basis<BasisType> lhs,
-                                       const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
+template <overflow_policy Policy, unsigned_integral BasisType>
+[[nodiscard]] constexpr auto mod_impl(const unsigned_integer_basis<BasisType> lhs,
+                                      const unsigned_integer_basis<BasisType> rhs)
+    noexcept(Policy == overflow_policy::saturate)
+    -> unsigned_integer_basis<BasisType>
 {
     using result_type = unsigned_integer_basis<BasisType>;
 
     // Normally this should trap, but throwing an exception is more elegant
     if (static_cast<BasisType>(rhs) == 0U) [[unlikely]]
     {
-        BOOST_THROW_EXCEPTION(std::domain_error("Unsigned modulo by zero"));
+        if constexpr (Policy == overflow_policy::throw_exception)
+        {
+            BOOST_THROW_EXCEPTION(std::domain_error("Unsigned modulo by zero"));
+        }
+        else
+        {
+            return result_type{0U};
+        }
     }
 
     if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
     {
-        return static_cast<result_type>(static_cast<BasisType>(static_cast<BasisType>(lhs) % static_cast<BasisType>(rhs)));
+        return result_type{static_cast<BasisType>(static_cast<BasisType>(lhs) % static_cast<BasisType>(rhs))};
     }
     else
     {
-        return static_cast<result_type>(static_cast<BasisType>(lhs) % static_cast<BasisType>(rhs));
+        return result_type{static_cast<BasisType>(lhs) % static_cast<BasisType>(rhs)};
     }
+}
+
+template <unsigned_integral BasisType>
+[[nodiscard]] constexpr auto operator%(const unsigned_integer_basis<BasisType> lhs,
+                                       const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
+{
+    return mod_impl<overflow_policy::throw_exception>(lhs, rhs);
 }
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("modulo", operator%)
@@ -737,37 +831,18 @@ namespace boost::safe_numbers {
 
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto add_sat(const detail::unsigned_integer_basis<BasisType> lhs,
-                                     const detail::unsigned_integer_basis<BasisType> rhs) noexcept -> detail::unsigned_integer_basis<BasisType>
+                                     const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> detail::unsigned_integer_basis<BasisType>
 {
-    using result_type = detail::unsigned_integer_basis<BasisType>;
+    return detail::add_impl<detail::overflow_policy::saturate>(lhs, rhs);
+}
 
-    const auto lhs_basis {static_cast<BasisType>(lhs)};
-    const auto rhs_basis {static_cast<BasisType>(rhs)};
-    BasisType res {};
-
-    if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
-    {
-        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
-
-        if (!std::is_constant_evaluated())
-        {
-            if (detail::impl::unsigned_intrin_add(lhs_basis, rhs_basis, res))
-            {
-                res = std::numeric_limits<BasisType>::max();
-            }
-
-            return result_type{res};
-        }
-
-        #endif // __has_builtin(__builtin_add_overflow)
-    }
-
-    if (detail::impl::unsigned_no_intrin_add(lhs_basis, rhs_basis, res))
-    {
-        res = std::numeric_limits<BasisType>::max();
-    }
-
-    return result_type{res};
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto sub_sat(const detail::unsigned_integer_basis<BasisType> lhs,
+                                     const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::sub_impl<detail::overflow_policy::saturate>(lhs, rhs);
 }
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating_add", add_sat)
