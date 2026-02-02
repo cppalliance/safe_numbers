@@ -48,4 +48,12 @@
 
 #endif
 
+#if defined(__GNUC__) || defined(__clang__)
+#  define BOOST_SAFE_NUMBERS_UNREACHABLE __builtin_unreachable()
+#elif defined(_MSC_VER)
+#  define BOOST_SAFE_NUMBERS_UNREACHABLE __assume(0)
+#else
+#  define BOOST_SAFE_NUMBERS_UNREACHABLE std::abort()
+#endif
+
 #endif // BOOST_SAFENUMBERS_CONFIG_HPP
