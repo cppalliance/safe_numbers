@@ -12,6 +12,7 @@ enum class overflow_policy
     throw_exception,
     saturate,
     overflow_tuple,
+    checked,
 };
 
 } // namespace boost::safe_numbers::detail

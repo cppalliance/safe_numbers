@@ -18,6 +18,7 @@
 #include <stdexcept>
 #include <cstdint>
 #include <utility>
+#include <optional>
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -268,10 +269,42 @@ struct add_helper<overflow_policy::overflow_tuple, BasisType>
     }
 };
 
+// Partial specialization for overflow_tuple policy
+template <unsigned_integral BasisType>
+struct add_helper<overflow_policy::checked, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+        -> std::optional<unsigned_integer_basis<BasisType>>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType res {};
+
+        if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
+        {
+            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+            if (!std::is_constant_evaluated())
+            {
+                const auto overflowed {impl::unsigned_intrin_add(lhs_basis, rhs_basis, res)};
+                return overflowed ? std::nullopt : std::make_optional(result_type{res});
+            }
+
+            #endif
+        }
+
+        const auto overflowed {impl::unsigned_no_intrin_add(lhs_basis, rhs_basis, res)};
+        return overflowed ? std::nullopt : std::make_optional(result_type{res});
+    }
+};
+
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto add_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple)
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked)
 {
     return add_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -567,10 +600,42 @@ struct sub_helper<overflow_policy::overflow_tuple, BasisType>
     }
 };
 
+// Partial specialization for checked policy
+template <unsigned_integral BasisType>
+struct sub_helper<overflow_policy::checked, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+        -> std::optional<unsigned_integer_basis<BasisType>>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType res {};
+
+        if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
+        {
+            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+            if (!std::is_constant_evaluated())
+            {
+                const auto underflowed {impl::unsigned_intrin_sub(lhs_basis, rhs_basis, res)};
+                return underflowed ? std::nullopt : std::make_optional(result_type{res});
+            }
+
+            #endif
+        }
+
+        const auto underflowed {impl::unsigned_no_intrin_sub(lhs_basis, rhs_basis, res)};
+        return underflowed ? std::nullopt : std::make_optional(result_type{res});
+    }
+};
+
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto sub_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple)
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked)
 {
     return sub_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -767,10 +832,42 @@ struct mul_helper<overflow_policy::overflow_tuple, BasisType>
     }
 };
 
+// Partial specialization for checked policy
+template <unsigned_integral BasisType>
+struct mul_helper<overflow_policy::checked, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+        -> std::optional<unsigned_integer_basis<BasisType>>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType res {};
+
+        if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
+        {
+            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)
+
+            if (!std::is_constant_evaluated())
+            {
+                const auto overflowed {impl::unsigned_intrin_mul(lhs_basis, rhs_basis, res)};
+                return overflowed ? std::nullopt : std::make_optional(result_type{res});
+            }
+
+            #endif
+        }
+
+        const auto overflowed {impl::no_intrin_mul(lhs_basis, rhs_basis, res)};
+        return overflowed ? std::nullopt : std::make_optional(result_type{res});
+    }
+};
+
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto mul_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple)
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked)
 {
     return mul_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -861,9 +958,37 @@ struct div_helper<overflow_policy::overflow_tuple, BasisType>
     }
 };
 
+// Partial specialization for checked policy
+template <unsigned_integral BasisType>
+struct div_helper<overflow_policy::checked, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+        -> std::optional<unsigned_integer_basis<BasisType>>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto divisor {static_cast<BasisType>(rhs)};
+        if (divisor == 0U) [[unlikely]]
+        {
+            return std::nullopt;
+        }
+
+        if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
+        {
+            return std::make_optional(result_type{static_cast<BasisType>(static_cast<BasisType>(lhs) / divisor)});
+        }
+        else
+        {
+            return std::make_optional(result_type{static_cast<BasisType>(lhs) / divisor});
+        }
+    }
+};
+
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto div_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
+    noexcept(Policy == overflow_policy::checked)
 {
     return div_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -954,9 +1079,37 @@ struct mod_helper<overflow_policy::overflow_tuple, BasisType>
     }
 };
 
+// Partial specialization for checked policy
+template <unsigned_integral BasisType>
+struct mod_helper<overflow_policy::checked, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+        -> std::optional<unsigned_integer_basis<BasisType>>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto divisor {static_cast<BasisType>(rhs)};
+        if (divisor == 0U) [[unlikely]]
+        {
+            return std::nullopt;
+        }
+
+        if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
+        {
+            return std::make_optional(result_type{static_cast<BasisType>(static_cast<BasisType>(lhs) % divisor)});
+        }
+        else
+        {
+            return std::make_optional(result_type{static_cast<BasisType>(lhs) % divisor});
+        }
+    }
+};
+
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto mod_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
+    noexcept(Policy == overflow_policy::checked)
 {
     return mod_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -1137,6 +1290,46 @@ template <detail::unsigned_integral BasisType>
     -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
 {
     return detail::mod_impl<detail::overflow_policy::overflow_tuple>(lhs, rhs);
+}
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto checked_add(const detail::unsigned_integer_basis<BasisType> lhs,
+                                         const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> std::optional<detail::unsigned_integer_basis<BasisType>>
+{
+    return detail::add_impl<detail::overflow_policy::checked>(lhs, rhs);
+}
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto checked_sub(const detail::unsigned_integer_basis<BasisType> lhs,
+                                         const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> std::optional<detail::unsigned_integer_basis<BasisType>>
+{
+    return detail::sub_impl<detail::overflow_policy::checked>(lhs, rhs);
+}
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto checked_mul(const detail::unsigned_integer_basis<BasisType> lhs,
+                                         const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> std::optional<detail::unsigned_integer_basis<BasisType>>
+{
+    return detail::mul_impl<detail::overflow_policy::checked>(lhs, rhs);
+}
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto checked_div(const detail::unsigned_integer_basis<BasisType> lhs,
+                                         const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> std::optional<detail::unsigned_integer_basis<BasisType>>
+{
+    return detail::div_impl<detail::overflow_policy::checked>(lhs, rhs);
+}
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto checked_mod(const detail::unsigned_integer_basis<BasisType> lhs,
+                                         const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> std::optional<detail::unsigned_integer_basis<BasisType>>
+{
+    return detail::mod_impl<detail::overflow_policy::checked>(lhs, rhs);
 }
 
 } // namespace boost::safe_numbers
