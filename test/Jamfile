@@ -72,6 +72,7 @@ run test_unsigned_charconv.cpp ;
 run test_unsigned_saturating_addition.cpp ;
 run test_unsigned_comparisons.cpp ;
 run test_unsigned_saturating_subtraction.cpp ;
+run test_unsigned_saturating_multiplication.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
