@@ -17,7 +17,7 @@
 #include <limits>
 #include <stdexcept>
 #include <cstdint>
-#include <tuple>
+#include <utility>
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -242,7 +242,7 @@ struct add_helper<overflow_policy::overflow_tuple, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs) noexcept
-        -> std::tuple<unsigned_integer_basis<BasisType>, bool>
+        -> std::pair<unsigned_integer_basis<BasisType>, bool>
     {
         using result_type = unsigned_integer_basis<BasisType>;
 
@@ -257,14 +257,14 @@ struct add_helper<overflow_policy::overflow_tuple, BasisType>
             if (!std::is_constant_evaluated())
             {
                 const auto overflowed {impl::unsigned_intrin_add(lhs_basis, rhs_basis, res)};
-                return std::make_tuple(result_type{res}, overflowed);
+                return std::make_pair(result_type{res}, overflowed);
             }
 
             #endif
         }
 
         const auto overflowed {impl::unsigned_no_intrin_add(lhs_basis, rhs_basis, res)};
-        return std::make_tuple(result_type{res}, overflowed);
+        return std::make_pair(result_type{res}, overflowed);
     }
 };
 
@@ -541,7 +541,7 @@ struct sub_helper<overflow_policy::overflow_tuple, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs) noexcept
-        -> std::tuple<unsigned_integer_basis<BasisType>, bool>
+        -> std::pair<unsigned_integer_basis<BasisType>, bool>
     {
         using result_type = unsigned_integer_basis<BasisType>;
 
@@ -556,14 +556,14 @@ struct sub_helper<overflow_policy::overflow_tuple, BasisType>
             if (!std::is_constant_evaluated())
             {
                 const auto underflowed {impl::unsigned_intrin_sub(lhs_basis, rhs_basis, res)};
-                return std::make_tuple(result_type{res}, underflowed);
+                return std::make_pair(result_type{res}, underflowed);
             }
 
             #endif
         }
 
         const auto underflowed {impl::unsigned_no_intrin_sub(lhs_basis, rhs_basis, res)};
-        return std::make_tuple(result_type{res}, underflowed);
+        return std::make_pair(result_type{res}, underflowed);
     }
 };
 
@@ -750,7 +750,7 @@ struct mul_helper<overflow_policy::overflow_tuple, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs) noexcept
-        -> std::tuple<unsigned_integer_basis<BasisType>, bool>
+        -> std::pair<unsigned_integer_basis<BasisType>, bool>
     {
         using result_type = unsigned_integer_basis<BasisType>;
 
@@ -765,14 +765,14 @@ struct mul_helper<overflow_policy::overflow_tuple, BasisType>
             if (!std::is_constant_evaluated())
             {
                 const auto overflowed {impl::unsigned_intrin_mul(lhs_basis, rhs_basis, res)};
-                return std::make_tuple(result_type{res}, overflowed);
+                return std::make_pair(result_type{res}, overflowed);
             }
 
             #endif
         }
 
         const auto overflowed {impl::no_intrin_mul(lhs_basis, rhs_basis, res)};
-        return std::make_tuple(result_type{res}, overflowed);
+        return std::make_pair(result_type{res}, overflowed);
     }
 };
 
@@ -849,7 +849,7 @@ struct div_helper<overflow_policy::overflow_tuple, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs)
-        -> std::tuple<unsigned_integer_basis<BasisType>, bool>
+        -> std::pair<unsigned_integer_basis<BasisType>, bool>
     {
         using result_type = unsigned_integer_basis<BasisType>;
 
@@ -861,11 +861,11 @@ struct div_helper<overflow_policy::overflow_tuple, BasisType>
 
         if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
         {
-            return std::make_tuple(result_type{static_cast<BasisType>(static_cast<BasisType>(lhs) / divisor)}, false);
+            return std::make_pair(result_type{static_cast<BasisType>(static_cast<BasisType>(lhs) / divisor)}, false);
         }
         else
         {
-            return std::make_tuple(result_type{static_cast<BasisType>(lhs) / divisor}, false);
+            return std::make_pair(result_type{static_cast<BasisType>(lhs) / divisor}, false);
         }
     }
 };
@@ -942,7 +942,7 @@ struct mod_helper<overflow_policy::overflow_tuple, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs)
-        -> std::tuple<unsigned_integer_basis<BasisType>, bool>
+        -> std::pair<unsigned_integer_basis<BasisType>, bool>
     {
         using result_type = unsigned_integer_basis<BasisType>;
 
@@ -954,11 +954,11 @@ struct mod_helper<overflow_policy::overflow_tuple, BasisType>
 
         if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
         {
-            return std::make_tuple(result_type{static_cast<BasisType>(static_cast<BasisType>(lhs) % divisor)}, false);
+            return std::make_pair(result_type{static_cast<BasisType>(static_cast<BasisType>(lhs) % divisor)}, false);
         }
         else
         {
-            return std::make_tuple(result_type{static_cast<BasisType>(lhs) % divisor}, false);
+            return std::make_pair(result_type{static_cast<BasisType>(lhs) % divisor}, false);
         }
     }
 };
@@ -1111,7 +1111,7 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating modulo", saturat
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto overflowing_add(const detail::unsigned_integer_basis<BasisType> lhs,
                                              const detail::unsigned_integer_basis<BasisType> rhs) noexcept
-    -> std::tuple<detail::unsigned_integer_basis<BasisType>, bool>
+    -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
 {
     return detail::add_impl<detail::overflow_policy::overflow_tuple>(lhs, rhs);
 }
@@ -1119,7 +1119,7 @@ template <detail::unsigned_integral BasisType>
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto overflowing_sub(const detail::unsigned_integer_basis<BasisType> lhs,
                                              const detail::unsigned_integer_basis<BasisType> rhs) noexcept
-    -> std::tuple<detail::unsigned_integer_basis<BasisType>, bool>
+    -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
 {
     return detail::sub_impl<detail::overflow_policy::overflow_tuple>(lhs, rhs);
 }
@@ -1127,7 +1127,7 @@ template <detail::unsigned_integral BasisType>
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto overflowing_mul(const detail::unsigned_integer_basis<BasisType> lhs,
                                              const detail::unsigned_integer_basis<BasisType> rhs) noexcept
-    -> std::tuple<detail::unsigned_integer_basis<BasisType>, bool>
+    -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
 {
     return detail::mul_impl<detail::overflow_policy::overflow_tuple>(lhs, rhs);
 }
@@ -1135,7 +1135,7 @@ template <detail::unsigned_integral BasisType>
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto overflowing_div(const detail::unsigned_integer_basis<BasisType> lhs,
                                              const detail::unsigned_integer_basis<BasisType> rhs) noexcept
-    -> std::tuple<detail::unsigned_integer_basis<BasisType>, bool>
+    -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
 {
     return detail::div_impl<detail::overflow_policy::overflow_tuple>(lhs, rhs);
 }
@@ -1143,7 +1143,7 @@ template <detail::unsigned_integral BasisType>
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto overflowing_mod(const detail::unsigned_integer_basis<BasisType> lhs,
                                              const detail::unsigned_integer_basis<BasisType> rhs) noexcept
-    -> std::tuple<detail::unsigned_integer_basis<BasisType>, bool>
+    -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
 {
     return detail::mod_impl<detail::overflow_policy::overflow_tuple>(lhs, rhs);
 }

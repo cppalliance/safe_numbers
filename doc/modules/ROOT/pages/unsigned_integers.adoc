@@ -158,19 +158,19 @@ This follows normal C family unsigned rollover where `UINT_MAX + 1 == 0` and `UI
 namespace boost::safe_numbers {
 
 template <UnsignedLibType T>
-constexpr std::tuple<T, bool> overflowing_add(const T lhs, const T rhs) noexcept;
+constexpr std::pair<T, bool> overflowing_add(const T lhs, const T rhs) noexcept;
 
 template <UnsignedLibType T>
-constexpr std::tuple<T, bool> overflowing_sub(const T lhs, const T rhs) noexcept;
+constexpr std::pair<T, bool> overflowing_sub(const T lhs, const T rhs) noexcept;
 
 template <UnsignedLibType T>
-constexpr std::tuple<T, bool> overflowing_mul(const T lhs, const T rhs) noexcept;
+constexpr std::pair<T, bool> overflowing_mul(const T lhs, const T rhs) noexcept;
 
 template <UnsignedLibType T>
-constexpr std::tuple<T, bool> overflowing_div(const T lhs, const T rhs);
+constexpr std::pair<T, bool> overflowing_div(const T lhs, const T rhs);
 
 template <UnsignedLibType T>
-constexpr std::tuple<T, bool> overflowing_mod(const T lhs, const T rhs);
+constexpr std::pair<T, bool> overflowing_mod(const T lhs, const T rhs);
 
 } // namespace boost::safe_numbers
 ----
