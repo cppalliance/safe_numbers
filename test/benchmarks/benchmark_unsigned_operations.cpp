@@ -15,6 +15,7 @@
 #include <iostream>
 #include <iomanip>
 #include <functional>
+#include <algorithm>
 
 #if defined(__clang__)
 #  pragma clang diagnostic push

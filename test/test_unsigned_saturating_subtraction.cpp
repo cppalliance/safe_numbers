@@ -111,14 +111,14 @@ void test_valid_subtraction()
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
-        const T res {lhs - rhs};
+        const T res {sub_sat(lhs, rhs)};
 
         BOOST_TEST(ref_value == res);
     }
 }
 
 template <typename T>
-void test_throwing_subtraction()
+void test_saturating_subtraction()
 {
     using basis_type = detail::underlying_type_t<T>;
     boost::random::uniform_int_distribution<basis_type> dist {1U, std::numeric_limits<basis_type>::max() - 1U};
@@ -131,68 +131,24 @@ void test_throwing_subtraction()
         const T lhs {lhs_value};
         const T rhs {rhs_value};
 
-        BOOST_TEST_THROWS(lhs - rhs, std::underflow_error);
+        BOOST_TEST_EQ(sub_sat(lhs, rhs), std::numeric_limits<T>::min());
     }
 }
 
-template <typename T>
-void test_valid_compound_subtraction()
-{
-    using basis_type = detail::underlying_type_t<T>;
-    boost::random::uniform_int_distribution<basis_type> dist {std::numeric_limits<basis_type>::min() / 2U,
-                                                              std::numeric_limits<basis_type>::max() / 2U};
-
-    for (std::size_t i = 0; i < N; ++i)
-    {
-        auto lhs_value {dist(rng)};
-        auto rhs_value {dist(rng)};
-
-        if (lhs_value < rhs_value)
-        {
-            std::swap(lhs_value, rhs_value);
-        }
-
-        T ref_value {};
-        if constexpr (std::is_same_v<basis_type, std::uint8_t> || std::is_same_v<basis_type, std::uint16_t>)
-        {
-            ref_value = static_cast<T>(static_cast<basis_type>(static_cast<std::uint32_t>(lhs_value - rhs_value)));
-        }
-        else
-        {
-            ref_value = static_cast<T>(lhs_value - rhs_value);
-        }
-
-        T lhs {lhs_value};
-        const T rhs {rhs_value};
-        lhs -= rhs;
-
-        BOOST_TEST(ref_value == lhs);
-    }
-}
 
 int main()
 {
     test_valid_subtraction<u8>();
-    test_valid_compound_subtraction<u8>();
-
     test_valid_subtraction<u16>();
-    test_valid_compound_subtraction<u16>();
-
     test_valid_subtraction<u32>();
-    test_valid_compound_subtraction<u32>();
-
     test_valid_subtraction<u64>();
-    test_valid_compound_subtraction<u64>();
-
     test_valid_subtraction<u128>();
-    test_valid_compound_subtraction<u128>();
 
-    // These are all at the end because they kill the debugger
-    test_throwing_subtraction<u8>();
-    test_throwing_subtraction<u16>();
-    test_throwing_subtraction<u32>();
-    test_throwing_subtraction<u64>();
-    test_throwing_subtraction<u128>();
+    test_saturating_subtraction<u8>();
+    test_saturating_subtraction<u16>();
+    test_saturating_subtraction<u32>();
+    test_saturating_subtraction<u64>();
+    test_saturating_subtraction<u128>();
 
     return boost::report_errors();
 }
