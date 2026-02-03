@@ -12,6 +12,7 @@
 #include <boost/safe_numbers/detail/int128/int128.hpp>
 #include <string>
 #include <format>
+#include <tuple>
 
 #define BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_FORMAT
 
