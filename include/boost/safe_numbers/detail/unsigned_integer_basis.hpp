@@ -670,17 +670,8 @@ constexpr bool no_intrin_mul(const T lhs, const T rhs, T& result)
 
 constexpr bool no_intrin_mul(const int128::uint128_t& lhs, const int128::uint128_t& rhs, int128::uint128_t& result) noexcept
 {
-    // Fall back to division check
-    if (rhs != 0U && lhs > (std::numeric_limits<int128::uint128_t>::max() / rhs))
-    {
-        result = std::numeric_limits<int128::uint128_t>::max();
-        return true;
-    }
-    else
-    {
-        result = lhs * rhs;
-        return false;
-    }
+    result = lhs * rhs;
+    return rhs != 0U && lhs > (std::numeric_limits<int128::uint128_t>::max() / rhs);
 }
 
 } // namespace impl
