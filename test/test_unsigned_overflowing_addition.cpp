@@ -120,14 +120,14 @@ void test_overflowed_addition()
 
     for (std::size_t i = 0; i < N; ++i)
     {
-        constexpr basis_type lhs_value {std::numeric_limits<basis_type>::max() - 1U};
+        constexpr basis_type lhs_value {std::numeric_limits<basis_type>::max()};
         const auto rhs_value {dist(rng)};
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
         const auto [res, overflowed] = overflowing_add(lhs, rhs);
         
-        BOOST_TEST_EQ(res, T{static_cast<T>(std::numeric_limits<basis_type>::max() - 1U + rhs_value)});
+        BOOST_TEST_EQ(res, T{static_cast<T>(std::numeric_limits<basis_type>::max() + rhs_value)});
         BOOST_TEST(overflowed);
     }
 }
