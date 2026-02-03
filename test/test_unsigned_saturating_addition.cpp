@@ -105,7 +105,7 @@ void test_valid_addition()
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
-        const T res {add_sat(lhs, rhs)};
+        const T res {saturating_add(lhs, rhs)};
 
         BOOST_TEST_EQ(ref_value, res);
     }
@@ -125,7 +125,7 @@ void test_saturated_addition()
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
-        const T res {add_sat(lhs, rhs)};
+        const T res {saturating_add(lhs, rhs)};
         
         BOOST_TEST_EQ(res, max_value);
     }

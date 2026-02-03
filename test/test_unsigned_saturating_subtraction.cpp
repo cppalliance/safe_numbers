@@ -111,7 +111,7 @@ void test_valid_subtraction()
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
-        const T res {sub_sat(lhs, rhs)};
+        const T res {saturating_sub(lhs, rhs)};
 
         BOOST_TEST(ref_value == res);
     }
@@ -131,7 +131,7 @@ void test_saturating_subtraction()
         const T lhs {lhs_value};
         const T rhs {rhs_value};
 
-        BOOST_TEST_EQ(sub_sat(lhs, rhs), std::numeric_limits<T>::min());
+        BOOST_TEST_EQ(saturating_sub(lhs, rhs), std::numeric_limits<T>::min());
     }
 }
 

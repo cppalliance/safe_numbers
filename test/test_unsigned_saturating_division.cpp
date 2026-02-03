@@ -105,7 +105,7 @@ void test_valid_division()
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
-        const T res {div_sat(lhs, rhs)};
+        const T res {saturating_div(lhs, rhs)};
 
         BOOST_TEST_EQ(ref_value, res);
     }
@@ -125,7 +125,7 @@ void test_throwing_division()
         const T lhs {lhs_value};
         const T rhs {rhs_value};
 
-        BOOST_TEST_THROWS(div_sat(lhs, rhs), std::domain_error);
+        BOOST_TEST_THROWS(saturating_div(lhs, rhs), std::domain_error);
     }
 }
 

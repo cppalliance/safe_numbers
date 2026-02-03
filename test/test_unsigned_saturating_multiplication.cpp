@@ -105,7 +105,7 @@ void test_valid_multiplication()
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
-        const T res {mul_sat(lhs, rhs)};
+        const T res {saturating_mul(lhs, rhs)};
 
         BOOST_TEST(ref_value == res);
     }
@@ -125,7 +125,7 @@ void test_throwing_multiplication()
         const T lhs {lhs_value};
         const T rhs {rhs_value};
 
-        BOOST_TEST_EQ(mul_sat(lhs, rhs), std::numeric_limits<T>::max());
+        BOOST_TEST_EQ(saturating_mul(lhs, rhs), std::numeric_limits<T>::max());
     }
 }
 
