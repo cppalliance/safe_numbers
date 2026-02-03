@@ -105,14 +105,15 @@ void test_valid_multiplication()
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
-        const T res {saturating_mul(lhs, rhs)};
+        const auto [res, overflowed] = overflowing_mul(lhs, rhs);
 
-        BOOST_TEST(ref_value == res);
+        BOOST_TEST_EQ(ref_value, res);
+        BOOST_TEST(!overflowed);
     }
 }
 
 template <typename T>
-void test_saturating_multiplication()
+void test_overflowing_multiplication()
 {
     using basis_type = detail::underlying_type_t<T>;
     boost::random::uniform_int_distribution<basis_type> dist {2U, std::numeric_limits<basis_type>::max()};
@@ -124,27 +125,37 @@ void test_saturating_multiplication()
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
+        const auto [res, overflowed] = overflowing_mul(lhs, rhs);
 
-        BOOST_TEST_EQ(saturating_mul(lhs, rhs), std::numeric_limits<T>::max());
+        if constexpr (std::is_same_v<basis_type, std::uint8_t> || std::is_same_v<basis_type, std::uint16_t>)
+        {
+            BOOST_TEST_EQ(res, T{static_cast<basis_type>(static_cast<std::uint32_t>(lhs_value) * static_cast<std::uint32_t>(rhs_value))});
+        }
+        else
+        {
+            BOOST_TEST_EQ(res, T{static_cast<basis_type>(lhs_value * rhs_value)});
+        }
+
+        BOOST_TEST(overflowed);
     }
 }
 
 int main()
 {
     test_valid_multiplication<u8>();
-    test_saturating_multiplication<u8>();
+    test_overflowing_multiplication<u8>();
 
     test_valid_multiplication<u16>();
-    test_saturating_multiplication<u16>();
+    test_overflowing_multiplication<u16>();
 
     test_valid_multiplication<u32>();
-    test_saturating_multiplication<u32>();
+    test_overflowing_multiplication<u32>();
 
     test_valid_multiplication<u64>();
-    test_saturating_multiplication<u64>();
+    test_overflowing_multiplication<u64>();
 
     test_valid_multiplication<u128>();
-    test_saturating_multiplication<u128>();
+    test_overflowing_multiplication<u128>();
 
     return boost::report_errors();
 }

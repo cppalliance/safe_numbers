@@ -17,6 +17,7 @@
 #include <limits>
 #include <stdexcept>
 #include <cstdint>
+#include <utility>
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -176,58 +177,103 @@ constexpr bool unsigned_no_intrin_add(const int128::uint128_t& lhs, const int128
 
 } // namespace impl
 
+// Primary template for non-tuple policies
+template <overflow_policy Policy, unsigned_integral BasisType>
+struct add_helper
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs)
+        noexcept(Policy != overflow_policy::throw_exception)
+        -> unsigned_integer_basis<BasisType>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType res {};
+
+        auto handle_overflow = [&res]
+        {
+            if constexpr (Policy == overflow_policy::throw_exception)
+            {
+                static_cast<void>(res);
+                BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
+            }
+            else if constexpr (Policy == overflow_policy::saturate)
+            {
+                res = std::numeric_limits<BasisType>::max();
+            }
+            else
+            {
+                static_cast<void>(res);
+                BOOST_SAFE_NUMBERS_UNREACHABLE;
+            }
+        };
+
+        if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
+        {
+            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+            if (!std::is_constant_evaluated())
+            {
+                if (impl::unsigned_intrin_add(lhs_basis, rhs_basis, res))
+                {
+                    handle_overflow();
+                }
+
+                return result_type{res};
+            }
+
+            #endif
+        }
+
+        if (impl::unsigned_no_intrin_add(lhs_basis, rhs_basis, res))
+        {
+            handle_overflow();
+        }
+
+        return result_type{res};
+    }
+};
+
+// Partial specialization for overflow_tuple policy
+template <unsigned_integral BasisType>
+struct add_helper<overflow_policy::overflow_tuple, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+        -> std::pair<unsigned_integer_basis<BasisType>, bool>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType res {};
+
+        if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
+        {
+            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+            if (!std::is_constant_evaluated())
+            {
+                const auto overflowed {impl::unsigned_intrin_add(lhs_basis, rhs_basis, res)};
+                return std::make_pair(result_type{res}, overflowed);
+            }
+
+            #endif
+        }
+
+        const auto overflowed {impl::unsigned_no_intrin_add(lhs_basis, rhs_basis, res)};
+        return std::make_pair(result_type{res}, overflowed);
+    }
+};
+
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto add_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy != overflow_policy::throw_exception) -> unsigned_integer_basis<BasisType>
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple)
 {
-    using result_type = unsigned_integer_basis<BasisType>;
-
-    const auto lhs_basis {static_cast<BasisType>(lhs)};
-    const auto rhs_basis {static_cast<BasisType>(rhs)};
-    BasisType res {};
-
-    auto handle_overflow = [&res]
-    {
-        if constexpr (Policy == overflow_policy::throw_exception)
-        {
-            static_cast<void>(res);
-            BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
-        }
-        else if constexpr (Policy == overflow_policy::saturate)
-        {
-            res = std::numeric_limits<BasisType>::max();
-        }
-        else
-        {
-            static_cast<void>(res);
-            BOOST_SAFE_NUMBERS_UNREACHABLE;
-        }
-    };
-
-    if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
-    {
-        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
-
-        if (!std::is_constant_evaluated())
-        {
-            if (impl::unsigned_intrin_add(lhs_basis, rhs_basis, res))
-            {
-                handle_overflow();
-            }
-
-            return result_type{res};
-        }
-
-        #endif // __has_builtin(__builtin_add_overflow)
-    }
-
-    if (impl::unsigned_no_intrin_add(lhs_basis, rhs_basis, res))
-    {
-        handle_overflow();
-    }
-
-    return result_type{res};
+    return add_helper<Policy, BasisType>::apply(lhs, rhs);
 }
 
 template <unsigned_integral BasisType>
@@ -430,59 +476,103 @@ constexpr bool unsigned_no_intrin_sub(const int128::uint128_t& lhs, const int128
 
 } // namespace impl
 
+// Primary template for non-tuple policies
+template <overflow_policy Policy, unsigned_integral BasisType>
+struct sub_helper
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs)
+        noexcept(Policy != overflow_policy::throw_exception)
+        -> unsigned_integer_basis<BasisType>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType res {};
+
+        auto handle_underflow = [&res]
+        {
+            if constexpr (Policy == overflow_policy::throw_exception)
+            {
+                static_cast<void>(res);
+                BOOST_THROW_EXCEPTION(std::underflow_error("Underflow detected in unsigned subtraction"));
+            }
+            else if constexpr (Policy == overflow_policy::saturate)
+            {
+                res = std::numeric_limits<BasisType>::min();
+            }
+            else
+            {
+                static_cast<void>(res);
+                BOOST_SAFE_NUMBERS_UNREACHABLE;
+            }
+        };
+
+        if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
+        {
+            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+            if (!std::is_constant_evaluated())
+            {
+                if (impl::unsigned_intrin_sub(lhs_basis, rhs_basis, res))
+                {
+                    handle_underflow();
+                }
+
+                return result_type{res};
+            }
+
+            #endif
+        }
+
+        if (impl::unsigned_no_intrin_sub(lhs_basis, rhs_basis, res))
+        {
+            handle_underflow();
+        }
+
+        return result_type{res};
+    }
+};
+
+// Partial specialization for overflow_tuple policy
+template <unsigned_integral BasisType>
+struct sub_helper<overflow_policy::overflow_tuple, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+        -> std::pair<unsigned_integer_basis<BasisType>, bool>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType res {};
+
+        if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
+        {
+            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+            if (!std::is_constant_evaluated())
+            {
+                const auto underflowed {impl::unsigned_intrin_sub(lhs_basis, rhs_basis, res)};
+                return std::make_pair(result_type{res}, underflowed);
+            }
+
+            #endif
+        }
+
+        const auto underflowed {impl::unsigned_no_intrin_sub(lhs_basis, rhs_basis, res)};
+        return std::make_pair(result_type{res}, underflowed);
+    }
+};
+
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto sub_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy != overflow_policy::throw_exception)
-    -> unsigned_integer_basis<BasisType>
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple)
 {
-    using result_type = unsigned_integer_basis<BasisType>;
-
-    const auto lhs_basis {static_cast<BasisType>(lhs)};
-    const auto rhs_basis {static_cast<BasisType>(rhs)};
-    BasisType res {};
-
-    auto handle_underflow = [&res]
-    {
-        if constexpr (Policy == overflow_policy::throw_exception)
-        {
-            static_cast<void>(res);
-            BOOST_THROW_EXCEPTION(std::underflow_error("Underflow detected in unsigned subtraction"));
-        }
-        else if constexpr (Policy == overflow_policy::saturate)
-        {
-            res = std::numeric_limits<BasisType>::min();
-        }
-        else
-        {
-            static_cast<void>(res);
-            BOOST_SAFE_NUMBERS_UNREACHABLE;
-        }
-    };
-
-    if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
-    {
-        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
-
-        if (!std::is_constant_evaluated())
-        {
-            if (impl::unsigned_intrin_sub(lhs_basis, rhs_basis, res))
-            {
-                handle_underflow();
-            }
-
-            return result_type{res};
-        }
-
-        #endif // Use builtins
-    }
-
-    if (impl::unsigned_no_intrin_sub(lhs_basis, rhs_basis, res))
-    {
-        handle_underflow();
-    }
-
-    return result_type{res};
+    return sub_helper<Policy, BasisType>::apply(lhs, rhs);
 }
 
 template <unsigned_integral BasisType>
@@ -580,74 +670,109 @@ constexpr bool no_intrin_mul(const T lhs, const T rhs, T& result)
 
 constexpr bool no_intrin_mul(const int128::uint128_t& lhs, const int128::uint128_t& rhs, int128::uint128_t& result) noexcept
 {
-    // Fall back to division check
-    if (rhs != 0U && lhs > (std::numeric_limits<int128::uint128_t>::max() / rhs))
-    {
-        result = std::numeric_limits<int128::uint128_t>::max();
-        return true;
-    }
-    else
-    {
-        result = lhs * rhs;
-        return false;
-    }
+    result = lhs * rhs;
+    return rhs != 0U && lhs > (std::numeric_limits<int128::uint128_t>::max() / rhs);
 }
 
 } // namespace impl
 
+// Primary template for non-tuple policies
+template <overflow_policy Policy, unsigned_integral BasisType>
+struct mul_helper
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs)
+        noexcept(Policy == overflow_policy::saturate)
+        -> unsigned_integer_basis<BasisType>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType res {};
+
+        auto handle_overflow = [&res]
+        {
+            if constexpr (Policy == overflow_policy::throw_exception)
+            {
+                static_cast<void>(res);
+                BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned multiplication"));
+            }
+            else if constexpr (Policy == overflow_policy::saturate)
+            {
+                res = std::numeric_limits<BasisType>::max();
+            }
+            else
+            {
+                static_cast<void>(res);
+                BOOST_SAFE_NUMBERS_UNREACHABLE;
+            }
+        };
+
+        if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
+        {
+            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)
+
+            if (!std::is_constant_evaluated())
+            {
+                if (impl::unsigned_intrin_mul(lhs_basis, rhs_basis, res))
+                {
+                    handle_overflow();
+                }
+
+                return result_type{res};
+            }
+
+            #endif
+        }
+
+        if (impl::no_intrin_mul(lhs_basis, rhs_basis, res))
+        {
+            handle_overflow();
+        }
+
+        return result_type{res};
+    }
+};
+
+// Partial specialization for overflow_tuple policy
+template <unsigned_integral BasisType>
+struct mul_helper<overflow_policy::overflow_tuple, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+        -> std::pair<unsigned_integer_basis<BasisType>, bool>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType res {};
+
+        if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
+        {
+            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)
+
+            if (!std::is_constant_evaluated())
+            {
+                const auto overflowed {impl::unsigned_intrin_mul(lhs_basis, rhs_basis, res)};
+                return std::make_pair(result_type{res}, overflowed);
+            }
+
+            #endif
+        }
+
+        const auto overflowed {impl::no_intrin_mul(lhs_basis, rhs_basis, res)};
+        return std::make_pair(result_type{res}, overflowed);
+    }
+};
+
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto mul_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy == overflow_policy::saturate)
-    -> unsigned_integer_basis<BasisType>
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple)
 {
-    using result_type = unsigned_integer_basis<BasisType>;
-
-    const auto lhs_basis {static_cast<BasisType>(lhs)};
-    const auto rhs_basis {static_cast<BasisType>(rhs)};
-    BasisType res {};
-
-    auto handle_overflow = [&res]()
-    {
-        if constexpr (Policy == overflow_policy::throw_exception)
-        {
-            static_cast<void>(res);
-            BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned multiplication"));
-        }
-        else if constexpr (Policy == overflow_policy::saturate)
-        {
-            res = std::numeric_limits<BasisType>::max();
-        }
-        else
-        {
-            static_cast<void>(res);
-            BOOST_SAFE_NUMBERS_UNREACHABLE;
-        }
-    };
-
-    if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
-    {
-        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)
-
-        if (!std::is_constant_evaluated())
-        {
-            if (impl::unsigned_intrin_mul(lhs_basis, rhs_basis, res))
-            {
-                handle_overflow();
-            }
-
-            return result_type{res};
-        }
-
-        #endif // Use builtins
-    }
-
-    if (impl::no_intrin_mul(lhs_basis, rhs_basis, res))
-    {
-        handle_overflow();
-    }
-
-    return result_type{res};
+    return mul_helper<Policy, BasisType>::apply(lhs, rhs);
 }
 
 template <unsigned_integral BasisType>
@@ -672,39 +797,75 @@ constexpr auto unsigned_integer_basis<BasisType>::operator*=(const unsigned_inte
 // Division
 // ------------------------------
 
+// Primary template for non-tuple policies
 template <overflow_policy Policy, unsigned_integral BasisType>
-[[nodiscard]] constexpr auto div_impl(const unsigned_integer_basis<BasisType> lhs,
-                                      const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy == overflow_policy::saturate)
-    -> unsigned_integer_basis<BasisType>
+struct div_helper
 {
-    using result_type = unsigned_integer_basis<BasisType>;
-
-    // Normally this should trap, but throwing an exception is more elegant
-    if (static_cast<BasisType>(rhs) == 0U) [[unlikely]]
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs)
+        -> unsigned_integer_basis<BasisType>
     {
-        if constexpr (Policy == overflow_policy::throw_exception)
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        if (static_cast<BasisType>(rhs) == 0U) [[unlikely]]
         {
-            BOOST_THROW_EXCEPTION(std::domain_error("Unsigned division by zero"));
+            if constexpr (Policy == overflow_policy::throw_exception)
+            {
+                BOOST_THROW_EXCEPTION(std::domain_error("Unsigned division by zero"));
+            }
+            else if constexpr (Policy == overflow_policy::saturate)
+            {
+                BOOST_THROW_EXCEPTION(std::domain_error("Unsigned division by zero"));
+            }
+            else
+            {
+                BOOST_SAFE_NUMBERS_UNREACHABLE;
+            }
         }
-        else if constexpr (Policy == overflow_policy::saturate)
+
+        if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
         {
-            return result_type{std::numeric_limits<BasisType>::max()};
+            return result_type{static_cast<BasisType>(static_cast<BasisType>(lhs) / static_cast<BasisType>(rhs))};
         }
         else
         {
-            BOOST_SAFE_NUMBERS_UNREACHABLE;
+            return result_type{static_cast<BasisType>(lhs) / static_cast<BasisType>(rhs)};
         }
     }
+};
 
-    if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
+// Partial specialization for overflow_tuple policy
+template <unsigned_integral BasisType>
+struct div_helper<overflow_policy::overflow_tuple, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs)
+        -> std::pair<unsigned_integer_basis<BasisType>, bool>
     {
-        return result_type{static_cast<BasisType>(static_cast<BasisType>(lhs) / static_cast<BasisType>(rhs))};
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto divisor {static_cast<BasisType>(rhs)};
+        if (divisor == 0U) [[unlikely]]
+        {
+            BOOST_THROW_EXCEPTION(std::domain_error("Unsigned division by zero"));
+        }
+
+        if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
+        {
+            return std::make_pair(result_type{static_cast<BasisType>(static_cast<BasisType>(lhs) / divisor)}, false);
+        }
+        else
+        {
+            return std::make_pair(result_type{static_cast<BasisType>(lhs) / divisor}, false);
+        }
     }
-    else
-    {
-        return result_type{static_cast<BasisType>(lhs) / static_cast<BasisType>(rhs)};
-    }
+};
+
+template <overflow_policy Policy, unsigned_integral BasisType>
+[[nodiscard]] constexpr auto div_impl(const unsigned_integer_basis<BasisType> lhs,
+                                      const unsigned_integer_basis<BasisType> rhs)
+{
+    return div_helper<Policy, BasisType>::apply(lhs, rhs);
 }
 
 template <unsigned_integral BasisType>
@@ -729,39 +890,75 @@ constexpr auto unsigned_integer_basis<BasisType>::operator/=(const unsigned_inte
 // Modulo
 // ------------------------------
 
+// Primary template for non-tuple policies
 template <overflow_policy Policy, unsigned_integral BasisType>
-[[nodiscard]] constexpr auto mod_impl(const unsigned_integer_basis<BasisType> lhs,
-                                      const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy == overflow_policy::saturate)
-    -> unsigned_integer_basis<BasisType>
+struct mod_helper
 {
-    using result_type = unsigned_integer_basis<BasisType>;
-
-    // Normally this should trap, but throwing an exception is more elegant
-    if (static_cast<BasisType>(rhs) == 0U) [[unlikely]]
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs)
+        -> unsigned_integer_basis<BasisType>
     {
-        if constexpr (Policy == overflow_policy::throw_exception)
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        if (static_cast<BasisType>(rhs) == 0U) [[unlikely]]
         {
-            BOOST_THROW_EXCEPTION(std::domain_error("Unsigned modulo by zero"));
+            if constexpr (Policy == overflow_policy::throw_exception)
+            {
+                BOOST_THROW_EXCEPTION(std::domain_error("Unsigned modulo by zero"));
+            }
+            else if constexpr (Policy == overflow_policy::saturate)
+            {
+                BOOST_THROW_EXCEPTION(std::domain_error("Unsigned division by zero"));
+            }
+            else
+            {
+                BOOST_SAFE_NUMBERS_UNREACHABLE;
+            }
         }
-        else if constexpr (Policy == overflow_policy::saturate)
+
+        if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
         {
-            return result_type{0U};
+            return result_type{static_cast<BasisType>(static_cast<BasisType>(lhs) % static_cast<BasisType>(rhs))};
         }
         else
         {
-            BOOST_SAFE_NUMBERS_UNREACHABLE;
+            return result_type{static_cast<BasisType>(lhs) % static_cast<BasisType>(rhs)};
         }
     }
+};
 
-    if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
+// Partial specialization for overflow_tuple policy
+template <unsigned_integral BasisType>
+struct mod_helper<overflow_policy::overflow_tuple, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs)
+        -> std::pair<unsigned_integer_basis<BasisType>, bool>
     {
-        return result_type{static_cast<BasisType>(static_cast<BasisType>(lhs) % static_cast<BasisType>(rhs))};
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto divisor {static_cast<BasisType>(rhs)};
+        if (divisor == 0U) [[unlikely]]
+        {
+            BOOST_THROW_EXCEPTION(std::domain_error("Unsigned division by zero"));
+        }
+
+        if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
+        {
+            return std::make_pair(result_type{static_cast<BasisType>(static_cast<BasisType>(lhs) % divisor)}, false);
+        }
+        else
+        {
+            return std::make_pair(result_type{static_cast<BasisType>(lhs) % divisor}, false);
+        }
     }
-    else
-    {
-        return result_type{static_cast<BasisType>(lhs) % static_cast<BasisType>(rhs)};
-    }
+};
+
+template <overflow_policy Policy, unsigned_integral BasisType>
+[[nodiscard]] constexpr auto mod_impl(const unsigned_integer_basis<BasisType> lhs,
+                                      const unsigned_integer_basis<BasisType> rhs)
+{
+    return mod_helper<Policy, BasisType>::apply(lhs, rhs);
 }
 
 template <unsigned_integral BasisType>
@@ -853,44 +1050,94 @@ constexpr auto unsigned_integer_basis<BasisType>::operator--(int)
 namespace boost::safe_numbers {
 
 template <detail::unsigned_integral BasisType>
-[[nodiscard]] constexpr auto add_sat(const detail::unsigned_integer_basis<BasisType> lhs,
-                                     const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+[[nodiscard]] constexpr auto saturating_add(const detail::unsigned_integer_basis<BasisType> lhs,
+                                            const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> detail::unsigned_integer_basis<BasisType>
 {
     return detail::add_impl<detail::overflow_policy::saturate>(lhs, rhs);
 }
 
-BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating addition", add_sat)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating addition", saturating_add)
 
 template <detail::unsigned_integral BasisType>
-[[nodiscard]] constexpr auto sub_sat(const detail::unsigned_integer_basis<BasisType> lhs,
-                                     const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+[[nodiscard]] constexpr auto saturating_sub(const detail::unsigned_integer_basis<BasisType> lhs,
+                                            const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> detail::unsigned_integer_basis<BasisType>
 {
     return detail::sub_impl<detail::overflow_policy::saturate>(lhs, rhs);
 }
 
-BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating subtraction", sub_sat)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating subtraction", saturating_sub)
 
 template <detail::unsigned_integral BasisType>
-[[nodiscard]] constexpr auto mul_sat(const detail::unsigned_integer_basis<BasisType> lhs,
-                                     const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+[[nodiscard]] constexpr auto saturating_mul(const detail::unsigned_integer_basis<BasisType> lhs,
+                                            const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> detail::unsigned_integer_basis<BasisType>
 {
     return detail::mul_impl<detail::overflow_policy::saturate>(lhs, rhs);
 }
 
-BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating multiplication", mul_sat)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating multiplication", saturating_mul)
 
 template <detail::unsigned_integral BasisType>
-[[nodiscard]] constexpr auto div_sat(const detail::unsigned_integer_basis<BasisType> lhs,
-                                     const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+[[nodiscard]] constexpr auto saturating_div(const detail::unsigned_integer_basis<BasisType> lhs,
+                                            const detail::unsigned_integer_basis<BasisType> rhs)
     -> detail::unsigned_integer_basis<BasisType>
 {
     return detail::div_impl<detail::overflow_policy::saturate>(lhs, rhs);
 }
 
-BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating division", div_sat)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating division", saturating_div)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto saturating_mod(const detail::unsigned_integer_basis<BasisType> lhs,
+                                            const detail::unsigned_integer_basis<BasisType> rhs)
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::mod_impl<detail::overflow_policy::saturate>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating modulo", saturating_mod)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto overflowing_add(const detail::unsigned_integer_basis<BasisType> lhs,
+                                             const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
+{
+    return detail::add_impl<detail::overflow_policy::overflow_tuple>(lhs, rhs);
+}
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto overflowing_sub(const detail::unsigned_integer_basis<BasisType> lhs,
+                                             const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
+{
+    return detail::sub_impl<detail::overflow_policy::overflow_tuple>(lhs, rhs);
+}
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto overflowing_mul(const detail::unsigned_integer_basis<BasisType> lhs,
+                                             const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
+{
+    return detail::mul_impl<detail::overflow_policy::overflow_tuple>(lhs, rhs);
+}
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto overflowing_div(const detail::unsigned_integer_basis<BasisType> lhs,
+                                             const detail::unsigned_integer_basis<BasisType> rhs)
+    -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
+{
+    return detail::div_impl<detail::overflow_policy::overflow_tuple>(lhs, rhs);
+}
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto overflowing_mod(const detail::unsigned_integer_basis<BasisType> lhs,
+                                             const detail::unsigned_integer_basis<BasisType> rhs)
+    -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
+{
+    return detail::mod_impl<detail::overflow_policy::overflow_tuple>(lhs, rhs);
+}
 
 } // namespace boost::safe_numbers
 

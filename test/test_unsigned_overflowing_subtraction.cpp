@@ -73,7 +73,7 @@ import boost.safe_numbers;
 #include <limits>
 #include <type_traits>
 #include <iostream>
-#include <cmath>
+#include <utility>
 
 #endif
 
@@ -83,68 +83,76 @@ inline std::mt19937_64 rng{42};
 inline constexpr std::size_t N {1024};
 
 template <typename T>
-void test_valid_multiplication()
+void test_valid_subtraction()
 {
     using basis_type = detail::underlying_type_t<T>;
-    boost::random::uniform_int_distribution<basis_type> dist {0, sizeof(basis_type) * 8U - 1U};
+    boost::random::uniform_int_distribution<basis_type> dist {std::numeric_limits<basis_type>::min() / 2U,
+                                                              std::numeric_limits<basis_type>::max() / 2U};
 
     for (std::size_t i = 0; i < N; ++i)
     {
-        const auto lhs_value {dist(rng)};
-        const auto rhs_value {dist(rng)};
+        auto lhs_value {dist(rng)};
+        auto rhs_value {dist(rng)};
+
+        if (lhs_value < rhs_value)
+        {
+            std::swap(lhs_value, rhs_value);
+        }
 
         T ref_value {};
         if constexpr (std::is_same_v<basis_type, std::uint8_t> || std::is_same_v<basis_type, std::uint16_t>)
         {
-            ref_value = static_cast<T>(static_cast<basis_type>(static_cast<std::uint32_t>(lhs_value * rhs_value)));
+            ref_value = static_cast<T>(static_cast<basis_type>(static_cast<std::uint32_t>(lhs_value - rhs_value)));
         }
         else
         {
-            ref_value = static_cast<T>(lhs_value * rhs_value);
+            ref_value = static_cast<T>(lhs_value - rhs_value);
         }
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
-        const T res {saturating_mul(lhs, rhs)};
+        const auto [res, overflowed] = overflowing_sub(lhs, rhs);
 
-        BOOST_TEST(ref_value == res);
+        BOOST_TEST_EQ(ref_value, res);
+        BOOST_TEST(!overflowed);
     }
 }
 
 template <typename T>
-void test_saturating_multiplication()
+void test_saturating_subtraction()
 {
     using basis_type = detail::underlying_type_t<T>;
-    boost::random::uniform_int_distribution<basis_type> dist {2U, std::numeric_limits<basis_type>::max()};
+    boost::random::uniform_int_distribution<basis_type> dist {1U, std::numeric_limits<basis_type>::max() - 1U};
 
     for (std::size_t i = 0; i < N; ++i)
     {
-        constexpr basis_type lhs_value {std::numeric_limits<basis_type>::max() - 1U};
-        const auto rhs_value {dist(rng)};
+        const auto lhs_value {dist(rng)};
+        constexpr basis_type rhs_value {std::numeric_limits<basis_type>::max()};
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
 
-        BOOST_TEST_EQ(saturating_mul(lhs, rhs), std::numeric_limits<T>::max());
+        const auto [res, overflowed] = overflowing_sub(lhs, rhs);
+
+        BOOST_TEST_EQ(res, T{static_cast<basis_type>(lhs_value - std::numeric_limits<basis_type>::max())});
+        BOOST_TEST(overflowed);
     }
 }
 
+
 int main()
 {
-    test_valid_multiplication<u8>();
-    test_saturating_multiplication<u8>();
+    test_valid_subtraction<u8>();
+    test_valid_subtraction<u16>();
+    test_valid_subtraction<u32>();
+    test_valid_subtraction<u64>();
+    test_valid_subtraction<u128>();
 
-    test_valid_multiplication<u16>();
-    test_saturating_multiplication<u16>();
-
-    test_valid_multiplication<u32>();
-    test_saturating_multiplication<u32>();
-
-    test_valid_multiplication<u64>();
-    test_saturating_multiplication<u64>();
-
-    test_valid_multiplication<u128>();
-    test_saturating_multiplication<u128>();
+    test_saturating_subtraction<u8>();
+    test_saturating_subtraction<u16>();
+    test_saturating_subtraction<u32>();
+    test_saturating_subtraction<u64>();
+    test_saturating_subtraction<u128>();
 
     return boost::report_errors();
 }

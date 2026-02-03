@@ -74,6 +74,12 @@ run test_unsigned_comparisons.cpp ;
 run test_unsigned_saturating_subtraction.cpp ;
 run test_unsigned_saturating_multiplication.cpp ;
 run test_unsigned_saturating_division.cpp ;
+run test_unsigned_saturating_mod.cpp ;
+run test_unsigned_overflowing_addition.cpp ;
+run test_unsigned_overflowing_subtraction.cpp ;
+run test_unsigned_overflowing_multiplication.cpp ;
+run test_unsigned_overflowing_division.cpp ;
+run test_unsigned_overflowing_mod.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
