@@ -812,7 +812,6 @@ struct div_helper
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs)
-        noexcept(Policy == overflow_policy::saturate)
         -> unsigned_integer_basis<BasisType>
     {
         using result_type = unsigned_integer_basis<BasisType>;
@@ -825,7 +824,7 @@ struct div_helper
             }
             else if constexpr (Policy == overflow_policy::saturate)
             {
-                return result_type{std::numeric_limits<BasisType>::max()};
+                BOOST_THROW_EXCEPTION(std::domain_error("Unsigned division by zero"));
             }
             else
             {
@@ -849,7 +848,7 @@ template <unsigned_integral BasisType>
 struct div_helper<overflow_policy::overflow_tuple, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
-                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+                                              const unsigned_integer_basis<BasisType> rhs)
         -> std::tuple<unsigned_integer_basis<BasisType>, bool>
     {
         using result_type = unsigned_integer_basis<BasisType>;
@@ -857,7 +856,7 @@ struct div_helper<overflow_policy::overflow_tuple, BasisType>
         const auto divisor {static_cast<BasisType>(rhs)};
         if (divisor == 0U) [[unlikely]]
         {
-            return std::make_tuple(result_type{std::numeric_limits<BasisType>::max()}, true);
+            BOOST_THROW_EXCEPTION(std::domain_error("Unsigned division by zero"));
         }
 
         if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
@@ -874,7 +873,6 @@ struct div_helper<overflow_policy::overflow_tuple, BasisType>
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto div_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple)
 {
     return div_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -907,7 +905,6 @@ struct mod_helper
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs)
-        noexcept(Policy == overflow_policy::saturate)
         -> unsigned_integer_basis<BasisType>
     {
         using result_type = unsigned_integer_basis<BasisType>;
@@ -920,7 +917,7 @@ struct mod_helper
             }
             else if constexpr (Policy == overflow_policy::saturate)
             {
-                return result_type{0U};
+                BOOST_THROW_EXCEPTION(std::domain_error("Unsigned division by zero"));
             }
             else
             {
@@ -944,7 +941,7 @@ template <unsigned_integral BasisType>
 struct mod_helper<overflow_policy::overflow_tuple, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
-                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+                                              const unsigned_integer_basis<BasisType> rhs)
         -> std::tuple<unsigned_integer_basis<BasisType>, bool>
     {
         using result_type = unsigned_integer_basis<BasisType>;
@@ -952,7 +949,7 @@ struct mod_helper<overflow_policy::overflow_tuple, BasisType>
         const auto divisor {static_cast<BasisType>(rhs)};
         if (divisor == 0U) [[unlikely]]
         {
-            return std::make_tuple(result_type{0U}, true);
+            BOOST_THROW_EXCEPTION(std::domain_error("Unsigned division by zero"));
         }
 
         if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
@@ -969,7 +966,6 @@ struct mod_helper<overflow_policy::overflow_tuple, BasisType>
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto mod_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple)
 {
     return mod_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -1094,7 +1090,7 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating multiplication",
 
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto div_sat(const detail::unsigned_integer_basis<BasisType> lhs,
-                                     const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+                                     const detail::unsigned_integer_basis<BasisType> rhs)
     -> detail::unsigned_integer_basis<BasisType>
 {
     return detail::div_impl<detail::overflow_policy::saturate>(lhs, rhs);

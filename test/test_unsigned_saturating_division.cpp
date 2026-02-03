@@ -125,7 +125,7 @@ void test_throwing_division()
         const T lhs {lhs_value};
         const T rhs {rhs_value};
 
-        BOOST_TEST_EQ(div_sat(lhs, rhs), std::numeric_limits<T>::max());
+        BOOST_TEST_THROWS(div_sat(lhs, rhs), std::domain_error);
     }
 }
 
