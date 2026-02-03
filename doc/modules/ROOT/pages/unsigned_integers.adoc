@@ -58,7 +58,8 @@ Narrowing conversions cause a compile-time error.
 
 == Comparison Operators
 
-Full three-way comparison is supported via `operator<=>`, which returns `std::strong_ordering`. All comparison operators (`<`, `<=`, `>`, `>=`, `==`, `!=`) are available.
+Full three-way comparison is supported via `pass:[operator<=>]`, which returns `std::strong_ordering`.
+All comparison operators (`<`, `<=`, `>`, `>=`, `==`, `!=`) are available.
 
 == Arithmetic Operators
 
@@ -103,9 +104,49 @@ Operations between different width safe integer types are compile-time errors. T
 For cases where throwing exceptions is not desired, saturating arithmetic functions are provided.
 These functions clamp the result to the representable range instead of throwing.
 
-=== add_sat
+[source, c++]
+----
+namespace boost::safe_numbers {
 
-Returns the sum of two values, saturating at the maximum value on overflow.
+template <UnsignedLibType T>
+constexpr T saturating_add(const T lhs, const T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T saturating_sub(const T lhs, const T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T saturating_mul(const T lhs, const T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T saturating_div(const T lhs, const T rhs);
+
+template <UnsignedLibType T>
+constexpr T saturating_mod(const T lhs, const T rhs);
+
+}
+----
+
+=== saturating_add
+
+Returns the sum of two values, saturating at the maximum value on overflow (i.e., returns `std::numeric_limits::max`).
+
+=== saturating_sub
+
+Returns the difference of two values, saturating at the minimum value on underflow (i.e., returns `std::numeric_limits::min`).
+
+=== saturating_mul
+
+Returns the product of two values, saturating at the maximum value on overflow (i.e., returns `std::numeric_limits::max`).
+
+=== saturating_div
+
+Returns the quotient of two values, and throws `std::range_error` in the event of division by 0.
+Otherwise, overflow and underflow are impossible.
+
+=== saturating_div
+
+Returns the remainder of two values, and throws `std::range_error` in the event of division by 0.
+Otherwise, overflow and underflow are impossible.
 
 == Exception Summary
 
@@ -114,21 +155,21 @@ Returns the sum of two values, saturating at the maximum value on overflow.
 
 | `+`, `+=`
 | `std::overflow_error`
-| Result exceeds maximum value
+| The result exceeds maximum value
 
 | `-`, `-=`
 | `std::underflow_error`
-| Result would be negative
+| The result would be negative
 
-| `*`, `*=`
+| `pass:[*]`, `pass:[*=]`
 | `std::overflow_error`
-| Result exceeds maximum value
+| The result exceeds maximum value
 
-| `/`, `/=`
+| `/`, `/=`, `saturating_div`
 | `std::domain_error`
 | Division by zero
 
-| `%`, `%=`
+| `%`, `%=`, `saturating_mod`
 | `std::domain_error`
 | Modulo by zero
 
@@ -143,4 +184,5 @@ Returns the sum of two values, saturating at the maximum value on overflow.
 
 == Constexpr Support
 
-All operations are `constexpr`-compatible when evaluated at compile time. Overflow at compile time results in a compile error.
+All operations are `constexpr`-compatible.
+Overflow at compile time results in a compiler error.
