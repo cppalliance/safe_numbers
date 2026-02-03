@@ -153,7 +153,7 @@ Otherwise, overflow and underflow are impossible.
 |===
 | Operation | Exception Type | Condition
 
-| `+`, `+=`
+| `pass:[+]`, `pass:[+=]`
 | `std::overflow_error`
 | The result exceeds maximum value
 
