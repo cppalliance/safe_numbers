@@ -1051,7 +1051,7 @@ namespace boost::safe_numbers {
 
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto saturating_add(const detail::unsigned_integer_basis<BasisType> lhs,
-                                     const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+                                            const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> detail::unsigned_integer_basis<BasisType>
 {
     return detail::add_impl<detail::overflow_policy::saturate>(lhs, rhs);
@@ -1061,7 +1061,7 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating addition", satur
 
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto saturating_sub(const detail::unsigned_integer_basis<BasisType> lhs,
-                                     const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+                                            const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> detail::unsigned_integer_basis<BasisType>
 {
     return detail::sub_impl<detail::overflow_policy::saturate>(lhs, rhs);
@@ -1071,7 +1071,7 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating subtraction", sa
 
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto saturating_mul(const detail::unsigned_integer_basis<BasisType> lhs,
-                                     const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+                                            const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> detail::unsigned_integer_basis<BasisType>
 {
     return detail::mul_impl<detail::overflow_policy::saturate>(lhs, rhs);
@@ -1081,7 +1081,7 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating multiplication",
 
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto saturating_div(const detail::unsigned_integer_basis<BasisType> lhs,
-                                     const detail::unsigned_integer_basis<BasisType> rhs)
+                                            const detail::unsigned_integer_basis<BasisType> rhs)
     -> detail::unsigned_integer_basis<BasisType>
 {
     return detail::div_impl<detail::overflow_policy::saturate>(lhs, rhs);
@@ -1091,7 +1091,7 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating division", satur
 
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto saturating_mod(const detail::unsigned_integer_basis<BasisType> lhs,
-                                     const detail::unsigned_integer_basis<BasisType> rhs)
+                                            const detail::unsigned_integer_basis<BasisType> rhs)
     -> detail::unsigned_integer_basis<BasisType>
 {
     return detail::mod_impl<detail::overflow_policy::saturate>(lhs, rhs);
@@ -1125,7 +1125,7 @@ template <detail::unsigned_integral BasisType>
 
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto overflowing_div(const detail::unsigned_integer_basis<BasisType> lhs,
-                                             const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+                                             const detail::unsigned_integer_basis<BasisType> rhs)
     -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
 {
     return detail::div_impl<detail::overflow_policy::overflow_tuple>(lhs, rhs);
@@ -1133,7 +1133,7 @@ template <detail::unsigned_integral BasisType>
 
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto overflowing_mod(const detail::unsigned_integer_basis<BasisType> lhs,
-                                             const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+                                             const detail::unsigned_integer_basis<BasisType> rhs)
     -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
 {
     return detail::mod_impl<detail::overflow_policy::overflow_tuple>(lhs, rhs);
