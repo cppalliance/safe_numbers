@@ -123,7 +123,7 @@ constexpr T saturating_div(const T lhs, const T rhs);
 template <UnsignedLibType T>
 constexpr T saturating_mod(const T lhs, const T rhs);
 
-}
+} // namespace boost::safe_numbers
 ----
 
 === saturating_add
@@ -144,6 +144,55 @@ Returns the quotient of two values, and throws `std::range_error` in the event o
 Otherwise, overflow and underflow are impossible.
 
 === saturating_div
+
+Returns the remainder of two values, and throws `std::range_error` in the event of division by 0.
+Otherwise, overflow and underflow are impossible.
+
+== Overflowing Arithmetic
+
+This family of functions provides well-defined wrapping semantics as well as a flag to alert the consumer if overflow occurred.
+This follows normal C family unsigned rollover where `UINT_MAX + 1 == 0` and `UINT_MIN - 1 == UINT_MAX`.
+
+[source, c++]
+----
+namespace boost::safe_numbers {
+
+template <UnsignedLibType T>
+constexpr std::tuple<T, bool> overflowing_add(const T lhs, const T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::tuple<T, bool> overflowing_sub(const T lhs, const T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::tuple<T, bool> overflowing_mul(const T lhs, const T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::tuple<T, bool> overflowing_div(const T lhs, const T rhs);
+
+template <UnsignedLibType T>
+constexpr std::tuple<T, bool> overflowing_mod(const T lhs, const T rhs);
+
+} // namespace boost::safe_numbers
+----
+
+=== overflowing_add
+
+Returns the sum of two values, wrapping the sum and setting the `bool` in the return to `true` as required.
+
+=== overflowing_sub
+
+Returns the difference of two values, wrapping the difference and setting the `bool` in the return to `true` as required.
+
+=== overflowing_mul
+
+Returns the product of two values, wrapping the product and setting the `bool` in the return to `true` as required.
+
+=== overflowing_div
+
+Returns the quotient of two values, and throws `std::range_error` in the event of division by 0.
+Otherwise, overflow and underflow are impossible.
+
+=== overflowing_mod
 
 Returns the remainder of two values, and throws `std::range_error` in the event of division by 0.
 Otherwise, overflow and underflow are impossible.
