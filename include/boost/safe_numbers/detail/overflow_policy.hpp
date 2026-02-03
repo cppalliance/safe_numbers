@@ -10,7 +10,8 @@ namespace boost::safe_numbers::detail {
 enum class overflow_policy
 {
     throw_exception,
-    saturate
+    saturate,
+    overflow_tuple,
 };
 
 } // namespace boost::safe_numbers::detail
