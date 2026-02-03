@@ -191,6 +191,7 @@ template <overflow_policy Policy, unsigned_integral BasisType>
     {
         if constexpr (Policy == overflow_policy::throw_exception)
         {
+            static_cast<void>(res);
             BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
         }
         else if constexpr (Policy == overflow_policy::saturate)
@@ -199,6 +200,7 @@ template <overflow_policy Policy, unsigned_integral BasisType>
         }
         else
         {
+            static_cast<void>(res);
             BOOST_SAFE_NUMBERS_UNREACHABLE;
         }
     };
@@ -444,6 +446,7 @@ template <overflow_policy Policy, unsigned_integral BasisType>
     {
         if constexpr (Policy == overflow_policy::throw_exception)
         {
+            static_cast<void>(res);
             BOOST_THROW_EXCEPTION(std::underflow_error("Underflow detected in unsigned subtraction"));
         }
         else if constexpr (Policy == overflow_policy::saturate)
@@ -452,6 +455,7 @@ template <overflow_policy Policy, unsigned_integral BasisType>
         }
         else
         {
+            static_cast<void>(res);
             BOOST_SAFE_NUMBERS_UNREACHABLE;
         }
     };
@@ -603,9 +607,11 @@ template <overflow_policy Policy, unsigned_integral BasisType>
     const auto rhs_basis {static_cast<BasisType>(rhs)};
     BasisType res {};
 
-    auto handle_overflow = [&res]() {
+    auto handle_overflow = [&res]()
+    {
         if constexpr (Policy == overflow_policy::throw_exception)
         {
+            static_cast<void>(res);
             BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned multiplication"));
         }
         else if constexpr (Policy == overflow_policy::saturate)
@@ -614,6 +620,7 @@ template <overflow_policy Policy, unsigned_integral BasisType>
         }
         else
         {
+            static_cast<void>(res);
             BOOST_SAFE_NUMBERS_UNREACHABLE;
         }
     };
