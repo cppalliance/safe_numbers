@@ -1260,6 +1260,8 @@ template <detail::unsigned_integral BasisType>
     return detail::add_impl<detail::overflow_policy::overflow_tuple>(lhs, rhs);
 }
 
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("overflowing addition", overflowing_add)
+
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto overflowing_sub(const detail::unsigned_integer_basis<BasisType> lhs,
                                              const detail::unsigned_integer_basis<BasisType> rhs) noexcept
@@ -1267,6 +1269,8 @@ template <detail::unsigned_integral BasisType>
 {
     return detail::sub_impl<detail::overflow_policy::overflow_tuple>(lhs, rhs);
 }
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("overflowing subtraction", overflowing_sub)
 
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto overflowing_mul(const detail::unsigned_integer_basis<BasisType> lhs,
@@ -1276,6 +1280,8 @@ template <detail::unsigned_integral BasisType>
     return detail::mul_impl<detail::overflow_policy::overflow_tuple>(lhs, rhs);
 }
 
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("overflowing multiplication", overflowing_mul)
+
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto overflowing_div(const detail::unsigned_integer_basis<BasisType> lhs,
                                              const detail::unsigned_integer_basis<BasisType> rhs)
@@ -1283,6 +1289,8 @@ template <detail::unsigned_integral BasisType>
 {
     return detail::div_impl<detail::overflow_policy::overflow_tuple>(lhs, rhs);
 }
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("overflowing division", overflowing_div)
 
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto overflowing_mod(const detail::unsigned_integer_basis<BasisType> lhs,
@@ -1292,6 +1300,8 @@ template <detail::unsigned_integral BasisType>
     return detail::mod_impl<detail::overflow_policy::overflow_tuple>(lhs, rhs);
 }
 
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("overflowing modulo", overflowing_mod)
+
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto checked_add(const detail::unsigned_integer_basis<BasisType> lhs,
                                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
@@ -1299,6 +1309,8 @@ template <detail::unsigned_integral BasisType>
 {
     return detail::add_impl<detail::overflow_policy::checked>(lhs, rhs);
 }
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("checked addition", checked_add)
 
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto checked_sub(const detail::unsigned_integer_basis<BasisType> lhs,
@@ -1308,6 +1320,8 @@ template <detail::unsigned_integral BasisType>
     return detail::sub_impl<detail::overflow_policy::checked>(lhs, rhs);
 }
 
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("checked subtraction", checked_sub)
+
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto checked_mul(const detail::unsigned_integer_basis<BasisType> lhs,
                                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
@@ -1315,6 +1329,8 @@ template <detail::unsigned_integral BasisType>
 {
     return detail::mul_impl<detail::overflow_policy::checked>(lhs, rhs);
 }
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("checked multiplication", checked_mul)
 
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto checked_div(const detail::unsigned_integer_basis<BasisType> lhs,
@@ -1324,6 +1340,8 @@ template <detail::unsigned_integral BasisType>
     return detail::div_impl<detail::overflow_policy::checked>(lhs, rhs);
 }
 
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("checked division", checked_div)
+
 template <detail::unsigned_integral BasisType>
 [[nodiscard]] constexpr auto checked_mod(const detail::unsigned_integer_basis<BasisType> lhs,
                                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
@@ -1331,6 +1349,8 @@ template <detail::unsigned_integral BasisType>
 {
     return detail::mod_impl<detail::overflow_policy::checked>(lhs, rhs);
 }
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("checked modulo", checked_mod)
 
 } // namespace boost::safe_numbers
 
