@@ -126,8 +126,16 @@ void test_overflowing_multiplication()
         const T lhs {lhs_value};
         const T rhs {rhs_value};
         const auto [res, overflowed] = overflowing_mul(lhs, rhs);
-        
-        BOOST_TEST_EQ(res, T{static_cast<basis_type>(lhs_value * rhs_value)});
+
+        if constexpr (std::is_same_v<basis_type, std::uint8_t> || std::is_same_v<basis_type, std::uint16_t>)
+        {
+            BOOST_TEST_EQ(res, T{static_cast<basis_type>(static_cast<std::uint32_t>(lhs_value) * static_cast<std::uint32_t>(rhs_value))});
+        }
+        else
+        {
+            BOOST_TEST_EQ(res, T{static_cast<basis_type>(lhs_value * rhs_value)});
+        }
+
         BOOST_TEST(overflowed);
     }
 }
