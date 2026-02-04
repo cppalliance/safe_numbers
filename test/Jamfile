@@ -105,3 +105,7 @@ run ../examples/basic_usage.cpp ;
 compile-fail ../examples/compile_fail_basic_usage_constexpr.cpp ;
 run ../examples/debugger.cpp ;
 run ../examples/construction_and_conversion.cpp ;
+run ../examples/saturating_arithmetic.cpp ;
+run ../examples/overflowing_arithmetic.cpp ;
+run ../examples/checked_arithmetic.cpp ;
+run ../examples/wrapping_arithmetic.cpp ;
