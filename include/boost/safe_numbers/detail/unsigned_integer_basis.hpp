@@ -301,10 +301,42 @@ struct add_helper<overflow_policy::checked, BasisType>
     }
 };
 
+// Partial specialization for wrapping policy
+template <unsigned_integral BasisType>
+struct add_helper<overflow_policy::wrapping, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+        -> unsigned_integer_basis<BasisType>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType res {};
+
+        if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
+        {
+            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+            if (!std::is_constant_evaluated())
+            {
+                impl::unsigned_intrin_add(lhs_basis, rhs_basis, res);
+                return result_type{res};
+            }
+
+            #endif
+        }
+
+        impl::unsigned_no_intrin_add(lhs_basis, rhs_basis, res);
+        return result_type{res};
+    }
+};
+
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto add_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked)
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::wrapping)
 {
     return add_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -632,10 +664,42 @@ struct sub_helper<overflow_policy::checked, BasisType>
     }
 };
 
+// Partial specialization for wrapping policy
+template <unsigned_integral BasisType>
+struct sub_helper<overflow_policy::wrapping, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+        -> unsigned_integer_basis<BasisType>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType res {};
+
+        if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
+        {
+            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+            if (!std::is_constant_evaluated())
+            {
+                impl::unsigned_intrin_sub(lhs_basis, rhs_basis, res);
+                return result_type{res};
+            }
+
+            #endif
+        }
+
+        impl::unsigned_no_intrin_sub(lhs_basis, rhs_basis, res);
+        return result_type{res};
+    }
+};
+
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto sub_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked)
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::wrapping)
 {
     return sub_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -864,10 +928,42 @@ struct mul_helper<overflow_policy::checked, BasisType>
     }
 };
 
+// Partial specialization for wrapping policy
+template <unsigned_integral BasisType>
+struct mul_helper<overflow_policy::wrapping, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+        -> unsigned_integer_basis<BasisType>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType res {};
+
+        if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
+        {
+            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)
+
+            if (!std::is_constant_evaluated())
+            {
+                impl::unsigned_intrin_mul(lhs_basis, rhs_basis, res);
+                return result_type{res};
+            }
+
+            #endif
+        }
+
+        impl::no_intrin_mul(lhs_basis, rhs_basis, res);
+        return result_type{res};
+    }
+};
+
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto mul_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked)
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::wrapping)
 {
     return mul_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -981,6 +1077,35 @@ struct div_helper<overflow_policy::checked, BasisType>
         else
         {
             return std::make_optional(result_type{static_cast<BasisType>(lhs) / divisor});
+        }
+    }
+};
+
+// Partial specialization for wrapping policy
+// Note: unsigned division cannot overflow, so this just performs normal division
+// Division by zero still throws
+template <unsigned_integral BasisType>
+struct div_helper<overflow_policy::wrapping, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs)
+        -> unsigned_integer_basis<BasisType>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto divisor {static_cast<BasisType>(rhs)};
+        if (divisor == 0U) [[unlikely]]
+        {
+            BOOST_THROW_EXCEPTION(std::domain_error("Unsigned division by zero"));
+        }
+
+        if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
+        {
+            return result_type{static_cast<BasisType>(static_cast<BasisType>(lhs) / divisor)};
+        }
+        else
+        {
+            return result_type{static_cast<BasisType>(lhs) / divisor};
         }
     }
 };
@@ -1102,6 +1227,35 @@ struct mod_helper<overflow_policy::checked, BasisType>
         else
         {
             return std::make_optional(result_type{static_cast<BasisType>(lhs) % divisor});
+        }
+    }
+};
+
+// Partial specialization for wrapping policy
+// Note: unsigned modulo cannot overflow, so this just performs normal modulo
+// Modulo by zero still throws
+template <unsigned_integral BasisType>
+struct mod_helper<overflow_policy::wrapping, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs)
+        -> unsigned_integer_basis<BasisType>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto divisor {static_cast<BasisType>(rhs)};
+        if (divisor == 0U) [[unlikely]]
+        {
+            BOOST_THROW_EXCEPTION(std::domain_error("Unsigned modulo by zero"));
+        }
+
+        if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
+        {
+            return result_type{static_cast<BasisType>(static_cast<BasisType>(lhs) % divisor)};
+        }
+        else
+        {
+            return result_type{static_cast<BasisType>(lhs) % divisor};
         }
     }
 };
@@ -1351,6 +1505,56 @@ template <detail::unsigned_integral BasisType>
 }
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("checked modulo", checked_mod)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto wrapping_add(const detail::unsigned_integer_basis<BasisType> lhs,
+                                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::add_impl<detail::overflow_policy::wrapping>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("wrapping addition", wrapping_add)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto wrapping_sub(const detail::unsigned_integer_basis<BasisType> lhs,
+                                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::sub_impl<detail::overflow_policy::wrapping>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("wrapping subtraction", wrapping_sub)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto wrapping_mul(const detail::unsigned_integer_basis<BasisType> lhs,
+                                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::mul_impl<detail::overflow_policy::wrapping>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("wrapping multiplication", wrapping_mul)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto wrapping_div(const detail::unsigned_integer_basis<BasisType> lhs,
+                                          const detail::unsigned_integer_basis<BasisType> rhs)
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::div_impl<detail::overflow_policy::wrapping>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("wrapping division", wrapping_div)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto wrapping_mod(const detail::unsigned_integer_basis<BasisType> lhs,
+                                          const detail::unsigned_integer_basis<BasisType> rhs)
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::mod_impl<detail::overflow_policy::wrapping>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("wrapping modulo", wrapping_mod)
 
 } // namespace boost::safe_numbers
 
