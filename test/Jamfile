@@ -119,5 +119,6 @@ run ../examples/overflowing_arithmetic.cpp ;
 run ../examples/checked_arithmetic.cpp ;
 run ../examples/wrapping_arithmetic.cpp ;
 run ../examples/strict_arithmetic.cpp ;
+run ../examples/generic_arithmetic.cpp ;
 run ../examples/fmt_format.cpp ;
 run ../examples/charconv.cpp ;
