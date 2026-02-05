@@ -1,0 +1,169 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#format]
+= Formatting Support
+:idprefix: format_
+
+== Description
+
+Boost.SafeNumbers supports formatting with both `<format>` (C++20 and later) and `<fmt/format.h>` (all language standards).
+The formatters delegate to the underlying integer type's formatter, so all standard integer format specifiers are supported.
+
+`std::format` is supported when using C++20 or later with a compiler that has appropriate support: GCC >= 13, Clang >= 18, MSVC >= 19.40.
+
+[source,c++]
+----
+#include <boost/safe_numbers/format.hpp>     // For std::format support
+#include <boost/safe_numbers/fmt_format.hpp> // For fmt::format support
+----
+
+== Synopsis
+
+[source,c++]
+----
+// <boost/safe_numbers/format.hpp>
+template <unsigned_integral BasisType>
+struct std::formatter<boost::safe_numbers::detail::unsigned_integer_basis<BasisType>>
+    : std::formatter<BasisType>
+{
+    auto format(const unsigned_integer_basis<BasisType>& val,
+                std::format_context& ctx) const;
+};
+
+// <boost/safe_numbers/fmt_format.hpp>
+template <unsigned_integral BasisType>
+struct fmt::formatter<boost::safe_numbers::detail::unsigned_integer_basis<BasisType>>
+    : fmt::formatter<BasisType>
+{
+    auto format(const unsigned_integer_basis<BasisType>& val,
+                fmt::format_context& ctx) const;
+};
+----
+
+== Type Modifiers
+
+The following type modifiers are supported (same as built-in integer types):
+
+|===
+| Modifier | Format | Example
+
+| `d` | Decimal (default) | `12345`
+| `x` | Lowercase hexadecimal | `3039`
+| `X` | Uppercase hexadecimal | `3039`
+| `o` | Octal | `30071`
+| `b` | Lowercase binary | `11000000111001`
+| `B` | Uppercase binary | `11000000111001`
+|===
+
+Example usage for hexadecimal format: `{:x}`
+
+== Alternate Form
+
+Use `#` to enable alternate form which adds a prefix:
+
+|===
+| Format | Prefix
+
+| `{:#x}` | `0x`
+| `{:#X}` | `0X`
+| `{:#o}` | `0`
+| `{:#b}` | `0b`
+| `{:#B}` | `0B`
+|===
+
+== Padding and Alignment
+
+Values can be padded to a fixed width with optional alignment:
+
+|===
+| Specifier | Alignment | Example (`val = 42`)
+
+| `{:>10}` | Right (default) | `        42`
+| `{:<10}` | Left | `42        `
+| `{:^10}` | Center | `    42    `
+| `{:0>10}` | Right with zero fill | `0000000042`
+|===
+
+== Fill Character
+
+A custom fill character can be specified before the alignment:
+
+- `{:*>10}` produces `********42`
+- `{:_<10}` produces `42________`
+
+== Sign Modifier
+
+For unsigned types, sign modifiers have limited effect since values are always non-negative:
+
+|===
+| Modifier | Effect
+
+| `+` | Always show sign (shows `+` for positive values)
+| `-` | Only show sign for negative (no effect for unsigned)
+| ` ` | Space for positive, minus for negative
+|===
+
+== Locale Modifier
+
+Use `L` to apply locale-specific formatting (e.g., thousand separators):
+
+[source,c++]
+----
+std::locale::global(std::locale("en_US.UTF-8"));
+std::cout << std::format("{:L}", u32{1234567}); // "1,234,567"
+----
+
+== Format Specifier Order
+
+The full format specifier order is:
+
+----
+{[fill][align][sign][#][0][width][.precision][L][type]}
+----
+
+== Examples
+
+IMPORTANT: The header `<boost/safe_numbers/fmt_format.hpp>` is *NOT* part of the convenience header, because it is an optional dependency on a potentially compiled library.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/fmt_format.cpp[example] demonstrates how to use pass:[{fmt}] with the safe integer types.
+====
+[source, c++]
+----
+include::example$fmt_format.cpp[]
+----
+
+Output:
+----
+Default Format:
+12345
+9876543210
+
+Hexadecimal Format:
+3039
+0x24cb016ea
+
+Binary Format:
+11000000111001
+0b101010
+
+Octal Format:
+30071
+030071
+
+Padding and Alignment:
+     12345
+12345
+  12345
+0000012345
+
+Fill Character:
+*****12345
+12345_____
+----
+====
+
+This same example can be run with `<format>` by replacing `fmt::format` with `std::format` and including `<boost/safe_numbers/format.hpp>` instead.
