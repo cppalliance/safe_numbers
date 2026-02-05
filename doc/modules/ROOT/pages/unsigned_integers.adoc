@@ -184,6 +184,22 @@ constexpr T strict_div(T lhs, T rhs) noexcept;
 template <UnsignedLibType T>
 constexpr T strict_mod(T lhs, T rhs) noexcept;
 
+// Generic policy-parameterized arithmetic
+template <overflow_policy Policy, UnsignedLibType T>
+constexpr auto add(T lhs, T rhs);
+
+template <overflow_policy Policy, UnsignedLibType T>
+constexpr auto sub(T lhs, T rhs);
+
+template <overflow_policy Policy, UnsignedLibType T>
+constexpr auto mul(T lhs, T rhs);
+
+template <overflow_policy Policy, UnsignedLibType T>
+constexpr auto div(T lhs, T rhs);
+
+template <overflow_policy Policy, UnsignedLibType T>
+constexpr auto mod(T lhs, T rhs);
+
 } // namespace boost::safe_numbers
 ----
 
@@ -316,259 +332,7 @@ To perform operations between different widths, explicitly convert to the same t
 == Alternative Arithmetic Functions
 
 For cases where throwing exceptions is not desired, alternative arithmetic functions are provided with different overflow handling policies.
-
-=== Saturating Arithmetic
-
-[source,c++]
-----
-template <UnsignedLibType T>
-constexpr T saturating_add(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr T saturating_sub(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr T saturating_mul(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr T saturating_div(T lhs, T rhs);
-
-template <UnsignedLibType T>
-constexpr T saturating_mod(T lhs, T rhs);
-----
-
-These functions clamp the result to the representable range instead of throwing:
-
-- `saturating_add`: Returns the sum, saturating at `std::numeric_limits<T>::max()` on overflow
-- `saturating_sub`: Returns the difference, saturating at `std::numeric_limits<T>::min()` (zero) on underflow
-- `saturating_mul`: Returns the product, saturating at `std::numeric_limits<T>::max()` on overflow
-- `saturating_div`: Returns the quotient; throws `std::domain_error` on division by zero (overflow is impossible)
-- `saturating_mod`: Returns the remainder; throws `std::domain_error` on division by zero (overflow is impossible)
-
-=== Overflowing Arithmetic
-
-[source,c++]
-----
-template <UnsignedLibType T>
-constexpr std::pair<T, bool> overflowing_add(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr std::pair<T, bool> overflowing_sub(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr std::pair<T, bool> overflowing_mul(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr std::pair<T, bool> overflowing_div(T lhs, T rhs);
-
-template <UnsignedLibType T>
-constexpr std::pair<T, bool> overflowing_mod(T lhs, T rhs);
-----
-
-These functions provide well-defined wrapping semantics with a flag to indicate if overflow occurred.
-This follows normal C family unsigned rollover where `UINT_MAX + 1 == 0` and `0 - 1 == UINT_MAX`.
-
-- `overflowing_add`: Returns the wrapped sum and `true` if overflow occurred
-- `overflowing_sub`: Returns the wrapped difference and `true` if underflow occurred
-- `overflowing_mul`: Returns the wrapped product and `true` if overflow occurred
-- `overflowing_div`: Returns the quotient and `false`; throws `std::domain_error` on division by zero
-- `overflowing_mod`: Returns the remainder and `false`; throws `std::domain_error` on division by zero
-
-=== Checked Arithmetic
-
-[source,c++]
-----
-template <UnsignedLibType T>
-constexpr std::optional<T> checked_add(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr std::optional<T> checked_sub(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr std::optional<T> checked_mul(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr std::optional<T> checked_div(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr std::optional<T> checked_mod(T lhs, T rhs) noexcept;
-----
-
-These functions return `std::nullopt` on overflow, underflow, or division by zero:
-
-- `checked_add`: Returns the sum, or `std::nullopt` on overflow
-- `checked_sub`: Returns the difference, or `std::nullopt` on underflow
-- `checked_mul`: Returns the product, or `std::nullopt` on overflow
-- `checked_div`: Returns the quotient, or `std::nullopt` on division by zero
-- `checked_mod`: Returns the remainder, or `std::nullopt` on division by zero
-
-=== Wrapping Arithmetic
-
-[source,c++]
-----
-template <UnsignedLibType T>
-constexpr T wrapping_add(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr T wrapping_sub(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr T wrapping_mul(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr T wrapping_div(T lhs, T rhs);
-
-template <UnsignedLibType T>
-constexpr T wrapping_mod(T lhs, T rhs);
-----
-
-These functions wrap on overflow without any indication:
-
-- `wrapping_add`: Returns the wrapped sum
-- `wrapping_sub`: Returns the wrapped difference
-- `wrapping_mul`: Returns the wrapped product
-- `wrapping_div`: Returns the quotient; throws `std::domain_error` on division by zero
-- `wrapping_mod`: Returns the remainder; throws `std::domain_error` on division by zero
-
-=== Strict Arithmetic
-
-[source,c++]
-----
-template <UnsignedLibType T>
-constexpr T strict_add(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr T strict_sub(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr T strict_mul(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr T strict_div(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr T strict_mod(T lhs, T rhs) noexcept;
-----
-
-These functions call `std::exit(EXIT_FAILURE)` on error, providing a hard termination policy for safety-critical applications where exceptions cannot be used:
-
-- `strict_add`: Returns the sum; calls `std::exit(EXIT_FAILURE)` on overflow
-- `strict_sub`: Returns the difference; calls `std::exit(EXIT_FAILURE)` on underflow
-- `strict_mul`: Returns the product; calls `std::exit(EXIT_FAILURE)` on overflow
-- `strict_div`: Returns the quotient; calls `std::exit(EXIT_FAILURE)` on division by zero
-- `strict_mod`: Returns the remainder; calls `std::exit(EXIT_FAILURE)` on modulo by zero
-
-All strict functions are marked `noexcept` since `std::exit` does not throw.
-
-== Exception Summary
-
-|===
-| Operation | Exception Type | Condition
-
-| `pass:[+]`, `pass:[+=]`
-| `std::overflow_error`
-| Result exceeds maximum value
-
-| `-`, `-=`
-| `std::underflow_error`
-| Result would be negative
-
-| `pass:[*]`, `pass:[*=]`
-| `std::overflow_error`
-| Result exceeds maximum value
-
-| `/`, `/=`
-| `std::domain_error`
-| Division by zero
-
-| `%`, `%=`
-| `std::domain_error`
-| Modulo by zero
-
-| `++` (pre/post)
-| `std::overflow_error`
-| Value is at maximum
-
-| `--` (pre/post)
-| `std::underflow_error`
-| Value is zero
-
-| `saturating_div`, `saturating_mod`
-| `std::domain_error`
-| Division by zero
-
-| `overflowing_div`, `overflowing_mod`
-| `std::domain_error`
-| Division by zero
-
-| `wrapping_div`, `wrapping_mod`
-| `std::domain_error`
-| Division by zero
-|===
-
-== Strict Functions Behavior
-
-The `strict_*` functions do not throw exceptions. Instead, they call `std::exit(EXIT_FAILURE)` on error:
-
-|===
-| Operation | Behavior | Condition
-
-| `strict_add`
-| `std::exit(EXIT_FAILURE)`
-| Overflow
-
-| `strict_sub`
-| `std::exit(EXIT_FAILURE)`
-| Underflow
-
-| `strict_mul`
-| `std::exit(EXIT_FAILURE)`
-| Overflow
-
-| `strict_div`
-| `std::exit(EXIT_FAILURE)`
-| Division by zero
-
-| `strict_mod`
-| `std::exit(EXIT_FAILURE)`
-| Modulo by zero
-|===
-
-== Policy Summary
-
-|===
-| Policy | Overflow/Underflow Behavior | Division by Zero | noexcept
-
-| Default operators
-| Throws exception
-| Throws `std::domain_error`
-| No
-
-| `saturating_*`
-| Clamps to min/max
-| Throws `std::domain_error`
-| Add/Sub/Mul: Yes, Div/Mod: No
-
-| `overflowing_*`
-| Wraps, returns flag
-| Throws `std::domain_error`
-| Add/Sub/Mul: Yes, Div/Mod: No
-
-| `checked_*`
-| Returns `std::nullopt`
-| Returns `std::nullopt`
-| Yes
-
-| `wrapping_*`
-| Wraps silently
-| Throws `std::domain_error`
-| Add/Sub/Mul: Yes, Div/Mod: No
-
-| `strict_*`
-| Calls `std::exit(EXIT_FAILURE)`
-| Calls `std::exit(EXIT_FAILURE)`
-| Yes
-|===
+See xref:policies.adoc[] for full documentation of all policies, named arithmetic functions, and the generic policy-parameterized interface.
 
 == Constexpr Support
 

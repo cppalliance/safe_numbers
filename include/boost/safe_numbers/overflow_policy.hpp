@@ -2,10 +2,10 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-#ifndef BOOST_SAFE_NUMBERS_DETAIL_OVERFLOW_POLICY_HPP
-#define BOOST_SAFE_NUMBERS_DETAIL_OVERFLOW_POLICY_HPP
+#ifndef BOOST_SAFE_NUMBERS_OVERFLOW_POLICY_HPP
+#define BOOST_SAFE_NUMBERS_OVERFLOW_POLICY_HPP
 
-namespace boost::safe_numbers::detail {
+namespace boost::safe_numbers {
 
 enum class overflow_policy
 {
@@ -17,6 +17,6 @@ enum class overflow_policy
     strict,
 };
 
-} // namespace boost::safe_numbers::detail
+} // namespace boost::safe_numbers
 
-#endif // BOOST_SAFE_NUMBERS_DETAIL_OVERFLOW_POLICY_HPP
+#endif // BOOST_SAFE_NUMBERS_OVERFLOW_POLICY_HPP

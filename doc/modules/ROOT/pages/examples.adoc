@@ -150,6 +150,59 @@ Counter sequence: 254 255 0 1 2
 ----
 ====
 
+[#examples_strict]
+== Strict Arithmetic
+
+Strict arithmetic calls `std::exit(EXIT_FAILURE)` on overflow, underflow, or division by zero.
+This provides a hard termination policy for safety-critical applications where exceptions cannot be used but silent wrapping is unacceptable.
+All strict functions are `noexcept`.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/strict_arithmetic.cpp[example] demonstrates strict arithmetic operations.
+====
+[source, c++]
+----
+include::example$strict_arithmetic.cpp[]
+----
+
+Output:
+----
+strict_add(100, 50) = 150
+strict_sub(100, 50) = 50
+strict_mul(100, 50) = 5000
+strict_div(100, 50) = 2
+strict_mod(100, 50) = 0
+strict_div(1000000, 3) = 333333
+strict_mod(1000000, 3) = 1
+----
+====
+
+[#examples_generic]
+== Generic Policy-Parameterized Arithmetic
+
+The generic `add`, `sub`, `mul`, `div`, and `mod` functions accept an `overflow_policy` as a template parameter, allowing you to write code that is generic over the overflow handling strategy.
+The return type varies by policy.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/generic_arithmetic.cpp[example] demonstrates the generic policy-parameterized interface.
+====
+[source, c++]
+----
+include::example$generic_arithmetic.cpp[]
+----
+
+Output:
+----
+add<throw_exception>(100, 50) = 150
+add<saturate>(100, 50)        = 150
+add<wrapping>(100, 50)        = 150
+add<strict>(100, 50)          = 150
+add<overflow_tuple>(100, 50)   = 150 (overflowed: false)
+add<checked>(100, 50)          = 150
+add<checked>(max, 1)           = nullopt (overflow)
+add<saturate>(max, 1)          = 4294967295
+add<wrapping>(max, 1)          = 0
+----
+====
+
 [#examples_charconv]
 == Character Conversion
 
@@ -252,4 +305,14 @@ The following table summarizes the behavior of each arithmetic policy:
 |Wraps around (modulo 2^N)
 |`T`
 |Counters, checksums, hashing
+
+|Strict
+|Calls `std::exit(EXIT_FAILURE)`
+|`T`
+|Safety-critical, no-exceptions environments
+
+|Generic (`add<Policy>`)
+|Depends on policy
+|Depends on policy
+|Policy-generic algorithms
 |===
