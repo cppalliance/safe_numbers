@@ -12,9 +12,11 @@ https://www.boost.org/LICENSE_1_0.txt
 
 The library provides user-defined literal suffixes for concise construction of safe integer types.
 The literals are defined in the `boost::safe_numbers::literals` namespace.
-For `_u8`, `_u16`, and `_u32`, the literal value is range-checked and throws `std::overflow_error` if the value exceeds the target type's maximum.
-The `_u64` literal performs no range check since `unsigned long long` maps directly to `std::uint64_t`.
-The `_u128` literal parses a string representation and throws `std::overflow_error` on overflow or `std::invalid_argument` on invalid input.
+The behavior of the literals depends on the type:
+
+- For `_u8`, `_u16`, and `_u32`, the literal value is range-checked and throws `std::overflow_error` if the value exceeds the target type's maximum.
+- The `_u64` literal performs no range check since `unsigned long long` maps directly to `std::uint64_t` (statically verified).
+- The `_u128` literal parses a string representation and throws `std::overflow_error` on overflow or `std::invalid_argument` on invalid input.
 
 [source,c++]
 ----
