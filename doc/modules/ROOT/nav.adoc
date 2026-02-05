@@ -6,6 +6,8 @@
 ** xref:examples.adoc#examples_overflowing[Overflowing Arithmetic]
 ** xref:examples.adoc#examples_checked[Checked Arithmetic]
 ** xref:examples.adoc#examples_wrapping[Wrapping Arithmetic]
+** xref:examples.adoc#examples_charconv[Character Conversion]
+** xref:examples.adoc#examples_fmt_format[Formatting]
 * xref:api_reference.adoc[]
 ** xref:api_reference.adoc#api_types[Types]
 ** xref:api_reference.adoc#api_functions[Functions]

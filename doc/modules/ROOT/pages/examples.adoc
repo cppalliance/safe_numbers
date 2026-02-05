@@ -13,15 +13,14 @@ All the following examples can be found in the examples/ folder of the library.
 [#examples_basic_usage]
 == Basic Usage (Default Throwing Behavior)
 
-.This https://github.com/boostorg/safe_numbers/blob/develop/examples/basic_usage.cpp[example] demonstrates the default behavior where arithmetic overflow throws an exception
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/basic_usage.cpp[example] demonstrates the default behavior where arithmetic overflow throws an exception.
 ====
 [source, c++]
 ----
 include::example$basic_usage.cpp[]
 ----
 
-.Expected Output
-[listing]
+Output:
 ----
 Error Detected: Overflow detected in unsigned addition
 ----
@@ -30,11 +29,17 @@ Error Detected: Overflow detected in unsigned addition
 [#examples_construction]
 == Construction and Conversion
 
-.This https://github.com/boostorg/safe_numbers/blob/develop/examples/construction_and_conversion.cpp[example] demonstrates safe integer construction and conversion
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/construction_and_conversion.cpp[example] demonstrates safe integer construction and conversion.
 ====
 [source, c++]
 ----
 include::example$construction_and_conversion.cpp[]
+----
+
+Output:
+----
+Safe Value: 42
+Builtin Value: 42
 ----
 ====
 
@@ -44,15 +49,14 @@ include::example$construction_and_conversion.cpp[]
 Saturating arithmetic clamps results to the type's minimum or maximum value instead of overflowing or throwing.
 This is useful when you want bounded behavior without exceptions.
 
-.This https://github.com/boostorg/safe_numbers/blob/develop/examples/saturating_arithmetic.cpp[example] demonstrates saturating arithmetic operations
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/saturating_arithmetic.cpp[example] demonstrates saturating arithmetic operations.
 ====
 [source, c++]
 ----
 include::example$saturating_arithmetic.cpp[]
 ----
 
-.Expected Output
-[listing]
+Output:
 ----
 saturating_add(max, 100) = 4294967295
 saturating_sub(10, 100) = 0
@@ -69,15 +73,14 @@ saturating_mul(100, 50) = 5000
 Overflowing arithmetic returns both the wrapped result and a boolean flag indicating whether overflow occurred.
 This gives you access to both the C-style wrapped value and overflow detection in a single operation.
 
-.This https://github.com/boostorg/safe_numbers/blob/develop/examples/overflowing_arithmetic.cpp[example] demonstrates overflowing arithmetic operations
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/overflowing_arithmetic.cpp[example] demonstrates overflowing arithmetic operations.
 ====
 [source, c++]
 ----
 include::example$overflowing_arithmetic.cpp[]
 ----
 
-.Expected Output
-[listing]
+Output:
 ----
 overflowing_add(max, 100):
   result = 99
@@ -101,15 +104,14 @@ Safe multiplication: 1000000000 * 5 = 5000000000
 Checked arithmetic returns `std::optional` - containing the result on success, or `std::nullopt` on overflow.
 This provides exception-free error handling with a clean, idiomatic interface.
 
-.This https://github.com/boostorg/safe_numbers/blob/develop/examples/checked_arithmetic.cpp[example] demonstrates checked arithmetic operations
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/checked_arithmetic.cpp[example] demonstrates checked arithmetic operations.
 ====
 [source, c++]
 ----
 include::example$checked_arithmetic.cpp[]
 ----
 
-.Expected Output
-[listing]
+Output:
 ----
 checked_add(max, 100) = overflow detected!
 checked_sub(10, 100) = underflow detected!
@@ -127,15 +129,14 @@ Safe: 1000000000 * 5 = 5000000000
 Wrapping arithmetic performs standard C unsigned integer wrapping behavior - results wrap around modulo 2^N.
 This matches the behavior of built-in unsigned integers and is useful for implementing counters, checksums, or hash functions.
 
-.This https://github.com/boostorg/safe_numbers/blob/develop/examples/wrapping_arithmetic.cpp[example] demonstrates wrapping arithmetic operations
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/wrapping_arithmetic.cpp[example] demonstrates wrapping arithmetic operations.
 ====
 [source, c++]
 ----
 include::example$wrapping_arithmetic.cpp[]
 ----
 
-.Expected Output
-[listing]
+Output:
 ----
 wrapping_add(255, 2) = 1
 wrapping_sub(0, 1) = 255
@@ -146,6 +147,75 @@ wrapping_add(100, 50) = 150
 wrapping_sub(100, 50) = 50
 wrapping_mul(100, 50) = 5000
 Counter sequence: 254 255 0 1 2
+----
+====
+
+[#examples_charconv]
+== Character Conversion
+
+The library provides `to_chars` and `from_chars` functions for converting between safe integers and strings using https://www.boost.org/doc/libs/master/libs/charconv/doc/html/charconv.html[Boost.Charconv].
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/charconv.cpp[example] demonstrates character conversion with various bases.
+====
+[source, c++]
+----
+include::example$charconv.cpp[]
+----
+
+Output:
+----
+to_chars (base 10): 12345
+to_chars (base 16): 3039
+to_chars (base 2):  11000000111001
+
+from_chars (base 10): 98765
+from_chars (base 16): 6699
+from_chars (base 2):  26
+----
+====
+
+[#examples_fmt_format]
+== Formatting with pass:[{fmt}]
+
+The library supports formatting with both `<format>` (C++20) and `<fmt/format.h>`.
+All standard integer format specifiers are supported.
+
+IMPORTANT: The header `<boost/safe_numbers/fmt_format.hpp>` is *NOT* part of the convenience header, because it is an optional dependency.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/fmt_format.cpp[example] demonstrates formatting with pass:[{fmt}].
+====
+[source, c++]
+----
+include::example$fmt_format.cpp[]
+----
+
+Output:
+----
+Default Format:
+12345
+9876543210
+
+Hexadecimal Format:
+3039
+0x24cb016ea
+
+Binary Format:
+11000000111001
+0b101010
+
+Octal Format:
+30071
+030071
+
+Padding and Alignment:
+     12345
+12345
+  12345
+0000012345
+
+Fill Character:
+*****12345
+12345_____
 ----
 ====
 
