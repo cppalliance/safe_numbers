@@ -70,6 +70,26 @@ run test_unsigned_std_format.cpp ;
 run test_unsigned_fmt_format.cpp ;
 run test_unsigned_charconv.cpp ;
 run test_unsigned_saturating_addition.cpp ;
+run test_unsigned_comparisons.cpp ;
+run test_unsigned_saturating_subtraction.cpp ;
+run test_unsigned_saturating_multiplication.cpp ;
+run test_unsigned_saturating_division.cpp ;
+run test_unsigned_saturating_mod.cpp ;
+run test_unsigned_overflowing_addition.cpp ;
+run test_unsigned_overflowing_subtraction.cpp ;
+run test_unsigned_overflowing_multiplication.cpp ;
+run test_unsigned_overflowing_division.cpp ;
+run test_unsigned_overflowing_mod.cpp ;
+run test_unsigned_checked_addition.cpp ;
+run test_unsigned_checked_subtraction.cpp ;
+run test_unsigned_checked_multiplication.cpp ;
+run test_unsigned_checked_division.cpp ;
+run test_unsigned_checked_mod.cpp ;
+run test_unsigned_wrapping_addition.cpp ;
+run test_unsigned_wrapping_subtraction.cpp ;
+run test_unsigned_wrapping_multiplication.cpp ;
+run test_unsigned_wrapping_division.cpp ;
+run test_unsigned_wrapping_mod.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;

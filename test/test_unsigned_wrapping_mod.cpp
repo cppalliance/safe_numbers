@@ -73,6 +73,7 @@ import boost.safe_numbers;
 #include <limits>
 #include <type_traits>
 #include <iostream>
+#include <stdexcept>
 
 #endif
 
@@ -82,11 +83,10 @@ inline std::mt19937_64 rng{42};
 inline constexpr std::size_t N {1024};
 
 template <typename T>
-void test_valid_addition()
+void test_valid_modulo()
 {
     using basis_type = detail::underlying_type_t<T>;
-    boost::random::uniform_int_distribution<basis_type> dist {std::numeric_limits<basis_type>::min() / 2U,
-                                                              std::numeric_limits<basis_type>::max() / 2U};
+    boost::random::uniform_int_distribution<basis_type> dist {1U, std::numeric_limits<basis_type>::max()};
 
     for (std::size_t i = 0; i < N; ++i)
     {
@@ -96,57 +96,46 @@ void test_valid_addition()
         T ref_value {};
         if constexpr (std::is_same_v<basis_type, std::uint8_t> || std::is_same_v<basis_type, std::uint16_t>)
         {
-            ref_value = static_cast<T>(static_cast<basis_type>(static_cast<std::uint32_t>(lhs_value + rhs_value)));
+            ref_value = static_cast<T>(static_cast<basis_type>(static_cast<std::uint32_t>(lhs_value) % rhs_value));
         }
         else
         {
-            ref_value = static_cast<T>(lhs_value + rhs_value);
+            ref_value = static_cast<T>(lhs_value % rhs_value);
         }
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
-        const T res {saturating_add(lhs, rhs)};
+        const T res {wrapping_mod(lhs, rhs)};
 
         BOOST_TEST_EQ(ref_value, res);
     }
 }
 
 template <typename T>
-void test_saturated_addition()
+void test_modulo_by_zero_throws()
 {
-    using basis_type = detail::underlying_type_t<T>;
-    boost::random::uniform_int_distribution<basis_type> dist {2U, std::numeric_limits<basis_type>::max()};
+    const T lhs {42U};
+    const T rhs {0U};
 
-    for (std::size_t i = 0; i < N; ++i)
-    {
-        constexpr T max_value {std::numeric_limits<T>::max()};
-        constexpr basis_type lhs_value {std::numeric_limits<basis_type>::max() - 1U};
-        const auto rhs_value {dist(rng)};
-
-        const T lhs {lhs_value};
-        const T rhs {rhs_value};
-        const T res {saturating_add(lhs, rhs)};
-        
-        BOOST_TEST_EQ(res, max_value);
-    }
+    BOOST_TEST_THROWS(wrapping_mod(lhs, rhs), std::domain_error);
 }
 
 int main()
 {
-    test_valid_addition<u8>();
-    test_saturated_addition<u8>();
+    test_valid_modulo<u8>();
+    test_modulo_by_zero_throws<u8>();
 
-    test_valid_addition<u16>();
-    test_saturated_addition<u16>();
+    test_valid_modulo<u16>();
+    test_modulo_by_zero_throws<u16>();
 
-    test_valid_addition<u32>();
-    test_saturated_addition<u32>();
+    test_valid_modulo<u32>();
+    test_modulo_by_zero_throws<u32>();
 
-    test_valid_addition<u64>();
-    test_saturated_addition<u64>();
+    test_valid_modulo<u64>();
+    test_modulo_by_zero_throws<u64>();
 
-    test_valid_addition<u128>();
-    test_saturated_addition<u128>();
+    test_valid_modulo<u128>();
+    test_modulo_by_zero_throws<u128>();
 
     return boost::report_errors();
 }

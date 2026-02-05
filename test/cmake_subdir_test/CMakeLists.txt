@@ -15,11 +15,12 @@ set(deps
 assert
 config
 throw_exception
+charconv
 
 # Secondary dependencies
 
-static_assert
-
+core
+        
 )
 
 foreach(dep IN LISTS deps)

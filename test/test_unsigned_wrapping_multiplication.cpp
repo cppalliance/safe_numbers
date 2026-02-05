@@ -49,18 +49,6 @@
 #  pragma warning(pop)
 #endif
 
-// Ignore [[nodiscard]] on the test that we know are going to throw
-#ifdef __clang__
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Wunused-result"
-#elif defined(__GNUC__)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wunused-result"
-#elif defined(_MSC_VER)
-#  pragma warning (push)
-#  pragma warning (disable: 4834)
-#endif
-
 #ifdef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 import boost.safe_numbers;
@@ -82,11 +70,13 @@ inline std::mt19937_64 rng{42};
 inline constexpr std::size_t N {1024};
 
 template <typename T>
-void test_valid_addition()
+void test_valid_multiplication()
 {
     using basis_type = detail::underlying_type_t<T>;
-    boost::random::uniform_int_distribution<basis_type> dist {std::numeric_limits<basis_type>::min() / 2U,
-                                                              std::numeric_limits<basis_type>::max() / 2U};
+
+    // Use smaller range to avoid overflow in valid tests
+    constexpr auto max_val {static_cast<basis_type>(std::numeric_limits<basis_type>::max() >> (sizeof(basis_type) * 4U))};
+    boost::random::uniform_int_distribution<basis_type> dist {0U, max_val};
 
     for (std::size_t i = 0; i < N; ++i)
     {
@@ -96,57 +86,67 @@ void test_valid_addition()
         T ref_value {};
         if constexpr (std::is_same_v<basis_type, std::uint8_t> || std::is_same_v<basis_type, std::uint16_t>)
         {
-            ref_value = static_cast<T>(static_cast<basis_type>(static_cast<std::uint32_t>(lhs_value + rhs_value)));
+            ref_value = static_cast<T>(static_cast<basis_type>(static_cast<std::uint32_t>(lhs_value) * rhs_value));
         }
         else
         {
-            ref_value = static_cast<T>(lhs_value + rhs_value);
+            ref_value = static_cast<T>(lhs_value * rhs_value);
         }
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
-        const T res {saturating_add(lhs, rhs)};
+        const T res {wrapping_mul(lhs, rhs)};
 
         BOOST_TEST_EQ(ref_value, res);
     }
 }
 
 template <typename T>
-void test_saturated_addition()
+void test_wrapping_multiplication()
 {
     using basis_type = detail::underlying_type_t<T>;
     boost::random::uniform_int_distribution<basis_type> dist {2U, std::numeric_limits<basis_type>::max()};
 
     for (std::size_t i = 0; i < N; ++i)
     {
-        constexpr T max_value {std::numeric_limits<T>::max()};
-        constexpr basis_type lhs_value {std::numeric_limits<basis_type>::max() - 1U};
+        constexpr basis_type lhs_value {std::numeric_limits<basis_type>::max()};
         const auto rhs_value {dist(rng)};
+
+        // Calculate expected wrapped result
+        T expected_value {};
+        if constexpr (std::is_same_v<basis_type, std::uint8_t> || std::is_same_v<basis_type, std::uint16_t>)
+        {
+            expected_value = static_cast<T>(static_cast<basis_type>(static_cast<std::uint32_t>(lhs_value) * rhs_value));
+        }
+        else
+        {
+            expected_value = static_cast<T>(lhs_value * rhs_value);
+        }
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
-        const T res {saturating_add(lhs, rhs)};
-        
-        BOOST_TEST_EQ(res, max_value);
+        const T res {wrapping_mul(lhs, rhs)};
+
+        BOOST_TEST_EQ(res, expected_value);
     }
 }
 
 int main()
 {
-    test_valid_addition<u8>();
-    test_saturated_addition<u8>();
+    test_valid_multiplication<u8>();
+    test_wrapping_multiplication<u8>();
 
-    test_valid_addition<u16>();
-    test_saturated_addition<u16>();
+    test_valid_multiplication<u16>();
+    test_wrapping_multiplication<u16>();
 
-    test_valid_addition<u32>();
-    test_saturated_addition<u32>();
+    test_valid_multiplication<u32>();
+    test_wrapping_multiplication<u32>();
 
-    test_valid_addition<u64>();
-    test_saturated_addition<u64>();
+    test_valid_multiplication<u64>();
+    test_wrapping_multiplication<u64>();
 
-    test_valid_addition<u128>();
-    test_saturated_addition<u128>();
+    test_valid_multiplication<u128>();
+    test_wrapping_multiplication<u128>();
 
     return boost::report_errors();
 }

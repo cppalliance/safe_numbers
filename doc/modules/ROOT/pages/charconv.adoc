@@ -10,8 +10,6 @@ https://www.boost.org/LICENSE_1_0.txt
 
 The following functions provide character conversion support for safe integer types using https://www.boost.org/doc/libs/master/libs/charconv/doc/html/charconv.html[Boost.Charconv].
 
-IMPORTANT: Using this header requires Boost.Charconv headers to be present.
-
 [#to_chars]
 == to_chars
 

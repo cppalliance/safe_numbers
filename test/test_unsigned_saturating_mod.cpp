@@ -73,6 +73,7 @@ import boost.safe_numbers;
 #include <limits>
 #include <type_traits>
 #include <iostream>
+#include <cmath>
 
 #endif
 
@@ -82,11 +83,10 @@ inline std::mt19937_64 rng{42};
 inline constexpr std::size_t N {1024};
 
 template <typename T>
-void test_valid_addition()
+void test_valid_division()
 {
     using basis_type = detail::underlying_type_t<T>;
-    boost::random::uniform_int_distribution<basis_type> dist {std::numeric_limits<basis_type>::min() / 2U,
-                                                              std::numeric_limits<basis_type>::max() / 2U};
+    boost::random::uniform_int_distribution<basis_type> dist {1, std::numeric_limits<basis_type>::max()};
 
     for (std::size_t i = 0; i < N; ++i)
     {
@@ -96,57 +96,55 @@ void test_valid_addition()
         T ref_value {};
         if constexpr (std::is_same_v<basis_type, std::uint8_t> || std::is_same_v<basis_type, std::uint16_t>)
         {
-            ref_value = static_cast<T>(static_cast<basis_type>(static_cast<std::uint32_t>(lhs_value + rhs_value)));
+            ref_value = static_cast<T>(static_cast<basis_type>(static_cast<std::uint32_t>(lhs_value % rhs_value)));
         }
         else
         {
-            ref_value = static_cast<T>(lhs_value + rhs_value);
+            ref_value = static_cast<T>(lhs_value % rhs_value);
         }
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
-        const T res {saturating_add(lhs, rhs)};
+        const T res {saturating_mod(lhs, rhs)};
 
         BOOST_TEST_EQ(ref_value, res);
     }
 }
 
 template <typename T>
-void test_saturated_addition()
+void test_throwing_division()
 {
     using basis_type = detail::underlying_type_t<T>;
-    boost::random::uniform_int_distribution<basis_type> dist {2U, std::numeric_limits<basis_type>::max()};
+    boost::random::uniform_int_distribution<basis_type> dist {1, std::numeric_limits<basis_type>::max()};
 
     for (std::size_t i = 0; i < N; ++i)
     {
-        constexpr T max_value {std::numeric_limits<T>::max()};
-        constexpr basis_type lhs_value {std::numeric_limits<basis_type>::max() - 1U};
-        const auto rhs_value {dist(rng)};
+        const auto lhs_value {dist(rng)};
+        constexpr basis_type rhs_value {0U};
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
-        const T res {saturating_add(lhs, rhs)};
-        
-        BOOST_TEST_EQ(res, max_value);
+
+        BOOST_TEST_THROWS(saturating_mod(lhs, rhs), std::domain_error);
     }
 }
 
 int main()
 {
-    test_valid_addition<u8>();
-    test_saturated_addition<u8>();
+    test_valid_division<u8>();
+    test_throwing_division<u8>();
 
-    test_valid_addition<u16>();
-    test_saturated_addition<u16>();
+    test_valid_division<u16>();
+    test_throwing_division<u16>();
 
-    test_valid_addition<u32>();
-    test_saturated_addition<u32>();
+    test_valid_division<u32>();
+    test_throwing_division<u32>();
 
-    test_valid_addition<u64>();
-    test_saturated_addition<u64>();
+    test_valid_division<u64>();
+    test_throwing_division<u64>();
 
-    test_valid_addition<u128>();
-    test_saturated_addition<u128>();
+    test_valid_division<u128>();
+    test_throwing_division<u128>();
 
     return boost::report_errors();
 }

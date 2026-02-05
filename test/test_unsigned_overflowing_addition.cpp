@@ -105,48 +105,49 @@ void test_valid_addition()
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
-        const T res {saturating_add(lhs, rhs)};
+        const auto [res, overflowed] = overflowing_add(lhs, rhs);
 
         BOOST_TEST_EQ(ref_value, res);
+        BOOST_TEST(!overflowed);
     }
 }
 
 template <typename T>
-void test_saturated_addition()
+void test_overflowed_addition()
 {
     using basis_type = detail::underlying_type_t<T>;
     boost::random::uniform_int_distribution<basis_type> dist {2U, std::numeric_limits<basis_type>::max()};
 
     for (std::size_t i = 0; i < N; ++i)
     {
-        constexpr T max_value {std::numeric_limits<T>::max()};
-        constexpr basis_type lhs_value {std::numeric_limits<basis_type>::max() - 1U};
+        constexpr basis_type lhs_value {std::numeric_limits<basis_type>::max()};
         const auto rhs_value {dist(rng)};
 
         const T lhs {lhs_value};
         const T rhs {rhs_value};
-        const T res {saturating_add(lhs, rhs)};
+        const auto [res, overflowed] = overflowing_add(lhs, rhs);
         
-        BOOST_TEST_EQ(res, max_value);
+        BOOST_TEST_EQ(res, T{static_cast<T>(std::numeric_limits<basis_type>::max() + rhs_value)});
+        BOOST_TEST(overflowed);
     }
 }
 
 int main()
 {
     test_valid_addition<u8>();
-    test_saturated_addition<u8>();
+    test_overflowed_addition<u8>();
 
     test_valid_addition<u16>();
-    test_saturated_addition<u16>();
+    test_overflowed_addition<u16>();
 
     test_valid_addition<u32>();
-    test_saturated_addition<u32>();
+    test_overflowed_addition<u32>();
 
     test_valid_addition<u64>();
-    test_saturated_addition<u64>();
+    test_overflowed_addition<u64>();
 
     test_valid_addition<u128>();
-    test_saturated_addition<u128>();
+    test_overflowed_addition<u128>();
 
     return boost::report_errors();
 }
