@@ -5,15 +5,13 @@ https://www.boost.org/LICENSE_1_0.txt
 ////
 
 [#charconv]
-= `<charconv>`
+= `<charconv>` Support
 :idprefix: charconv_
 
-The following functions provide character conversion support for safe integer types using https://www.boost.org/doc/libs/master/libs/charconv/doc/html/charconv.html[Boost.Charconv].
+== Description
 
-[#to_chars]
-== to_chars
-
-`to_chars` converts a safe integer value into a character buffer specified by `[first, last)`.
+The library provides character conversion functions for safe integer types using https://www.boost.org/doc/libs/master/libs/charconv/doc/html/charconv.html[Boost.Charconv].
+These functions convert between safe integer types and their string representations.
 
 [source,c++]
 ----
@@ -21,79 +19,148 @@ The following functions provide character conversion support for safe integer ty
 
 namespace boost::safe_numbers {
 
-template <detail::unsigned_integral BasisType>
+// Convert safe integer to character string
+template <unsigned_integral BasisType>
 constexpr auto to_chars(char* first, char* last,
-                        const detail::unsigned_integer_basis<BasisType> value,
+                        unsigned_integer_basis<BasisType> value,
                         int base = 10) -> charconv::to_chars_result;
 
-} // namespace boost::safe_numbers
-----
-
-=== Parameters
-
-* `first`, `last` - character buffer to write to
-* `value` - the safe integer value to convert
-* `base` - integer base (default: 10), must be between 2 and 36
-
-=== Return Value
-
-Returns `boost::charconv::to_chars_result`:
-
-[source,c++]
-----
-struct to_chars_result
-{
-    char* ptr;
-    std::errc ec;
-
-    friend constexpr bool operator==(const to_chars_result& lhs, const to_chars_result& rhs) noexcept = default;
-    constexpr explicit operator bool() const noexcept { return ec == std::errc{}; }
-};
-----
-
-* `ptr` - pointer to one past the last character written on success, or `last` on failure
-* `ec` - error code (`std::errc{}` on success, `std::errc::value_too_large` if buffer is too small)
-
-[#from_chars]
-== from_chars
-
-`from_chars` parses a string from `[first, last)` and converts it into a safe integer value.
-
-[source,c++]
-----
-#include <boost/safe_numbers/charconv.hpp>
-
-namespace boost::safe_numbers {
-
-template <detail::unsigned_integral BasisType>
+// Convert character string to safe integer
+template <unsigned_integral BasisType>
 constexpr auto from_chars(const char* first, const char* last,
-                          detail::unsigned_integer_basis<BasisType>& value,
+                          unsigned_integer_basis<BasisType>& value,
                           int base = 10) -> charconv::from_chars_result;
 
 } // namespace boost::safe_numbers
 ----
 
-=== Parameters
-
-* `first`, `last` - character range to parse
-* `value` - reference to safe integer to store the result
-* `base` - integer base (default: 10), must be between 2 and 36
-
-=== Return Value
-
-Returns `boost::charconv::from_chars_result`:
+== to_chars_result
 
 [source,c++]
 ----
+namespace boost::charconv {
+
+struct to_chars_result
+{
+    char* ptr;
+    std::errc ec;
+
+    friend constexpr bool operator==(const to_chars_result& lhs,
+                                     const to_chars_result& rhs) noexcept = default;
+    constexpr explicit operator bool() const noexcept { return ec == std::errc{}; }
+};
+
+} // namespace boost::charconv
+----
+
+|===
+| Member | Description
+
+| `ptr` | Pointer to one past the last character written on success, or `last` on failure
+| `ec` | Error code: `std::errc{}` on success, `std::errc::value_too_large` if buffer is too small
+|===
+
+== from_chars_result
+
+[source,c++]
+----
+namespace boost::charconv {
+
 struct from_chars_result
 {
     const char* ptr;
     std::errc ec;
 
-    friend constexpr bool operator==(const from_chars_result& lhs, const from_chars_result& rhs) noexcept = default;
+    friend constexpr bool operator==(const from_chars_result& lhs,
+                                     const from_chars_result& rhs) noexcept = default;
     constexpr explicit operator bool() const noexcept { return ec == std::errc{}; }
 };
+
+} // namespace boost::charconv
 ----
 
-* `ptr` - pointer to the first character not matching the pattern, or `last` if all characters matched
-* `ec` - error code (`std::errc{}` on success, `std::errc::invalid_argument` if no valid conversion, `std::errc::result_out_of_range` if value overflows)
+|===
+| Member | Description
+
+| `ptr` | Pointer to the first character not matching the pattern, or `last` if all matched
+| `ec` | Error code: `std::errc{}` on success, `std::errc::invalid_argument` if no valid conversion, `std::errc::result_out_of_range` if value overflows
+|===
+
+== to_chars
+
+[source,c++]
+----
+template <unsigned_integral BasisType>
+constexpr auto to_chars(char* first, char* last,
+                        unsigned_integer_basis<BasisType> value,
+                        int base = 10) -> charconv::to_chars_result;
+----
+
+Converts a safe integer value into a character buffer specified by `[first, last)`.
+
+=== Parameters
+
+|===
+| Parameter | Description
+
+| `first`, `last` | Character buffer to write to
+| `value` | The safe integer value to convert
+| `base` | Integer base (default: 10), must be between 2 and 36
+|===
+
+=== Return Value
+
+Returns `boost::charconv::to_chars_result` with:
+
+- `ptr` pointing to one past the last character written on success
+- `ec` set to `std::errc{}` on success, or `std::errc::value_too_large` if the buffer is too small
+
+== from_chars
+
+[source,c++]
+----
+template <unsigned_integral BasisType>
+constexpr auto from_chars(const char* first, const char* last,
+                          unsigned_integer_basis<BasisType>& value,
+                          int base = 10) -> charconv::from_chars_result;
+----
+
+Parses a string from `[first, last)` and converts it into a safe integer value.
+
+=== Parameters
+
+|===
+| Parameter | Description
+
+| `first`, `last` | Character range to parse
+| `value` | Reference to safe integer to store the result
+| `base` | Integer base (default: 10), must be between 2 and 36
+|===
+
+=== Return Value
+
+Returns `boost::charconv::from_chars_result` with:
+
+- `ptr` pointing to the first character not matching the pattern
+- `ec` set to `std::errc{}` on success, `std::errc::invalid_argument` if no valid conversion, or `std::errc::result_out_of_range` if the value overflows
+
+== Examples
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/charconv.cpp[example] demonstrates how to use `to_chars` and `from_chars` with safe integer types.
+====
+[source, c++]
+----
+include::example$charconv.cpp[]
+----
+
+Output:
+----
+to_chars (base 10): 12345
+to_chars (base 16): 3039
+to_chars (base 2):  11000000111001
+
+from_chars (base 10): 98765
+from_chars (base 16): 6699
+from_chars (base 2):  26
+----
+====
