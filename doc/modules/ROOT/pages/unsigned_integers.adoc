@@ -8,17 +8,27 @@ https://www.boost.org/LICENSE_1_0.txt
 
 = Unsigned Integer Types
 
-== Overview
+== Description
 
 The library provides safe unsigned integer types that detect overflow, underflow, and other undefined behavior at runtime.
 These types are drop-in replacements for the standard unsigned integer types with added safety guarantees.
 
-== Available Types
+|===
+| Type | Underlying Type | Width | Min | Max
 
-The following types are provided in the `boost::safe_numbers` namespace:
+| `u8`   | `std::uint8_t`   | 8 bits   | 0 | 255
+| `u16`  | `std::uint16_t`  | 16 bits  | 0 | 65,535
+| `u32`  | `std::uint32_t`  | 32 bits  | 0 | 4,294,967,295
+| `u64`  | `std::uint64_t`  | 64 bits  | 0 | 18,446,744,073,709,551,615
+| `u128` | `uint128_t`      | 128 bits | 0 | 340,282,366,920,938,463,463,374,607,431,768,211,455
+|===
 
-[source,cpp]
+Each type exposes a `basis_type` member type alias that refers to the underlying integer type, allowing conversion back to built-in types when needed.
+
+[source,c++]
 ----
+#include <boost/safe_numbers/unsigned_integers.hpp>
+
 namespace boost::safe_numbers {
 
 using u8   = detail::unsigned_integer_basis<std::uint8_t>;
@@ -27,175 +37,382 @@ using u32  = detail::unsigned_integer_basis<std::uint32_t>;
 using u64  = detail::unsigned_integer_basis<std::uint64_t>;
 using u128 = detail::unsigned_integer_basis<int128::uint128_t>;
 
+template <unsigned_integral BasisType>
+class unsigned_integer_basis {
+
+public:
+    using basis_type = BasisType;
+
+    // Construction
+    constexpr unsigned_integer_basis() noexcept = default;
+    explicit constexpr unsigned_integer_basis(BasisType val) noexcept;
+
+    template <typename T>
+        requires std::is_same_v<T, bool>
+    explicit constexpr unsigned_integer_basis(T) noexcept = delete; // bool prohibited
+
+    // Conversion to underlying types
+    template <unsigned_integral OtherBasis>
+    explicit constexpr operator OtherBasis() const noexcept;
+
+    // Comparison operators
+    friend constexpr auto operator<=>(unsigned_integer_basis lhs, unsigned_integer_basis rhs) noexcept
+        -> std::strong_ordering = default;
+
+    // Compound assignment operators
+    template <unsigned_integral OtherBasis>
+    constexpr auto operator+=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
+
+    template <unsigned_integral OtherBasis>
+    constexpr auto operator-=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
+
+    template <unsigned_integral OtherBasis>
+    constexpr auto operator*=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
+
+    template <unsigned_integral OtherBasis>
+    constexpr auto operator/=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
+
+    template <unsigned_integral OtherBasis>
+    constexpr auto operator%=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
+
+    // Increment and decrement operators
+    constexpr auto operator++() -> unsigned_integer_basis&;
+    constexpr auto operator++(int) -> unsigned_integer_basis;
+    constexpr auto operator--() -> unsigned_integer_basis&;
+    constexpr auto operator--(int) -> unsigned_integer_basis;
+
+}; // class unsigned_integer_basis
+
+// Arithmetic operators (throw on overflow/underflow)
+template <unsigned_integral BasisType>
+constexpr auto operator+(unsigned_integer_basis<BasisType> lhs,
+                         unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
+
+template <unsigned_integral BasisType>
+constexpr auto operator-(unsigned_integer_basis<BasisType> lhs,
+                         unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
+
+template <unsigned_integral BasisType>
+constexpr auto operator*(unsigned_integer_basis<BasisType> lhs,
+                         unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
+
+template <unsigned_integral BasisType>
+constexpr auto operator/(unsigned_integer_basis<BasisType> lhs,
+                         unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
+
+template <unsigned_integral BasisType>
+constexpr auto operator%(unsigned_integer_basis<BasisType> lhs,
+                         unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
+
+// Saturating arithmetic (clamp to min/max on overflow/underflow)
+template <UnsignedLibType T>
+constexpr T saturating_add(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T saturating_sub(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T saturating_mul(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T saturating_div(T lhs, T rhs);
+
+template <UnsignedLibType T>
+constexpr T saturating_mod(T lhs, T rhs);
+
+// Overflowing arithmetic (wrap and return overflow flag)
+template <UnsignedLibType T>
+constexpr std::pair<T, bool> overflowing_add(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::pair<T, bool> overflowing_sub(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::pair<T, bool> overflowing_mul(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::pair<T, bool> overflowing_div(T lhs, T rhs);
+
+template <UnsignedLibType T>
+constexpr std::pair<T, bool> overflowing_mod(T lhs, T rhs);
+
+// Checked arithmetic (return std::nullopt on overflow/underflow)
+template <UnsignedLibType T>
+constexpr std::optional<T> checked_add(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::optional<T> checked_sub(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::optional<T> checked_mul(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::optional<T> checked_div(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::optional<T> checked_mod(T lhs, T rhs) noexcept;
+
+// Wrapping arithmetic (wrap without indication)
+template <UnsignedLibType T>
+constexpr T wrapping_add(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T wrapping_sub(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T wrapping_mul(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T wrapping_div(T lhs, T rhs);
+
+template <UnsignedLibType T>
+constexpr T wrapping_mod(T lhs, T rhs);
+
 } // namespace boost::safe_numbers
 ----
 
-Each type exposes a `basis_type` member type alias that refers to the underlying integer type, allowing conversion back to built-in types when needed.
-
-== Construction
+== Operator Behavior
 
 === Default Construction
 
+[source,c++]
+----
+constexpr unsigned_integer_basis() noexcept = default;
+----
+
 Values are default-initialized to zero.
 
-=== Explicit Construction from Underlying Type
+=== Construction from Underlying Type
+
+[source,c++]
+----
+explicit constexpr unsigned_integer_basis(BasisType val) noexcept;
+----
 
 Construction from the underlying type is explicit to prevent accidental conversions.
 
-=== Construction from bool is Prohibited
+=== Construction from bool
+
+[source,c++]
+----
+template <typename T>
+    requires std::is_same_v<T, bool>
+explicit constexpr unsigned_integer_basis(T) noexcept = delete;
+----
 
 Constructing from `bool` is a compile-time error.
 
-== Type Conversions
+=== Conversion to Underlying Types
 
-=== Explicit Conversion to Underlying Types
+[source,c++]
+----
+template <unsigned_integral OtherBasis>
+explicit constexpr operator OtherBasis() const noexcept;
+----
 
 Conversion to other unsigned integral types is explicit.
-
-=== Narrowing Conversions are Prohibited
-
 Narrowing conversions cause a compile-time error.
 
-== Comparison Operators
+=== Comparison Operators
+
+[source,c++]
+----
+friend constexpr auto operator<=>(unsigned_integer_basis lhs, unsigned_integer_basis rhs) noexcept
+    -> std::strong_ordering = default;
+----
 
 Full three-way comparison is supported via `pass:[operator<=>]`, which returns `std::strong_ordering`.
 All comparison operators (`<`, `<=`, `>`, `>=`, `==`, `!=`) are available.
 
-== Arithmetic Operators
+=== Arithmetic Operators
 
-All arithmetic operators perform runtime checks and throw exceptions when undefined behavior would occur.
-
-=== Addition (`operator+`, `operator+=`)
-
-Throws `std::overflow_error` if the result would exceed the maximum representable value.
-
-=== Subtraction (`operator-`, `operator-=`)
-
-Throws `std::underflow_error` if the result would be negative (wrap around).
-
-=== Multiplication (`operator*`, `operator*=`)
-
-Throws `std::overflow_error` if the result would exceed the maximum representable value.
-
-=== Division (`operator/`, `operator/=`)
-
-Throws `std::domain_error` if dividing by zero.
-
-=== Modulo (`operator%`, `operator%=`)
-
-Throws `std::domain_error` if the divisor is zero.
-
-== Increment and Decrement Operators
-
-=== Pre-increment and Post-increment (`++`)
-
-Throws `std::overflow_error` if the value is already at the maximum.
-
-=== Pre-decrement and Post-decrement (`--`)
-
-Throws `std::underflow_error` if the value is already zero.
-
-== Mixed-Width Operations are Prohibited
-
-Operations between different width safe integer types are compile-time errors. To perform operations between different widths, explicitly convert to the same type first.
-
-== Saturating Arithmetic
-
-For cases where throwing exceptions is not desired, saturating arithmetic functions are provided.
-These functions clamp the result to the representable range instead of throwing.
-
-[source, c++]
+[source,c++]
 ----
-namespace boost::safe_numbers {
+template <unsigned_integral BasisType>
+constexpr auto operator+(unsigned_integer_basis<BasisType> lhs,
+                         unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
 
-template <UnsignedLibType T>
-constexpr T saturating_add(const T lhs, const T rhs) noexcept;
+template <unsigned_integral BasisType>
+constexpr auto operator-(unsigned_integer_basis<BasisType> lhs,
+                         unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
 
-template <UnsignedLibType T>
-constexpr T saturating_sub(const T lhs, const T rhs) noexcept;
+template <unsigned_integral BasisType>
+constexpr auto operator*(unsigned_integer_basis<BasisType> lhs,
+                         unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
 
-template <UnsignedLibType T>
-constexpr T saturating_mul(const T lhs, const T rhs) noexcept;
+template <unsigned_integral BasisType>
+constexpr auto operator/(unsigned_integer_basis<BasisType> lhs,
+                         unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
 
-template <UnsignedLibType T>
-constexpr T saturating_div(const T lhs, const T rhs);
-
-template <UnsignedLibType T>
-constexpr T saturating_mod(const T lhs, const T rhs);
-
-} // namespace boost::safe_numbers
+template <unsigned_integral BasisType>
+constexpr auto operator%(unsigned_integer_basis<BasisType> lhs,
+                         unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
 ----
 
-=== saturating_add
+All arithmetic operators perform runtime checks and throw exceptions when undefined behavior would occur:
 
-Returns the sum of two values, saturating at the maximum value on overflow (i.e., returns `std::numeric_limits::max`).
+- `pass:[+]`: Throws `std::overflow_error` if the result exceeds the maximum representable value
+- `-`: Throws `std::underflow_error` if the result would be negative (wrap around)
+- `pass:[*]`: Throws `std::overflow_error` if the result exceeds the maximum representable value
+- `/`: Throws `std::domain_error` if dividing by zero
+- `%`: Throws `std::domain_error` if the divisor is zero
 
-=== saturating_sub
+=== Compound Assignment Operators
 
-Returns the difference of two values, saturating at the minimum value on underflow (i.e., returns `std::numeric_limits::min`).
-
-=== saturating_mul
-
-Returns the product of two values, saturating at the maximum value on overflow (i.e., returns `std::numeric_limits::max`).
-
-=== saturating_div
-
-Returns the quotient of two values, and throws `std::range_error` in the event of division by 0.
-Otherwise, overflow and underflow are impossible.
-
-=== saturating_div
-
-Returns the remainder of two values, and throws `std::range_error` in the event of division by 0.
-Otherwise, overflow and underflow are impossible.
-
-== Overflowing Arithmetic
-
-This family of functions provides well-defined wrapping semantics as well as a flag to alert the consumer if overflow occurred.
-This follows normal C family unsigned rollover where `UINT_MAX + 1 == 0` and `UINT_MIN - 1 == UINT_MAX`.
-
-[source, c++]
+[source,c++]
 ----
-namespace boost::safe_numbers {
+template <unsigned_integral OtherBasis>
+constexpr auto operator+=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
-template <UnsignedLibType T>
-constexpr std::pair<T, bool> overflowing_add(const T lhs, const T rhs) noexcept;
+template <unsigned_integral OtherBasis>
+constexpr auto operator-=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
-template <UnsignedLibType T>
-constexpr std::pair<T, bool> overflowing_sub(const T lhs, const T rhs) noexcept;
+template <unsigned_integral OtherBasis>
+constexpr auto operator*=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
-template <UnsignedLibType T>
-constexpr std::pair<T, bool> overflowing_mul(const T lhs, const T rhs) noexcept;
+template <unsigned_integral OtherBasis>
+constexpr auto operator/=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
-template <UnsignedLibType T>
-constexpr std::pair<T, bool> overflowing_div(const T lhs, const T rhs);
-
-template <UnsignedLibType T>
-constexpr std::pair<T, bool> overflowing_mod(const T lhs, const T rhs);
-
-} // namespace boost::safe_numbers
+template <unsigned_integral OtherBasis>
+constexpr auto operator%=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 ----
 
-=== overflowing_add
+Compound assignment operators follow the same exception behavior as their corresponding arithmetic operators.
 
-Returns the sum of two values, wrapping the sum and setting the `bool` in the return to `true` as required.
+=== Increment and Decrement Operators
 
-=== overflowing_sub
+[source,c++]
+----
+constexpr auto operator++() -> unsigned_integer_basis&;
+constexpr auto operator++(int) -> unsigned_integer_basis;
+constexpr auto operator--() -> unsigned_integer_basis&;
+constexpr auto operator--(int) -> unsigned_integer_basis;
+----
 
-Returns the difference of two values, wrapping the difference and setting the `bool` in the return to `true` as required.
+- `++` (pre/post): Throws `std::overflow_error` if the value is already at the maximum
+- `--` (pre/post): Throws `std::underflow_error` if the value is already zero
 
-=== overflowing_mul
+=== Mixed-Width Operations
 
-Returns the product of two values, wrapping the product and setting the `bool` in the return to `true` as required.
+Operations between different width safe integer types are compile-time errors.
+To perform operations between different widths, explicitly convert to the same type first.
 
-=== overflowing_div
+== Alternative Arithmetic Functions
 
-Returns the quotient of two values, and throws `std::range_error` in the event of division by 0.
-Otherwise, overflow and underflow are impossible.
+For cases where throwing exceptions is not desired, alternative arithmetic functions are provided with different overflow handling policies.
 
-=== overflowing_mod
+=== Saturating Arithmetic
 
-Returns the remainder of two values, and throws `std::range_error` in the event of division by 0.
-Otherwise, overflow and underflow are impossible.
+[source,c++]
+----
+template <UnsignedLibType T>
+constexpr T saturating_add(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T saturating_sub(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T saturating_mul(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T saturating_div(T lhs, T rhs);
+
+template <UnsignedLibType T>
+constexpr T saturating_mod(T lhs, T rhs);
+----
+
+These functions clamp the result to the representable range instead of throwing:
+
+- `saturating_add`: Returns the sum, saturating at `std::numeric_limits<T>::max()` on overflow
+- `saturating_sub`: Returns the difference, saturating at `std::numeric_limits<T>::min()` (zero) on underflow
+- `saturating_mul`: Returns the product, saturating at `std::numeric_limits<T>::max()` on overflow
+- `saturating_div`: Returns the quotient; throws `std::domain_error` on division by zero (overflow is impossible)
+- `saturating_mod`: Returns the remainder; throws `std::domain_error` on division by zero (overflow is impossible)
+
+=== Overflowing Arithmetic
+
+[source,c++]
+----
+template <UnsignedLibType T>
+constexpr std::pair<T, bool> overflowing_add(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::pair<T, bool> overflowing_sub(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::pair<T, bool> overflowing_mul(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::pair<T, bool> overflowing_div(T lhs, T rhs);
+
+template <UnsignedLibType T>
+constexpr std::pair<T, bool> overflowing_mod(T lhs, T rhs);
+----
+
+These functions provide well-defined wrapping semantics with a flag to indicate if overflow occurred.
+This follows normal C family unsigned rollover where `UINT_MAX + 1 == 0` and `0 - 1 == UINT_MAX`.
+
+- `overflowing_add`: Returns the wrapped sum and `true` if overflow occurred
+- `overflowing_sub`: Returns the wrapped difference and `true` if underflow occurred
+- `overflowing_mul`: Returns the wrapped product and `true` if overflow occurred
+- `overflowing_div`: Returns the quotient and `false`; throws `std::domain_error` on division by zero
+- `overflowing_mod`: Returns the remainder and `false`; throws `std::domain_error` on division by zero
+
+=== Checked Arithmetic
+
+[source,c++]
+----
+template <UnsignedLibType T>
+constexpr std::optional<T> checked_add(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::optional<T> checked_sub(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::optional<T> checked_mul(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::optional<T> checked_div(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::optional<T> checked_mod(T lhs, T rhs) noexcept;
+----
+
+These functions return `std::nullopt` on overflow, underflow, or division by zero:
+
+- `checked_add`: Returns the sum, or `std::nullopt` on overflow
+- `checked_sub`: Returns the difference, or `std::nullopt` on underflow
+- `checked_mul`: Returns the product, or `std::nullopt` on overflow
+- `checked_div`: Returns the quotient, or `std::nullopt` on division by zero
+- `checked_mod`: Returns the remainder, or `std::nullopt` on division by zero
+
+=== Wrapping Arithmetic
+
+[source,c++]
+----
+template <UnsignedLibType T>
+constexpr T wrapping_add(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T wrapping_sub(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T wrapping_mul(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T wrapping_div(T lhs, T rhs);
+
+template <UnsignedLibType T>
+constexpr T wrapping_mod(T lhs, T rhs);
+----
+
+These functions wrap on overflow without any indication:
+
+- `wrapping_add`: Returns the wrapped sum
+- `wrapping_sub`: Returns the wrapped difference
+- `wrapping_mul`: Returns the wrapped product
+- `wrapping_div`: Returns the quotient; throws `std::domain_error` on division by zero
+- `wrapping_mod`: Returns the remainder; throws `std::domain_error` on division by zero
 
 == Exception Summary
 
@@ -204,21 +421,21 @@ Otherwise, overflow and underflow are impossible.
 
 | `pass:[+]`, `pass:[+=]`
 | `std::overflow_error`
-| The result exceeds maximum value
+| Result exceeds maximum value
 
 | `-`, `-=`
 | `std::underflow_error`
-| The result would be negative
+| Result would be negative
 
 | `pass:[*]`, `pass:[*=]`
 | `std::overflow_error`
-| The result exceeds maximum value
+| Result exceeds maximum value
 
-| `/`, `/=`, `saturating_div`
+| `/`, `/=`
 | `std::domain_error`
 | Division by zero
 
-| `%`, `%=`, `saturating_mod`
+| `%`, `%=`
 | `std::domain_error`
 | Modulo by zero
 
@@ -229,6 +446,18 @@ Otherwise, overflow and underflow are impossible.
 | `--` (pre/post)
 | `std::underflow_error`
 | Value is zero
+
+| `saturating_div`, `saturating_mod`
+| `std::domain_error`
+| Division by zero
+
+| `overflowing_div`, `overflowing_mod`
+| `std::domain_error`
+| Division by zero
+
+| `wrapping_div`, `wrapping_mod`
+| `std::domain_error`
+| Division by zero
 |===
 
 == Constexpr Support
