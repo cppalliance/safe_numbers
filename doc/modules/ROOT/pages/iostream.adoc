@@ -1,0 +1,98 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#iostream]
+
+= Stream I/O Support
+
+== Description
+
+The library provides `operator<<` and `operator>>` overloads for all safe integer types, enabling use with standard C++ streams (`std::cout`, `std::cin`, `std::stringstream`, etc.).
+
+The `u8` type is handled specially: it displays as a numeric value rather than as a character, unlike `std::uint8_t` which most implementations treat as `unsigned char`.
+
+Attempting to read a negative value into an unsigned safe integer throws `std::domain_error`.
+
+[source,c++]
+----
+#include <boost/safe_numbers/iostream.hpp>
+
+namespace boost::safe_numbers::detail {
+
+// Output: writes the numeric value to the stream
+template <typename charT, typename traits, library_type LibType>
+auto operator<<(std::basic_ostream<charT, traits>& os, const LibType& v)
+    -> std::basic_ostream<charT, traits>&;
+
+// Input: reads a numeric value from the stream
+// Throws std::domain_error if the input begins with '-'
+template <typename charT, typename traits, library_type LibType>
+auto operator>>(std::basic_istream<charT, traits>& is, LibType& v)
+    -> std::basic_istream<charT, traits>&;
+
+} // namespace boost::safe_numbers::detail
+----
+
+== Behavior
+
+=== Output (`operator<<`)
+
+|===
+| Type | Behavior
+
+| `u8`
+| Promoted to `std::uint32_t` before output so the value displays as a number, not a character
+
+| `u16`, `u32`, `u64`
+| Converted to the underlying type and written directly
+
+| `u128`
+| Converted to the underlying `uint128_t` and written using its stream support
+|===
+
+Standard stream manipulators (`std::hex`, `std::oct`, `std::dec`, `std::setw`, etc.) work as expected.
+
+=== Input (`operator>>`)
+
+|===
+| Input | Behavior
+
+| Valid non-negative number
+| Parsed and stored in the safe integer
+
+| Negative number (starts with `-`)
+| Throws `std::domain_error`
+
+| Invalid input
+| Sets the stream's fail bit as with any standard stream extraction
+|===
+
+For `u8`, the input is read as a `std::uint32_t` to avoid character interpretation, then narrowed to `std::uint8_t`.
+
+== Examples
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/iostream.cpp[example] demonstrates stream I/O with safe integer types.
+====
+[source, c++]
+----
+include::example$iostream.cpp[]
+----
+
+Output:
+----
+u8:  42
+u16: 1000
+u32: 100000
+u64: 9999999999
+u8(10) = 10 (not a newline character)
+u8(32) = 32 (not a space character)
+Read from stream: 12345
+Decimal:     255
+Hexadecimal: ff
+Octal:       377
+Roundtrip: 18446744073709551615 -> "18446744073709551615" -> 18446744073709551615
+----
+====

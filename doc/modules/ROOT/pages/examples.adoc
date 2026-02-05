@@ -203,6 +203,32 @@ add<wrapping>(max, 1)          = 0
 ----
 ====
 
+[#examples_literals]
+== Literals
+
+User-defined literal suffixes (`_u8`, `_u16`, `_u32`, `_u64`, `_u128`) provide concise construction of safe integer types.
+Values are range-checked at construction, producing a compile error in `constexpr` contexts or throwing `std::overflow_error` at runtime for out-of-range values.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/literals.cpp[example] demonstrates how to use user-defined literals with safe integer types.
+====
+[source, c++]
+----
+include::example$literals.cpp[]
+----
+
+Output:
+----
+42_u8   = 42
+1000_u16 = 1000
+100000_u32 = 100000
+9999999999_u64 = 9999999999
+max_u128 = 340282366920938463463374607431768211455
+100_u32 + 50_u32 = 150
+6_u32 * 7_u32    = 42
+constexpr 255_u8 = 255
+----
+====
+
 [#examples_charconv]
 == Character Conversion
 
@@ -269,6 +295,35 @@ Padding and Alignment:
 Fill Character:
 *****12345
 12345_____
+----
+====
+
+[#examples_iostream]
+== Stream I/O
+
+The library provides `operator<<` and `operator>>` overloads for all safe integer types.
+The `u8` type is handled specially: it displays as a numeric value rather than as a character.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/iostream.cpp[example] demonstrates stream I/O with safe integer types.
+====
+[source, c++]
+----
+include::example$iostream.cpp[]
+----
+
+Output:
+----
+u8:  42
+u16: 1000
+u32: 100000
+u64: 9999999999
+u8(10) = 10 (not a newline character)
+u8(32) = 32 (not a space character)
+Read from stream: 12345
+Decimal:     255
+Hexadecimal: ff
+Octal:       377
+Roundtrip: 18446744073709551615 -> "18446744073709551615" -> 18446744073709551615
 ----
 ====
 

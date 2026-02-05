@@ -1,0 +1,98 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#literals]
+
+= User-Defined Literals
+
+== Description
+
+The library provides user-defined literal suffixes for concise construction of safe integer types.
+The literals are defined in the `boost::safe_numbers::literals` namespace.
+For `_u8`, `_u16`, and `_u32`, the literal value is range-checked and throws `std::overflow_error` if the value exceeds the target type's maximum.
+The `_u64` literal performs no range check since `unsigned long long` maps directly to `std::uint64_t`.
+The `_u128` literal parses a string representation and throws `std::overflow_error` on overflow or `std::invalid_argument` on invalid input.
+
+[source,c++]
+----
+#include <boost/safe_numbers/literals.hpp>
+
+namespace boost::safe_numbers::literals {
+
+constexpr auto operator ""_u8(unsigned long long int val) -> u8;
+constexpr auto operator ""_u16(unsigned long long int val) -> u16;
+constexpr auto operator ""_u32(unsigned long long int val) -> u32;
+constexpr auto operator ""_u64(unsigned long long int val) -> u64;
+constexpr auto operator ""_u128(const char* str) -> u128;
+
+} // namespace boost::safe_numbers::literals
+----
+
+== Literal Suffixes
+
+|===
+| Suffix | Result Type | Range Check
+
+| `_u8`
+| `u8`
+| Throws `std::overflow_error` if value > 255
+
+| `_u16`
+| `u16`
+| Throws `std::overflow_error` if value > 65,535
+
+| `_u32`
+| `u32`
+| Throws `std::overflow_error` if value > 4,294,967,295
+
+| `_u64`
+| `u64`
+| No range check (direct conversion from `unsigned long long`)
+
+| `_u128`
+| `u128`
+| Parses string; throws `std::overflow_error` on overflow, `std::invalid_argument` on invalid input
+|===
+
+== Usage
+
+To use the literals, bring the `boost::safe_numbers::literals` namespace into scope:
+
+[source,c++]
+----
+using namespace boost::safe_numbers::literals;
+
+constexpr auto a {42_u8};
+constexpr auto b {1000_u16};
+constexpr auto c {100000_u32};
+constexpr auto d {9999999999_u64};
+constexpr auto e {340282366920938463463374607431768211455_u128};
+----
+
+Literals are `constexpr` and can be used in compile-time contexts.
+When used in a `constexpr` context, an out-of-range value produces a compile error rather than a runtime exception.
+
+== Examples
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/literals.cpp[example] demonstrates how to use user-defined literals with safe integer types.
+====
+[source, c++]
+----
+include::example$literals.cpp[]
+----
+
+Output:
+----
+42_u8   = 42
+1000_u16 = 1000
+100000_u32 = 100000
+9999999999_u64 = 9999999999
+max_u128 = 340282366920938463463374607431768211455
+100_u32 + 50_u32 = 150
+6_u32 * 7_u32    = 42
+constexpr 255_u8 = 255
+----
+====
