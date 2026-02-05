@@ -68,6 +68,15 @@ https://www.boost.org/LICENSE_1_0.txt
 | xref:literals.adoc[`_u8`, `_u16`, `_u32`, `_u64`, `_u128`]
 | User-defined literal suffixes for constructing safe integer types
 |===
+
+=== Stream I/O
+
+[cols="1,2", options="header"]
+|===
+| Function | Description
+
+| xref:iostream.adoc[`operator<<`, `operator>>`]
+| Stream insertion and extraction for all safe integer types
 |===
 
 === Arithmetic
@@ -111,6 +120,8 @@ https://www.boost.org/LICENSE_1_0.txt
 | `<boost/safe_numbers/literals.hpp>`
 | User-defined literal suffixes (`_u8`, `_u16`, `_u32`, `_u64`, `_u128`)
 
+| `<boost/safe_numbers/iostream.hpp>`
+| Stream I/O operators (`operator<<`, `operator>>`) for safe integer types
 
 | `<boost/safe_numbers/charconv.hpp>`
 | Character conversion functions (`to_chars`, `from_chars`)

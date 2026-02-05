@@ -122,4 +122,5 @@ run ../examples/strict_arithmetic.cpp ;
 run ../examples/generic_arithmetic.cpp ;
 run ../examples/literals.cpp ;
 run ../examples/fmt_format.cpp ;
+run ../examples/iostream.cpp ;
 run ../examples/charconv.cpp ;

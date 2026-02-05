@@ -298,6 +298,35 @@ Fill Character:
 ----
 ====
 
+[#examples_iostream]
+== Stream I/O
+
+The library provides `operator<<` and `operator>>` overloads for all safe integer types.
+The `u8` type is handled specially: it displays as a numeric value rather than as a character.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/iostream.cpp[example] demonstrates stream I/O with safe integer types.
+====
+[source, c++]
+----
+include::example$iostream.cpp[]
+----
+
+Output:
+----
+u8:  42
+u16: 1000
+u32: 100000
+u64: 9999999999
+u8(10) = 10 (not a newline character)
+u8(32) = 32 (not a space character)
+Read from stream: 12345
+Decimal:     255
+Hexadecimal: ff
+Octal:       377
+Roundtrip: 18446744073709551615 -> "18446744073709551615" -> 18446744073709551615
+----
+====
+
 [#examples_policy_comparison]
 == Policy Comparison
 
