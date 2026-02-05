@@ -33,6 +33,16 @@ https://www.boost.org/LICENSE_1_0.txt
 | Safe unsigned 128-bit integer
 |===
 
+=== Enumerations
+
+[cols="1,2", options="header"]
+|===
+| Type | Description
+
+| xref:policies.adoc[`overflow_policy`]
+| Enum class specifying the overflow handling policy for arithmetic operations
+|===
+
 [#api_functions]
 == Functions
 
@@ -42,11 +52,36 @@ https://www.boost.org/LICENSE_1_0.txt
 |===
 | Function | Description
 
-| xref:charconv.adoc#to_chars[`to_chars`]
+| xref:charconv.adoc[`to_chars`]
 | Converts a safe integer to a character string
 
-| xref:charconv.adoc#from_chars[`from_chars`]
+| xref:charconv.adoc[`from_chars`]
 | Parses a character string into a safe integer
+|===
+
+=== Arithmetic
+
+[cols="1,2", options="header"]
+|===
+| Function | Description
+
+| xref:policies.adoc[`saturating_add`, `saturating_sub`, `saturating_mul`, `saturating_div`, `saturating_mod`]
+| Saturating arithmetic (clamp to min/max on overflow)
+
+| xref:policies.adoc[`overflowing_add`, `overflowing_sub`, `overflowing_mul`, `overflowing_div`, `overflowing_mod`]
+| Overflowing arithmetic (wrap and return overflow flag)
+
+| xref:policies.adoc[`checked_add`, `checked_sub`, `checked_mul`, `checked_div`, `checked_mod`]
+| Checked arithmetic (return `std::nullopt` on overflow)
+
+| xref:policies.adoc[`wrapping_add`, `wrapping_sub`, `wrapping_mul`, `wrapping_div`, `wrapping_mod`]
+| Wrapping arithmetic (wrap silently)
+
+| xref:policies.adoc[`strict_add`, `strict_sub`, `strict_mul`, `strict_div`, `strict_mod`]
+| Strict arithmetic (call `std::exit(EXIT_FAILURE)` on error)
+
+| xref:policies.adoc[`add`, `sub`, `mul`, `div`, `mod`]
+| Generic policy-parameterized arithmetic (takes `overflow_policy` as template parameter)
 |===
 
 [#api_headers]
@@ -58,6 +93,9 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | `<boost/safe_numbers/unsigned_integers.hpp>`
 | All unsigned safe integer types (`u8`, `u16`, `u32`, `u64`, `u128`)
+
+| `<boost/safe_numbers/overflow_policy.hpp>`
+| The `overflow_policy` enum class
 
 | `<boost/safe_numbers/charconv.hpp>`
 | Character conversion functions (`to_chars`, `from_chars`)

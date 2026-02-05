@@ -13,6 +13,7 @@
 ** xref:api_reference.adoc#api_functions[Functions]
 ** xref:api_reference.adoc#api_headers[Headers]
 * xref:unsigned_integers.adoc[]
+* xref:policies.adoc[]
 * xref:limits.adoc[]
 * xref:format.adoc[]
 * xref:charconv.adoc[]
