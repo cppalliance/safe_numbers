@@ -2,11 +2,10 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-//[checked_arithmetic_example
-//` This example demonstrates the use of checked arithmetic operations.
-//` These functions return std::optional - containing the result if the
-//` operation succeeded, or std::nullopt if overflow/underflow occurred.
-//` This provides a clean, exception-free way to handle arithmetic errors.
+// This example demonstrates the use of checked arithmetic operations.
+// These functions return std::optional - containing the result if the
+// operation succeeded, or std::nullopt if overflow/underflow occurred.
+// This provides a clean, exception-free way to handle arithmetic errors.
 
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/iostream.hpp>
@@ -108,4 +107,4 @@ int main()
 
     return 0;
 }
-//]
+

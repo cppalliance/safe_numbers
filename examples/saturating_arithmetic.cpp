@@ -2,10 +2,9 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-//[saturating_arithmetic_example
-//` This example demonstrates the use of saturating arithmetic operations.
-//` When overflow or underflow would occur, the result saturates at the
-//` type's maximum or minimum value instead of wrapping or throwing.
+// This example demonstrates the use of saturating arithmetic operations.
+// When overflow or underflow would occur, the result saturates at the
+// type's maximum or minimum value instead of wrapping or throwing.
 
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/iostream.hpp>
@@ -63,4 +62,4 @@ int main()
 
     return 0;
 }
-//]
+

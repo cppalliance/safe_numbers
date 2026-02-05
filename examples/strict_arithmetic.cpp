@@ -2,11 +2,10 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-//[strict_arithmetic_example
-//` This example demonstrates the use of strict arithmetic operations.
-//` These functions call std::exit(EXIT_FAILURE) on overflow, underflow,
-//` or division by zero. They are designed for safety-critical applications
-//` where exceptions cannot be used but silent wrapping is unacceptable.
+// This example demonstrates the use of strict arithmetic operations.
+// These functions call std::exit(EXIT_FAILURE) on overflow, underflow,
+// or division by zero. They are designed for safety-critical applications
+// where exceptions cannot be used but silent wrapping is unacceptable.
 
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/iostream.hpp>
@@ -63,4 +62,4 @@ int main()
 
     return 0;
 }
-//]
+

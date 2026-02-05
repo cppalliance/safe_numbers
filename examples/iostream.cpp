@@ -2,11 +2,10 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-//[iostream_example
-//` This example demonstrates stream I/O support for safe integer types.
-//` Safe integers can be written to and read from standard streams using
-//` the familiar << and >> operators. The u8 type displays as a number
-//` rather than as a character.
+// This example demonstrates stream I/O support for safe integer types.
+// Safe integers can be written to and read from standard streams using
+// the familiar << and >> operators. The u8 type displays as a number
+// rather than as a character.
 
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/iostream.hpp>
@@ -73,4 +72,4 @@ int main()
 
     return 0;
 }
-//]
+

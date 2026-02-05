@@ -2,11 +2,10 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-//[generic_arithmetic_example
-//` This example demonstrates the generic policy-parameterized arithmetic
-//` functions (add, sub, mul, div, mod). These accept an overflow_policy
-//` as a template parameter, allowing you to write code that is generic
-//` over the overflow handling strategy.
+// This example demonstrates the generic policy-parameterized arithmetic
+// functions (add, sub, mul, div, mod). These accept an overflow_policy
+// as a template parameter, allowing you to write code that is generic
+// over the overflow handling strategy.
 
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/overflow_policy.hpp>
@@ -78,4 +77,4 @@ int main()
 
     return 0;
 }
-//]
+

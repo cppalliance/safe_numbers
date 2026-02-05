@@ -2,10 +2,9 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-//[literals_example
-//` This example demonstrates the use of user-defined literals for
-//` constructing safe integer types. The literals provide a concise
-//` syntax and perform compile-time range checking when possible.
+// This example demonstrates the use of user-defined literals for
+// constructing safe integer types. The literals provide a concise
+// syntax and perform compile-time range checking when possible.
 
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/literals.hpp>
@@ -60,4 +59,4 @@ int main()
 
     return 0;
 }
-//]
+

@@ -2,11 +2,10 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-//[overflowing_arithmetic_example
-//` This example demonstrates the use of overflowing arithmetic operations.
-//` These functions return a std::pair containing the result and a boolean
-//` flag indicating whether overflow/underflow occurred. The result is the
-//` wrapped value (as if using normal unsigned arithmetic).
+// This example demonstrates the use of overflowing arithmetic operations.
+// These functions return a std::pair containing the result and a boolean
+// flag indicating whether overflow/underflow occurred. The result is the
+// wrapped value (as if using normal unsigned arithmetic).
 
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/iostream.hpp>
@@ -92,4 +91,4 @@ int main()
 
     return 0;
 }
-//]
+

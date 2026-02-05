@@ -2,11 +2,10 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-//[wrapping_arithmetic_example
-//` This example demonstrates the use of wrapping arithmetic operations.
-//` These functions perform standard C unsigned integer wrapping behavior -
-//` when overflow or underflow occurs, the result wraps around modulo 2^N.
-//` This matches the behavior of built-in unsigned integers in C/C++.
+// This example demonstrates the use of wrapping arithmetic operations.
+// These functions perform standard C unsigned integer wrapping behavior -
+// when overflow or underflow occurs, the result wraps around modulo 2^N.
+// This matches the behavior of built-in unsigned integers in C/C++.
 
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/iostream.hpp>
@@ -93,4 +92,4 @@ int main()
 
     return 0;
 }
-//]
+
