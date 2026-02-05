@@ -27,7 +27,7 @@ namespace boost::safe_numbers::literals {
 constexpr auto operator ""_u8(unsigned long long int val) -> u8;
 constexpr auto operator ""_u16(unsigned long long int val) -> u16;
 constexpr auto operator ""_u32(unsigned long long int val) -> u32;
-constexpr auto operator ""_u64(unsigned long long int val) -> u64;
+constexpr auto operator ""_u64(unsigned long long int val) noexcept -> u64;
 constexpr auto operator ""_u128(const char* str) -> u128;
 
 } // namespace boost::safe_numbers::literals

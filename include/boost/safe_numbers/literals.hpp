@@ -57,8 +57,9 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u32(const unsigned long lon
 #  pragma warning(pop)
 #endif
 
-BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u64(const unsigned long long int val) -> u64
+BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u64(const unsigned long long int val) noexcept -> u64
 {
+    static_assert(std::numeric_limits<std::uint64_t>::max() == std::numeric_limits<unsigned long long int>::max());
     return static_cast<u64>(static_cast<std::uint64_t>(val));
 }
 
