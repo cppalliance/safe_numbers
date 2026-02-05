@@ -1,0 +1,200 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#limits]
+= `<limits>` Support
+:idprefix: limits_
+
+== Description
+
+The library provides `std::numeric_limits` specializations for all safe integer types.
+These specializations delegate to the underlying type's `numeric_limits`, ensuring consistent behavior with the built-in types.
+
+[source,c++]
+----
+#include <boost/safe_numbers/limits.hpp>
+
+namespace std {
+
+template <>
+struct numeric_limits<boost::safe_numbers::u8>;
+
+template <>
+struct numeric_limits<boost::safe_numbers::u16>;
+
+template <>
+struct numeric_limits<boost::safe_numbers::u32>;
+
+template <>
+struct numeric_limits<boost::safe_numbers::u64>;
+
+template <>
+struct numeric_limits<boost::safe_numbers::u128>;
+
+} // namespace std
+----
+
+== Specialization
+
+Each specialization has the following structure, where `T` is the safe integer type and `basis_type` is its underlying integer type:
+
+[source,c++]
+----
+namespace std {
+
+template <>
+struct numeric_limits<T>
+{
+    using basis_type = typename T::basis_type;
+
+    // Static member constants
+    static constexpr bool is_specialized = std::numeric_limits<basis_type>::is_specialized;
+    static constexpr bool is_signed = std::numeric_limits<basis_type>::is_signed;
+    static constexpr bool is_integer = std::numeric_limits<basis_type>::is_integer;
+    static constexpr bool is_exact = std::numeric_limits<basis_type>::is_exact;
+    static constexpr bool has_infinity = std::numeric_limits<basis_type>::has_infinity;
+    static constexpr bool has_quiet_NaN = std::numeric_limits<basis_type>::has_quiet_NaN;
+    static constexpr bool has_signaling_NaN = std::numeric_limits<basis_type>::has_signaling_NaN;
+
+    // Deprecated in C++23
+    static constexpr std::float_denorm_style has_denorm = std::numeric_limits<basis_type>::has_denorm;
+    static constexpr bool has_denorm_loss = std::numeric_limits<basis_type>::has_denorm_loss;
+
+    static constexpr std::float_round_style round_style = std::numeric_limits<basis_type>::round_style;
+    static constexpr bool is_iec559 = std::numeric_limits<basis_type>::is_iec559;
+    static constexpr bool is_bounded = std::numeric_limits<basis_type>::is_bounded;
+    static constexpr bool is_modulo = std::numeric_limits<basis_type>::is_modulo;
+    static constexpr int digits = std::numeric_limits<basis_type>::digits;
+    static constexpr int digits10 = std::numeric_limits<basis_type>::digits10;
+    static constexpr int max_digits10 = std::numeric_limits<basis_type>::max_digits10;
+    static constexpr int radix = std::numeric_limits<basis_type>::radix;
+    static constexpr int min_exponent = std::numeric_limits<basis_type>::min_exponent;
+    static constexpr int min_exponent10 = std::numeric_limits<basis_type>::min_exponent10;
+    static constexpr int max_exponent = std::numeric_limits<basis_type>::max_exponent;
+    static constexpr int max_exponent10 = std::numeric_limits<basis_type>::max_exponent10;
+    static constexpr bool traps = std::numeric_limits<basis_type>::traps;
+    static constexpr bool tinyness_before = std::numeric_limits<basis_type>::tinyness_before;
+
+    // Static member functions
+    static constexpr T min() noexcept;
+    static constexpr T max() noexcept;
+    static constexpr T lowest() noexcept;
+    static constexpr T epsilon() noexcept;
+    static constexpr T round_error() noexcept;
+    static constexpr T infinity() noexcept;
+    static constexpr T quiet_NaN() noexcept;
+    static constexpr T signaling_NaN() noexcept;
+    static constexpr T denorm_min() noexcept;
+};
+
+} // namespace std
+----
+
+== Member Constants
+
+For unsigned integer types, the following values are consistent across all specializations:
+
+|===
+| Member | Value | Description
+
+| `is_specialized` | `true` | Type has a specialization
+| `is_signed` | `false` | Type is unsigned
+| `is_integer` | `true` | Type represents integers
+| `is_exact` | `true` | Type uses exact representations
+| `has_infinity` | `false` | Type cannot represent infinity
+| `has_quiet_NaN` | `false` | Type cannot represent quiet NaN
+| `has_signaling_NaN` | `false` | Type cannot represent signaling NaN
+| `has_denorm` | `std::denorm_absent` | Type does not have denormalized values
+| `has_denorm_loss` | `false` | No denormalization loss
+| `round_style` | `std::round_toward_zero` | Rounding truncates toward zero
+| `is_iec559` | `false` | Not IEC 559 (IEEE 754) compliant
+| `is_bounded` | `true` | Type has finite range
+| `is_modulo` | `false` | Overflow does not wrap (throws instead)
+| `radix` | `2` | Binary representation
+| `min_exponent` | `0` | Not applicable for integers
+| `min_exponent10` | `0` | Not applicable for integers
+| `max_exponent` | `0` | Not applicable for integers
+| `max_exponent10` | `0` | Not applicable for integers
+| `traps` | platform-dependent | Whether arithmetic traps
+| `tinyness_before` | `false` | Not applicable for integers
+|===
+
+== Type-Specific Values
+
+|===
+| Type | `digits` | `digits10` | `max_digits10`
+
+| `u8`   | 8   | 2  | 3
+| `u16`  | 16  | 4  | 5
+| `u32`  | 32  | 9  | 10
+| `u64`  | 64  | 18 | 20
+| `u128` | 128 | 38 | 39
+|===
+
+== Member Functions
+
+[source,c++]
+----
+static constexpr T min() noexcept;
+----
+
+Returns the minimum finite value (always `T{0}` for unsigned types).
+
+[source,c++]
+----
+static constexpr T max() noexcept;
+----
+
+Returns the maximum finite value.
+
+[source,c++]
+----
+static constexpr T lowest() noexcept;
+----
+
+Returns the lowest finite value (same as `min()` for unsigned types).
+
+[source,c++]
+----
+static constexpr T epsilon() noexcept;
+----
+
+Returns `T{0}` (not meaningful for integer types).
+
+[source,c++]
+----
+static constexpr T round_error() noexcept;
+----
+
+Returns `T{0}` (not meaningful for integer types).
+
+[source,c++]
+----
+static constexpr T infinity() noexcept;
+----
+
+Returns `T{0}` (unsigned integers cannot represent infinity).
+
+[source,c++]
+----
+static constexpr T quiet_NaN() noexcept;
+----
+
+Returns `T{0}` (unsigned integers cannot represent NaN).
+
+[source,c++]
+----
+static constexpr T signaling_NaN() noexcept;
+----
+
+Returns `T{0}` (unsigned integers cannot represent NaN).
+
+[source,c++]
+----
+static constexpr T denorm_min() noexcept;
+----
+
+Returns `T{0}` (not meaningful for integer types).
