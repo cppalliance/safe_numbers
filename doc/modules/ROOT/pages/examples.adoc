@@ -203,6 +203,32 @@ add<wrapping>(max, 1)          = 0
 ----
 ====
 
+[#examples_literals]
+== Literals
+
+User-defined literal suffixes (`_u8`, `_u16`, `_u32`, `_u64`, `_u128`) provide concise construction of safe integer types.
+Values are range-checked at construction, producing a compile error in `constexpr` contexts or throwing `std::overflow_error` at runtime for out-of-range values.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/literals.cpp[example] demonstrates how to use user-defined literals with safe integer types.
+====
+[source, c++]
+----
+include::example$literals.cpp[]
+----
+
+Output:
+----
+42_u8   = 42
+1000_u16 = 1000
+100000_u32 = 100000
+9999999999_u64 = 9999999999
+max_u128 = 340282366920938463463374607431768211455
+100_u32 + 50_u32 = 150
+6_u32 * 7_u32    = 42
+constexpr 255_u8 = 255
+----
+====
+
 [#examples_charconv]
 == Character Conversion
 
