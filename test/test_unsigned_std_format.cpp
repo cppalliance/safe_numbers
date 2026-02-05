@@ -9,9 +9,16 @@ import boost.safe_numbers;
 #else
 
 #include <boost/safe_numbers.hpp>
+
+#ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_FORMAT
+
 #include <format>
 
 #endif
+
+#endif
+
+#ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_FORMAT
 
 #include <boost/core/lightweight_test.hpp>
 
@@ -37,3 +44,12 @@ int main()
 
     return boost::report_errors();
 }
+
+#else
+
+int main()
+{
+    return 0;
+}
+
+#endif
