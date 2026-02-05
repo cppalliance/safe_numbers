@@ -17,6 +17,7 @@
 #include <limits>
 #include <stdexcept>
 #include <cstdint>
+#include <cstdlib>
 #include <utility>
 #include <optional>
 
@@ -204,6 +205,11 @@ struct add_helper
             {
                 res = std::numeric_limits<BasisType>::max();
             }
+            else if constexpr (Policy == overflow_policy::strict)
+            {
+                static_cast<void>(res);
+                std::exit(EXIT_FAILURE);
+            }
             else
             {
                 static_cast<void>(res);
@@ -336,7 +342,7 @@ struct add_helper<overflow_policy::wrapping, BasisType>
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto add_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::wrapping)
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::wrapping || Policy == overflow_policy::strict)
 {
     return add_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -567,6 +573,11 @@ struct sub_helper
             {
                 res = std::numeric_limits<BasisType>::min();
             }
+            else if constexpr (Policy == overflow_policy::strict)
+            {
+                static_cast<void>(res);
+                std::exit(EXIT_FAILURE);
+            }
             else
             {
                 static_cast<void>(res);
@@ -699,7 +710,7 @@ struct sub_helper<overflow_policy::wrapping, BasisType>
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto sub_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::wrapping)
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::wrapping || Policy == overflow_policy::strict)
 {
     return sub_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -811,7 +822,7 @@ struct mul_helper
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs)
-        noexcept(Policy == overflow_policy::saturate)
+        noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::strict)
         -> unsigned_integer_basis<BasisType>
     {
         using result_type = unsigned_integer_basis<BasisType>;
@@ -830,6 +841,11 @@ struct mul_helper
             else if constexpr (Policy == overflow_policy::saturate)
             {
                 res = std::numeric_limits<BasisType>::max();
+            }
+            else if constexpr (Policy == overflow_policy::strict)
+            {
+                static_cast<void>(res);
+                std::exit(EXIT_FAILURE);
             }
             else
             {
@@ -963,7 +979,7 @@ struct mul_helper<overflow_policy::wrapping, BasisType>
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto mul_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::wrapping)
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::wrapping || Policy == overflow_policy::strict)
 {
     return mul_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -996,6 +1012,7 @@ struct div_helper
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs)
+        noexcept(Policy == overflow_policy::strict)
         -> unsigned_integer_basis<BasisType>
     {
         using result_type = unsigned_integer_basis<BasisType>;
@@ -1009,6 +1026,10 @@ struct div_helper
             else if constexpr (Policy == overflow_policy::saturate)
             {
                 BOOST_THROW_EXCEPTION(std::domain_error("Unsigned division by zero"));
+            }
+            else if constexpr (Policy == overflow_policy::strict)
+            {
+                std::exit(EXIT_FAILURE);
             }
             else
             {
@@ -1113,7 +1134,7 @@ struct div_helper<overflow_policy::wrapping, BasisType>
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto div_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy == overflow_policy::checked)
+    noexcept(Policy == overflow_policy::checked || Policy == overflow_policy::strict)
 {
     return div_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -1146,6 +1167,7 @@ struct mod_helper
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs)
+        noexcept(Policy == overflow_policy::strict)
         -> unsigned_integer_basis<BasisType>
     {
         using result_type = unsigned_integer_basis<BasisType>;
@@ -1158,7 +1180,11 @@ struct mod_helper
             }
             else if constexpr (Policy == overflow_policy::saturate)
             {
-                BOOST_THROW_EXCEPTION(std::domain_error("Unsigned division by zero"));
+                BOOST_THROW_EXCEPTION(std::domain_error("Unsigned modulo by zero"));
+            }
+            else if constexpr (Policy == overflow_policy::strict)
+            {
+                std::exit(EXIT_FAILURE);
             }
             else
             {
@@ -1263,7 +1289,7 @@ struct mod_helper<overflow_policy::wrapping, BasisType>
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto mod_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy == overflow_policy::checked)
+    noexcept(Policy == overflow_policy::checked || Policy == overflow_policy::strict)
 {
     return mod_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -1555,6 +1581,56 @@ template <detail::unsigned_integral BasisType>
 }
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("wrapping modulo", wrapping_mod)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto strict_add(const detail::unsigned_integer_basis<BasisType> lhs,
+                                        const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::add_impl<detail::overflow_policy::strict>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("strict addition", strict_add)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto strict_sub(const detail::unsigned_integer_basis<BasisType> lhs,
+                                        const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::sub_impl<detail::overflow_policy::strict>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("strict subtraction", strict_sub)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto strict_mul(const detail::unsigned_integer_basis<BasisType> lhs,
+                                        const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::mul_impl<detail::overflow_policy::strict>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("strict multiplication", strict_mul)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto strict_div(const detail::unsigned_integer_basis<BasisType> lhs,
+                                        const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::div_impl<detail::overflow_policy::strict>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("strict division", strict_div)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto strict_mod(const detail::unsigned_integer_basis<BasisType> lhs,
+                                        const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::mod_impl<detail::overflow_policy::strict>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("strict modulo", strict_mod)
 
 } // namespace boost::safe_numbers
 

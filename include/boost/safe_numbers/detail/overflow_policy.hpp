@@ -14,6 +14,7 @@ enum class overflow_policy
     overflow_tuple,
     checked,
     wrapping,
+    strict,
 };
 
 } // namespace boost::safe_numbers::detail
