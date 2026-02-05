@@ -111,21 +111,31 @@ https://www.boost.org/LICENSE_1_0.txt
 |===
 | Header | Contents
 
-| `<boost/safe_numbers/unsigned_integers.hpp>`
-| All unsigned safe integer types (`u8`, `u16`, `u32`, `u64`, `u128`)
-
-| `<boost/safe_numbers/overflow_policy.hpp>`
-| The `overflow_policy` enum class
-
-| `<boost/safe_numbers/literals.hpp>`
-| User-defined literal suffixes (`_u8`, `_u16`, `_u32`, `_u64`, `_u128`)
-
-| `<boost/safe_numbers/iostream.hpp>`
-| Stream I/O operators (`operator<<`, `operator>>`) for safe integer types
+| `<boost/safe_numbers.hpp>`
+| Convenience header including all library types
 
 | `<boost/safe_numbers/charconv.hpp>`
 | Character conversion functions (`to_chars`, `from_chars`)
 
-| `<boost/safe_numbers/safe_numbers.hpp>`
-| Convenience header including all library components
+| `<boost/safe_numbers/fmt_format.hpp`>
+| Support for library types to `pass:[{fmt}]`.
+This header is not included in the convenience header since it requires external dependencies
+
+| `<boost/safe_numbers/format.hpp>`
+| Contains specializations of `<format>` for library types
+
+| `<boost/safe_numbers/iostream.hpp>`
+| Stream I/O operators (`operator<<`, `operator>>`) for library types
+
+| `<boost/safe_numbers/limits.hpp>`
+| Contains specializations of `<limits>` for library types
+
+| `<boost/safe_numbers/literals.hpp>`
+| User-defined literal suffixes (`_u8`, `_u16`, `_u32`, `_u64`, `_u128`)
+
+| `<boost/safe_numbers/overflow_policy.hpp>`
+| The `overflow_policy` enum class
+
+| `<boost/safe_numbers/unsigned_integers.hpp>`
+| All unsigned safe integer types (`u8`, `u16`, `u32`, `u64`, `u128`)
 |===
