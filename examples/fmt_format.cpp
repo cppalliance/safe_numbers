@@ -2,6 +2,10 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
+#define FMT_HEADER_ONLY
+
+#if __has_include(<fmt/format.h>)
+
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/fmt_format.hpp>
 #include <fmt/format.h>
@@ -48,3 +52,14 @@ int main()
 
     return 0;
 }
+
+#else
+
+#include <iostream>
+
+int main()
+{
+    std::cout << "{fmt} headers are required to run this example." << std::endl;
+}
+
+#endif
