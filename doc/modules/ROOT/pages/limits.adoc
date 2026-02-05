@@ -141,7 +141,7 @@ For unsigned integer types, the following values are consistent across all speci
 static constexpr T min() noexcept;
 ----
 
-Returns the minimum finite value (always `T{0}` for unsigned types).
+Returns the minimum finite value (always `Tpass:[{0}]` for unsigned types).
 
 [source,c++]
 ----
@@ -162,39 +162,39 @@ Returns the lowest finite value (same as `min()` for unsigned types).
 static constexpr T epsilon() noexcept;
 ----
 
-Returns `T{0}` (not meaningful for integer types).
+Returns `Tpass:[{0}]` (not meaningful for integer types).
 
 [source,c++]
 ----
 static constexpr T round_error() noexcept;
 ----
 
-Returns `T{0}` (not meaningful for integer types).
+Returns `Tpass:[{0}]` (not meaningful for integer types).
 
 [source,c++]
 ----
 static constexpr T infinity() noexcept;
 ----
 
-Returns `T{0}` (unsigned integers cannot represent infinity).
+Returns `Tpass:[{0}]` (unsigned integers cannot represent infinity).
 
 [source,c++]
 ----
 static constexpr T quiet_NaN() noexcept;
 ----
 
-Returns `T{0}` (unsigned integers cannot represent NaN).
+Returns `Tpass:[{0}]` (unsigned integers cannot represent NaN).
 
 [source,c++]
 ----
 static constexpr T signaling_NaN() noexcept;
 ----
 
-Returns `T{0}` (unsigned integers cannot represent NaN).
+Returns `Tpass:[{0}]` (unsigned integers cannot represent NaN).
 
 [source,c++]
 ----
 static constexpr T denorm_min() noexcept;
 ----
 
-Returns `T{0}` (not meaningful for integer types).
+Returns `Tpass:[{0}]` (not meaningful for integer types).
