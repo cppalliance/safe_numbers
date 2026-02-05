@@ -91,6 +91,10 @@ run test_unsigned_wrapping_multiplication.cpp ;
 run test_unsigned_wrapping_division.cpp ;
 run test_unsigned_wrapping_mod.cpp ;
 
+# Exhaustive verification tests
+run test_exhaustive_u8_arithmetic.cpp ;
+run test_boundary_arithmetic.cpp ;
+
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
 compile compile_tests/compile_test_iostream.cpp ;
@@ -105,3 +109,7 @@ run ../examples/basic_usage.cpp ;
 compile-fail ../examples/compile_fail_basic_usage_constexpr.cpp ;
 run ../examples/debugger.cpp ;
 run ../examples/construction_and_conversion.cpp ;
+run ../examples/saturating_arithmetic.cpp ;
+run ../examples/overflowing_arithmetic.cpp ;
+run ../examples/checked_arithmetic.cpp ;
+run ../examples/wrapping_arithmetic.cpp ;

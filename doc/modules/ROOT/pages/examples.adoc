@@ -1,0 +1,185 @@
+////
+Copyright 2025 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#examples]
+= Examples
+:idprefix: examples_
+
+All the following examples can be found in the examples/ folder of the library.
+
+[#examples_basic_usage]
+== Basic Usage (Default Throwing Behavior)
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/basic_usage.cpp[example] demonstrates the default behavior where arithmetic overflow throws an exception
+====
+[source, c++]
+----
+include::example$basic_usage.cpp[]
+----
+
+.Expected Output
+[listing]
+----
+Error Detected: Overflow detected in unsigned addition
+----
+====
+
+[#examples_construction]
+== Construction and Conversion
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/construction_and_conversion.cpp[example] demonstrates safe integer construction and conversion
+====
+[source, c++]
+----
+include::example$construction_and_conversion.cpp[]
+----
+====
+
+[#examples_saturating]
+== Saturating Arithmetic
+
+Saturating arithmetic clamps results to the type's minimum or maximum value instead of overflowing or throwing.
+This is useful when you want bounded behavior without exceptions.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/saturating_arithmetic.cpp[example] demonstrates saturating arithmetic operations
+====
+[source, c++]
+----
+include::example$saturating_arithmetic.cpp[]
+----
+
+.Expected Output
+[listing]
+----
+saturating_add(max, 100) = 4294967295
+saturating_sub(10, 100) = 0
+saturating_mul(max, 2) = 4294967295
+saturating_add(100, 50) = 150
+saturating_sub(100, 50) = 50
+saturating_mul(100, 50) = 5000
+----
+====
+
+[#examples_overflowing]
+== Overflowing Arithmetic
+
+Overflowing arithmetic returns both the wrapped result and a boolean flag indicating whether overflow occurred.
+This gives you access to both the C-style wrapped value and overflow detection in a single operation.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/overflowing_arithmetic.cpp[example] demonstrates overflowing arithmetic operations
+====
+[source, c++]
+----
+include::example$overflowing_arithmetic.cpp[]
+----
+
+.Expected Output
+[listing]
+----
+overflowing_add(max, 100):
+  result = 99
+  overflowed = true
+overflowing_sub(10, 100):
+  result = 4294967206
+  underflowed = true
+overflowing_mul(max, 2):
+  result = 4294967294
+  overflowed = true
+overflowing_add(100, 50) = 150 (overflow: false)
+overflowing_sub(100, 50) = 50 (overflow: false)
+overflowing_mul(100, 50) = 5000 (overflow: false)
+Safe multiplication: 1000000000 * 5 = 5000000000
+----
+====
+
+[#examples_checked]
+== Checked Arithmetic
+
+Checked arithmetic returns `std::optional` - containing the result on success, or `std::nullopt` on overflow.
+This provides exception-free error handling with a clean, idiomatic interface.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/checked_arithmetic.cpp[example] demonstrates checked arithmetic operations
+====
+[source, c++]
+----
+include::example$checked_arithmetic.cpp[]
+----
+
+.Expected Output
+[listing]
+----
+checked_add(max, 100) = overflow detected!
+checked_sub(10, 100) = underflow detected!
+checked_div(100, 0) = division by zero!
+checked_add(100, 50) = 150
+checked_sub(100, 50) = 50
+checked_mul(100, 50) = 5000
+Safe: 1000000000 * 5 = 5000000000
+----
+====
+
+[#examples_wrapping]
+== Wrapping Arithmetic
+
+Wrapping arithmetic performs standard C unsigned integer wrapping behavior - results wrap around modulo 2^N.
+This matches the behavior of built-in unsigned integers and is useful for implementing counters, checksums, or hash functions.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/wrapping_arithmetic.cpp[example] demonstrates wrapping arithmetic operations
+====
+[source, c++]
+----
+include::example$wrapping_arithmetic.cpp[]
+----
+
+.Expected Output
+[listing]
+----
+wrapping_add(255, 2) = 1
+wrapping_sub(0, 1) = 255
+wrapping_mul(200, 2) = 144
+wrapping_add(UINT32_MAX, 1) = 0
+wrapping_sub(0, 1) = 4294967295
+wrapping_add(100, 50) = 150
+wrapping_sub(100, 50) = 50
+wrapping_mul(100, 50) = 5000
+Counter sequence: 254 255 0 1 2
+----
+====
+
+[#examples_policy_comparison]
+== Policy Comparison
+
+The following table summarizes the behavior of each arithmetic policy:
+
+[cols="1,2,2,2"]
+|===
+|Policy |On Overflow |Return Type |Use Case
+
+|Default (operators)
+|Throws `std::overflow_error`
+|`T`
+|When overflow is a programming error
+
+|Saturating
+|Clamps to min/max
+|`T`
+|Bounded values, DSP, graphics
+
+|Overflowing
+|Returns wrapped value + flag
+|`std::pair<T, bool>`
+|Need both wrapped value and detection
+
+|Checked
+|Returns `std::nullopt`
+|`std::optional<T>`
+|Exception-free error handling
+
+|Wrapping
+|Wraps around (modulo 2^N)
+|`T`
+|Counters, checksums, hashing
+|===
