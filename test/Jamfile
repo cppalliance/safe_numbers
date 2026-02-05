@@ -44,7 +44,7 @@ project : requirements
     <toolset>clang:<warnings-as-errors>on
     <toolset>gcc:<warnings-as-errors>on
 
-  [ requires cxx17_hdr_charconv cxx20_hdr_bit cxx20_hdr_compare cxx20_hdr_concepts cxx20_hdr_format ]
+  [ requires cxx20_hdr_bit cxx20_hdr_compare cxx20_hdr_concepts ]
   ;
 
 run quick.cpp ;
