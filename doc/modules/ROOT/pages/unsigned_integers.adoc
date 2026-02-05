@@ -168,6 +168,22 @@ constexpr T wrapping_div(T lhs, T rhs);
 template <UnsignedLibType T>
 constexpr T wrapping_mod(T lhs, T rhs);
 
+// Strict arithmetic (call std::exit(EXIT_FAILURE) on error)
+template <UnsignedLibType T>
+constexpr T strict_add(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T strict_sub(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T strict_mul(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T strict_div(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T strict_mod(T lhs, T rhs) noexcept;
+
 } // namespace boost::safe_numbers
 ----
 
@@ -414,6 +430,36 @@ These functions wrap on overflow without any indication:
 - `wrapping_div`: Returns the quotient; throws `std::domain_error` on division by zero
 - `wrapping_mod`: Returns the remainder; throws `std::domain_error` on division by zero
 
+=== Strict Arithmetic
+
+[source,c++]
+----
+template <UnsignedLibType T>
+constexpr T strict_add(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T strict_sub(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T strict_mul(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T strict_div(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T strict_mod(T lhs, T rhs) noexcept;
+----
+
+These functions call `std::exit(EXIT_FAILURE)` on error, providing a hard termination policy for safety-critical applications where exceptions cannot be used:
+
+- `strict_add`: Returns the sum; calls `std::exit(EXIT_FAILURE)` on overflow
+- `strict_sub`: Returns the difference; calls `std::exit(EXIT_FAILURE)` on underflow
+- `strict_mul`: Returns the product; calls `std::exit(EXIT_FAILURE)` on overflow
+- `strict_div`: Returns the quotient; calls `std::exit(EXIT_FAILURE)` on division by zero
+- `strict_mod`: Returns the remainder; calls `std::exit(EXIT_FAILURE)` on modulo by zero
+
+All strict functions are marked `noexcept` since `std::exit` does not throw.
+
 == Exception Summary
 
 |===
@@ -458,6 +504,70 @@ These functions wrap on overflow without any indication:
 | `wrapping_div`, `wrapping_mod`
 | `std::domain_error`
 | Division by zero
+|===
+
+== Strict Functions Behavior
+
+The `strict_*` functions do not throw exceptions. Instead, they call `std::exit(EXIT_FAILURE)` on error:
+
+|===
+| Operation | Behavior | Condition
+
+| `strict_add`
+| `std::exit(EXIT_FAILURE)`
+| Overflow
+
+| `strict_sub`
+| `std::exit(EXIT_FAILURE)`
+| Underflow
+
+| `strict_mul`
+| `std::exit(EXIT_FAILURE)`
+| Overflow
+
+| `strict_div`
+| `std::exit(EXIT_FAILURE)`
+| Division by zero
+
+| `strict_mod`
+| `std::exit(EXIT_FAILURE)`
+| Modulo by zero
+|===
+
+== Policy Summary
+
+|===
+| Policy | Overflow/Underflow Behavior | Division by Zero | noexcept
+
+| Default operators
+| Throws exception
+| Throws `std::domain_error`
+| No
+
+| `saturating_*`
+| Clamps to min/max
+| Throws `std::domain_error`
+| Add/Sub/Mul: Yes, Div/Mod: No
+
+| `overflowing_*`
+| Wraps, returns flag
+| Throws `std::domain_error`
+| Add/Sub/Mul: Yes, Div/Mod: No
+
+| `checked_*`
+| Returns `std::nullopt`
+| Returns `std::nullopt`
+| Yes
+
+| `wrapping_*`
+| Wraps silently
+| Throws `std::domain_error`
+| Add/Sub/Mul: Yes, Div/Mod: No
+
+| `strict_*`
+| Calls `std::exit(EXIT_FAILURE)`
+| Calls `std::exit(EXIT_FAILURE)`
+| Yes
 |===
 
 == Constexpr Support

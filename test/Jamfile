@@ -90,6 +90,11 @@ run test_unsigned_wrapping_subtraction.cpp ;
 run test_unsigned_wrapping_multiplication.cpp ;
 run test_unsigned_wrapping_division.cpp ;
 run test_unsigned_wrapping_mod.cpp ;
+run-fail test_unsigned_strict_addition.cpp ;
+run-fail test_unsigned_strict_subtraction.cpp ;
+run-fail test_unsigned_strict_multiplication.cpp ;
+run-fail test_unsigned_strict_division.cpp ;
+run-fail test_unsigned_strict_mod.cpp ;
 
 # Exhaustive verification tests
 run test_exhaustive_u8_arithmetic.cpp ;
