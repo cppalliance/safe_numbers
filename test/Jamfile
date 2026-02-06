@@ -109,6 +109,7 @@ run test_unsigned_bounded_division.cpp ;
 run test_unsigned_bounded_modulo.cpp ;
 run test_unsigned_bounded_conversions.cpp ;
 compile-fail compile_fail_bounded_mixed_ops.cpp ;
+compile-fail compile_fail_bounded_bool_bounds.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;

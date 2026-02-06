@@ -30,7 +30,7 @@ namespace boost::safe_numbers {
 namespace detail {
 
 template <typename T>
-concept valid_bound = is_unsigned_library_type_v<T> || is_fundamental_unsigned_integral_v<T>;
+concept valid_bound = !std::is_same_v<T, bool> && (is_unsigned_library_type_v<T> || is_fundamental_unsigned_integral_v<T>);
 
 template <typename T>
     requires valid_bound<T>
