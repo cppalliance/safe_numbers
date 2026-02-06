@@ -92,6 +92,14 @@ public:
         return static_cast<OtherBasis>(static_cast<detail::underlying_type_t<basis_type>>(basis_));
     }
 
+    template <auto Min2, auto Max2>
+    [[nodiscard]] explicit constexpr operator bounded_uint<Min2, Max2>() const
+    {
+        using target_basis = typename bounded_uint<Min2, Max2>::basis_type;
+        const auto raw {static_cast<detail::underlying_type_t<basis_type>>(basis_)};
+        return bounded_uint<Min2, Max2>{static_cast<target_basis>(raw)};
+    }
+
     [[nodiscard]] friend constexpr auto operator<=>(bounded_uint lhs, bounded_uint rhs) noexcept
         -> std::strong_ordering = default;
 
