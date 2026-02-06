@@ -52,7 +52,7 @@ constexpr auto bit_width(const UnsignedInt x) noexcept -> int
     using std::bit_width;
     using basis_type = typename UnsignedInt::basis_type;
 
-    return bit_width(static_cast<basis_type>(x));
+    return static_cast<int>(bit_width(static_cast<basis_type>(x)));
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
