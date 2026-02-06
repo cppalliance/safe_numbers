@@ -13,7 +13,6 @@
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 #include <boost/core/bit.hpp>
-#include <bit>
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -22,7 +21,7 @@ namespace boost::safe_numbers {
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 constexpr auto has_single_bit(const UnsignedInt x) noexcept -> bool
 {
-    using std::has_single_bit;
+    using boost::core::has_single_bit;
     using basis_type = typename UnsignedInt::basis_type;
 
     return has_single_bit(static_cast<basis_type>(x));
@@ -31,7 +30,7 @@ constexpr auto has_single_bit(const UnsignedInt x) noexcept -> bool
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 constexpr auto bit_ceil(const UnsignedInt x) noexcept -> UnsignedInt
 {
-    using std::bit_ceil;
+    using boost::core::bit_ceil;
     using basis_type = typename UnsignedInt::basis_type;
 
     return static_cast<UnsignedInt>(bit_ceil(static_cast<basis_type>(x)));
@@ -40,7 +39,7 @@ constexpr auto bit_ceil(const UnsignedInt x) noexcept -> UnsignedInt
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 constexpr auto bit_floor(const UnsignedInt x) noexcept -> UnsignedInt
 {
-    using std::bit_floor;
+    using boost::core::bit_floor;
     using basis_type = typename UnsignedInt::basis_type;
 
     return static_cast<UnsignedInt>(bit_floor(static_cast<basis_type>(x)));
@@ -49,7 +48,7 @@ constexpr auto bit_floor(const UnsignedInt x) noexcept -> UnsignedInt
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 constexpr auto bit_width(const UnsignedInt x) noexcept -> int
 {
-    using std::bit_width;
+    using boost::core::bit_width;
     using basis_type = typename UnsignedInt::basis_type;
 
     return static_cast<int>(bit_width(static_cast<basis_type>(x)));
@@ -58,7 +57,7 @@ constexpr auto bit_width(const UnsignedInt x) noexcept -> int
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 constexpr auto rotl(const UnsignedInt x, const int s) noexcept -> UnsignedInt
 {
-    using std::rotl;
+    using boost::core::rotl;
     using basis_type = typename UnsignedInt::basis_type;
 
     return static_cast<UnsignedInt>(rotl(static_cast<basis_type>(x), s));
@@ -67,7 +66,7 @@ constexpr auto rotl(const UnsignedInt x, const int s) noexcept -> UnsignedInt
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 constexpr auto rotr(const UnsignedInt x, const int s) noexcept -> UnsignedInt
 {
-    using std::rotr;
+    using boost::core::rotr;
     using basis_type = typename UnsignedInt::basis_type;
 
     return static_cast<UnsignedInt>(rotr(static_cast<basis_type>(x), s));
@@ -76,7 +75,7 @@ constexpr auto rotr(const UnsignedInt x, const int s) noexcept -> UnsignedInt
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 constexpr auto countl_zero(const UnsignedInt x) noexcept -> int
 {
-    using std::countl_zero;
+    using boost::core::countl_zero;
     using basis_type = typename UnsignedInt::basis_type;
 
     return countl_zero(static_cast<basis_type>(x));
@@ -85,7 +84,7 @@ constexpr auto countl_zero(const UnsignedInt x) noexcept -> int
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 constexpr auto countl_one(const UnsignedInt x) noexcept -> int
 {
-    using std::countl_one;
+    using boost::core::countl_one;
     using basis_type = typename UnsignedInt::basis_type;
 
     return countl_one(static_cast<basis_type>(x));
@@ -94,7 +93,7 @@ constexpr auto countl_one(const UnsignedInt x) noexcept -> int
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 constexpr auto countr_zero(const UnsignedInt x) noexcept -> int
 {
-    using std::countr_zero;
+    using boost::core::countr_zero;
     using basis_type = typename UnsignedInt::basis_type;
 
     return countr_zero(static_cast<basis_type>(x));
@@ -103,7 +102,7 @@ constexpr auto countr_zero(const UnsignedInt x) noexcept -> int
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 constexpr auto countr_one(const UnsignedInt x) noexcept -> int
 {
-    using std::countr_one;
+    using boost::core::countr_one;
     using basis_type = typename UnsignedInt::basis_type;
 
     return countr_one(static_cast<basis_type>(x));
@@ -112,7 +111,7 @@ constexpr auto countr_one(const UnsignedInt x) noexcept -> int
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 constexpr auto popcount(const UnsignedInt x) noexcept -> int
 {
-    using std::popcount;
+    using boost::core::popcount;
     using basis_type = typename UnsignedInt::basis_type;
 
     return popcount(static_cast<basis_type>(x));
@@ -121,7 +120,7 @@ constexpr auto popcount(const UnsignedInt x) noexcept -> int
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 constexpr auto byteswap(const UnsignedInt x) noexcept -> UnsignedInt
 {
-    using core::byteswap;
+    using boost::core::byteswap;
     using basis_type = typename UnsignedInt::basis_type;
 
     return static_cast<UnsignedInt>(byteswap(static_cast<basis_type>(x)));
