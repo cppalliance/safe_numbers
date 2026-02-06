@@ -372,6 +372,132 @@ void test_u128_conversions()
     BOOST_TEST_THROWS((static_cast<b128_narrow>(f)), std::domain_error);
 }
 
+// -----------------------------------------------
+// Narrowing conversions via operator OtherBasis()
+// (bounded_uint -> smaller safe type)
+// -----------------------------------------------
+
+void test_bounded_to_basis_widening()
+{
+    // bounded_uint with u8 basis -> u16 (widening, always works)
+    constexpr bounded_uint<0u, 255u> a {u8{200}};
+    const auto b {static_cast<u16>(a)};
+    const u16 expected {200};
+    BOOST_TEST(b == expected);
+
+    // bounded_uint with u8 basis -> u32
+    const auto c {static_cast<u32>(a)};
+    const u32 expected_c {200};
+    BOOST_TEST(c == expected_c);
+
+    // bounded_uint with u16 basis -> u32
+    constexpr bounded_uint<0u, 1000u> d {u16{1000}};
+    const auto e {static_cast<u32>(d)};
+    const u32 expected_e {1000};
+    BOOST_TEST(e == expected_e);
+
+    // bounded_uint with u16 basis -> u64
+    const auto f {static_cast<u64>(d)};
+    const u64 expected_f {1000};
+    BOOST_TEST(f == expected_f);
+
+    // bounded_uint with u32 basis -> u64
+    constexpr bounded_uint<0u, 100000u> g {u32{100000}};
+    const auto h {static_cast<u64>(g)};
+    const u64 expected_h {100000};
+    BOOST_TEST(h == expected_h);
+}
+
+void test_bounded_to_basis_same_width()
+{
+    // bounded_uint with u8 basis -> u8 (same width, always works)
+    constexpr bounded_uint<0u, 255u> a {u8{42}};
+    const auto b {static_cast<u8>(a)};
+    const u8 expected {42};
+    BOOST_TEST(b == expected);
+
+    constexpr bounded_uint<10u, 100u> c {u8{75}};
+    const auto d {static_cast<u8>(c)};
+    const u8 expected_d {75};
+    BOOST_TEST(d == expected_d);
+
+    // bounded_uint with u16 basis -> u16
+    constexpr bounded_uint<0u, 1000u> e {u16{500}};
+    const auto f {static_cast<u16>(e)};
+    const u16 expected_f {500};
+    BOOST_TEST(f == expected_f);
+}
+
+void test_bounded_to_basis_narrowing_fits()
+{
+    // bounded_uint with u16 basis -> u8: value 200 fits in u8
+    constexpr bounded_uint<0u, 1000u> a {u16{200}};
+    const auto b {static_cast<u8>(a)};
+    const u8 expected {200};
+    BOOST_TEST(b == expected);
+
+    // bounded_uint with u16 basis -> u8: value 0 fits
+    constexpr bounded_uint<0u, 1000u> c {u16{0}};
+    const auto d {static_cast<u8>(c)};
+    const u8 expected_d {0};
+    BOOST_TEST(d == expected_d);
+
+    // bounded_uint with u16 basis -> u8: value 255 fits (exact max)
+    constexpr bounded_uint<0u, 1000u> e {u16{255}};
+    const auto f {static_cast<u8>(e)};
+    const u8 expected_f {255};
+    BOOST_TEST(f == expected_f);
+
+    // bounded_uint with u32 basis -> u16: value 30000 fits in u16
+    constexpr bounded_uint<0u, 100000u> g {u32{30000}};
+    const auto h {static_cast<u16>(g)};
+    const u16 expected_h {30000};
+    BOOST_TEST(h == expected_h);
+
+    // bounded_uint with u32 basis -> u8: value 100 fits in u8
+    constexpr bounded_uint<0u, 100000u> i {u32{100}};
+    const auto j {static_cast<u8>(i)};
+    const u8 expected_j {100};
+    BOOST_TEST(j == expected_j);
+
+    // bounded_uint with u64 basis -> u32: value fits
+    constexpr bounded_uint<0ULL, 5'000'000'000ULL> k {u64{1'000'000ULL}};
+    const auto l {static_cast<u32>(k)};
+    const u32 expected_l {1'000'000u};
+    BOOST_TEST(l == expected_l);
+}
+
+void test_bounded_to_basis_narrowing_throws()
+{
+    // bounded_uint with u16 basis -> u8: value 256 > 255
+    constexpr bounded_uint<0u, 1000u> a {u16{256}};
+    BOOST_TEST_THROWS((static_cast<u8>(a)), std::domain_error);
+
+    // bounded_uint with u16 basis -> u8: value 1000 > 255
+    constexpr bounded_uint<0u, 1000u> b {u16{1000}};
+    BOOST_TEST_THROWS((static_cast<u8>(b)), std::domain_error);
+
+    // bounded_uint with u32 basis -> u8: value 300 > 255
+    constexpr bounded_uint<0u, 100000u> c {u32{300}};
+    BOOST_TEST_THROWS((static_cast<u8>(c)), std::domain_error);
+
+    // bounded_uint with u32 basis -> u16: value 70000 > 65535
+    constexpr bounded_uint<0u, 100000u> d {u32{70000}};
+    BOOST_TEST_THROWS((static_cast<u16>(d)), std::domain_error);
+
+    // bounded_uint with u64 basis -> u32: value 5'000'000'000 > UINT32_MAX
+    constexpr bounded_uint<0ULL, 5'000'000'000ULL> e {u64{5'000'000'000ULL}};
+    BOOST_TEST_THROWS((static_cast<u32>(e)), std::domain_error);
+
+    // bounded_uint with u64 basis -> u8: value 1000 > 255
+    constexpr bounded_uint<0ULL, 5'000'000'000ULL> f {u64{1000}};
+    BOOST_TEST_THROWS((static_cast<u8>(f)), std::domain_error);
+
+    // bounded_uint with u64 basis -> u16: value 100000 > 65535
+    constexpr bounded_uint<0ULL, 5'000'000'000ULL> g {u64{100000}};
+    BOOST_TEST_THROWS((static_cast<u16>(g)), std::domain_error);
+}
+
 int main()
 {
     test_u8_to_u8_wider();
@@ -392,6 +518,12 @@ int main()
     test_identity_conversion();
     test_constexpr_conversions();
     test_u128_conversions();
+
+    // Narrowing operator OtherBasis() tests
+    test_bounded_to_basis_widening();
+    test_bounded_to_basis_same_width();
+    test_bounded_to_basis_narrowing_fits();
+    test_bounded_to_basis_narrowing_throws();
 
     return boost::report_errors();
 }

@@ -53,7 +53,7 @@ public:
 
     // Conversion to underlying types
     template <unsigned_integral OtherBasis>
-    explicit constexpr operator OtherBasis() const noexcept;
+    explicit constexpr operator OtherBasis() const;
 
     // Comparison operators
     friend constexpr auto operator<=>(unsigned_integer_basis lhs, unsigned_integer_basis rhs) noexcept
@@ -239,11 +239,13 @@ Constructing from `bool` is a compile-time error.
 [source,c++]
 ----
 template <unsigned_integral OtherBasis>
-explicit constexpr operator OtherBasis() const noexcept;
+explicit constexpr operator OtherBasis() const;
 ----
 
 Conversion to other unsigned integral types is explicit.
-Narrowing conversions cause a compile-time error.
+Widening conversions (e.g., `u8` to `u16`) always succeed.
+Narrowing conversions (e.g., `u32` to `u16`) perform a runtime bounds check: if the value exceeds the maximum representable value of the target type, `std::domain_error` is thrown.
+This allows safe narrowing when the value is known to fit at runtime.
 
 === Comparison Operators
 

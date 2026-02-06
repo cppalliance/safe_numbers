@@ -82,14 +82,24 @@ public:
 
     template <typename OtherBasis>
         requires (detail::is_unsigned_library_type_v<OtherBasis> || detail::is_fundamental_unsigned_integral_v<OtherBasis>)
-    [[nodiscard]] explicit constexpr operator OtherBasis() const noexcept
+    [[nodiscard]] explicit constexpr operator OtherBasis() const
     {
+        const auto raw {static_cast<detail::underlying_type_t<basis_type>>(basis_)};
+
         if constexpr (sizeof(OtherBasis) < sizeof(basis_type))
         {
-            static_assert(detail::dependent_false<OtherBasis>, "Narrowing conversions are not allowed");
-        }
+            using raw_other = detail::underlying_type_t<OtherBasis>;
+            if (raw > static_cast<detail::underlying_type_t<basis_type>>(std::numeric_limits<raw_other>::max()))
+            {
+                BOOST_THROW_EXCEPTION(std::domain_error("Overflow in conversion to smaller type"));
+            }
 
-        return static_cast<OtherBasis>(static_cast<detail::underlying_type_t<basis_type>>(basis_));
+            return static_cast<OtherBasis>(static_cast<raw_other>(raw));
+        }
+        else
+        {
+            return static_cast<OtherBasis>(raw);
+        }
     }
 
     template <auto Min2, auto Max2>
