@@ -38,6 +38,22 @@ concept library_type = is_library_type_v<T>;
 
 namespace impl {
 
+template <typename>
+struct is_unsigned_library_type : std::false_type {};
+
+template <typename T>
+struct is_unsigned_library_type<unsigned_integer_basis<T>> : std::true_type {};
+
+} // namespace impl
+
+template <typename T>
+inline constexpr bool is_unsigned_library_type_v = impl::is_unsigned_library_type<T>::value;
+
+template <typename T>
+concept unsigned_library_type = is_unsigned_library_type_v<T>;
+
+namespace impl {
+
 template <typename T>
 struct underlying
 {
