@@ -12,6 +12,7 @@
 ** xref:examples.adoc#examples_charconv[Character Conversion]
 ** xref:examples.adoc#examples_fmt_format[Formatting]
 ** xref:examples.adoc#examples_iostream[Stream I/O]
+** xref:examples.adoc#examples_bit[Bit Manipulation]
 * xref:api_reference.adoc[]
 ** xref:api_reference.adoc#api_types[Types]
 ** xref:api_reference.adoc#api_functions[Functions]
@@ -23,4 +24,5 @@
 * xref:format.adoc[]
 * xref:iostream.adoc[]
 * xref:charconv.adoc[]
+* xref:bit.adoc[]
 * xref:reference.adoc[]

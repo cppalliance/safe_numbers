@@ -79,6 +79,49 @@ https://www.boost.org/LICENSE_1_0.txt
 | Stream insertion and extraction for all safe integer types
 |===
 
+=== Bit Manipulation
+
+[cols="1,2", options="header"]
+|===
+| Function | Description
+
+| xref:bit.adoc[`has_single_bit`]
+| Returns `true` if the value is a power of two
+
+| xref:bit.adoc[`bit_ceil`]
+| Returns the smallest power of two not less than the value
+
+| xref:bit.adoc[`bit_floor`]
+| Returns the largest power of two not greater than the value
+
+| xref:bit.adoc[`bit_width`]
+| Returns the number of bits needed to represent the value
+
+| xref:bit.adoc[`rotl`]
+| Bitwise left rotation
+
+| xref:bit.adoc[`rotr`]
+| Bitwise right rotation
+
+| xref:bit.adoc[`countl_zero`]
+| Counts consecutive zero bits from the most significant bit
+
+| xref:bit.adoc[`countl_one`]
+| Counts consecutive one bits from the most significant bit
+
+| xref:bit.adoc[`countr_zero`]
+| Counts consecutive zero bits from the least significant bit
+
+| xref:bit.adoc[`countr_one`]
+| Counts consecutive one bits from the least significant bit
+
+| xref:bit.adoc[`popcount`]
+| Returns the number of set bits
+
+| xref:bit.adoc[`byteswap`]
+| Reverses the bytes of the value
+|===
+
 === Arithmetic
 
 [cols="1,2", options="header"]
@@ -113,6 +156,9 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | `<boost/safe_numbers.hpp>`
 | Convenience header including all library types
+
+| `<boost/safe_numbers/bit.hpp>`
+| Bit manipulation functions (`has_single_bit`, `bit_ceil`, `bit_floor`, `bit_width`, `rotl`, `rotr`, `countl_zero`, `countl_one`, `countr_zero`, `countr_one`, `popcount`, `byteswap`)
 
 | `<boost/safe_numbers/charconv.hpp>`
 | Character conversion functions (`to_chars`, `from_chars`)
