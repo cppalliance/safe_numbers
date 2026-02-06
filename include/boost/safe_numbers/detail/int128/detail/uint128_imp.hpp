@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <cstring>
 #include <climits>
+#include <compare>
 
 #endif
 
@@ -1215,6 +1216,20 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILTIN_CONSTEXPR bool operator>=(const T, cons
 #endif // BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128
+
+//=====================================
+// Three-way Comparison Operator
+//=====================================
+
+BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr std::strong_ordering operator<=>(const uint128_t lhs, const uint128_t rhs) noexcept
+{
+    if (lhs.high != rhs.high)
+    {
+        return lhs.high <=> rhs.high;
+    }
+
+    return lhs.low <=> rhs.low;
+}
 
 //=====================================
 // Not Operator
