@@ -1,0 +1,194 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#bit]
+= `<bit>` Support
+:idprefix: bit_
+
+== Description
+
+The library provides thin wrappers around the C++20 https://en.cppreference.com/w/cpp/header/bit.html[`<bit>`] functions for safe integer types.
+Each function extracts the underlying value, delegates to the corresponding `std::` function, and wraps the result back into the safe type where appropriate.
+For `u128`, the functions delegate to the `boost::int128` implementations.
+
+[source,c++]
+----
+#include <boost/safe_numbers/bit.hpp>
+----
+
+== Power-of-Two Functions
+
+=== has_single_bit
+
+[source,c++]
+----
+template <unsigned_library_type UnsignedInt>
+constexpr auto has_single_bit(UnsignedInt x) noexcept -> bool;
+----
+
+Returns `true` if `x` is a power of two.
+See https://en.cppreference.com/w/cpp/numeric/has_single_bit.html[`std::has_single_bit`].
+
+=== bit_ceil
+
+[source,c++]
+----
+template <unsigned_library_type UnsignedInt>
+constexpr auto bit_ceil(UnsignedInt x) noexcept -> UnsignedInt;
+----
+
+Returns the smallest power of two not less than `x`.
+Undefined behavior if the result is not representable in the underlying type.
+See https://en.cppreference.com/w/cpp/numeric/bit_ceil.html[`std::bit_ceil`].
+
+=== bit_floor
+
+[source,c++]
+----
+template <unsigned_library_type UnsignedInt>
+constexpr auto bit_floor(UnsignedInt x) noexcept -> UnsignedInt;
+----
+
+Returns the largest power of two not greater than `x`.
+Returns zero if `x` is zero.
+See https://en.cppreference.com/w/cpp/numeric/bit_floor.html[`std::bit_floor`].
+
+=== bit_width
+
+[source,c++]
+----
+template <unsigned_library_type UnsignedInt>
+constexpr auto bit_width(UnsignedInt x) noexcept -> int;
+----
+
+Returns the number of bits needed to represent `x` (i.e., 1 + floor(log2(x)) for x > 0, or 0 for x == 0).
+See https://en.cppreference.com/w/cpp/numeric/bit_width.html[`std::bit_width`].
+
+== Rotation Functions
+
+=== rotl
+
+[source,c++]
+----
+template <unsigned_library_type UnsignedInt>
+constexpr auto rotl(UnsignedInt x, int s) noexcept -> UnsignedInt;
+----
+
+Computes the result of bitwise left-rotating `x` by `s` positions.
+See https://en.cppreference.com/w/cpp/numeric/rotl.html[`std::rotl`].
+
+=== rotr
+
+[source,c++]
+----
+template <unsigned_library_type UnsignedInt>
+constexpr auto rotr(UnsignedInt x, int s) noexcept -> UnsignedInt;
+----
+
+Computes the result of bitwise right-rotating `x` by `s` positions.
+See https://en.cppreference.com/w/cpp/numeric/rotr.html[`std::rotr`].
+
+== Counting Functions
+
+=== countl_zero
+
+[source,c++]
+----
+template <unsigned_library_type UnsignedInt>
+constexpr auto countl_zero(UnsignedInt x) noexcept -> int;
+----
+
+Returns the number of consecutive 0-bits starting from the most significant bit.
+See https://en.cppreference.com/w/cpp/numeric/countl_zero.html[`std::countl_zero`].
+
+=== countl_one
+
+[source,c++]
+----
+template <unsigned_library_type UnsignedInt>
+constexpr auto countl_one(UnsignedInt x) noexcept -> int;
+----
+
+Returns the number of consecutive 1-bits starting from the most significant bit.
+See https://en.cppreference.com/w/cpp/numeric/countl_one.html[`std::countl_one`].
+
+=== countr_zero
+
+[source,c++]
+----
+template <unsigned_library_type UnsignedInt>
+constexpr auto countr_zero(UnsignedInt x) noexcept -> int;
+----
+
+Returns the number of consecutive 0-bits starting from the least significant bit.
+See https://en.cppreference.com/w/cpp/numeric/countr_zero.html[`std::countr_zero`].
+
+=== countr_one
+
+[source,c++]
+----
+template <unsigned_library_type UnsignedInt>
+constexpr auto countr_one(UnsignedInt x) noexcept -> int;
+----
+
+Returns the number of consecutive 1-bits starting from the least significant bit.
+See https://en.cppreference.com/w/cpp/numeric/countr_one.html[`std::countr_one`].
+
+=== popcount
+
+[source,c++]
+----
+template <unsigned_library_type UnsignedInt>
+constexpr auto popcount(UnsignedInt x) noexcept -> int;
+----
+
+Returns the number of 1-bits in `x`.
+See https://en.cppreference.com/w/cpp/numeric/popcount.html[`std::popcount`].
+
+== Byte Manipulation
+
+=== byteswap
+
+[source,c++]
+----
+template <unsigned_library_type UnsignedInt>
+constexpr auto byteswap(UnsignedInt x) noexcept -> UnsignedInt;
+----
+
+Reverses the bytes of `x`.
+For standard unsigned types this delegates to `std::byteswap` (C++23).
+For `u128` this delegates to the `boost::int128::byteswap` implementation.
+See https://en.cppreference.com/w/cpp/numeric/byteswap.html[`std::byteswap`].
+
+== Examples
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/bit.cpp[example] demonstrates the bit manipulation functions.
+====
+[source, c++]
+----
+include::example$bit.cpp[]
+----
+
+Output:
+----
+has_single_bit(40) = 0
+has_single_bit(32) = 1
+bit_ceil(40)       = 64
+bit_floor(40)      = 32
+bit_width(40)      = 6
+
+rotl(0b10110001, 2) = 198
+rotr(0b10110001, 2) = 108
+
+countl_zero(0x0F00) = 4
+countl_one(0x0F00)  = 0
+countr_zero(0x0F00) = 8
+countr_one(0x0F00)  = 0
+popcount(0x0F00)    = 4
+
+byteswap(0x12345678) = 0x78563412
+----
+====

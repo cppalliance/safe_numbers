@@ -327,6 +327,40 @@ Roundtrip: 18446744073709551615 -> "18446744073709551615" -> 1844674407370955161
 ----
 ====
 
+[#examples_bit]
+== Bit Manipulation
+
+The library provides thin wrappers around all C++20 `<bit>` functions for safe integer types.
+Each function extracts the underlying value, delegates to the standard library, and wraps the result back.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/bit.cpp[example] demonstrates the bit manipulation functions.
+====
+[source, c++]
+----
+include::example$bit.cpp[]
+----
+
+Output:
+----
+has_single_bit(40) = 0
+has_single_bit(32) = 1
+bit_ceil(40)       = 64
+bit_floor(40)      = 32
+bit_width(40)      = 6
+
+rotl(0b10110001, 2) = 198
+rotr(0b10110001, 2) = 108
+
+countl_zero(0x0F00) = 4
+countl_one(0x0F00)  = 0
+countr_zero(0x0F00) = 8
+countr_one(0x0F00)  = 0
+popcount(0x0F00)    = 4
+
+byteswap(0x12345678) = 0x78563412
+----
+====
+
 [#examples_policy_comparison]
 == Policy Comparison
 
