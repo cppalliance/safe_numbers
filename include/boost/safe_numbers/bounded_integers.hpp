@@ -147,4 +147,32 @@ template <auto Min, auto Max>
 
 } // namespace boost::safe_numbers
 
+#define BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP(OP_NAME, OP_SYMBOL)                                                             \
+template <auto LHSMin, auto LHSMax, auto RHSMin, auto RHSMax>                                                                          \
+    requires (LHSMin != RHSMin || LHSMax != RHSMax)                                                                                     \
+constexpr auto OP_SYMBOL(const boost::safe_numbers::bounded_uint<LHSMin, LHSMax>,                                                      \
+                         const boost::safe_numbers::bounded_uint<RHSMin, RHSMax>)                                                       \
+{                                                                                                                                       \
+    static_assert(boost::safe_numbers::detail::dependent_false<                                                                         \
+                      boost::safe_numbers::bounded_uint<LHSMin, LHSMax>,                                                                \
+                      boost::safe_numbers::bounded_uint<RHSMin, RHSMax>>,                                                               \
+                  "Can not perform " OP_NAME " between bounded_uint types with different bounds. "                                       \
+                  "Both operands must have the same Min and Max.");                                                                      \
+                                                                                                                                        \
+    return boost::safe_numbers::bounded_uint<LHSMin, LHSMax>(                                                                           \
+        typename boost::safe_numbers::bounded_uint<LHSMin, LHSMax>::basis_type{0});                                                     \
+}
+
+namespace boost::safe_numbers {
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("addition", operator+)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("subtraction", operator-)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("multiplication", operator*)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("division", operator/)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("modulo", operator%)
+
+} // namespace boost::safe_numbers
+
+#undef BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP
+
 #endif // BOOST_SAFE_NUMBERS_BOUNDED_INTEGERS_HPP
