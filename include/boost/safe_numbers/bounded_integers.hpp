@@ -105,6 +105,38 @@ template <auto Min, auto Max>
     return bounded_uint<Min, Max>{static_cast<basis>(lhs) + static_cast<basis>(rhs)};
 }
 
+template <auto Min, auto Max>
+[[nodiscard]] constexpr auto operator-(const bounded_uint<Min, Max> lhs,
+                                       const bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>
+{
+    using basis = typename bounded_uint<Min, Max>::basis_type;
+    return bounded_uint<Min, Max>{static_cast<basis>(lhs) - static_cast<basis>(rhs)};
+}
+
+template <auto Min, auto Max>
+[[nodiscard]] constexpr auto operator*(const bounded_uint<Min, Max> lhs,
+                                       const bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>
+{
+    using basis = typename bounded_uint<Min, Max>::basis_type;
+    return bounded_uint<Min, Max>{static_cast<basis>(lhs) * static_cast<basis>(rhs)};
+}
+
+template <auto Min, auto Max>
+[[nodiscard]] constexpr auto operator/(const bounded_uint<Min, Max> lhs,
+                                       const bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>
+{
+    using basis = typename bounded_uint<Min, Max>::basis_type;
+    return bounded_uint<Min, Max>{static_cast<basis>(lhs) / static_cast<basis>(rhs)};
+}
+
+template <auto Min, auto Max>
+[[nodiscard]] constexpr auto operator%(const bounded_uint<Min, Max> lhs,
+                                       const bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>
+{
+    using basis = typename bounded_uint<Min, Max>::basis_type;
+    return bounded_uint<Min, Max>{static_cast<basis>(lhs) % static_cast<basis>(rhs)};
+}
+
 } // namespace boost::safe_numbers
 
 #endif // BOOST_SAFE_NUMBERS_BOUNDED_INTEGERS_HPP

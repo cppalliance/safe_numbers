@@ -102,6 +102,10 @@ run test_exhaustive_u8_arithmetic.cpp ;
 run test_boundary_arithmetic.cpp ;
 run test_unsigned_bounded_construction.cpp ;
 run test_unsigned_bounded_addition.cpp ;
+run test_unsigned_bounded_subtraction.cpp ;
+run test_unsigned_bounded_multiplication.cpp ;
+run test_unsigned_bounded_division.cpp ;
+run test_unsigned_bounded_modulo.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
