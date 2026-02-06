@@ -61,10 +61,16 @@ public:
                                std::conditional_t<(std::numeric_limits<std::uint32_t>::max() >= detail::raw_value(Max)), u32,
                                    std::conditional_t<(std::numeric_limits<std::uint64_t>::max() >= detail::raw_value(Max)), u64, u128>>>>;
 
+private:
+
+    basis_type basis_ {static_cast<basis_type>(detail::raw_value(Min))};
+
+public:
+
     explicit constexpr bounded_uint(const basis_type val)
     {
-        constexpr auto min_val = static_cast<basis_type>(detail::raw_value(Min));
-        constexpr auto max_val = static_cast<basis_type>(detail::raw_value(Max));
+        constexpr auto min_val {static_cast<basis_type>(detail::raw_value(Min))};
+        constexpr auto max_val {static_cast<basis_type>(detail::raw_value(Max))};
 
         if (val < min_val || val > max_val)
         {
@@ -89,10 +95,15 @@ public:
     [[nodiscard]] friend constexpr auto operator<=>(bounded_uint lhs, bounded_uint rhs) noexcept
         -> std::strong_ordering = default;
 
-private:
-
-    basis_type basis_ {static_cast<basis_type>(detail::raw_value(Min))};
 };
+
+template <auto Min, auto Max>
+[[nodiscard]] constexpr auto operator+(const bounded_uint<Min, Max> lhs,
+                                       const bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>
+{
+    using basis = typename bounded_uint<Min, Max>::basis_type;
+    return bounded_uint<Min, Max>{static_cast<basis>(lhs) + static_cast<basis>(rhs)};
+}
 
 } // namespace boost::safe_numbers
 
