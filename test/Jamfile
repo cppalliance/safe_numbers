@@ -106,6 +106,7 @@ run test_unsigned_bounded_subtraction.cpp ;
 run test_unsigned_bounded_multiplication.cpp ;
 run test_unsigned_bounded_division.cpp ;
 run test_unsigned_bounded_modulo.cpp ;
+run test_unsigned_bounded_conversions.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
