@@ -20,7 +20,7 @@ namespace boost::safe_numbers::detail {
 template <unsigned_integral BasisType>
 class unsigned_integer_basis;
 
-template <auto Max, auto Min>
+template <auto Min, auto Max>
 class bounded_uint;
 
 namespace impl {
@@ -79,10 +79,10 @@ struct underlying<unsigned_integer_basis<T>>
     using type = T;
 };
 
-template <auto Max, auto Min>
-struct underlying<bounded_uint<Max, Min>>
+template <auto Min, auto Max>
+struct underlying<bounded_uint<Min, Max>>
 {
-    using type = underlying<typename bounded_uint<Max, Min>::basis_type>;
+    using type = underlying<typename bounded_uint<Min, Max>::basis_type>;
 };
 
 } // namespace impl

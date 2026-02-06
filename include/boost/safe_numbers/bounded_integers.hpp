@@ -27,21 +27,39 @@
 
 namespace boost::safe_numbers {
 
+namespace detail {
+
+template <typename T>
+concept valid_bound = is_unsigned_library_type_v<T> || is_fundamental_unsigned_integral_v<T>;
+
+template <typename T>
+    requires valid_bound<T>
+consteval auto raw_value(T val) noexcept
+{
+    if constexpr (is_unsigned_library_type_v<T>)
+    {
+        return static_cast<underlying_type_t<T>>(val);
+    }
+    else
+    {
+        return val;
+    }
+}
+
+} // namespace detail
+
 template <auto Min, auto Max>
-    requires (Max > Min &&
-        Max >= static_cast<decltype(Max)>(0) &&
-        Min >= static_cast<decltype(Min)>(0) &&
-        std::numeric_limits<decltype(Min)>::is_specialized &&
-        std::numeric_limits<decltype(Max)>::is_specialized &&
-        Max <= std::numeric_limits<int128::uint128_t>::max())
+    requires (detail::valid_bound<decltype(Min)> &&
+              detail::valid_bound<decltype(Max)> &&
+              detail::raw_value(Max) > detail::raw_value(Min))
 class bounded_uint
 {
 public:
 
-    using basis_type = std::conditional_t<std::numeric_limits<std::uint8_t>::max() >= Max, u8,
-                           std::conditional_t<std::numeric_limits<std::uint16_t>::max() >= Max, u16,
-                               std::conditional_t<std::numeric_limits<std::uint32_t>::max() >= Max, u32,
-                                   std::conditional_t<std::numeric_limits<std::uint64_t>::max() >= Max, u64, u128>>>>;
+    using basis_type = std::conditional_t<(std::numeric_limits<std::uint8_t>::max() >= detail::raw_value(Max)), u8,
+                           std::conditional_t<(std::numeric_limits<std::uint16_t>::max() >= detail::raw_value(Max)), u16,
+                               std::conditional_t<(std::numeric_limits<std::uint32_t>::max() >= detail::raw_value(Max)), u32,
+                                   std::conditional_t<(std::numeric_limits<std::uint64_t>::max() >= detail::raw_value(Max)), u64, u128>>>>;
 
     explicit constexpr bounded_uint(const basis_type val) noexcept : basis_(val) {}
 
@@ -62,7 +80,7 @@ public:
 
 private:
 
-    basis_type basis_ {static_cast<basis_type>(Min)};
+    basis_type basis_ {static_cast<basis_type>(detail::raw_value(Min))};
 };
 
 } // namespace boost::safe_numbers
