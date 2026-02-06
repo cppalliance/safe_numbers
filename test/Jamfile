@@ -100,6 +100,7 @@ run-fail test_unsigned_strict_mod.cpp ;
 # Exhaustive verification tests
 run test_exhaustive_u8_arithmetic.cpp ;
 run test_boundary_arithmetic.cpp ;
+run test_unsigned_bounded_construction.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
