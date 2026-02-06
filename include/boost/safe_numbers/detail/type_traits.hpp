@@ -20,6 +20,9 @@ namespace boost::safe_numbers::detail {
 template <unsigned_integral BasisType>
 class unsigned_integer_basis;
 
+template <auto Max, auto Min>
+class bounded_uint;
+
 namespace impl {
 
 template <typename>
@@ -55,6 +58,16 @@ concept unsigned_library_type = is_unsigned_library_type_v<T>;
 namespace impl {
 
 template <typename T>
+struct is_fundamental_unsigned_integral : std::bool_constant<std::is_unsigned_v<T> || std::is_same_v<T, int128::uint128_t>> {};
+
+} // namespace impl
+
+template <typename T>
+inline constexpr bool is_fundamental_unsigned_integral_v = impl::is_fundamental_unsigned_integral<T>::value;
+
+namespace impl {
+
+template <typename T>
 struct underlying
 {
     using type = std::remove_cv_t<std::remove_reference_t<T>>;
@@ -64,6 +77,12 @@ template <typename T>
 struct underlying<unsigned_integer_basis<T>>
 {
     using type = T;
+};
+
+template <auto Max, auto Min>
+struct underlying<bounded_uint<Max, Min>>
+{
+    using type = underlying<typename bounded_uint<Max, Min>::basis_type>;
 };
 
 } // namespace impl
