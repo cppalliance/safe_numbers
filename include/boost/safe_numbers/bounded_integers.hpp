@@ -61,7 +61,18 @@ public:
                                std::conditional_t<(std::numeric_limits<std::uint32_t>::max() >= detail::raw_value(Max)), u32,
                                    std::conditional_t<(std::numeric_limits<std::uint64_t>::max() >= detail::raw_value(Max)), u64, u128>>>>;
 
-    explicit constexpr bounded_uint(const basis_type val) noexcept : basis_(val) {}
+    explicit constexpr bounded_uint(const basis_type val)
+    {
+        constexpr auto min_val = static_cast<basis_type>(detail::raw_value(Min));
+        constexpr auto max_val = static_cast<basis_type>(detail::raw_value(Max));
+
+        if (val < min_val || val > max_val)
+        {
+            BOOST_THROW_EXCEPTION(std::domain_error("Construction from value outside the bounds"));
+        }
+
+        basis_ = val;
+    }
 
     template <typename OtherBasis>
         requires (detail::is_unsigned_library_type_v<OtherBasis> || detail::is_fundamental_unsigned_integral_v<OtherBasis>)
