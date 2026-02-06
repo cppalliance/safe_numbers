@@ -6,6 +6,7 @@
 #include <boost/safe_numbers.hpp>
 
 #include <type_traits>
+#include <stdexcept>
 #include <limits>
 #include <cstdint>
 
@@ -188,6 +189,116 @@ void test_same_value_equality()
     BOOST_TEST(a64 == b64);
 }
 
+// -----------------------------------------------
+// Bounds-checking exception tests
+// -----------------------------------------------
+
+void test_u8_bounds_checking()
+{
+    // Exact boundary values should NOT throw
+    bounded_uint<10u, 200u> a {u8{10}};
+    bounded_uint<10u, 200u> b {u8{200}};
+    (void)a;
+    (void)b;
+
+    // Below minimum should throw
+    BOOST_TEST_THROWS((bounded_uint<10u, 200u>{u8{9}}), std::domain_error);
+    BOOST_TEST_THROWS((bounded_uint<10u, 200u>{u8{0}}), std::domain_error);
+
+    // Above maximum should throw
+    BOOST_TEST_THROWS((bounded_uint<10u, 200u>{u8{201}}), std::domain_error);
+    BOOST_TEST_THROWS((bounded_uint<10u, 200u>{u8{255}}), std::domain_error);
+
+    // Single-value above max for full-range lower bound
+    BOOST_TEST_THROWS((bounded_uint<0u, 100u>{u8{101}}), std::domain_error);
+    BOOST_TEST_THROWS((bounded_uint<0u, 100u>{u8{255}}), std::domain_error);
+}
+
+void test_u16_bounds_checking()
+{
+    // Exact boundary values should NOT throw
+    bounded_uint<256u, 65535u> a {u16{256}};
+    bounded_uint<256u, 65535u> b {u16{65535}};
+    (void)a;
+    (void)b;
+
+    // Below minimum should throw
+    BOOST_TEST_THROWS((bounded_uint<256u, 65535u>{u16{255}}), std::domain_error);
+    BOOST_TEST_THROWS((bounded_uint<256u, 65535u>{u16{0}}), std::domain_error);
+
+    // Above maximum for narrower range
+    BOOST_TEST_THROWS((bounded_uint<0u, 1000u>{u16{1001}}), std::domain_error);
+    BOOST_TEST_THROWS((bounded_uint<0u, 1000u>{u16{65535}}), std::domain_error);
+
+    // Below minimum for narrower range
+    BOOST_TEST_THROWS((bounded_uint<500u, 1000u>{u16{499}}), std::domain_error);
+    BOOST_TEST_THROWS((bounded_uint<500u, 1000u>{u16{0}}), std::domain_error);
+}
+
+void test_u32_bounds_checking()
+{
+    // Exact boundary values should NOT throw
+    bounded_uint<65536u, 4294967295u> a {u32{65536}};
+    bounded_uint<65536u, 4294967295u> b {u32{4294967295u}};
+    (void)a;
+    (void)b;
+
+    // Below minimum should throw
+    BOOST_TEST_THROWS((bounded_uint<65536u, 4294967295u>{u32{65535}}), std::domain_error);
+    BOOST_TEST_THROWS((bounded_uint<65536u, 4294967295u>{u32{0}}), std::domain_error);
+
+    // Above maximum for narrower range
+    BOOST_TEST_THROWS((bounded_uint<0u, 100000u>{u32{100001}}), std::domain_error);
+    BOOST_TEST_THROWS((bounded_uint<0u, 100000u>{u32{4294967295u}}), std::domain_error);
+}
+
+void test_u64_bounds_checking()
+{
+    // Exact boundary values should NOT throw
+    bounded_uint<4294967296ULL, UINT64_MAX> a {u64{4294967296ULL}};
+    bounded_uint<4294967296ULL, UINT64_MAX> b {u64{UINT64_MAX}};
+    (void)a;
+    (void)b;
+
+    // Below minimum should throw
+    BOOST_TEST_THROWS((bounded_uint<4294967296ULL, UINT64_MAX>{u64{4294967295ULL}}), std::domain_error);
+    BOOST_TEST_THROWS((bounded_uint<4294967296ULL, UINT64_MAX>{u64{0}}), std::domain_error);
+
+    // Above maximum for narrower range
+    BOOST_TEST_THROWS((bounded_uint<0ULL, 5'000'000'000ULL>{u64{5'000'000'001ULL}}), std::domain_error);
+    BOOST_TEST_THROWS((bounded_uint<0ULL, 5'000'000'000ULL>{u64{UINT64_MAX}}), std::domain_error);
+}
+
+void test_u128_bounds_checking()
+{
+    // Exact boundary values should NOT throw
+    constexpr auto max_val = uint128_t{1, 0};
+    using b128 = bounded_uint<uint128_t{0}, max_val>;
+
+    b128 a {u128{uint128_t{0}}};
+    b128 b {u128{max_val}};
+    (void)a;
+    (void)b;
+
+    // Above maximum should throw
+    constexpr auto above_max = uint128_t{1, 1};
+    BOOST_TEST_THROWS((b128{u128{above_max}}), std::domain_error);
+
+    // Non-zero minimum range
+    constexpr auto min_val = uint128_t{1000};
+    constexpr auto max_val2 = uint128_t{1, 0};
+    using b128_ranged = bounded_uint<min_val, max_val2>;
+
+    b128_ranged c {u128{uint128_t{1000}}};
+    b128_ranged d {u128{max_val2}};
+    (void)c;
+    (void)d;
+
+    // Below minimum should throw
+    BOOST_TEST_THROWS((b128_ranged{u128{uint128_t{999}}}), std::domain_error);
+    BOOST_TEST_THROWS((b128_ranged{u128{uint128_t{0}}}), std::domain_error);
+}
+
 void test_constexpr_construction()
 {
     // Verify all constructions are valid in constexpr context
@@ -220,6 +331,11 @@ int main()
     test_u128_range();
     test_same_value_equality();
     test_constexpr_construction();
+    test_u8_bounds_checking();
+    test_u16_bounds_checking();
+    test_u32_bounds_checking();
+    test_u64_bounds_checking();
+    test_u128_bounds_checking();
 
     return boost::report_errors();
 }
