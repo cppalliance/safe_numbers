@@ -30,8 +30,8 @@ Safety critical applications
 Boost.safe_numbers is tested natively on Ubuntu (x86_64, x86_32, s390x, aarch64, ARM32v7), macOS (x86_64, and Apple Silicon), and Windows (x86_64, x86_32, and ARM64);
 as well as emulated PPC64LE using QEMU with the following compilers:
 
-* GCC 13 and later
-* Clang 17 and later
+* GCC 9 and later
+* Clang 11 and later
 * Visual Studio 2022 (14.3) and later
 * Intel OneAPI DPC++ 2024.2 and later
 
