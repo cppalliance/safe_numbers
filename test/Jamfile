@@ -69,6 +69,7 @@ run test_unsigned_inc_dec.cpp ;
 run test_unsigned_std_format.cpp ;
 run test_unsigned_fmt_format.cpp ;
 run test_unsigned_charconv.cpp ;
+run test_bit.cpp ;
 run test_unsigned_saturating_addition.cpp ;
 run test_unsigned_comparisons.cpp ;
 run test_unsigned_saturating_subtraction.cpp ;
