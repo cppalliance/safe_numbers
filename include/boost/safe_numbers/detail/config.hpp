@@ -56,4 +56,15 @@
 #  define BOOST_SAFE_NUMBERS_UNREACHABLE std::abort()
 #endif
 
+namespace boost::safe_numbers::detail {
+
+// Workaround for static_assert(false, ...) in if constexpr branches.
+// Before C++23 (P2593R1), static_assert(false) is ill-formed even in
+// discarded branches. Making the condition depend on a template parameter
+// defers evaluation until instantiation.
+template <typename...>
+inline constexpr auto dependent_false {false};
+
+} // namespace boost::safe_numbers::detail
+
 #endif // BOOST_SAFENUMBERS_CONFIG_HPP

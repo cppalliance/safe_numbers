@@ -9,6 +9,8 @@
 #include <boost/safe_numbers/detail/int128/format.hpp>
 #include <boost/safe_numbers/detail/concepts.hpp>
 
+#ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_FORMAT
+
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 #include <format>
@@ -26,5 +28,7 @@ struct std::formatter<boost::safe_numbers::detail::unsigned_integer_basis<BasisT
         return std::formatter<BasisType>::format(static_cast<BasisType>(val), ctx);
     }
 };
+
+#endif // Has format
 
 #endif // BOOST_SAFE_NUMBERS_FORMAT_HPP

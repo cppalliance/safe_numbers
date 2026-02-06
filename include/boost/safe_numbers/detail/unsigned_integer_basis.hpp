@@ -47,7 +47,7 @@ public:
         requires std::is_same_v<T, bool>
     explicit constexpr unsigned_integer_basis(T) noexcept
     {
-        static_assert(false, "Construction from bool is not allowed");
+        static_assert(dependent_false<T>, "Construction from bool is not allowed");
     }
 
     template <unsigned_integral OtherBasis>
@@ -86,7 +86,7 @@ constexpr unsigned_integer_basis<BasisType>::operator OtherBasis() const noexcep
 {
     if constexpr (sizeof(OtherBasis) < sizeof(BasisType))
     {
-        static_assert(false, "Narrowing conversions are not allowed");
+        static_assert(dependent_false<OtherBasis>, "Narrowing conversions are not allowed");
     }
 
     return static_cast<OtherBasis>(basis_);
@@ -356,95 +356,95 @@ template <unsigned_integral BasisType>
 
 } // namespace boost::safe_numbers::detail
 
-#define BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP(OP_NAME, OP_SYMBOL)                    \
-template <boost::safe_numbers::detail::unsigned_integral LHSBasis,                                 \
-          boost::safe_numbers::detail::unsigned_integral RHSBasis>                                 \
-    requires (!std::is_same_v<LHSBasis, RHSBasis>)                                                 \
-constexpr auto OP_SYMBOL(const boost::safe_numbers::detail::unsigned_integer_basis<LHSBasis>,      \
-                         const boost::safe_numbers::detail::unsigned_integer_basis<RHSBasis>)      \
-{                                                                                                  \
-    if constexpr (std::is_same_v<LHSBasis, std::uint8_t>)                                          \
-    {                                                                                              \
-        if constexpr (std::is_same_v<RHSBasis, std::uint16_t>)                                     \
-        {                                                                                          \
-            static_assert(false, "Can not perform " OP_NAME " between u8 and u16");                \
-        }                                                                                          \
-        else if constexpr (std::is_same_v<RHSBasis, std::uint32_t>)                                \
-        {                                                                                          \
-            static_assert(false, "Can not perform " OP_NAME " between u8 and u32");                \
-        }                                                                                          \
-        else if constexpr (std::is_same_v<RHSBasis, std::uint64_t>)                                \
-        {                                                                                          \
-            static_assert(false, "Can not perform " OP_NAME " between u8 and u64");                \
-        }                                                                                          \
-        else                                                                                       \
-        {                                                                                          \
-            static_assert(false, "Can not perform " OP_NAME " between u8 and unknown type");       \
-        }                                                                                          \
-    }                                                                                              \
-    else if constexpr (std::is_same_v<LHSBasis, std::uint16_t>)                                    \
-    {                                                                                              \
-        if constexpr (std::is_same_v<RHSBasis, std::uint8_t>)                                      \
-        {                                                                                          \
-            static_assert(false, "Can not perform " OP_NAME " between u16 and u8");                \
-        }                                                                                          \
-        else if constexpr (std::is_same_v<RHSBasis, std::uint32_t>)                                \
-        {                                                                                          \
-            static_assert(false, "Can not perform " OP_NAME " between u16 and u32");               \
-        }                                                                                          \
-        else if constexpr (std::is_same_v<RHSBasis, std::uint64_t>)                                \
-        {                                                                                          \
-            static_assert(false, "Can not perform " OP_NAME " between u16 and u64");               \
-        }                                                                                          \
-        else                                                                                       \
-        {                                                                                          \
-            static_assert(false, "Can not perform " OP_NAME " between u16 and unknown type");      \
-        }                                                                                          \
-    }                                                                                              \
-    else if constexpr (std::is_same_v<LHSBasis, std::uint32_t>)                                    \
-    {                                                                                              \
-        if constexpr (std::is_same_v<RHSBasis, std::uint8_t>)                                      \
-        {                                                                                          \
-            static_assert(false, "Can not perform " OP_NAME " between u32 and u8");                \
-        }                                                                                          \
-        else if constexpr (std::is_same_v<RHSBasis, std::uint16_t>)                                \
-        {                                                                                          \
-            static_assert(false, "Can not perform " OP_NAME " between u32 and u16");               \
-        }                                                                                          \
-        else if constexpr (std::is_same_v<RHSBasis, std::uint64_t>)                                \
-        {                                                                                          \
-            static_assert(false, "Can not perform " OP_NAME " between u32 and u64");               \
-        }                                                                                          \
-        else                                                                                       \
-        {                                                                                          \
-            static_assert(false, "Can not perform " OP_NAME " between u32 and unknown type");      \
-        }                                                                                          \
-    }                                                                                              \
-    else if constexpr (std::is_same_v<LHSBasis, std::uint64_t>)                                    \
-    {                                                                                              \
-        if constexpr (std::is_same_v<RHSBasis, std::uint8_t>)                                      \
-        {                                                                                          \
-            static_assert(false, "Can not perform " OP_NAME " between u64 and u8");                \
-        }                                                                                          \
-        else if constexpr (std::is_same_v<RHSBasis, std::uint16_t>)                                \
-        {                                                                                          \
-            static_assert(false, "Can not perform " OP_NAME " between u64 and u16");               \
-        }                                                                                          \
-        else if constexpr (std::is_same_v<RHSBasis, std::uint32_t>)                                \
-        {                                                                                          \
-            static_assert(false, "Can not perform " OP_NAME " between u64 and u32");               \
-        }                                                                                          \
-        else                                                                                       \
-        {                                                                                          \
-            static_assert(false, "Can not perform " OP_NAME " between u64 and unknown type");      \
-        }                                                                                          \
-    }                                                                                              \
-    else                                                                                           \
-    {                                                                                              \
-        static_assert(false, "Can not perform " OP_NAME " on mixed width unsigned integer types"); \
-    }                                                                                              \
-                                                                                                   \
-    return boost::safe_numbers::detail::unsigned_integer_basis<LHSBasis>(0);                       \
+#define BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP(OP_NAME, OP_SYMBOL)                                                                                  \
+template <boost::safe_numbers::detail::unsigned_integral LHSBasis,                                                                                              \
+          boost::safe_numbers::detail::unsigned_integral RHSBasis>                                                                                              \
+    requires (!std::is_same_v<LHSBasis, RHSBasis>)                                                                                                              \
+constexpr auto OP_SYMBOL(const boost::safe_numbers::detail::unsigned_integer_basis<LHSBasis>,                                                                   \
+                         const boost::safe_numbers::detail::unsigned_integer_basis<RHSBasis>)                                                                   \
+{                                                                                                                                                               \
+    if constexpr (std::is_same_v<LHSBasis, std::uint8_t>)                                                                                                       \
+    {                                                                                                                                                           \
+        if constexpr (std::is_same_v<RHSBasis, std::uint16_t>)                                                                                                  \
+        {                                                                                                                                                       \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between u8 and u16");                  \
+        }                                                                                                                                                       \
+        else if constexpr (std::is_same_v<RHSBasis, std::uint32_t>)                                                                                             \
+        {                                                                                                                                                       \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between u8 and u32");                  \
+        }                                                                                                                                                       \
+        else if constexpr (std::is_same_v<RHSBasis, std::uint64_t>)                                                                                             \
+        {                                                                                                                                                       \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between u8 and u64");                  \
+        }                                                                                                                                                       \
+        else                                                                                                                                                    \
+        {                                                                                                                                                       \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between u8 and unknown type");         \
+        }                                                                                                                                                       \
+    }                                                                                                                                                           \
+    else if constexpr (std::is_same_v<LHSBasis, std::uint16_t>)                                                                                                 \
+    {                                                                                                                                                           \
+        if constexpr (std::is_same_v<RHSBasis, std::uint8_t>)                                                                                                   \
+        {                                                                                                                                                       \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between u16 and u8");                  \
+        }                                                                                                                                                       \
+        else if constexpr (std::is_same_v<RHSBasis, std::uint32_t>)                                                                                             \
+        {                                                                                                                                                       \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between u16 and u32");                 \
+        }                                                                                                                                                       \
+        else if constexpr (std::is_same_v<RHSBasis, std::uint64_t>)                                                                                             \
+        {                                                                                                                                                       \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between u16 and u64");                 \
+        }                                                                                                                                                       \
+        else                                                                                                                                                    \
+        {                                                                                                                                                       \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between u16 and unknown type");        \
+        }                                                                                                                                                       \
+    }                                                                                                                                                           \
+    else if constexpr (std::is_same_v<LHSBasis, std::uint32_t>)                                                                                                 \
+    {                                                                                                                                                           \
+        if constexpr (std::is_same_v<RHSBasis, std::uint8_t>)                                                                                                   \
+        {                                                                                                                                                       \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between u32 and u8");                  \
+        }                                                                                                                                                       \
+        else if constexpr (std::is_same_v<RHSBasis, std::uint16_t>)                                                                                             \
+        {                                                                                                                                                       \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between u32 and u16");                 \
+        }                                                                                                                                                       \
+        else if constexpr (std::is_same_v<RHSBasis, std::uint64_t>)                                                                                             \
+        {                                                                                                                                                       \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between u32 and u64");                 \
+        }                                                                                                                                                       \
+        else                                                                                                                                                    \
+        {                                                                                                                                                       \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between u32 and unknown type");        \
+        }                                                                                                                                                       \
+    }                                                                                                                                                           \
+    else if constexpr (std::is_same_v<LHSBasis, std::uint64_t>)                                                                                                 \
+    {                                                                                                                                                           \
+        if constexpr (std::is_same_v<RHSBasis, std::uint8_t>)                                                                                                   \
+        {                                                                                                                                                       \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between u64 and u8");                  \
+        }                                                                                                                                                       \
+        else if constexpr (std::is_same_v<RHSBasis, std::uint16_t>)                                                                                             \
+        {                                                                                                                                                       \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between u64 and u16");                 \
+        }                                                                                                                                                       \
+        else if constexpr (std::is_same_v<RHSBasis, std::uint32_t>)                                                                                             \
+        {                                                                                                                                                       \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between u64 and u32");                 \
+        }                                                                                                                                                       \
+        else                                                                                                                                                    \
+        {                                                                                                                                                       \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between u64 and unknown type");        \
+        }                                                                                                                                                       \
+    }                                                                                                                                                           \
+    else                                                                                                                                                        \
+    {                                                                                                                                                           \
+        static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " on mixed width unsigned integer types");   \
+    }                                                                                                                                                           \
+                                                                                                                                                                \
+    return boost::safe_numbers::detail::unsigned_integer_basis<LHSBasis>(0);                                                                                    \
 }
 
 namespace boost::safe_numbers::detail {
