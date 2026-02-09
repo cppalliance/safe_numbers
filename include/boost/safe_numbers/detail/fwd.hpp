@@ -26,7 +26,7 @@ class unsigned_integer_basis;
 namespace impl {
 
 template <typename T>
-struct is_fundamental_unsigned_integral : std::bool_constant<std::is_unsigned_v<T> || std::is_same_v<T, int128::uint128_t>> {};
+struct is_fundamental_unsigned_integral : std::bool_constant<std::is_unsigned_v<T> || std::is_same_v<std::remove_cv_t<T>, int128::uint128_t>> {};
 
 } // namespace impl
 
