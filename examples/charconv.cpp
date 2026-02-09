@@ -3,6 +3,7 @@
 // https://www.boost.org/LICENSE_1_0.txt
 
 #include <boost/safe_numbers/unsigned_integers.hpp>
+#include <boost/safe_numbers/bounded_integers.hpp>
 #include <boost/safe_numbers/charconv.hpp>
 #include <iostream>
 #include <cstring>
@@ -67,6 +68,48 @@ int main()
     if (parse_result)
     {
         std::cout << "from_chars (base 2):  " << static_cast<unsigned>(bin_value) << '\n';
+    }
+
+    std::cout << '\n';
+
+    // Bounded integer types work the same way
+    using percent = bounded_uint<0u, 100u>;
+    using port = bounded_uint<1u, 65535u>;
+
+    // to_chars with bounded types
+    auto pct = percent{75u};
+    result = to_chars(buffer, buffer + sizeof(buffer), pct);
+    if (result)
+    {
+        *result.ptr = '\0';
+        std::cout << "bounded to_chars (percent): " << buffer << '\n';
+    }
+
+    auto p = port{8080u};
+    result = to_chars(buffer, buffer + sizeof(buffer), p);
+    if (result)
+    {
+        *result.ptr = '\0';
+        std::cout << "bounded to_chars (port):    " << buffer << '\n';
+    }
+
+    // from_chars with bounded types
+    const char* pct_str = "42";
+    auto parsed_pct = percent{0u};
+
+    parse_result = from_chars(pct_str, pct_str + std::strlen(pct_str), parsed_pct);
+    if (parse_result)
+    {
+        std::cout << "bounded from_chars (percent): " << static_cast<unsigned>(static_cast<std::uint8_t>(parsed_pct)) << '\n';
+    }
+
+    const char* port_str = "443";
+    auto parsed_port = port{1u};
+
+    parse_result = from_chars(port_str, port_str + std::strlen(port_str), parsed_port);
+    if (parse_result)
+    {
+        std::cout << "bounded from_chars (port):    " << static_cast<unsigned>(static_cast<std::uint16_t>(parsed_port)) << '\n';
     }
 
     return 0;

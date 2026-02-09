@@ -10,8 +10,8 @@ https://www.boost.org/LICENSE_1_0.txt
 
 == Description
 
-The library provides character conversion functions for safe integer types using https://www.boost.org/doc/libs/master/libs/charconv/doc/html/charconv.html[Boost.Charconv].
-These functions convert between safe integer types and their string representations.
+The library provides character conversion functions for all safe integer types using https://www.boost.org/doc/libs/master/libs/charconv/doc/html/charconv.html[Boost.Charconv].
+These functions convert between safe integer types (including `bounded_uint`) and their string representations.
 
 [source,c++]
 ----
@@ -20,15 +20,15 @@ These functions convert between safe integer types and their string representati
 namespace boost::safe_numbers {
 
 // Convert safe integer to character string
-template <unsigned_integral BasisType>
+template <detail::library_type T>
 constexpr auto to_chars(char* first, char* last,
-                        unsigned_integer_basis<BasisType> value,
+                        T value,
                         int base = 10) -> charconv::to_chars_result;
 
 // Convert character string to safe integer
-template <unsigned_integral BasisType>
+template <detail::library_type T>
 constexpr auto from_chars(const char* first, const char* last,
-                          unsigned_integer_basis<BasisType>& value,
+                          T& value,
                           int base = 10) -> charconv::from_chars_result;
 
 } // namespace boost::safe_numbers
@@ -90,13 +90,14 @@ struct from_chars_result
 
 [source,c++]
 ----
-template <unsigned_integral BasisType>
+template <detail::library_type T>
 constexpr auto to_chars(char* first, char* last,
-                        unsigned_integer_basis<BasisType> value,
+                        T value,
                         int base = 10) -> charconv::to_chars_result;
 ----
 
 Converts a safe integer value into a character buffer specified by `[first, last)`.
+Works with all safe integer types, including `u8`, `u16`, `u32`, `u64`, `u128`, and `bounded_uint<Min, Max>`.
 
 === Parameters
 
@@ -119,13 +120,14 @@ Returns `boost::charconv::to_chars_result` with:
 
 [source,c++]
 ----
-template <unsigned_integral BasisType>
+template <detail::library_type T>
 constexpr auto from_chars(const char* first, const char* last,
-                          unsigned_integer_basis<BasisType>& value,
+                          T& value,
                           int base = 10) -> charconv::from_chars_result;
 ----
 
 Parses a string from `[first, last)` and converts it into a safe integer value.
+Works with all safe integer types, including `u8`, `u16`, `u32`, `u64`, `u128`, and `bounded_uint<Min, Max>`.
 
 === Parameters
 
@@ -162,5 +164,10 @@ to_chars (base 2):  11000000111001
 from_chars (base 10): 98765
 from_chars (base 16): 6699
 from_chars (base 2):  26
+
+bounded to_chars (percent): 75
+bounded to_chars (port):    8080
+bounded from_chars (percent): 42
+bounded from_chars (port):    443
 ----
 ====
