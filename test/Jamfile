@@ -139,3 +139,4 @@ run ../examples/fmt_format.cpp ;
 run ../examples/iostream.cpp ;
 run ../examples/charconv.cpp ;
 run ../examples/bit.cpp ;
+run ../examples/bounded_limits.cpp ;
