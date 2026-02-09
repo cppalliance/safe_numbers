@@ -110,6 +110,8 @@ public:
         return bounded_uint<Min2, Max2>{static_cast<target_basis>(raw)};
     }
 
+    [[nodiscard]] explicit constexpr operator basis_type() const noexcept { return basis_; }
+
     [[nodiscard]] friend constexpr auto operator<=>(bounded_uint lhs, bounded_uint rhs) noexcept
         -> std::strong_ordering = default;
 
