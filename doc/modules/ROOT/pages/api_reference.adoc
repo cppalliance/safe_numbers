@@ -33,6 +33,16 @@ https://www.boost.org/LICENSE_1_0.txt
 | Safe unsigned 128-bit integer
 |===
 
+=== Bounded Unsigned Integer Type
+
+[cols="1,2", options="header"]
+|===
+| Type | Description
+
+| xref:bounded_uint.adoc[`bounded_uint<Min, Max>`]
+| Safe unsigned integer constrained to a compile-time range `[Min, Max]`
+|===
+
 === Enumerations
 
 [cols="1,2", options="header"]
@@ -184,4 +194,7 @@ This header is not included in the convenience header since it requires external
 
 | `<boost/safe_numbers/unsigned_integers.hpp>`
 | All unsigned safe integer types (`u8`, `u16`, `u32`, `u64`, `u128`)
+
+| `<boost/safe_numbers/bounded_integers.hpp>`
+| Bounded unsigned integer type (`bounded_uint<Min, Max>`)
 |===

@@ -1,0 +1,213 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#bounded_uint]
+
+= Bounded Unsigned Integer Type
+
+== Description
+
+The `bounded_uint<Min, Max>` class template provides a safe unsigned integer type whose values are constrained to a compile-time range `[Min, Max]`.
+Any operation that would produce a value outside this range throws an exception at runtime.
+
+The underlying storage type (`basis_type`) is automatically selected as the smallest safe unsigned integer type capable of representing `Max`:
+
+|===
+| Max Value Range | Selected `basis_type`
+
+| 0 -- 255                     | `u8`
+| 256 -- 65,535                | `u16`
+| 65,536 -- 4,294,967,295     | `u32`
+| 4,294,967,296 -- 2^64 - 1   | `u64`
+| 2^64 -- 2^128 - 1           | `u128`
+|===
+
+The template parameters `Min` and `Max` can be any non-`bool` unsigned type, including the library's own safe unsigned types (`u8`, `u16`, etc.) or built-in unsigned types (`std::uint8_t`, `unsigned int`, etc.).
+`Max` must be strictly greater than `Min`.
+
+[source,c++]
+----
+#include <boost/safe_numbers/bounded_integers.hpp>
+
+namespace boost::safe_numbers {
+
+template <auto Min, auto Max>
+    requires (detail::valid_bound<decltype(Min)> &&
+              detail::valid_bound<decltype(Max)> &&
+              detail::raw_value(Max) > detail::raw_value(Min))
+class bounded_uint
+{
+public:
+    using basis_type = /* smallest safe unsigned type that fits Max */;
+
+    // Construction
+    explicit constexpr bounded_uint(basis_type val);
+
+    // Conversion to underlying types
+    template <typename OtherBasis>
+    explicit constexpr operator OtherBasis() const;
+
+    // Conversion to other bounded_uint types
+    template <auto Min2, auto Max2>
+    explicit constexpr operator bounded_uint<Min2, Max2>() const;
+
+    // Comparison operators
+    friend constexpr auto operator<=>(bounded_uint lhs, bounded_uint rhs) noexcept
+        -> std::strong_ordering = default;
+
+    // Compound assignment operators
+    constexpr auto operator+=(bounded_uint rhs) -> bounded_uint&;
+    constexpr auto operator-=(bounded_uint rhs) -> bounded_uint&;
+    constexpr auto operator*=(bounded_uint rhs) -> bounded_uint&;
+    constexpr auto operator/=(bounded_uint rhs) -> bounded_uint&;
+
+    // Increment and decrement operators
+    constexpr auto operator++() -> bounded_uint&;
+    constexpr auto operator++(int) -> bounded_uint;
+    constexpr auto operator--() -> bounded_uint&;
+    constexpr auto operator--(int) -> bounded_uint;
+};
+
+// Arithmetic operators (throw on out-of-bounds result)
+template <auto Min, auto Max>
+constexpr auto operator+(bounded_uint<Min, Max> lhs,
+                         bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>;
+
+template <auto Min, auto Max>
+constexpr auto operator-(bounded_uint<Min, Max> lhs,
+                         bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>;
+
+template <auto Min, auto Max>
+constexpr auto operator*(bounded_uint<Min, Max> lhs,
+                         bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>;
+
+template <auto Min, auto Max>
+constexpr auto operator/(bounded_uint<Min, Max> lhs,
+                         bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>;
+
+template <auto Min, auto Max>
+constexpr auto operator%(bounded_uint<Min, Max> lhs,
+                         bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>;
+
+} // namespace boost::safe_numbers
+----
+
+== Operator Behavior
+
+=== Construction
+
+[source,c++]
+----
+explicit constexpr bounded_uint(basis_type val);
+----
+
+Constructs a `bounded_uint` from a value of the underlying `basis_type`.
+The value is default-initialized to `Min`.
+If `val` is less than `Min` or greater than `Max`, `std::domain_error` is thrown.
+
+=== Conversion to Underlying Types
+
+[source,c++]
+----
+template <typename OtherBasis>
+explicit constexpr operator OtherBasis() const;
+----
+
+Conversion to other unsigned integral types is explicit.
+Widening conversions always succeed.
+Narrowing conversions perform a runtime bounds check: if the value exceeds the maximum representable value of the target type, `std::domain_error` is thrown.
+
+=== Conversion to Other Bounded Types
+
+[source,c++]
+----
+template <auto Min2, auto Max2>
+explicit constexpr operator bounded_uint<Min2, Max2>() const;
+----
+
+Conversion to a `bounded_uint` with different bounds is explicit.
+The target type's constructor validates that the value falls within `[Min2, Max2]`, throwing `std::domain_error` if it does not.
+
+=== Comparison Operators
+
+[source,c++]
+----
+friend constexpr auto operator<=>(bounded_uint lhs, bounded_uint rhs) noexcept
+    -> std::strong_ordering = default;
+----
+
+Full three-way comparison is supported via `pass:[operator<=>]`, which returns `std::strong_ordering`.
+All comparison operators (`<`, `<=`, `>`, `>=`, `==`, `!=`) are available.
+
+=== Arithmetic Operators
+
+[source,c++]
+----
+template <auto Min, auto Max>
+constexpr auto operator+(bounded_uint<Min, Max> lhs,
+                         bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>;
+
+template <auto Min, auto Max>
+constexpr auto operator-(bounded_uint<Min, Max> lhs,
+                         bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>;
+
+template <auto Min, auto Max>
+constexpr auto operator*(bounded_uint<Min, Max> lhs,
+                         bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>;
+
+template <auto Min, auto Max>
+constexpr auto operator/(bounded_uint<Min, Max> lhs,
+                         bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>;
+
+template <auto Min, auto Max>
+constexpr auto operator%(bounded_uint<Min, Max> lhs,
+                         bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>;
+----
+
+Arithmetic is performed on the underlying `basis_type` values.
+The result is then used to construct a new `bounded_uint`, which validates that it falls within `[Min, Max]`.
+If the result is out of bounds, the exception thrown depends on the underlying safe unsigned integer operation:
+
+- `pass:[+]`: Throws `std::overflow_error` if the result exceeds `Max`
+- `-`: Throws `std::underflow_error` if the result would be below `Min`
+- `pass:[*]`: Throws `std::overflow_error` if the result exceeds `Max`
+- `/`: Throws `std::domain_error` if dividing by zero, or `std::domain_error` if the result falls outside `[Min, Max]`
+- `%`: Throws `std::domain_error` if the divisor is zero, or `std::domain_error` if the result falls outside `[Min, Max]`
+
+=== Compound Assignment Operators
+
+[source,c++]
+----
+constexpr auto operator+=(bounded_uint rhs) -> bounded_uint&;
+constexpr auto operator-=(bounded_uint rhs) -> bounded_uint&;
+constexpr auto operator*=(bounded_uint rhs) -> bounded_uint&;
+constexpr auto operator/=(bounded_uint rhs) -> bounded_uint&;
+----
+
+Compound assignment operators delegate to their corresponding arithmetic operators and follow the same exception behavior.
+
+=== Increment and Decrement Operators
+
+[source,c++]
+----
+constexpr auto operator++() -> bounded_uint&;
+constexpr auto operator++(int) -> bounded_uint;
+constexpr auto operator--() -> bounded_uint&;
+constexpr auto operator--(int) -> bounded_uint;
+----
+
+- `++` (pre/post): Adds one to the underlying value and validates the result. Throws `std::overflow_error` if the value is already at `Max`, or `std::domain_error` if the incremented value exceeds the upper bound.
+- `--` (pre/post): Subtracts one from the underlying value and validates the result. Throws `std::underflow_error` if the value is already at `Min`, or `std::domain_error` if the decremented value falls below the lower bound.
+
+=== Mixed-Bounds Operations
+
+Operations between `bounded_uint` types with different `Min` and `Max` values are compile-time errors.
+To perform operations between different bounded types, explicitly convert to the same type first.
+
+== Constexpr Support
+
+All operations are `constexpr`-compatible.
+Out-of-bounds results at compile time produce a compiler error.
