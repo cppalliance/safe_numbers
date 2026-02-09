@@ -7,6 +7,7 @@
 #if __has_include(<fmt/format.h>)
 
 #include <boost/safe_numbers/unsigned_integers.hpp>
+#include <boost/safe_numbers/bounded_integers.hpp>
 #include <boost/safe_numbers/fmt_format.hpp>
 #include <fmt/format.h>
 #include <iostream>
@@ -48,7 +49,16 @@ int main()
     // Fill character
     std::cout << "Fill Character:\n";
     std::cout << fmt::format("{:*>10}", val1) << '\n';
-    std::cout << fmt::format("{:_<10}", val1) << '\n';
+    std::cout << fmt::format("{:_<10}", val1) << "\n\n";
+
+    // Bounded integer types
+    using percent = bounded_uint<0u, 100u>;
+    using port = bounded_uint<1u, 65535u>;
+
+    std::cout << "Bounded Integers:\n";
+    std::cout << fmt::format("{}", percent{75u}) << '\n';
+    std::cout << fmt::format("{:>8}", port{8080u}) << '\n';
+    std::cout << fmt::format("{:#x}", port{443u}) << '\n';
 
     return 0;
 }
