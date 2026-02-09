@@ -27,27 +27,6 @@
 
 namespace boost::safe_numbers {
 
-namespace detail {
-
-template <typename T>
-concept valid_bound = !std::is_same_v<T, bool> && (is_unsigned_library_type_v<T> || is_fundamental_unsigned_integral_v<T>);
-
-template <typename T>
-    requires valid_bound<T>
-consteval auto raw_value(T val) noexcept
-{
-    if constexpr (is_unsigned_library_type_v<T>)
-    {
-        return static_cast<underlying_type_t<T>>(val);
-    }
-    else
-    {
-        return val;
-    }
-}
-
-} // namespace detail
-
 template <auto Min, auto Max>
     requires (detail::valid_bound<decltype(Min)> &&
               detail::valid_bound<decltype(Max)> &&
@@ -63,6 +42,7 @@ public:
 
 private:
 
+    using underlying_type = detail::underlying_type_t<basis_type>;
     basis_type basis_ {static_cast<basis_type>(detail::raw_value(Min))};
 
 public:
@@ -79,6 +59,8 @@ public:
 
         basis_ = val;
     }
+
+    explicit constexpr bounded_uint(const underlying_type val) : bounded_uint{basis_type{val}} {}
 
     template <typename OtherBasis>
         requires (detail::is_unsigned_library_type_v<OtherBasis> || detail::is_fundamental_unsigned_integral_v<OtherBasis>)
@@ -111,6 +93,8 @@ public:
     }
 
     [[nodiscard]] explicit constexpr operator basis_type() const noexcept { return basis_; }
+
+    [[nodiscard]] explicit constexpr operator underlying_type() const noexcept { return static_cast<underlying_type>(basis_); }
 
     [[nodiscard]] friend constexpr auto operator<=>(bounded_uint lhs, bounded_uint rhs) noexcept
         -> std::strong_ordering = default;
