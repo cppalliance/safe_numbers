@@ -517,6 +517,121 @@ void test_byteswap_u128()
     }
 }
 
+// -----------------------------------------------
+// bounded_uint types covering full underlying range
+// -----------------------------------------------
+
+using bounded_u8_full  = bounded_uint<0u, 255u>;
+using bounded_u16_full = bounded_uint<0u, 65535u>;
+using bounded_u32_full = bounded_uint<0u, 4294967295u>;
+using bounded_u64_full = bounded_uint<0ULL, UINT64_MAX>;
+
+// -----------------------------------------------
+// Narrower bounded_uint tests
+// -----------------------------------------------
+
+template <typename BoundedT, typename UnderlyingT>
+void test_bounded_has_single_bit(UnderlyingT lo, UnderlyingT hi)
+{
+    boost::random::uniform_int_distribution<UnderlyingT> dist {lo, hi};
+
+    for (std::size_t i {}; i < N; ++i)
+    {
+        const auto raw {dist(rng)};
+        const auto expected {std::has_single_bit(raw)};
+        const BoundedT wrapped {raw};
+        BOOST_TEST_EQ(expected, boost::safe_numbers::has_single_bit(wrapped));
+    }
+}
+
+template <typename BoundedT, typename UnderlyingT>
+void test_bounded_bit_width(UnderlyingT lo, UnderlyingT hi)
+{
+    boost::random::uniform_int_distribution<UnderlyingT> dist {lo, hi};
+
+    for (std::size_t i {}; i < N; ++i)
+    {
+        const auto raw {dist(rng)};
+        const auto expected {std::bit_width(raw)};
+        const BoundedT wrapped {raw};
+        BOOST_TEST_EQ(expected, boost::safe_numbers::bit_width(wrapped));
+    }
+}
+
+template <typename BoundedT, typename UnderlyingT>
+void test_bounded_popcount(UnderlyingT lo, UnderlyingT hi)
+{
+    boost::random::uniform_int_distribution<UnderlyingT> dist {lo, hi};
+
+    for (std::size_t i {}; i < N; ++i)
+    {
+        const auto raw {dist(rng)};
+        const auto expected {std::popcount(raw)};
+        const BoundedT wrapped {raw};
+        BOOST_TEST_EQ(expected, boost::safe_numbers::popcount(wrapped));
+    }
+}
+
+template <typename BoundedT, typename UnderlyingT>
+void test_bounded_countl_zero(UnderlyingT lo, UnderlyingT hi)
+{
+    boost::random::uniform_int_distribution<UnderlyingT> dist {lo, hi};
+
+    for (std::size_t i {}; i < N; ++i)
+    {
+        const auto raw {dist(rng)};
+        const auto expected {std::countl_zero(raw)};
+        const BoundedT wrapped {raw};
+        BOOST_TEST_EQ(expected, boost::safe_numbers::countl_zero(wrapped));
+    }
+}
+
+template <typename BoundedT, typename UnderlyingT>
+void test_bounded_countr_zero(UnderlyingT lo, UnderlyingT hi)
+{
+    boost::random::uniform_int_distribution<UnderlyingT> dist {lo, hi};
+
+    for (std::size_t i {}; i < N; ++i)
+    {
+        const auto raw {dist(rng)};
+        const auto expected {std::countr_zero(raw)};
+        const BoundedT wrapped {raw};
+        BOOST_TEST_EQ(expected, boost::safe_numbers::countr_zero(wrapped));
+    }
+}
+
+void test_narrow_bounded_bit_ops()
+{
+    using narrow_u8  = bounded_uint<10u, 200u>;
+    using narrow_u16 = bounded_uint<256u, 40000u>;
+    using narrow_u32 = bounded_uint<1000u, 100000u>;
+
+    // has_single_bit
+    test_bounded_has_single_bit<narrow_u8>(std::uint8_t{10}, std::uint8_t{200});
+    test_bounded_has_single_bit<narrow_u16>(std::uint16_t{256}, std::uint16_t{40000});
+    test_bounded_has_single_bit<narrow_u32>(std::uint32_t{1000}, std::uint32_t{100000});
+
+    // bit_width
+    test_bounded_bit_width<narrow_u8>(std::uint8_t{10}, std::uint8_t{200});
+    test_bounded_bit_width<narrow_u16>(std::uint16_t{256}, std::uint16_t{40000});
+    test_bounded_bit_width<narrow_u32>(std::uint32_t{1000}, std::uint32_t{100000});
+
+    // popcount
+    test_bounded_popcount<narrow_u8>(std::uint8_t{10}, std::uint8_t{200});
+    test_bounded_popcount<narrow_u16>(std::uint16_t{256}, std::uint16_t{40000});
+    test_bounded_popcount<narrow_u32>(std::uint32_t{1000}, std::uint32_t{100000});
+
+    // countl_zero
+    test_bounded_countl_zero<narrow_u8>(std::uint8_t{10}, std::uint8_t{200});
+    test_bounded_countl_zero<narrow_u16>(std::uint16_t{256}, std::uint16_t{40000});
+    test_bounded_countl_zero<narrow_u32>(std::uint32_t{1000}, std::uint32_t{100000});
+
+    // countr_zero
+    test_bounded_countr_zero<narrow_u8>(std::uint8_t{10}, std::uint8_t{200});
+    test_bounded_countr_zero<narrow_u16>(std::uint16_t{256}, std::uint16_t{40000});
+    test_bounded_countr_zero<narrow_u32>(std::uint32_t{1000}, std::uint32_t{100000});
+}
+
 int main()
 {
     test_has_single_bit<u8>();
@@ -591,6 +706,70 @@ int main()
     test_byteswap<u64>();
 
     test_byteswap_u128();
+
+    // Full-range bounded_uint tests (reuse existing templates)
+    test_has_single_bit<bounded_u8_full>();
+    test_has_single_bit<bounded_u16_full>();
+    test_has_single_bit<bounded_u32_full>();
+    test_has_single_bit<bounded_u64_full>();
+
+    test_bit_ceil<bounded_u8_full>();
+    test_bit_ceil<bounded_u16_full>();
+    test_bit_ceil<bounded_u32_full>();
+    test_bit_ceil<bounded_u64_full>();
+
+    test_bit_floor<bounded_u8_full>();
+    test_bit_floor<bounded_u16_full>();
+    test_bit_floor<bounded_u32_full>();
+    test_bit_floor<bounded_u64_full>();
+
+    test_bit_width<bounded_u8_full>();
+    test_bit_width<bounded_u16_full>();
+    test_bit_width<bounded_u32_full>();
+    test_bit_width<bounded_u64_full>();
+
+    test_rotl<bounded_u8_full>();
+    test_rotl<bounded_u16_full>();
+    test_rotl<bounded_u32_full>();
+    test_rotl<bounded_u64_full>();
+
+    test_rotr<bounded_u8_full>();
+    test_rotr<bounded_u16_full>();
+    test_rotr<bounded_u32_full>();
+    test_rotr<bounded_u64_full>();
+
+    test_countl_zero<bounded_u8_full>();
+    test_countl_zero<bounded_u16_full>();
+    test_countl_zero<bounded_u32_full>();
+    test_countl_zero<bounded_u64_full>();
+
+    test_countl_one<bounded_u8_full>();
+    test_countl_one<bounded_u16_full>();
+    test_countl_one<bounded_u32_full>();
+    test_countl_one<bounded_u64_full>();
+
+    test_countr_zero<bounded_u8_full>();
+    test_countr_zero<bounded_u16_full>();
+    test_countr_zero<bounded_u32_full>();
+    test_countr_zero<bounded_u64_full>();
+
+    test_countr_one<bounded_u8_full>();
+    test_countr_one<bounded_u16_full>();
+    test_countr_one<bounded_u32_full>();
+    test_countr_one<bounded_u64_full>();
+
+    test_popcount<bounded_u8_full>();
+    test_popcount<bounded_u16_full>();
+    test_popcount<bounded_u32_full>();
+    test_popcount<bounded_u64_full>();
+
+    test_byteswap<bounded_u8_full>();
+    test_byteswap<bounded_u16_full>();
+    test_byteswap<bounded_u32_full>();
+    test_byteswap<bounded_u64_full>();
+
+    // Narrow bounded_uint tests (functions that always return valid results)
+    test_narrow_bounded_bit_ops();
 
     return boost::report_errors();
 }
