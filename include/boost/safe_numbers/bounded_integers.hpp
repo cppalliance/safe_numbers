@@ -43,14 +43,14 @@ public:
 private:
 
     using underlying_type = detail::underlying_type_t<basis_type>;
-    basis_type basis_ {static_cast<basis_type>(detail::raw_value(Min))};
+    basis_type basis_ {static_cast<underlying_type>(detail::raw_value(Min))};
 
 public:
 
     explicit constexpr bounded_uint(const basis_type val)
     {
-        constexpr auto min_val {static_cast<basis_type>(detail::raw_value(Min))};
-        constexpr auto max_val {static_cast<basis_type>(detail::raw_value(Max))};
+        constexpr auto min_val {basis_type{static_cast<underlying_type>(detail::raw_value(Min))}};
+        constexpr auto max_val {basis_type{static_cast<underlying_type>(detail::raw_value(Max))}};
 
         if (val < min_val || val > max_val)
         {
