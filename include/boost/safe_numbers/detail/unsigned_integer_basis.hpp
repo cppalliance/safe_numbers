@@ -7,6 +7,7 @@
 
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/concepts.hpp>
+#include <boost/safe_numbers/detail/type_traits.hpp>
 #include <boost/safe_numbers/overflow_policy.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
@@ -344,10 +345,25 @@ struct add_helper<overflow_policy::wrapping, BasisType>
     }
 };
 
+// Partial specialization for widening policy
+template <unsigned_integral BasisType>
+struct add_helper<overflow_policy::widen, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+    {
+        using promoted_type = promoted_type<BasisType>;
+        static_assert(!std::is_same_v<promoted_type, bool>, "Widening policy with uint128_t is not supported");
+
+        using result_type = unsigned_integer_basis<promoted_type>;
+        return result_type{static_cast<promoted_type>(static_cast<promoted_type>(lhs) + rhs)};
+    }
+};
+
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto add_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::wrapping || Policy == overflow_policy::strict)
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::wrapping || Policy == overflow_policy::strict || Policy == overflow_policy::widen)
 {
     return add_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -981,10 +997,25 @@ struct mul_helper<overflow_policy::wrapping, BasisType>
     }
 };
 
+// Partial specialization for widening policy
+template <unsigned_integral BasisType>
+struct mul_helper<overflow_policy::widen, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+    {
+        using promoted_type = promoted_type<BasisType>;
+        static_assert(!std::is_same_v<promoted_type, bool>, "Widening policy with uint128_t is not supported");
+
+        using result_type = unsigned_integer_basis<promoted_type>;
+        return result_type{static_cast<promoted_type>(static_cast<promoted_type>(lhs) * rhs)};
+    }
+};
+
 template <overflow_policy Policy, unsigned_integral BasisType>
 [[nodiscard]] constexpr auto mul_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
-    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::wrapping || Policy == overflow_policy::strict)
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::wrapping || Policy == overflow_policy::strict || Policy == overflow_policy::widen)
 {
     return mul_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -1637,6 +1668,24 @@ template <detail::unsigned_integral BasisType>
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("strict modulo", strict_mod)
 
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto widening_add(const detail::unsigned_integer_basis<BasisType> lhs,
+                                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+{
+    return detail::add_impl<overflow_policy::widen>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("widening add", widening_add)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto widening_mul(const detail::unsigned_integer_basis<BasisType> lhs,
+                                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+{
+    return detail::mul_impl<overflow_policy::widen>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("widening mul", widening_mul)
+
 // ------------------------------
 // Generic policy-parameterized functions
 // ------------------------------
@@ -1670,6 +1719,14 @@ template <overflow_policy Policy, detail::unsigned_integral BasisType>
     {
         return strict_add(lhs, rhs);
     }
+    else if constexpr (Policy == overflow_policy::widen)
+    {
+        return widening_add(lhs, rhs);
+    }
+    else
+    {
+        static_assert(detail::dependent_false<BasisType>, "Policy is not supported for addition");
+    }
 }
 
 template <overflow_policy Policy, detail::unsigned_integral BasisType>
@@ -1700,6 +1757,10 @@ template <overflow_policy Policy, detail::unsigned_integral BasisType>
     else if constexpr (Policy == overflow_policy::strict)
     {
         return strict_sub(lhs, rhs);
+    }
+    else
+    {
+        static_assert(detail::dependent_false<BasisType>, "Policy is not supported for subtraction");
     }
 }
 
@@ -1732,6 +1793,14 @@ template <overflow_policy Policy, detail::unsigned_integral BasisType>
     {
         return strict_mul(lhs, rhs);
     }
+    else if constexpr (Policy == overflow_policy::widen)
+    {
+        return widening_mul(lhs, rhs);
+    }
+    else
+    {
+        static_assert(detail::dependent_false<BasisType>, "Policy is not supported for multiplication");
+    }
 }
 
 template <overflow_policy Policy, detail::unsigned_integral BasisType>
@@ -1763,6 +1832,10 @@ template <overflow_policy Policy, detail::unsigned_integral BasisType>
     {
         return strict_div(lhs, rhs);
     }
+    else
+    {
+        static_assert(detail::dependent_false<BasisType>, "Policy is not supported for division");
+    }
 }
 
 template <overflow_policy Policy, detail::unsigned_integral BasisType>
@@ -1793,6 +1866,10 @@ template <overflow_policy Policy, detail::unsigned_integral BasisType>
     else if constexpr (Policy == overflow_policy::strict)
     {
         return strict_mod(lhs, rhs);
+    }
+    else
+    {
+        static_assert(detail::dependent_false<BasisType>, "Policy is not supported for modulo");
     }
 }
 
