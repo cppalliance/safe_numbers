@@ -198,3 +198,68 @@ static constexpr T denorm_min() noexcept;
 ----
 
 Returns `Tpass:[{0}]` (not meaningful for integer types).
+
+== Bounded Integer Specialization
+
+A partial specialization of `std::numeric_limits` is provided for all `bounded_uint<Min, Max>` types.
+Static member constants delegate to the underlying hardware type's `std::numeric_limits` specialization, just as they do for the safe unsigned integer types.
+
+The key difference is in the `min()` and `max()` member functions: rather than returning the hardware type's full range, they return the compile-time bounds `Min` and `Max`.
+
+[source,c++]
+----
+namespace std {
+
+template <auto Min, auto Max>
+class numeric_limits<boost::safe_numbers::bounded_uint<Min, Max>>
+{
+    // Static member constants delegate to std::numeric_limits<underlying_type>
+    // ...
+
+    // Returns bounded_uint constructed from Min
+    static constexpr bounded_uint<Min, Max> min();
+
+    // Returns bounded_uint constructed from Max
+    static constexpr bounded_uint<Min, Max> max();
+
+    // Same as min() for unsigned types
+    static constexpr bounded_uint<Min, Max> lowest();
+
+    // Not meaningful for integer types; returns min()
+    static constexpr bounded_uint<Min, Max> epsilon();
+    static constexpr bounded_uint<Min, Max> round_error();
+    static constexpr bounded_uint<Min, Max> infinity();
+    static constexpr bounded_uint<Min, Max> quiet_NaN();
+    static constexpr bounded_uint<Min, Max> signaling_NaN();
+    static constexpr bounded_uint<Min, Max> denorm_min();
+};
+
+} // namespace std
+----
+
+NOTE: The non-applicable member functions (`epsilon`, `round_error`, `infinity`, `quiet_NaN`, `signaling_NaN`, `denorm_min`) return `min()` rather than a zero-constructed value, since zero may fall outside the valid range for types with a non-zero lower bound.
+
+=== Example
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/bounded_limits.cpp[example] demonstrates `std::numeric_limits` with bounded integer types.
+====
+[source, c++]
+----
+include::example$bounded_limits.cpp[]
+----
+
+Output:
+----
+percent type:
+  min:    0
+  max:    100
+  lowest: 0
+  digits: 8
+
+port type:
+  min:    1
+  max:    65535
+  lowest: 1
+  digits: 16
+----
+====
