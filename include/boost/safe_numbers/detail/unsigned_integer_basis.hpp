@@ -13,6 +13,7 @@
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 #include <boost/throw_exception.hpp>
+#include <boost/core/bit.hpp>
 #include <concepts>
 #include <compare>
 #include <limits>
@@ -1902,6 +1903,25 @@ constexpr auto operator^(const detail::unsigned_integer_basis<BasisType> lhs,
 {
     using return_type = detail::unsigned_integer_basis<BasisType>;
     return return_type{detail::raw_value(lhs) ^ detail::raw_value(rhs)};
+}
+
+template <detail::unsigned_integral BasisType>
+constexpr auto operator<<(const detail::unsigned_integer_basis<BasisType> lhs,
+                          const detail::unsigned_integer_basis<BasisType> rhs)
+{
+    using return_type = detail::unsigned_integer_basis<BasisType>;
+
+    const auto raw_lhs {detail::raw_value(lhs)};
+    const auto raw_rhs {detail::raw_value(rhs)};
+
+    const auto lhs_width {core::bit_width(raw_lhs)};
+
+    if (lhs_width + raw_lhs >= std::numeric_limits<BasisType>::digits)
+    {
+        BOOST_THROW_EXCEPTION(std::overflow_error("Left shift past the end of the type width"));
+    }
+
+    return return_type{raw_lhs << raw_rhs};
 }
 
 } // namespace boost::safe_numbers
