@@ -29,6 +29,7 @@ enum class overflow_policy
     checked,         // Return std::nullopt on overflow/underflow
     wrapping,        // Wrap silently
     strict,          // Call std::exit(EXIT_FAILURE) on error
+    widen,           // Promote to the next wider type (add/mul only)
 };
 
 } // namespace boost::safe_numbers
@@ -67,6 +68,11 @@ enum class overflow_policy
 | `strict`
 | Calls `std::exit(EXIT_FAILURE)`
 | Calls `std::exit(EXIT_FAILURE)`
+| Yes
+
+| `widen`
+| Promotes to next wider type (add/mul only)
+| N/A (only add/mul supported)
 | Yes
 |===
 
@@ -217,6 +223,28 @@ These functions call `std::exit(EXIT_FAILURE)` on error, providing a hard termin
 
 All strict functions are marked `noexcept` since `std::exit` does not throw.
 
+=== Widening Arithmetic
+
+[source,c++]
+----
+template <UnsignedLibType T>
+constexpr auto widening_add(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr auto widening_mul(T lhs, T rhs) noexcept;
+----
+
+These functions avoid overflow entirely by promoting the result to the next wider unsigned integer type.
+The promotion chain is: `uint8` -> `u16`, `u16` -> `u32`, `u32` -> `u64`, `u64` -> `uint128`.
+Since `uint128` is the widest supported type, widening is not available for `uint128` operands (a `static_assert` fires).
+
+Only addition and multiplication are provided because subtraction, division, and modulo cannot overflow into a range that requires a wider type.
+
+- `widening_add`: Returns the sum in the next wider type
+- `widening_mul`: Returns the product in the next wider type
+
+Both functions are `noexcept`.
+
 == Generic Policy-Parameterized Arithmetic
 
 [source,c++]
@@ -260,6 +288,9 @@ The return type depends on the policy:
 
 | `overflow_policy::strict`
 | `T`
+
+| `overflow_policy::widen`
+| Next wider unsigned integer type (add/mul only)
 |===
 
 This allows writing generic code parameterized on the overflow policy:
