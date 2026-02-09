@@ -9,6 +9,7 @@
 #include <boost/safe_numbers/detail/concepts.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
 #include <boost/safe_numbers/overflow_policy.hpp>
+#include <boost/safe_numbers/detail/int128/bit.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -1910,13 +1911,14 @@ constexpr auto operator<<(const detail::unsigned_integer_basis<BasisType> lhs,
                           const detail::unsigned_integer_basis<BasisType> rhs)
 {
     using return_type = detail::unsigned_integer_basis<BasisType>;
+    using core::bit_width;
 
     const auto raw_lhs {detail::raw_value(lhs)};
     const auto raw_rhs {detail::raw_value(rhs)};
 
-    const auto lhs_width {static_cast<BasisType>(core::bit_width(raw_lhs))};
+    const auto lhs_width {static_cast<BasisType>(bit_width(raw_lhs))};
 
-    if (lhs_width + raw_lhs >= std::numeric_limits<BasisType>::digits)
+    if (lhs_width + raw_rhs >= std::numeric_limits<BasisType>::digits)
     {
         BOOST_THROW_EXCEPTION(std::overflow_error("Left shift past the end of the type width"));
     }
@@ -1929,13 +1931,10 @@ constexpr auto operator>>(const detail::unsigned_integer_basis<BasisType> lhs,
                           const detail::unsigned_integer_basis<BasisType> rhs)
 {
     using return_type = detail::unsigned_integer_basis<BasisType>;
-
     const auto raw_lhs {detail::raw_value(lhs)};
     const auto raw_rhs {detail::raw_value(rhs)};
 
-    const auto lhs_first_one {core::countl_zero(raw_lhs)};
-
-    if (lhs_first_one < raw_rhs)
+    if (raw_rhs >= static_cast<BasisType>(std::numeric_limits<BasisType>::digits))
     {
         BOOST_THROW_EXCEPTION(std::overflow_error("Right shift past the end of the type width"));
     }
