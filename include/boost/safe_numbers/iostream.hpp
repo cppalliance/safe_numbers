@@ -76,6 +76,13 @@ auto operator<<(std::basic_ostream<charT, traits>& os, const LibType& v) -> std:
     return os;
 }
 
-}  // namespace boost::safe_numbers
+}  // namespace boost::safe_numbers::detail
+
+namespace boost::safe_numbers {
+
+using detail::operator<<;
+using detail::operator>>;
+
+} // namespace boost::safe_numbers
 
 #endif // BOOST_SAFE_NUMBERS_IOSTREAM_HPP
