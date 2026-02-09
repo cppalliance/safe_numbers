@@ -1914,7 +1914,7 @@ constexpr auto operator<<(const detail::unsigned_integer_basis<BasisType> lhs,
     const auto raw_lhs {detail::raw_value(lhs)};
     const auto raw_rhs {detail::raw_value(rhs)};
 
-    const auto lhs_width {core::bit_width(raw_lhs)};
+    const auto lhs_width {static_cast<BasisType>(core::bit_width(raw_lhs))};
 
     if (lhs_width + raw_lhs >= std::numeric_limits<BasisType>::digits)
     {
