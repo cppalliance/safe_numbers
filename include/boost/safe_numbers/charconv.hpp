@@ -20,9 +20,9 @@ template <detail::library_type T>
 constexpr auto from_chars(const char* first, const char* last, T& value, int base = 10)
     -> charconv::from_chars_result
 {
-    using basis_type = typename T::basis_type;
+    using underlying_type = detail::underlying_type_t<T>;
 
-    basis_type result {};
+    underlying_type result {};
     const auto r {charconv::from_chars(first, last, result, base)};
     value = T{result};
 
@@ -33,8 +33,8 @@ template <detail::library_type T>
 constexpr auto to_chars(char* first, char* last, const T value, int base = 10)
     -> charconv::to_chars_result
 {
-    using basis_type = typename T::basis_type;
-    return charconv::to_chars(first, last, static_cast<basis_type>(value), base);
+    using underlying_type = detail::underlying_type_t<T>;
+    return charconv::to_chars(first, last, static_cast<underlying_type>(value), base);
 }
 
 } // namespace boost::safe_numbers
