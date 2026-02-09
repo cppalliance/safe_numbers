@@ -111,4 +111,22 @@ struct is_unsigned_library_type<bounded_uint<Min, Max>> : std::true_type {};
 
 } // namespace boost::safe_numbers::detail::impl
 
+// is_bounded_type trait
+namespace boost::safe_numbers::detail {
+
+namespace impl {
+
+template <typename>
+struct is_bounded_type : std::false_type {};
+
+template <auto Min, auto Max>
+struct is_bounded_type<bounded_uint<Min, Max>> : std::true_type {};
+
+} // namespace impl
+
+template <typename T>
+inline constexpr bool is_bounded_type_v = impl::is_bounded_type<T>::value;
+
+} // namespace boost::safe_numbers::detail
+
 #endif // BOOST_SAFE_NUMBERS_DETAIL_FWD_HPP

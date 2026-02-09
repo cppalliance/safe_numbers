@@ -728,16 +728,6 @@ int main()
     test_bit_width<bounded_u32_full>();
     test_bit_width<bounded_u64_full>();
 
-    test_rotl<bounded_u8_full>();
-    test_rotl<bounded_u16_full>();
-    test_rotl<bounded_u32_full>();
-    test_rotl<bounded_u64_full>();
-
-    test_rotr<bounded_u8_full>();
-    test_rotr<bounded_u16_full>();
-    test_rotr<bounded_u32_full>();
-    test_rotr<bounded_u64_full>();
-
     test_countl_zero<bounded_u8_full>();
     test_countl_zero<bounded_u16_full>();
     test_countl_zero<bounded_u32_full>();
@@ -762,11 +752,6 @@ int main()
     test_popcount<bounded_u16_full>();
     test_popcount<bounded_u32_full>();
     test_popcount<bounded_u64_full>();
-
-    test_byteswap<bounded_u8_full>();
-    test_byteswap<bounded_u16_full>();
-    test_byteswap<bounded_u32_full>();
-    test_byteswap<bounded_u64_full>();
 
     // Narrow bounded_uint tests (functions that always return valid results)
     test_narrow_bounded_bit_ops();

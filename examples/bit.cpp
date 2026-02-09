@@ -3,6 +3,7 @@
 // https://www.boost.org/LICENSE_1_0.txt
 
 #include <boost/safe_numbers/unsigned_integers.hpp>
+#include <boost/safe_numbers/bounded_integers.hpp>
 #include <boost/safe_numbers/bit.hpp>
 #include <iostream>
 
@@ -42,6 +43,23 @@ int main()
     const u32 w {0x12345678};
     std::cout << std::hex;
     std::cout << "byteswap(0x12345678) = 0x" << static_cast<std::uint32_t>(byteswap(w)) << '\n';
+
+    std::cout << std::dec << '\n';
+
+    // Bounded integer types work the same way
+    using byte_val = bounded_uint<0u, 255u>;
+    using word_val = bounded_uint<0u, 65535u>;
+
+    const auto bv = byte_val{0b0010'1000u};  // 40
+    std::cout << "bounded has_single_bit(40) = " << has_single_bit(bv) << '\n';
+    std::cout << "bounded bit_ceil(40)       = " << static_cast<unsigned>(static_cast<std::uint8_t>(bit_ceil(bv))) << '\n';
+    std::cout << "bounded bit_floor(40)      = " << static_cast<unsigned>(static_cast<std::uint8_t>(bit_floor(bv))) << '\n';
+    std::cout << "bounded bit_width(40)      = " << bit_width(bv) << '\n';
+    std::cout << "bounded popcount(40)       = " << popcount(bv) << '\n';
+
+    const auto wv = word_val{0x0F00u};
+    std::cout << "bounded countl_zero(0x0F00) = " << countl_zero(wv) << '\n';
+    std::cout << "bounded popcount(0x0F00)    = " << popcount(wv) << '\n';
 
     return 0;
 }

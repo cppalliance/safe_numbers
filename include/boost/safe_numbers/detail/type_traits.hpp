@@ -40,6 +40,9 @@ concept library_type = is_library_type_v<T>;
 template <typename T>
 concept unsigned_library_type = is_unsigned_library_type_v<T>;
 
+template <typename T>
+concept non_bounded_unsigned_library_type = is_unsigned_library_type_v<T> && !is_bounded_type_v<T>;
+
 // underlying specialization for bounded_uint
 
 namespace impl {

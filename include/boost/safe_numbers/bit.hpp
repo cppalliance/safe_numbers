@@ -54,7 +54,7 @@ constexpr auto bit_width(const UnsignedInt x) noexcept -> int
     return static_cast<int>(bit_width(static_cast<underlying_type>(x)));
 }
 
-BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
+BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type UnsignedInt>
 constexpr auto rotl(const UnsignedInt x, const int s) noexcept -> UnsignedInt
 {
     using boost::core::rotl;
@@ -63,7 +63,7 @@ constexpr auto rotl(const UnsignedInt x, const int s) noexcept -> UnsignedInt
     return UnsignedInt{rotl(static_cast<underlying_type>(x), s)};
 }
 
-BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
+BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type UnsignedInt>
 constexpr auto rotr(const UnsignedInt x, const int s) noexcept -> UnsignedInt
 {
     using boost::core::rotr;
@@ -117,7 +117,7 @@ constexpr auto popcount(const UnsignedInt x) noexcept -> int
     return popcount(static_cast<underlying_type>(x));
 }
 
-BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
+BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type UnsignedInt>
 constexpr auto byteswap(const UnsignedInt x) noexcept -> UnsignedInt
 {
     using boost::core::byteswap;
