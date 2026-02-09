@@ -5,8 +5,7 @@
 #ifndef BOOST_SAFE_NUMBERS_DETAIL_TYPE_TRAITS_HPP
 #define BOOST_SAFE_NUMBERS_DETAIL_TYPE_TRAITS_HPP
 
-#include <boost/safe_numbers/detail/config.hpp>
-#include <boost/safe_numbers/detail/concepts.hpp>
+#include <boost/safe_numbers/detail/fwd.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -17,8 +16,7 @@
 
 namespace boost::safe_numbers::detail {
 
-template <unsigned_integral BasisType>
-class unsigned_integer_basis;
+// is_library_type
 
 namespace impl {
 
@@ -28,6 +26,9 @@ struct is_library_type : std::false_type {};
 template <typename T>
 struct is_library_type<unsigned_integer_basis<T>> : std::true_type {};
 
+template <auto Min, auto Max>
+struct is_library_type<bounded_uint<Min, Max>> : std::true_type {};
+
 } // namespace impl
 
 template <typename T>
@@ -36,40 +37,23 @@ inline constexpr bool is_library_type_v = impl::is_library_type<T>::value;
 template <typename T>
 concept library_type = is_library_type_v<T>;
 
-namespace impl {
-
-template <typename>
-struct is_unsigned_library_type : std::false_type {};
-
-template <typename T>
-struct is_unsigned_library_type<unsigned_integer_basis<T>> : std::true_type {};
-
-} // namespace impl
-
-template <typename T>
-inline constexpr bool is_unsigned_library_type_v = impl::is_unsigned_library_type<T>::value;
-
 template <typename T>
 concept unsigned_library_type = is_unsigned_library_type_v<T>;
 
+template <typename T>
+concept non_bounded_unsigned_library_type = is_unsigned_library_type_v<T> && !is_bounded_type_v<T>;
+
+// underlying specialization for bounded_uint
+
 namespace impl {
 
-template <typename T>
-struct underlying
+template <auto Min, auto Max>
+struct underlying<bounded_uint<Min, Max>>
 {
-    using type = std::remove_cv_t<std::remove_reference_t<T>>;
-};
-
-template <typename T>
-struct underlying<unsigned_integer_basis<T>>
-{
-    using type = T;
+    using type = typename underlying<typename bounded_uint<Min, Max>::basis_type>::type;
 };
 
 } // namespace impl
-
-template <typename T>
-using underlying_type_t = typename impl::underlying<T>::type;
 
 } // namespace boost::safe_numbers::detail
 

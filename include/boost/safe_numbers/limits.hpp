@@ -7,6 +7,7 @@
 
 #include <boost/safe_numbers/detail/type_traits.hpp>
 #include <boost/safe_numbers/unsigned_integers.hpp>
+#include <boost/safe_numbers/bounded_integers.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -88,6 +89,52 @@ class numeric_limits<boost::safe_numbers::u64> :
 template <>
 class numeric_limits<boost::safe_numbers::u128> :
     public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::u128> {};
+
+template <auto Min, auto Max>
+class numeric_limits<boost::safe_numbers::bounded_uint<Min, Max>>
+{
+    using type = boost::safe_numbers::bounded_uint<Min, Max>;
+    using underlying_type = boost::safe_numbers::detail::underlying_type_t<type>;
+
+public:
+    static constexpr bool is_specialized = std::numeric_limits<underlying_type>::is_specialized;
+    static constexpr bool is_signed = std::numeric_limits<underlying_type>::is_signed;
+    static constexpr bool is_integer = std::numeric_limits<underlying_type>::is_integer;
+    static constexpr bool is_exact = std::numeric_limits<underlying_type>::is_exact;
+    static constexpr bool has_infinity = std::numeric_limits<underlying_type>::has_infinity;
+    static constexpr bool has_quiet_NaN = std::numeric_limits<underlying_type>::has_quiet_NaN;
+    static constexpr bool has_signaling_NaN = std::numeric_limits<underlying_type>::has_signaling_NaN;
+
+    #if ((!defined(_MSC_VER) && (__cplusplus <= 202002L)) || (defined(_MSC_VER) && (_MSVC_LANG <= 202002L)))
+    static constexpr std::float_denorm_style has_denorm = std::numeric_limits<underlying_type>::has_denorm;
+    static constexpr bool has_denorm_loss = std::numeric_limits<underlying_type>::has_denorm_loss;
+    #endif
+
+    static constexpr std::float_round_style round_style = std::numeric_limits<underlying_type>::round_style;
+    static constexpr bool is_iec559 = std::numeric_limits<underlying_type>::is_iec559;
+    static constexpr bool is_bounded = std::numeric_limits<underlying_type>::is_bounded;
+    static constexpr bool is_modulo = std::numeric_limits<underlying_type>::is_modulo;
+    static constexpr int digits = std::numeric_limits<underlying_type>::digits;
+    static constexpr int digits10 = std::numeric_limits<underlying_type>::digits10;
+    static constexpr int max_digits10 = std::numeric_limits<underlying_type>::max_digits10;
+    static constexpr int radix = std::numeric_limits<underlying_type>::radix;
+    static constexpr int min_exponent = std::numeric_limits<underlying_type>::min_exponent;
+    static constexpr int min_exponent10 = std::numeric_limits<underlying_type>::min_exponent10;
+    static constexpr int max_exponent = std::numeric_limits<underlying_type>::max_exponent;
+    static constexpr int max_exponent10 = std::numeric_limits<underlying_type>::max_exponent10;
+    static constexpr bool traps = std::numeric_limits<underlying_type>::traps;
+    static constexpr bool tinyness_before = std::numeric_limits<underlying_type>::tinyness_before;
+
+    static constexpr type min() { return type{static_cast<underlying_type>(boost::safe_numbers::detail::raw_value(Min))}; }
+    static constexpr type max() { return type{static_cast<underlying_type>(boost::safe_numbers::detail::raw_value(Max))}; }
+    static constexpr type lowest() { return min(); }
+    static constexpr type epsilon() { return min(); }
+    static constexpr type round_error() { return min(); }
+    static constexpr type infinity() { return min(); }
+    static constexpr type quiet_NaN() { return min(); }
+    static constexpr type signaling_NaN() { return min(); }
+    static constexpr type denorm_min() { return min(); }
+};
 
 #ifdef __clang__
 #  pragma clang diagnostic pop

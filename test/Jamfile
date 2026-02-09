@@ -51,6 +51,7 @@ run quick.cpp ;
 
 run test_unsigned_construction.cpp ;
 compile compile_integer_type_properties.cpp ;
+run test_unsigned_narrowing_conversions.cpp ;
 
 run test_unsigned_addition.cpp ;
 compile-fail compile_fail_unsigned_addition.cpp ;
@@ -100,6 +101,18 @@ run-fail test_unsigned_strict_mod.cpp ;
 # Exhaustive verification tests
 run test_exhaustive_u8_arithmetic.cpp ;
 run test_boundary_arithmetic.cpp ;
+run test_unsigned_bounded_construction.cpp ;
+run test_unsigned_bounded_addition.cpp ;
+run test_unsigned_bounded_subtraction.cpp ;
+run test_unsigned_bounded_multiplication.cpp ;
+run test_unsigned_bounded_division.cpp ;
+run test_unsigned_bounded_modulo.cpp ;
+run test_unsigned_bounded_conversions.cpp ;
+run test_unsigned_bounded_charconv.cpp ;
+run test_unsigned_bounded_fmt_format.cpp ;
+run test_unsigned_bounded_std_format.cpp ;
+compile-fail compile_fail_bounded_mixed_ops.cpp ;
+compile-fail compile_fail_bounded_bool_bounds.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
@@ -126,3 +139,4 @@ run ../examples/fmt_format.cpp ;
 run ../examples/iostream.cpp ;
 run ../examples/charconv.cpp ;
 run ../examples/bit.cpp ;
+run ../examples/bounded_limits.cpp ;

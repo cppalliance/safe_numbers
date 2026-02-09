@@ -7,7 +7,7 @@
 
 #include <boost/safe_numbers/detail/unsigned_integer_basis.hpp>
 #include <boost/safe_numbers/detail/int128/format.hpp>
-#include <boost/safe_numbers/detail/concepts.hpp>
+#include <boost/safe_numbers/detail/type_traits.hpp>
 
 #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_FORMAT
 
@@ -18,14 +18,15 @@
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
-template <boost::safe_numbers::detail::unsigned_integral BasisType>
-struct std::formatter<boost::safe_numbers::detail::unsigned_integer_basis<BasisType>>
-    : std::formatter<BasisType>
+template <boost::safe_numbers::detail::library_type T>
+struct std::formatter<T>
+    : std::formatter<boost::safe_numbers::detail::underlying_type_t<T>>
 {
-    auto format(const boost::safe_numbers::detail::unsigned_integer_basis<BasisType>& val,
-                std::format_context& ctx) const
+    using underlying_type = boost::safe_numbers::detail::underlying_type_t<T>;
+
+    auto format(const T& val, std::format_context& ctx) const
     {
-        return std::formatter<BasisType>::format(static_cast<BasisType>(val), ctx);
+        return std::formatter<underlying_type>::format(static_cast<underlying_type>(val), ctx);
     }
 };
 

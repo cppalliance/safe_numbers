@@ -5,8 +5,7 @@
 #ifndef BOOST_SAFE_NUMBERS_CHARCONV_HPP
 #define BOOST_SAFE_NUMBERS_CHARCONV_HPP
 
-#include <boost/safe_numbers/detail/unsigned_integer_basis.hpp>
-#include <boost/safe_numbers/detail/concepts.hpp>
+#include <boost/safe_numbers/detail/type_traits.hpp>
 #include <boost/safe_numbers/detail/int128/charconv.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
@@ -17,22 +16,25 @@
 
 namespace boost::safe_numbers {
 
-template <detail::unsigned_integral BasisType>
-constexpr auto from_chars(const char* first, const char* last, detail::unsigned_integer_basis<BasisType>& value, int base = 10)
+template <detail::library_type T>
+constexpr auto from_chars(const char* first, const char* last, T& value, int base = 10)
     -> charconv::from_chars_result
 {
-    BasisType result {};
+    using underlying_type = detail::underlying_type_t<T>;
+
+    underlying_type result {};
     const auto r {charconv::from_chars(first, last, result, base)};
-    value = detail::unsigned_integer_basis<BasisType>{result};
+    value = T{result};
 
     return r;
 }
 
-template <detail::unsigned_integral BasisType>
-constexpr auto to_chars(char* first, char* last, const detail::unsigned_integer_basis<BasisType> value, int base = 10)
+template <detail::library_type T>
+constexpr auto to_chars(char* first, char* last, const T value, int base = 10)
     -> charconv::to_chars_result
 {
-    return charconv::to_chars(first, last, static_cast<BasisType>(value), base);
+    using underlying_type = detail::underlying_type_t<T>;
+    return charconv::to_chars(first, last, static_cast<underlying_type>(value), base);
 }
 
 } // namespace boost::safe_numbers

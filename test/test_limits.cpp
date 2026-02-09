@@ -58,6 +58,47 @@ void test()
     BOOST_TEST_EQ(std::numeric_limits<T>::denorm_min(), T{std::numeric_limits<basis_type>::denorm_min()});
 }
 
+template <typename BoundedT, typename UnderlyingT, UnderlyingT ExpectedMin, UnderlyingT ExpectedMax>
+void test_bounded()
+{
+    using underlying_type = UnderlyingT;
+
+    // Static properties should match the underlying hardware type
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::is_specialized, std::numeric_limits<underlying_type>::is_specialized);
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::is_signed, std::numeric_limits<underlying_type>::is_signed);
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::is_integer, std::numeric_limits<underlying_type>::is_integer);
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::is_exact, std::numeric_limits<underlying_type>::is_exact);
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::has_infinity, std::numeric_limits<underlying_type>::has_infinity);
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::has_quiet_NaN, std::numeric_limits<underlying_type>::has_quiet_NaN);
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::has_signaling_NaN, std::numeric_limits<underlying_type>::has_signaling_NaN);
+
+    #if ((!defined(_MSC_VER) && (__cplusplus <= 202002L)) || (defined(_MSC_VER) && (_MSVC_LANG <= 202002L)))
+    BOOST_TEST(std::numeric_limits<BoundedT>::has_denorm == std::numeric_limits<underlying_type>::has_denorm);
+    BOOST_TEST(std::numeric_limits<BoundedT>::has_denorm_loss == std::numeric_limits<underlying_type>::has_denorm_loss);
+    #endif
+
+    BOOST_TEST(std::numeric_limits<BoundedT>::round_style == std::numeric_limits<underlying_type>::round_style);
+
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::is_iec559, std::numeric_limits<underlying_type>::is_iec559);
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::is_bounded, std::numeric_limits<underlying_type>::is_bounded);
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::is_modulo, std::numeric_limits<underlying_type>::is_modulo);
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::digits, std::numeric_limits<underlying_type>::digits);
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::digits10, std::numeric_limits<underlying_type>::digits10);
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::max_digits10, std::numeric_limits<underlying_type>::max_digits10);
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::radix, std::numeric_limits<underlying_type>::radix);
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::min_exponent, std::numeric_limits<underlying_type>::min_exponent);
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::min_exponent10, std::numeric_limits<underlying_type>::min_exponent10);
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::max_exponent, std::numeric_limits<underlying_type>::max_exponent);
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::max_exponent10, std::numeric_limits<underlying_type>::max_exponent10);
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::traps, std::numeric_limits<underlying_type>::traps);
+    BOOST_TEST_EQ(std::numeric_limits<BoundedT>::tinyness_before, std::numeric_limits<underlying_type>::tinyness_before);
+
+    // min() and max() should return the bounds, not the hardware limits
+    BOOST_TEST(std::numeric_limits<BoundedT>::min() == BoundedT{ExpectedMin});
+    BOOST_TEST(std::numeric_limits<BoundedT>::max() == BoundedT{ExpectedMax});
+    BOOST_TEST(std::numeric_limits<BoundedT>::lowest() == std::numeric_limits<BoundedT>::min());
+}
+
 int main()
 {
     using namespace boost::safe_numbers;
@@ -66,6 +107,18 @@ int main()
     test<u16>();
     test<u32>();
     test<u64>();
+
+    // Full-range bounded types
+    test_bounded<bounded_uint<0u, 255u>, std::uint8_t, 0, 255>();
+    test_bounded<bounded_uint<0u, 65535u>, std::uint16_t, 0, 65535>();
+    test_bounded<bounded_uint<0u, 4294967295u>, std::uint32_t, 0, 4294967295u>();
+    test_bounded<bounded_uint<0ULL, UINT64_MAX>, std::uint64_t, 0, UINT64_MAX>();
+
+    // Non-zero minimum bounded types
+    test_bounded<bounded_uint<10u, 200u>, std::uint8_t, 10, 200>();
+    test_bounded<bounded_uint<256u, 40000u>, std::uint16_t, 256, 40000>();
+    test_bounded<bounded_uint<1000u, 100000u>, std::uint32_t, 1000, 100000>();
+    test_bounded<bounded_uint<4294967296ULL, UINT64_MAX>, std::uint64_t, 4294967296ULL, UINT64_MAX>();
 
     return boost::report_errors();
 }

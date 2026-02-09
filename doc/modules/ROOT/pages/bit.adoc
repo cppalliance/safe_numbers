@@ -10,7 +10,7 @@ https://www.boost.org/LICENSE_1_0.txt
 
 == Description
 
-The library provides thin wrappers around the C++20 https://en.cppreference.com/w/cpp/header/bit.html[`<bit>`] functions for safe integer types.
+The library provides thin wrappers around the C++20 https://en.cppreference.com/w/cpp/header/bit.html[`<bit>`] functions for all safe integer types, including `bounded_uint<Min, Max>`.
 Each function extracts the underlying value, delegates to the corresponding `std::` function, and wraps the result back into the safe type where appropriate.
 For `u128`, the functions delegate to the `boost::int128` implementations.
 
@@ -73,23 +73,27 @@ See https://en.cppreference.com/w/cpp/numeric/bit_width.html[`std::bit_width`].
 
 [source,c++]
 ----
-template <unsigned_library_type UnsignedInt>
+template <non_bounded_unsigned_library_type UnsignedInt>
 constexpr auto rotl(UnsignedInt x, int s) noexcept -> UnsignedInt;
 ----
 
 Computes the result of bitwise left-rotating `x` by `s` positions.
 See https://en.cppreference.com/w/cpp/numeric/rotl.html[`std::rotl`].
 
+NOTE: `rotl` is not available for `bounded_uint` types. Bit rotation can produce values outside the valid bounded range, making the operation semantically meaningless for bounded integers.
+
 === rotr
 
 [source,c++]
 ----
-template <unsigned_library_type UnsignedInt>
+template <non_bounded_unsigned_library_type UnsignedInt>
 constexpr auto rotr(UnsignedInt x, int s) noexcept -> UnsignedInt;
 ----
 
 Computes the result of bitwise right-rotating `x` by `s` positions.
 See https://en.cppreference.com/w/cpp/numeric/rotr.html[`std::rotr`].
+
+NOTE: `rotr` is not available for `bounded_uint` types. Bit rotation can produce values outside the valid bounded range, making the operation semantically meaningless for bounded integers.
 
 == Counting Functions
 
@@ -154,7 +158,7 @@ See https://en.cppreference.com/w/cpp/numeric/popcount.html[`std::popcount`].
 
 [source,c++]
 ----
-template <unsigned_library_type UnsignedInt>
+template <non_bounded_unsigned_library_type UnsignedInt>
 constexpr auto byteswap(UnsignedInt x) noexcept -> UnsignedInt;
 ----
 
@@ -162,6 +166,8 @@ Reverses the bytes of `x`.
 For standard unsigned types this delegates to `std::byteswap` (C++23).
 For `u128` this delegates to the `boost::int128::byteswap` implementation.
 See https://en.cppreference.com/w/cpp/numeric/byteswap.html[`std::byteswap`].
+
+NOTE: `byteswap` is not available for `bounded_uint` types. Byte reversal can produce values outside the valid bounded range, making the operation semantically meaningless for bounded integers.
 
 == Examples
 
@@ -190,5 +196,13 @@ countr_one(0x0F00)  = 0
 popcount(0x0F00)    = 4
 
 byteswap(0x12345678) = 0x78563412
+
+bounded has_single_bit(40) = 0
+bounded bit_ceil(40)       = 64
+bounded bit_floor(40)      = 32
+bounded bit_width(40)      = 6
+bounded popcount(40)       = 2
+bounded countl_zero(0x0F00) = 4
+bounded popcount(0x0F00)    = 4
 ----
 ====

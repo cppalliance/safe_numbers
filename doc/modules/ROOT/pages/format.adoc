@@ -12,6 +12,7 @@ https://www.boost.org/LICENSE_1_0.txt
 
 Boost.SafeNumbers supports formatting with both `<format>` (C++20 and later) and `<fmt/format.h>` (all language standards).
 The formatters delegate to the underlying integer type's formatter, so all standard integer format specifiers are supported.
+Both safe unsigned integers (`u8`, `u16`, `u32`, `u64`, `u128`) and bounded integers (`bounded_uint<Min, Max>`) are supported.
 
 `std::format` is supported when using C++20 or later with a compiler that has appropriate support: GCC >= 13, Clang >= 18, MSVC >= 19.40.
 
@@ -26,21 +27,19 @@ The formatters delegate to the underlying integer type's formatter, so all stand
 [source,c++]
 ----
 // <boost/safe_numbers/format.hpp>
-template <unsigned_integral BasisType>
-struct std::formatter<boost::safe_numbers::detail::unsigned_integer_basis<BasisType>>
-    : std::formatter<BasisType>
+template <detail::library_type T>
+struct std::formatter<T>
+    : std::formatter<detail::underlying_type_t<T>>
 {
-    auto format(const unsigned_integer_basis<BasisType>& val,
-                std::format_context& ctx) const;
+    auto format(const T& val, std::format_context& ctx) const;
 };
 
 // <boost/safe_numbers/fmt_format.hpp>
-template <unsigned_integral BasisType>
-struct fmt::formatter<boost::safe_numbers::detail::unsigned_integer_basis<BasisType>>
-    : fmt::formatter<BasisType>
+template <detail::library_type T>
+struct fmt::formatter<T>
+    : fmt::formatter<detail::underlying_type_t<T>>
 {
-    auto format(const unsigned_integer_basis<BasisType>& val,
-                fmt::format_context& ctx) const;
+    auto format(const T& val, fmt::format_context& ctx) const;
 };
 ----
 
@@ -163,6 +162,11 @@ Padding and Alignment:
 Fill Character:
 *****12345
 12345_____
+
+Bounded Integers:
+75
+    8080
+0x1bb
 ----
 ====
 

@@ -51,7 +51,9 @@ public:
     }
 
     template <unsigned_integral OtherBasis>
-    [[nodiscard]] explicit constexpr operator OtherBasis() const noexcept;
+    [[nodiscard]] explicit constexpr operator OtherBasis() const;
+
+    explicit constexpr operator BasisType() const noexcept { return basis_;}
 
     [[nodiscard]] friend constexpr auto operator<=>(unsigned_integer_basis lhs, unsigned_integer_basis rhs) noexcept
         -> std::strong_ordering = default;
@@ -82,11 +84,14 @@ public:
 
 template <unsigned_integral BasisType>
 template <unsigned_integral OtherBasis>
-constexpr unsigned_integer_basis<BasisType>::operator OtherBasis() const noexcept
+constexpr unsigned_integer_basis<BasisType>::operator OtherBasis() const
 {
     if constexpr (sizeof(OtherBasis) < sizeof(BasisType))
     {
-        static_assert(dependent_false<OtherBasis>, "Narrowing conversions are not allowed");
+        if (basis_ > static_cast<BasisType>(std::numeric_limits<OtherBasis>::max()))
+        {
+            BOOST_THROW_EXCEPTION(std::domain_error("Overflow in conversion to smaller type"));
+        }
     }
 
     return static_cast<OtherBasis>(basis_);
