@@ -113,6 +113,22 @@ public:
     [[nodiscard]] friend constexpr auto operator<=>(bounded_uint lhs, bounded_uint rhs) noexcept
         -> std::strong_ordering = default;
 
+
+    constexpr auto operator+=(bounded_uint<Min, Max> rhs) -> bounded_uint&;
+
+    constexpr auto operator-=(bounded_uint<Min, Max> rhs) -> bounded_uint&;
+
+    constexpr auto operator*=(bounded_uint<Min, Max> rhs) -> bounded_uint&;
+
+    constexpr auto operator/=(bounded_uint<Min, Max> rhs) -> bounded_uint&;
+
+    constexpr auto operator++() -> bounded_uint&;
+
+    constexpr auto operator++(int) -> bounded_uint;
+
+    constexpr auto operator--() -> bounded_uint&;
+
+    constexpr auto operator--(int) -> bounded_uint;
 };
 
 template <auto Min, auto Max>
@@ -153,6 +169,90 @@ template <auto Min, auto Max>
 {
     using basis = typename bounded_uint<Min, Max>::basis_type;
     return bounded_uint<Min, Max>{static_cast<basis>(lhs) % static_cast<basis>(rhs)};
+}
+
+template <auto Min, auto Max>
+    requires (detail::valid_bound<decltype(Min)> &&
+              detail::valid_bound<decltype(Max)> &&
+              detail::raw_value(Max) > detail::raw_value(Min))
+constexpr auto bounded_uint<Min, Max>::operator+=(bounded_uint<Min, Max> rhs) -> bounded_uint&
+{
+    *this = *this + rhs;
+    return *this;
+}
+
+template <auto Min, auto Max>
+    requires (detail::valid_bound<decltype(Min)> &&
+              detail::valid_bound<decltype(Max)> &&
+              detail::raw_value(Max) > detail::raw_value(Min))
+constexpr auto bounded_uint<Min, Max>::operator-=(bounded_uint<Min, Max> rhs) -> bounded_uint&
+{
+    *this = *this - rhs;
+    return *this;
+}
+
+template <auto Min, auto Max>
+    requires (detail::valid_bound<decltype(Min)> &&
+              detail::valid_bound<decltype(Max)> &&
+              detail::raw_value(Max) > detail::raw_value(Min))
+constexpr auto bounded_uint<Min, Max>::operator*=(bounded_uint<Min, Max> rhs) -> bounded_uint&
+{
+    *this = *this * rhs;
+    return *this;
+}
+
+template <auto Min, auto Max>
+    requires (detail::valid_bound<decltype(Min)> &&
+              detail::valid_bound<decltype(Max)> &&
+              detail::raw_value(Max) > detail::raw_value(Min))
+constexpr auto bounded_uint<Min, Max>::operator/=(bounded_uint<Min, Max> rhs) -> bounded_uint&
+{
+    *this = *this / rhs;
+    return *this;
+}
+
+template <auto Min, auto Max>
+    requires (detail::valid_bound<decltype(Min)> &&
+              detail::valid_bound<decltype(Max)> &&
+              detail::raw_value(Max) > detail::raw_value(Min))
+constexpr auto bounded_uint<Min, Max>::operator++() -> bounded_uint&
+{
+    auto val {static_cast<basis_type>(*this) + basis_type{1}};
+    *this = bounded_uint{val};
+    return *this;
+}
+
+template <auto Min, auto Max>
+    requires (detail::valid_bound<decltype(Min)> &&
+              detail::valid_bound<decltype(Max)> &&
+              detail::raw_value(Max) > detail::raw_value(Min))
+constexpr auto bounded_uint<Min, Max>::operator++(int) -> bounded_uint
+{
+    auto tmp {*this};
+    ++(*this);
+    return tmp;
+}
+
+template <auto Min, auto Max>
+    requires (detail::valid_bound<decltype(Min)> &&
+              detail::valid_bound<decltype(Max)> &&
+              detail::raw_value(Max) > detail::raw_value(Min))
+constexpr auto bounded_uint<Min, Max>::operator--() -> bounded_uint&
+{
+    auto val {static_cast<basis_type>(*this) - basis_type{1}};
+    *this = bounded_uint{val};
+    return *this;
+}
+
+template <auto Min, auto Max>
+    requires (detail::valid_bound<decltype(Min)> &&
+              detail::valid_bound<decltype(Max)> &&
+              detail::raw_value(Max) > detail::raw_value(Min))
+constexpr auto bounded_uint<Min, Max>::operator--(int) -> bounded_uint
+{
+    auto tmp {*this};
+    --(*this);
+    return tmp;
 }
 
 } // namespace boost::safe_numbers
