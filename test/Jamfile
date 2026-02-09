@@ -141,3 +141,4 @@ run ../examples/iostream.cpp ;
 run ../examples/charconv.cpp ;
 run ../examples/bit.cpp ;
 run ../examples/bounded_limits.cpp ;
+run ../examples/bitwise_ops.cpp ;
