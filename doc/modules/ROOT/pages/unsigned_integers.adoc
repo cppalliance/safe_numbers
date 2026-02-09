@@ -59,7 +59,7 @@ public:
     friend constexpr auto operator<=>(unsigned_integer_basis lhs, unsigned_integer_basis rhs) noexcept
         -> std::strong_ordering = default;
 
-    // Compound assignment operators
+    // Compound assignment operators (arithmetic)
     template <unsigned_integral OtherBasis>
     constexpr auto operator+=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
@@ -74,6 +74,13 @@ public:
 
     template <unsigned_integral OtherBasis>
     constexpr auto operator%=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
+
+    // Compound assignment operators (bitwise)
+    constexpr auto operator&=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
+    constexpr auto operator|=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
+    constexpr auto operator^=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
+    constexpr auto operator<<=(unsigned_integer_basis rhs) -> unsigned_integer_basis&;
+    constexpr auto operator>>=(unsigned_integer_basis rhs) -> unsigned_integer_basis&;
 
     // Increment and decrement operators
     constexpr auto operator++() -> unsigned_integer_basis&;
@@ -103,6 +110,36 @@ constexpr auto operator/(unsigned_integer_basis<BasisType> lhs,
 template <unsigned_integral BasisType>
 constexpr auto operator%(unsigned_integer_basis<BasisType> lhs,
                          unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
+
+// Bitwise operators
+template <unsigned_integral BasisType>
+constexpr auto operator~(unsigned_integer_basis<BasisType> lhs) noexcept
+    -> unsigned_integer_basis<BasisType>;
+
+template <unsigned_integral BasisType>
+constexpr auto operator&(unsigned_integer_basis<BasisType> lhs,
+                         unsigned_integer_basis<BasisType> rhs) noexcept
+    -> unsigned_integer_basis<BasisType>;
+
+template <unsigned_integral BasisType>
+constexpr auto operator|(unsigned_integer_basis<BasisType> lhs,
+                         unsigned_integer_basis<BasisType> rhs) noexcept
+    -> unsigned_integer_basis<BasisType>;
+
+template <unsigned_integral BasisType>
+constexpr auto operator^(unsigned_integer_basis<BasisType> lhs,
+                         unsigned_integer_basis<BasisType> rhs) noexcept
+    -> unsigned_integer_basis<BasisType>;
+
+template <unsigned_integral BasisType>
+constexpr auto operator<<(unsigned_integer_basis<BasisType> lhs,
+                          unsigned_integer_basis<BasisType> rhs)
+    -> unsigned_integer_basis<BasisType>;
+
+template <unsigned_integral BasisType>
+constexpr auto operator>>(unsigned_integer_basis<BasisType> lhs,
+                          unsigned_integer_basis<BasisType> rhs)
+    -> unsigned_integer_basis<BasisType>;
 
 // Saturating arithmetic (clamp to min/max on overflow/underflow)
 template <UnsignedLibType T>
@@ -312,6 +349,62 @@ constexpr auto operator%=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_in
 ----
 
 Compound assignment operators follow the same exception behavior as their corresponding arithmetic operators.
+
+=== Bitwise Operators
+
+[source,c++]
+----
+template <unsigned_integral BasisType>
+constexpr auto operator~(unsigned_integer_basis<BasisType> lhs) noexcept
+    -> unsigned_integer_basis<BasisType>;
+
+template <unsigned_integral BasisType>
+constexpr auto operator&(unsigned_integer_basis<BasisType> lhs,
+                         unsigned_integer_basis<BasisType> rhs) noexcept
+    -> unsigned_integer_basis<BasisType>;
+
+template <unsigned_integral BasisType>
+constexpr auto operator|(unsigned_integer_basis<BasisType> lhs,
+                         unsigned_integer_basis<BasisType> rhs) noexcept
+    -> unsigned_integer_basis<BasisType>;
+
+template <unsigned_integral BasisType>
+constexpr auto operator^(unsigned_integer_basis<BasisType> lhs,
+                         unsigned_integer_basis<BasisType> rhs) noexcept
+    -> unsigned_integer_basis<BasisType>;
+
+template <unsigned_integral BasisType>
+constexpr auto operator<<(unsigned_integer_basis<BasisType> lhs,
+                          unsigned_integer_basis<BasisType> rhs)
+    -> unsigned_integer_basis<BasisType>;
+
+template <unsigned_integral BasisType>
+constexpr auto operator>>(unsigned_integer_basis<BasisType> lhs,
+                          unsigned_integer_basis<BasisType> rhs)
+    -> unsigned_integer_basis<BasisType>;
+----
+
+The bitwise NOT, AND, OR, and XOR operators (`~`, `&`, `|`, `^`) are `noexcept` and operate directly on the underlying values, since these operations cannot overflow.
+
+The shift operators (`<<`, `>>`) perform runtime bounds checking:
+
+- `<<`: Throws `std::overflow_error` if the left shift would move bits past the type width. Specifically, this occurs when `bit_width(lhs) + rhs >= std::numeric_limits<BasisType>::digits`.
+- `>>`: Throws `std::overflow_error` if the shift amount is greater than or equal to the type width (i.e., `rhs >= std::numeric_limits<BasisType>::digits`).
+
+=== Compound Bitwise Assignment Operators
+
+[source,c++]
+----
+constexpr auto operator&=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
+constexpr auto operator|=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
+constexpr auto operator^=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
+constexpr auto operator<<=(unsigned_integer_basis rhs) -> unsigned_integer_basis&;
+constexpr auto operator>>=(unsigned_integer_basis rhs) -> unsigned_integer_basis&;
+----
+
+Compound bitwise assignment operators delegate to the corresponding free-function bitwise operators and follow the same exception behavior.
+`&=`, `|=`, and `^=` are `noexcept`.
+`<<=` and `>>=` throw `std::overflow_error` under the same conditions as `<<` and `>>`.
 
 === Increment and Decrement Operators
 
