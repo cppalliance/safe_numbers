@@ -1924,6 +1924,25 @@ constexpr auto operator<<(const detail::unsigned_integer_basis<BasisType> lhs,
     return return_type{raw_lhs << raw_rhs};
 }
 
+template <detail::unsigned_integral BasisType>
+constexpr auto operator>>(const detail::unsigned_integer_basis<BasisType> lhs,
+                          const detail::unsigned_integer_basis<BasisType> rhs)
+{
+    using return_type = detail::unsigned_integer_basis<BasisType>;
+
+    const auto raw_lhs {detail::raw_value(lhs)};
+    const auto raw_rhs {detail::raw_value(rhs)};
+
+    const auto lhs_first_one {core::countl_zero(raw_lhs)};
+
+    if (lhs_first_one < raw_rhs)
+    {
+        BOOST_THROW_EXCEPTION(std::overflow_error("Right shift past the end of the type width"));
+    }
+
+    return return_type{raw_lhs >> raw_rhs};
+}
+
 } // namespace boost::safe_numbers
 
 #undef BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP
