@@ -55,6 +55,14 @@ struct underlying<bounded_uint<Min, Max>>
 
 } // namespace impl
 
+// Promotes an unsigned integer to the next higher type
+// uint128_t becomes bool so that we can static_assert on bool check that we can't widen uint128_t
+template <unsigned_integral T>
+using promoted_type = std::conditional_t<std::is_same_v<T, std::uint8_t>, std::uint16_t,
+                          std::conditional_t<std::is_same_v<T, std::uint16_t>, std::uint32_t,
+                              std::conditional_t<std::is_same_v<T, std::uint32_t>, std::uint64_t,
+                                  std::conditional_t<std::is_same_v<T, std::uint64_t>, int128::uint128_t, bool>>>>;
+
 } // namespace boost::safe_numbers::detail
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_TYPE_TRAITS_HPP
