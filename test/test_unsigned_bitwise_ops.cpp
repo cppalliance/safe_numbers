@@ -296,6 +296,112 @@ void test_right_shift_failure()
 }
 
 // =============================================
+// Compound bitwise operators (&=, |=, ^=, <<=, >>=)
+// =============================================
+
+template <typename T>
+void test_compound_and()
+{
+    using basis_type = detail::underlying_type_t<T>;
+    boost::random::uniform_int_distribution<basis_type> dist {0, std::numeric_limits<basis_type>::max()};
+
+    for (std::size_t i {0}; i < N; ++i)
+    {
+        const auto raw_a {dist(rng)};
+        const auto raw_b {dist(rng)};
+        T a {raw_a};
+        const T b {raw_b};
+        a &= b;
+        const T expected {static_cast<basis_type>(raw_a & raw_b)};
+
+        BOOST_TEST(expected == a);
+    }
+}
+
+template <typename T>
+void test_compound_or()
+{
+    using basis_type = detail::underlying_type_t<T>;
+    boost::random::uniform_int_distribution<basis_type> dist {0, std::numeric_limits<basis_type>::max()};
+
+    for (std::size_t i {0}; i < N; ++i)
+    {
+        const auto raw_a {dist(rng)};
+        const auto raw_b {dist(rng)};
+        T a {raw_a};
+        const T b {raw_b};
+        a |= b;
+        const T expected {static_cast<basis_type>(raw_a | raw_b)};
+
+        BOOST_TEST(expected == a);
+    }
+}
+
+template <typename T>
+void test_compound_xor()
+{
+    using basis_type = detail::underlying_type_t<T>;
+    boost::random::uniform_int_distribution<basis_type> dist {0, std::numeric_limits<basis_type>::max()};
+
+    for (std::size_t i {0}; i < N; ++i)
+    {
+        const auto raw_a {dist(rng)};
+        const auto raw_b {dist(rng)};
+        T a {raw_a};
+        const T b {raw_b};
+        a ^= b;
+        const T expected {static_cast<basis_type>(raw_a ^ raw_b)};
+
+        BOOST_TEST(expected == a);
+    }
+}
+
+template <typename T>
+void test_compound_left_shift()
+{
+    using basis_type = detail::underlying_type_t<T>;
+
+    // Valid compound left shift
+    T val {1};
+    val <<= T{3};
+    BOOST_TEST(T{8} == val);
+
+    // Chained compound left shifts
+    T v {1};
+    v <<= T{1};
+    BOOST_TEST(T{2} == v);
+    v <<= T{1};
+    BOOST_TEST(T{4} == v);
+
+    // Compound left shift that overflows should throw
+    T big {std::numeric_limits<basis_type>::max()};
+    BOOST_TEST_THROWS(big <<= T{1}, std::overflow_error);
+}
+
+template <typename T>
+void test_compound_right_shift()
+{
+    using basis_type = detail::underlying_type_t<T>;
+    constexpr auto digits {std::numeric_limits<basis_type>::digits};
+
+    // Valid compound right shift
+    T val {8};
+    val >>= T{3};
+    BOOST_TEST(T{1} == val);
+
+    // Chained compound right shifts
+    T v {16};
+    v >>= T{1};
+    BOOST_TEST(T{8} == v);
+    v >>= T{2};
+    BOOST_TEST(T{2} == v);
+
+    // Compound right shift past type width should throw
+    T one {1};
+    BOOST_TEST_THROWS(one >>= T{static_cast<basis_type>(digits)}, std::overflow_error);
+}
+
+// =============================================
 // u128 specific tests (boost::random supports uint128_t)
 // =============================================
 
@@ -439,6 +545,82 @@ void test_right_shift_failure_u128()
     BOOST_TEST_THROWS(u128{1} >> u128{200}, std::overflow_error);
 }
 
+void test_compound_and_u128()
+{
+    using basis_type = detail::underlying_type_t<u128>;
+    boost::random::uniform_int_distribution<basis_type> dist {0, std::numeric_limits<basis_type>::max()};
+
+    for (std::size_t i {0}; i < N; ++i)
+    {
+        const auto raw_a {dist(rng)};
+        const auto raw_b {dist(rng)};
+        u128 a {raw_a};
+        const u128 b {raw_b};
+        a &= b;
+        const u128 expected {raw_a & raw_b};
+
+        BOOST_TEST(expected == a);
+    }
+}
+
+void test_compound_or_u128()
+{
+    using basis_type = detail::underlying_type_t<u128>;
+    boost::random::uniform_int_distribution<basis_type> dist {0, std::numeric_limits<basis_type>::max()};
+
+    for (std::size_t i {0}; i < N; ++i)
+    {
+        const auto raw_a {dist(rng)};
+        const auto raw_b {dist(rng)};
+        u128 a {raw_a};
+        const u128 b {raw_b};
+        a |= b;
+        const u128 expected {raw_a | raw_b};
+
+        BOOST_TEST(expected == a);
+    }
+}
+
+void test_compound_xor_u128()
+{
+    using basis_type = detail::underlying_type_t<u128>;
+    boost::random::uniform_int_distribution<basis_type> dist {0, std::numeric_limits<basis_type>::max()};
+
+    for (std::size_t i {0}; i < N; ++i)
+    {
+        const auto raw_a {dist(rng)};
+        const auto raw_b {dist(rng)};
+        u128 a {raw_a};
+        const u128 b {raw_b};
+        a ^= b;
+        const u128 expected {raw_a ^ raw_b};
+
+        BOOST_TEST(expected == a);
+    }
+}
+
+void test_compound_left_shift_u128()
+{
+    using basis_type = detail::underlying_type_t<u128>;
+
+    u128 val {1};
+    val <<= u128{3};
+    BOOST_TEST(u128{8} == val);
+
+    u128 big {std::numeric_limits<basis_type>::max()};
+    BOOST_TEST_THROWS(big <<= u128{1}, std::overflow_error);
+}
+
+void test_compound_right_shift_u128()
+{
+    u128 val {8};
+    val >>= u128{3};
+    BOOST_TEST(u128{1} == val);
+
+    u128 one {1};
+    BOOST_TEST_THROWS(one >>= u128{128}, std::overflow_error);
+}
+
 int main()
 {
     // Bitwise NOT
@@ -496,6 +678,41 @@ int main()
     test_right_shift_failure<u32>();
     test_right_shift_failure<u64>();
     test_right_shift_failure_u128();
+
+    // Compound &=
+    test_compound_and<u8>();
+    test_compound_and<u16>();
+    test_compound_and<u32>();
+    test_compound_and<u64>();
+    test_compound_and_u128();
+
+    // Compound |=
+    test_compound_or<u8>();
+    test_compound_or<u16>();
+    test_compound_or<u32>();
+    test_compound_or<u64>();
+    test_compound_or_u128();
+
+    // Compound ^=
+    test_compound_xor<u8>();
+    test_compound_xor<u16>();
+    test_compound_xor<u32>();
+    test_compound_xor<u64>();
+    test_compound_xor_u128();
+
+    // Compound <<=
+    test_compound_left_shift<u8>();
+    test_compound_left_shift<u16>();
+    test_compound_left_shift<u32>();
+    test_compound_left_shift<u64>();
+    test_compound_left_shift_u128();
+
+    // Compound >>=
+    test_compound_right_shift<u8>();
+    test_compound_right_shift<u16>();
+    test_compound_right_shift<u32>();
+    test_compound_right_shift<u64>();
+    test_compound_right_shift_u128();
 
     return boost::report_errors();
 }

@@ -76,6 +76,16 @@ public:
     template <unsigned_integral OtherBasis>
     constexpr auto operator%=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
+    constexpr auto operator&=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
+
+    constexpr auto operator|=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
+
+    constexpr auto operator^=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
+
+    constexpr auto operator<<=(unsigned_integer_basis rhs) -> unsigned_integer_basis&;
+
+    constexpr auto operator>>=(unsigned_integer_basis rhs) -> unsigned_integer_basis&;
+
     constexpr auto operator++() -> unsigned_integer_basis&;
 
     constexpr auto operator++(int) -> unsigned_integer_basis;
@@ -1879,7 +1889,7 @@ template <detail::unsigned_integral BasisType>
 constexpr auto operator~(const detail::unsigned_integer_basis<BasisType> lhs) noexcept
 {
     using return_type = detail::unsigned_integer_basis<BasisType>;
-    return return_type{~detail::raw_value(lhs)};
+    return return_type{static_cast<BasisType>(~detail::raw_value(lhs))};
 }
 
 template <detail::unsigned_integral BasisType>
@@ -1887,7 +1897,7 @@ constexpr auto operator&(const detail::unsigned_integer_basis<BasisType> lhs,
                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
 {
     using return_type = detail::unsigned_integer_basis<BasisType>;
-    return return_type{detail::raw_value(lhs) & detail::raw_value(rhs)};
+    return return_type{static_cast<BasisType>(detail::raw_value(lhs) & detail::raw_value(rhs))};
 }
 
 template <detail::unsigned_integral BasisType>
@@ -1895,7 +1905,7 @@ constexpr auto operator|(const detail::unsigned_integer_basis<BasisType> lhs,
                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
 {
     using return_type = detail::unsigned_integer_basis<BasisType>;
-    return return_type{detail::raw_value(lhs) | detail::raw_value(rhs)};
+    return return_type{static_cast<BasisType>(detail::raw_value(lhs) | detail::raw_value(rhs))};
 }
 
 template <detail::unsigned_integral BasisType>
@@ -1903,7 +1913,7 @@ constexpr auto operator^(const detail::unsigned_integer_basis<BasisType> lhs,
                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
 {
     using return_type = detail::unsigned_integer_basis<BasisType>;
-    return return_type{detail::raw_value(lhs) ^ detail::raw_value(rhs)};
+    return return_type{static_cast<BasisType>(detail::raw_value(lhs) ^ detail::raw_value(rhs))};
 }
 
 template <detail::unsigned_integral BasisType>
@@ -1923,7 +1933,7 @@ constexpr auto operator<<(const detail::unsigned_integer_basis<BasisType> lhs,
         BOOST_THROW_EXCEPTION(std::overflow_error("Left shift past the end of the type width"));
     }
 
-    return return_type{raw_lhs << raw_rhs};
+    return return_type{static_cast<BasisType>(raw_lhs << raw_rhs)};
 }
 
 template <detail::unsigned_integral BasisType>
@@ -1939,7 +1949,51 @@ constexpr auto operator>>(const detail::unsigned_integer_basis<BasisType> lhs,
         BOOST_THROW_EXCEPTION(std::overflow_error("Right shift past the end of the type width"));
     }
 
-    return return_type{raw_lhs >> raw_rhs};
+    return return_type{static_cast<BasisType>(raw_lhs >> raw_rhs)};
+}
+
+// ------------------------------
+// Compound bitwise operators
+// ------------------------------
+
+template <detail::unsigned_integral BasisType>
+constexpr auto detail::unsigned_integer_basis<BasisType>::operator&=(const unsigned_integer_basis rhs) noexcept
+    -> unsigned_integer_basis&
+{
+    *this = *this & rhs;
+    return *this;
+}
+
+template <detail::unsigned_integral BasisType>
+constexpr auto detail::unsigned_integer_basis<BasisType>::operator|=(const unsigned_integer_basis rhs) noexcept
+    -> unsigned_integer_basis&
+{
+    *this = *this | rhs;
+    return *this;
+}
+
+template <detail::unsigned_integral BasisType>
+constexpr auto detail::unsigned_integer_basis<BasisType>::operator^=(const unsigned_integer_basis rhs) noexcept
+    -> unsigned_integer_basis&
+{
+    *this = *this ^ rhs;
+    return *this;
+}
+
+template <detail::unsigned_integral BasisType>
+constexpr auto detail::unsigned_integer_basis<BasisType>::operator<<=(const unsigned_integer_basis rhs)
+    -> unsigned_integer_basis&
+{
+    *this = *this << rhs;
+    return *this;
+}
+
+template <detail::unsigned_integral BasisType>
+constexpr auto detail::unsigned_integer_basis<BasisType>::operator>>=(const unsigned_integer_basis rhs)
+    -> unsigned_integer_basis&
+{
+    *this = *this >> rhs;
+    return *this;
 }
 
 } // namespace boost::safe_numbers
