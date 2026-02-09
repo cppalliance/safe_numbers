@@ -108,6 +108,7 @@ run test_unsigned_bounded_multiplication.cpp ;
 run test_unsigned_bounded_division.cpp ;
 run test_unsigned_bounded_modulo.cpp ;
 run test_unsigned_bounded_conversions.cpp ;
+run test_unsigned_bounded_charconv.cpp ;
 compile-fail compile_fail_bounded_mixed_ops.cpp ;
 compile-fail compile_fail_bounded_bool_bounds.cpp ;
 
