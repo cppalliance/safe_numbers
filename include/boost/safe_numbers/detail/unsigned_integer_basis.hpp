@@ -1834,7 +1834,7 @@ template <overflow_policy Policy, detail::unsigned_integral BasisType>
     }
     else
     {
-        static_assert(detail::dependent_false<BasisType>, "Policy is not supported for multiplication");
+        static_assert(detail::dependent_false<BasisType>, "Policy is not supported for division");
     }
 }
 
@@ -1869,7 +1869,7 @@ template <overflow_policy Policy, detail::unsigned_integral BasisType>
     }
     else
     {
-        static_assert(detail::dependent_false<BasisType>, "Policy is not supported for multiplication");
+        static_assert(detail::dependent_false<BasisType>, "Policy is not supported for modulo");
     }
 }
 
