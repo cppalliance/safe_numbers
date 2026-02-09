@@ -1873,6 +1873,37 @@ template <overflow_policy Policy, detail::unsigned_integral BasisType>
     }
 }
 
+template <detail::unsigned_integral BasisType>
+constexpr auto operator~(const detail::unsigned_integer_basis<BasisType> lhs) noexcept
+{
+    using return_type = detail::unsigned_integer_basis<BasisType>;
+    return return_type{~detail::raw_value(lhs)};
+}
+
+template <detail::unsigned_integral BasisType>
+constexpr auto operator&(const detail::unsigned_integer_basis<BasisType> lhs,
+                         const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+{
+    using return_type = detail::unsigned_integer_basis<BasisType>;
+    return return_type{detail::raw_value(lhs) & detail::raw_value(rhs)};
+}
+
+template <detail::unsigned_integral BasisType>
+constexpr auto operator|(const detail::unsigned_integer_basis<BasisType> lhs,
+                         const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+{
+    using return_type = detail::unsigned_integer_basis<BasisType>;
+    return return_type{detail::raw_value(lhs) | detail::raw_value(rhs)};
+}
+
+template <detail::unsigned_integral BasisType>
+constexpr auto operator^(const detail::unsigned_integer_basis<BasisType> lhs,
+                         const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+{
+    using return_type = detail::unsigned_integer_basis<BasisType>;
+    return return_type{detail::raw_value(lhs) ^ detail::raw_value(rhs)};
+}
+
 } // namespace boost::safe_numbers
 
 #undef BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP
