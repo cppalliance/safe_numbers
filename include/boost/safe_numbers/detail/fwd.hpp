@@ -78,7 +78,7 @@ concept valid_bound = !std::is_same_v<T, bool> && (is_unsigned_library_type_v<T>
 
 template <typename T>
     requires valid_bound<T>
-consteval auto raw_value(T val) noexcept
+constexpr auto raw_value(T val) noexcept
 {
     if constexpr (is_unsigned_library_type_v<T>)
     {

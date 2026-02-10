@@ -361,6 +361,40 @@ byteswap(0x12345678) = 0x78563412
 ----
 ====
 
+[#examples_bitwise_ops]
+== Bitwise Operations
+
+The library provides bitwise operators (`~`, `&`, `|`, `^`, `<<`, `>>`) and their compound assignment forms (`&=`, `|=`, `^=`, `<<=`, `>>=`).
+The NOT, AND, OR, and XOR operators are `noexcept`, while the shift operators throw `std::overflow_error` if bits would be shifted past the type width.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/bitwise_ops.cpp[example] demonstrates the bitwise operators and shift overflow detection.
+====
+[source, c++]
+----
+include::example$bitwise_ops.cpp[]
+----
+
+Output:
+----
+~a             = 0xff00ff
+a & b          = 0xf000f00
+a | b          = 0xff0fff0f
+a ^ b          = 0xf00ff00f
+
+u8(1) << 4     = 16
+u8(128) >> 4   = 8
+
+x &= 0x0F0F   -> 0xf00
+x |= 0xF000   -> 0xff00
+x ^= 0x00FF   -> 0xffff
+y <<= 8       -> 256
+y >>= 4       -> 16
+
+Left shift error: Left shift past the end of the type width
+Right shift error: Right shift past the end of the type width
+----
+====
+
 [#examples_policy_comparison]
 == Policy Comparison
 
