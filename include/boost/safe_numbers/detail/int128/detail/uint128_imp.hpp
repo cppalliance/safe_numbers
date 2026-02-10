@@ -25,8 +25,8 @@
 namespace boost {
 namespace int128 {
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT struct
-    #ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128
+struct
+    #if defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128) || defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_MSVC_INT128)
     alignas(alignof(detail::builtin_u128))
     #else
     alignas(16)
