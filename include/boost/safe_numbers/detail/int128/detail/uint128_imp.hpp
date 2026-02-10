@@ -402,8 +402,8 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr bool operator==(const uint128_
     }
     else
     {
-        __m128i a = _mm_load_si128(reinterpret_cast<const __m128i*>(&lhs));
-        __m128i b = _mm_load_si128(reinterpret_cast<const __m128i*>(&rhs));
+        __m128i a = _mm_loadu_si128(reinterpret_cast<const __m128i*>(&lhs));
+        __m128i b = _mm_loadu_si128(reinterpret_cast<const __m128i*>(&rhs));
         __m128i cmp = _mm_cmpeq_epi32(a, b);
 
         return _mm_movemask_ps(_mm_castsi128_ps(cmp)) == 0xF;
@@ -538,8 +538,8 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_EXPORT constexpr bool operator!=(const uint128_
     }
     else
     {
-        __m128i a = _mm_load_si128(reinterpret_cast<const __m128i*>(&lhs));
-        __m128i b = _mm_load_si128(reinterpret_cast<const __m128i*>(&rhs));
+        __m128i a = _mm_loadu_si128(reinterpret_cast<const __m128i*>(&lhs));
+        __m128i b = _mm_loadu_si128(reinterpret_cast<const __m128i*>(&rhs));
         __m128i cmp = _mm_cmpeq_epi32(a, b);
 
         return _mm_movemask_ps(_mm_castsi128_ps(cmp)) != 0xF;
