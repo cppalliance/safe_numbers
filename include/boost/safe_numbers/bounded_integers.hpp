@@ -43,7 +43,7 @@ public:
 private:
 
     using underlying_type = detail::underlying_type_t<basis_type>;
-    basis_type basis_ {static_cast<underlying_type>(detail::raw_value(Min))};
+    basis_type basis_ {};
 
 public:
 
