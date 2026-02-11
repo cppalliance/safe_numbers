@@ -82,6 +82,72 @@ class U64Printer:
     def display_hint(self):
         return None
 
+class U128Printer:
+    """Pretty printer for u128 type"""
+
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        try:
+            basis = self.val["basis_"]
+            low = int(basis["low"]) & 0xFFFFFFFFFFFFFFFF
+            high = int(basis["high"]) & 0xFFFFFFFFFFFFFFFF
+            value = (high << 64) | low
+            return f"{value:,}"
+        except Exception as e:
+            return f"<invalid u128: {e}>"
+
+    def children(self):
+        yield "basis_", self.val["basis_"]
+
+    def display_hint(self):
+        return None
+
+class BoundedUintPrinter:
+    """Pretty printer for bounded_uint types"""
+
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        try:
+            type_name = str(self.val.type)
+
+            # Extract Min and Max from template parameters
+            match = re.search(r'bounded_uint<([^,]+),\s*([^>]+)>', type_name)
+            if match:
+                min_str = match.group(1).strip()
+                max_str = match.group(2).strip()
+            else:
+                min_str = "?"
+                max_str = "?"
+
+            # basis_ is a safe number type (u8/u16/u32/u64/u128),
+            # which itself has a basis_ member with the raw value
+            basis = self.val["basis_"]
+            inner = basis["basis_"]
+
+            # Check if this is a u128 (has low/high members)
+            try:
+                low = int(inner["low"]) & 0xFFFFFFFFFFFFFFFF
+                high = int(inner["high"]) & 0xFFFFFFFFFFFFFFFF
+                current = (high << 64) | low
+            except gdb.error:
+                byte_size = inner.type.sizeof
+                mask = (1 << (byte_size * 8)) - 1
+                current = int(inner) & mask
+
+            return f"[{min_str}, {max_str}] {current:,}"
+        except Exception as e:
+            return f"<invalid bounded_uint: {e}>"
+
+    def children(self):
+        yield "basis_", self.val["basis_"]
+
+    def display_hint(self):
+        return None
+
 def lookup_safe_numbers_type(val):
     """
     Lookup function to detect if a type should use our pretty printers.
@@ -114,6 +180,12 @@ def lookup_safe_numbers_type(val):
     u64_pattern = re.compile(
         r"^(boost::safe_numbers::detail::unsigned_integer_basis<unsigned long>|boost::safe_numbers::detail::unsigned_integer_basis<unsigned long long>|(\w+::)*u64)( &| \*)?$"
     )
+    u128_pattern = re.compile(
+        r"^(boost::safe_numbers::detail::unsigned_integer_basis<boost::safe_numbers::int128::uint128_t>|(\w+::)*u128)( &| \*)?$"
+    )
+    bounded_uint_pattern = re.compile(
+        r"^boost::safe_numbers::bounded_uint<[^>]+>( &| \*)?$"
+    )
 
     if u8_pattern.match(type_name):
         return U8Printer(val)
@@ -123,6 +195,10 @@ def lookup_safe_numbers_type(val):
         return U32Printer(val)
     if u64_pattern.match(type_name):
         return U64Printer(val)
+    if u128_pattern.match(type_name):
+        return U128Printer(val)
+    if bounded_uint_pattern.match(type_name):
+        return BoundedUintPrinter(val)
 
     return None
 
