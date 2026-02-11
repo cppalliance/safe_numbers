@@ -9,6 +9,7 @@ import boost.safe_numbers;
 #else
 
 #include <boost/safe_numbers/unsigned_integers.hpp>
+#include <boost/safe_numbers/iostream.hpp>
 
 #endif
 
@@ -30,6 +31,7 @@ int main()
     test<u16>();
     test<u32>();
     test<u64>();
+    test<u128>();
 
     return boost::report_errors();
 }
