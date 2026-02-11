@@ -1,0 +1,159 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#design]
+
+= Design Rationale
+
+== Motivation
+
+Much of the recent focus on pass:[C++] safety has centered on memory safety, driven in part by the US Government's https://www.cisa.gov/resources-tools/resources/product-security-bad-practices[CISA recommendations] to transition away from memory-unsafe languages.
+Library hardening and safety profiles (https://isocpp.org/files/papers/P3471R1.html[P3471R1]) are important steps forward.
+However, arithmetic safety is an equally dangerous and far less discussed class of bugs.
+
+Consider this expression:
+
+[source,c++]
+----
+-99 < 340282366920938463463374607431768211408
+----
+
+Intuitively this evaluates to `true`, but in pass:[C++] it evaluates to `false` because the signed value is implicitly converted to an unsigned 128-bit integer, making the two values bitwise equal.
+Bugs like these are subtle, difficult to catch in code review, and can have severe consequences in safety-critical and financial software.
+
+Existing tools help but leave gaps.
+Compiler flags like `-Wsign-conversion` and `-Wconversion` catch many issues at compile time, and UBSan catches undefined behavior at runtime.
+But UBSan explicitly allows unsigned integer rollover because the standard defines it as well-defined behavior -- even though silent rollover is the source of countless bugs.
+Boost.SafeNumbers aims to go further: by default, unsigned rollover is an error.
+
+== Core Design Principles
+
+=== Explicit Over Implicit
+
+The library prohibits implicit conversions entirely.
+There are no implicit conversions between safe types and builtin types, no implicit widening or narrowing between safe types of different widths, and no implicit conversion to or from `bool`.
+Every boundary crossing must be stated explicitly by the programmer.
+
+This is a deliberate departure from pass:[C++]'s usual implicit promotion and conversion rules, which are a major source of arithmetic bugs.
+The cost is slightly more verbose code at type boundaries; the benefit is that every conversion is visible and intentional.
+
+=== Fail Early, Fail Loudly
+
+When an operation would produce an incorrect result -- overflow, underflow, division by zero -- the library makes this visible rather than silently continuing with a wrong value.
+
+At compile time, errors become compiler errors.
+At runtime, errors throw exceptions by default.
+There is no mode where an error is silently ignored unless the programmer explicitly opts into wrapping behavior.
+
+=== Type Safety as a First-Class Concern
+
+The safe types (`u8`, `u16`, `u32`, `u64`, `u128`) are concrete, named types -- not template wrappers around a policy.
+This makes them easy to read, easy to teach, and easy to use as drop-in replacements for builtin types.
+
+Overflow policies are expressed through named free functions (`saturating_add`, `wrapping_add`, etc.) rather than through type-level policy parameters.
+This keeps the type system simple while still allowing full control over overflow behavior at each call site.
+
+=== Deliberately Restrictive
+
+Operations that are technically well-defined in pass:[C++] but commonly cause bugs are compile-time errors in this library.
+This includes mixed-width arithmetic, unary minus on unsigned types, and construction from `bool`.
+The philosophy is that it is better to require the programmer to be explicit about intent than to silently do something that is likely unintended.
+
+== Compile-Time vs Runtime Error Detection
+
+All operations in the library are `constexpr`.
+This means the same code path provides two levels of safety depending on context:
+
+- **Compile time**: When an operation is evaluated in a constant expression context (`constexpr` or `consteval`), any overflow, underflow, or domain error causes a *compile-time failure*.
+This happens because the error-handling path contains a `throw` expression, which is not permitted in a constant expression.
+The compiler rejects the program before it is ever run.
+
+- **Runtime**: When the same operation is evaluated at runtime, the `throw` executes normally, raising an exception that the caller can catch and handle.
+
+This dual behavior is automatic.
+The programmer writes the same code regardless of whether it will be evaluated at compile time or runtime, and gets the strongest available safety guarantee in each context.
+
+[source,c++]
+----
+#include <boost/safe_numbers/unsigned_integers.hpp>
+
+using boost::safe_numbers::u8;
+
+// Compile-time evaluation: this is a compiler error.
+// The compiler reports that the throw expression is not
+// a valid constant expression.
+// constexpr auto a = u8{255} + u8{1}; // ERROR
+
+// Runtime evaluation: this throws std::overflow_error.
+auto b = u8{255} + u8{1}; // throws
+----
+
+== Runtime Overflow Policies
+
+Different domains require different responses to overflow:
+
+- Signal processing often needs *saturation*: clamp to the representable range and continue.
+- Cryptographic algorithms require *wrapping*: modular arithmetic is the correct behavior.
+- Safety-critical systems may require *hard termination*: no exceptions, no recovery, just stop.
+- General application code benefits from *exceptions*: the error is reported and can be handled.
+- Some code needs to *detect and branch*: check whether overflow occurred without changing control flow.
+
+The library's default -- `throw_exception` -- is the safest general-purpose choice because it makes errors impossible to ignore.
+For other needs, named free functions make the policy explicit at each call site:
+
+[source,c++]
+----
+using boost::safe_numbers::u8;
+
+auto a = saturating_add(u8{200}, u8{100}); // a == u8{255}
+auto b = wrapping_add(u8{200}, u8{100});   // b == u8{44}
+auto c = checked_add(u8{200}, u8{100});    // c == std::nullopt
+auto [d, overflow] = overflowing_add(u8{200}, u8{100}); // d == u8{44}, overflow == true
+----
+
+This approach is inspired by Rust's primitive type API, where `checked_add`, `saturating_add`, and `wrapping_add` are methods on integer types.
+
+For generic code that needs to be parameterized on the overflow policy, the library provides policy-parameterized free functions:
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+template <overflow_policy Policy>
+auto compute(u32 a, u32 b)
+{
+    return add<Policy>(a, b);
+}
+----
+
+See xref:policies.adoc[] for the full API reference.
+
+== Deliberately Disabled Operations
+
+The library intentionally prohibits several operations that are legal in pass:[C++] but are common sources of bugs:
+
+**Construction from `bool`** -- Prevents conflation of boolean logic and integer arithmetic.
+In pass:[C++], `true + true == 2`, which is rarely the intended behavior.
+Constructing a safe integer from `bool` is a compile-time error.
+
+**Mixed-width arithmetic** -- Adding a `u8` to a `u32` is a compile-time error.
+In pass:[C++], the narrower operand would be implicitly promoted, which hides the fact that two different-sized values are being combined.
+The library requires an explicit conversion so the programmer acknowledges the width difference.
+
+**Unary minus on unsigned types** -- In pass:[C++], `-x` on an unsigned value performs modular negation, producing a large positive number.
+This is almost never intentional.
+The library does not define unary minus for unsigned types, so attempting it is a compile-time error.
+
+**Implicit conversions to and from builtin types** -- All conversions between safe types and builtin types require an explicit cast.
+This prevents accidental loss of safety guarantees when passing values across API boundaries.
+
+== Performance Considerations
+
+The library uses compiler intrinsics for overflow detection: `__builtin_add_overflow`, `__builtin_sub_overflow`, and `__builtin_mul_overflow` on GCC and Clang, and platform-specific intrinsics (`_addcarry_u64`, `_subborrow_u64`, `_umul128`) on MSVC.
+These compile to efficient hardware instructions (typically a single arithmetic instruction followed by a conditional branch on the carry or overflow flag).
+
+The target is a runtime penalty of less than 2x compared to builtin types.
+This is achievable because the overflow check is a single branch on a flag that the hardware already computes as part of the arithmetic instruction.
