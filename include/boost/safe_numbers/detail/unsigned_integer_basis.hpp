@@ -93,6 +93,14 @@ public:
     constexpr auto operator--() -> unsigned_integer_basis&;
 
     constexpr auto operator--(int) -> unsigned_integer_basis;
+
+    constexpr auto operator+() const noexcept -> unsigned_integer_basis { return *this; }
+
+    constexpr auto operator-() const noexcept
+    {
+        static_assert(dependent_false<BasisType>, "Unary minus is deliberately disabled for unsigned safe integers");
+        return *this; // LCOV_EXCL_LINE : deliberately unreachable
+    }
 };
 
 template <unsigned_integral BasisType>

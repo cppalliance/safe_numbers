@@ -88,6 +88,10 @@ public:
     constexpr auto operator--() -> unsigned_integer_basis&;
     constexpr auto operator--(int) -> unsigned_integer_basis;
 
+    // Unary operators
+    constexpr auto operator+() const noexcept -> unsigned_integer_basis;
+    constexpr auto operator-() const noexcept; // compile-time error
+
 }; // class unsigned_integer_basis
 
 // Arithmetic operators (throw on overflow/underflow)
@@ -418,6 +422,19 @@ constexpr auto operator--(int) -> unsigned_integer_basis;
 
 - `++` (pre/post): Throws `std::overflow_error` if the value is already at the maximum
 - `--` (pre/post): Throws `std::underflow_error` if the value is already zero
+
+=== Unary Operators
+
+[source,c++]
+----
+constexpr auto operator+() const noexcept -> unsigned_integer_basis;
+constexpr auto operator-() const noexcept; // compile-time error
+----
+
+- `+`: Returns a copy of the value (identity). This is consistent with built-in unsigned integer behavior.
+- `-`: Deliberately disabled. Any use of unary minus on an unsigned safe integer is a compile-time error via `static_assert`.
+While pass:[C++] defines unary minus on unsigned integers as modular negation (`2^N - x`), this is a common source of bugs and is prohibited by this library.
+Use a wrapping subtraction policy from zero or the maximum value if modular negation is needed.
 
 === Mixed-Width Operations
 

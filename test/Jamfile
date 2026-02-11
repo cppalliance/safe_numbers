@@ -72,6 +72,7 @@ run test_unsigned_fmt_format.cpp ;
 run test_unsigned_charconv.cpp ;
 run test_bit.cpp ;
 run test_unsigned_bitwise_ops.cpp ;
+compile-fail compile_fail_unsigned_unary_operators.cpp ;
 run test_unsigned_saturating_addition.cpp ;
 run test_unsigned_comparisons.cpp ;
 run test_unsigned_saturating_subtraction.cpp ;
