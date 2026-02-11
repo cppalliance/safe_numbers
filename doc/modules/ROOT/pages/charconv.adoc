@@ -13,6 +13,18 @@ https://www.boost.org/LICENSE_1_0.txt
 The library provides character conversion functions for all safe integer types using https://www.boost.org/doc/libs/master/libs/charconv/doc/html/charconv.html[Boost.Charconv].
 These functions convert between safe integer types (including `bounded_uint`) and their string representations.
 
+Since Boost.Charconv is a compiled library, auto-linking may occur (Especially on MSVC platforms).
+If you do not use Boost.Charconv in your application except for the dependency to this library, you can define the following:
+
+[source, c++]
+----
+#define BOOST_CHARCONV_NO_LIB
+#include <boost/safe_numbers.hpp> // or any other boost.safe_numbers header
+----
+
+`BOOST_CHARCONV_NO_LIB` must be defined before the inclusion of any boost.safe_numbers header.
+This will disable auto-linking for Boost.Charconv.
+
 [source,c++]
 ----
 #include <boost/safe_numbers/charconv.hpp>
