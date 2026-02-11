@@ -1,0 +1,86 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#pretty_printers]
+
+= Debugger Pretty Printers
+
+== Description
+
+The library ships with pretty printer scripts for GDB and LLDB in the `extra/` directory.
+When loaded, these scripts display safe number types as human-readable decimal values instead of showing the internal class layout.
+
+== Loading the Printers
+
+=== GDB
+
+Add the following to your `~/.gdbinit` file, or source it manually during a debug session:
+
+[source]
+----
+source /path/to/boost/libs/safe_numbers/extra/safe_numbers_printer_gdb.py
+----
+
+On success GDB will print:
+
+----
+Safe_numbers pretty printers loaded successfully
+----
+
+=== LLDB
+
+Add the following to your `~/.lldbinit` file, or run it from the LLDB prompt:
+
+[source]
+----
+command script import /path/to/boost/libs/safe_numbers/extra/safe_numbers_printer_lldb.py
+----
+
+On success, LLDB will print confirmation messages for each registered type.
+
+== Supported Types
+
+=== Unsigned Integers (`u8`, `u16`, `u32`, `u64`, `u128`)
+
+All unsigned integer types are displayed as comma-separated decimal values.
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+auto a = u8{255};
+auto b = u32{1'000'000};
+auto c = u128{18'446'744'073'709'551'616};
+----
+
+Debugger output:
+
+----
+a = 255
+b = 1,000,000
+c = 18,446,744,073,709,551,616
+----
+
+=== Bounded Unsigned Integers (`bounded_uint`)
+
+Bounded unsigned integers display both the compile-time bounds and the current runtime value in the format `[Min, Max] Current`:
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+bounded_uint<0u, 100u> percentage {u8{42}};
+bounded_uint<1u, 65535u> port {u16{8080}};
+----
+
+Debugger output:
+
+----
+percentage = [0u, 100u] 42
+port = [1u, 65535u] 8,080
+----
+
+The bounds shown are the raw template parameters as the compiler records them, so the exact suffix (e.g. `0u` vs `0`) may vary between compilers.
