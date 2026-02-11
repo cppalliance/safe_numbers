@@ -6,7 +6,6 @@
 #define BOOST_SAFE_NUMBERS_DETAIL_UNSIGNED_INTEGER_BASIS_HPP
 
 #include <boost/safe_numbers/detail/config.hpp>
-#include <boost/safe_numbers/detail/concepts.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
 #include <boost/safe_numbers/overflow_policy.hpp>
 #include <boost/safe_numbers/detail/int128/bit.hpp>
