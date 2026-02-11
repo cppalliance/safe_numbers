@@ -41,6 +41,7 @@
 #  pragma GCC diagnostic ignored "-Wsign-compare"
 #  pragma GCC diagnostic ignored "-Wfloat-equal"
 #  pragma GCC diagnostic ignored "-Woverflow"
+#  pragma GCC diagnostic ignored "-Wundef"
 
 #elif defined(_MSC_VER)
 #  pragma warning(push)
