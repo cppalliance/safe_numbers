@@ -120,6 +120,7 @@ compile-fail compile_fail_bounded_bool_bounds.cpp ;
 run test_verified_integers.cpp ;
 run test_verified_streaming.cpp ;
 run test_verified_bit.cpp ;
+run test_verified_charconv.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
