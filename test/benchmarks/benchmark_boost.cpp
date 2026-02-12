@@ -16,6 +16,7 @@
 #  pragma clang diagnostic ignored "-Wsign-compare"
 #  pragma clang diagnostic ignored "-Woverflow"
 #  pragma clang diagnostic ignored "-Wdouble-promotion"
+#  pragma clang diagnostic ignored "-Wdivision-by-zero"
 
 #  if (__clang_major__ >= 10 && !defined(__APPLE__)) || __clang_major__ >= 13
 #    pragma clang diagnostic ignored "-Wdeprecated-copy"
@@ -400,8 +401,13 @@ void test(const char * msg){
 
 int main()
 {
+    #ifdef BOOST_SAFE_NUMBERS_RUN_BENCHMARKS
+
     test<unsigned>("Testing type unsigned");
     test<boost::safe_numerics::safe<unsigned>>("Testing type safe<unsigned>");
     test<boost::safe_numbers::u32>("Testing type u32");
+
+    #endif
+
     return 1;
 }
