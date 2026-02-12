@@ -392,6 +392,25 @@ y >>= 4       -> 16
 
 Left shift error: Left shift past the end of the type width
 Right shift error: Right shift past the end of the type width
+
+saturating_shl(u8(1), 4)    = 16
+saturating_shl(u8(255), 1)  = 255
+saturating_shr(u8(128), 4)  = 8
+saturating_shr(u8(1), 8)    = 0
+
+overflowing_shl(u8(255), 1) = 254 (overflow: true)
+overflowing_shr(u8(1), 8)   = 0 (overflow: true)
+
+checked_shl(u8(1), 4)       = 16
+checked_shl(u8(255), 1)     = nullopt (overflow)
+checked_shr(u8(1), 8)       = nullopt (overflow)
+
+wrapping_shl(u8(255), 1)    = 254
+wrapping_shr(u8(1), 8)      = 0
+
+shl<saturate>(u32(1), 30)   = 1073741824
+shl<saturate>(u32(max), 1)  = 4294967295
+shr<checked>(u32(8), 1)     = 4
 ----
 ====
 
