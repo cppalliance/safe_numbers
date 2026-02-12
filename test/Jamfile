@@ -152,3 +152,7 @@ run ../examples/charconv.cpp ;
 run ../examples/bit.cpp ;
 run ../examples/bounded_limits.cpp ;
 run ../examples/bitwise_ops.cpp ;
+run ../examples/verified_construction.cpp ;
+run ../examples/verified_arithmetic.cpp ;
+run ../examples/verified_runtime_usage.cpp ;
+compile-fail ../examples/compile_fail_verified_overflow.cpp ;
