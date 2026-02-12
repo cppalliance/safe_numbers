@@ -117,6 +117,8 @@ run test_unsigned_bounded_std_format.cpp ;
 compile-fail compile_fail_bounded_mixed_ops.cpp ;
 compile-fail compile_fail_bounded_bool_bounds.cpp ;
 
+run test_verified_integers.cpp ;
+
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
 compile compile_tests/compile_test_iostream.cpp ;
