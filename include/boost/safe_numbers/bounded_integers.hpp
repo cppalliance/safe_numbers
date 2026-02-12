@@ -260,6 +260,8 @@ constexpr auto OP_SYMBOL(const boost::safe_numbers::bounded_uint<LHSMin, LHSMax>
 
 namespace boost::safe_numbers {
 
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("comparison", operator<=>)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("equality", operator==)
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("addition", operator+)
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("subtraction", operator-)
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("multiplication", operator*)
