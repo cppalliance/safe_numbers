@@ -167,6 +167,51 @@ consteval auto verified_type_basis<BasisType>::operator--(int) -> verified_type_
     return tmp;
 }
 
+// Mixed-type operation guards: produce clear static_assert messages
+// instead of cryptic "invalid operands to binary expression" errors.
+
+#define BOOST_SAFE_NUMBERS_DEFINE_MIXED_VERIFIED_OP(OP_NAME, OP_SYMBOL)                                         \
+template <library_type LHSBasis, library_type RHSBasis>                                                         \
+    requires (!std::is_same_v<LHSBasis, RHSBasis>)                                                              \
+consteval auto OP_SYMBOL(const verified_type_basis<LHSBasis>,                                                   \
+                         const verified_type_basis<RHSBasis>)                                                   \
+{                                                                                                               \
+    static_assert(dependent_false<LHSBasis, RHSBasis>,                                                          \
+                  "Can not perform " OP_NAME " between verified types with different basis types");              \
+    return verified_type_basis<LHSBasis>(LHSBasis{});                                                           \
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_VERIFIED_OP("addition", operator+)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_VERIFIED_OP("subtraction", operator-)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_VERIFIED_OP("multiplication", operator*)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_VERIFIED_OP("division", operator/)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_VERIFIED_OP("modulo", operator%)
+
+#undef BOOST_SAFE_NUMBERS_DEFINE_MIXED_VERIFIED_OP
+
+// Mixed-type comparison guard
+template <library_type LHSBasis, library_type RHSBasis>
+    requires (!std::is_same_v<LHSBasis, RHSBasis>)
+constexpr auto operator<=>(const verified_type_basis<LHSBasis>,
+                           const verified_type_basis<RHSBasis>)
+    -> std::strong_ordering
+{
+    static_assert(dependent_false<LHSBasis, RHSBasis>,
+                  "Can not compare verified types with different basis types");
+    return std::strong_ordering::equal;
+}
+
+template <library_type LHSBasis, library_type RHSBasis>
+    requires (!std::is_same_v<LHSBasis, RHSBasis>)
+constexpr auto operator==(const verified_type_basis<LHSBasis>,
+                          const verified_type_basis<RHSBasis>)
+    -> bool
+{
+    static_assert(dependent_false<LHSBasis, RHSBasis>,
+                  "Can not compare verified types with different basis types");
+    return false;
+}
+
 } // namespace boost::safe_numbers::detail
 
 #endif // BOOST_SAFE_NUMBERS_VERIFIED_INTEGER_BASIS_HPP
