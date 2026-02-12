@@ -157,3 +157,14 @@ These compile to efficient hardware instructions (typically a single arithmetic 
 
 The target is a runtime penalty of less than 2x compared to builtin types.
 This is achievable because the overflow check is a single branch on a flag that the hardware already computes as part of the arithmetic instruction.
+
+== Inspiration from Other Languages
+
+Much of the recent discourse over the direction pass:[C++] should take in terms of safety revolves around Rust.
+While this is certainly a good resource, we can learn from other potentially older or more academic languages as well.
+Below are some of the features that we offer, along with their source of inspiration:
+
+- Bounded Integers: Ada and Pascal
+- Policy-based arithmetic operations: Rust (to include following their naming convention)
+- Policy-based bitwise operation behavior: Rust and Zig
+- Proof-irrelevant refinement types: Liquid Haskell
