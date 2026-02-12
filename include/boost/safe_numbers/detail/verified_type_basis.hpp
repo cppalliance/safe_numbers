@@ -78,28 +78,28 @@ template <library_type BasisType>
 [[nodiscard]] consteval auto operator-(const verified_type_basis<BasisType> lhs,
                                        const verified_type_basis<BasisType> rhs) -> verified_type_basis<BasisType>
 {
-    return verified_type_basis<BasisType>{static_cast<BasisType>(lhs) + static_cast<BasisType>(rhs)};
+    return verified_type_basis<BasisType>{static_cast<BasisType>(lhs) - static_cast<BasisType>(rhs)};
 }
 
 template <library_type BasisType>
 [[nodiscard]] consteval auto operator*(const verified_type_basis<BasisType> lhs,
                                        const verified_type_basis<BasisType> rhs) -> verified_type_basis<BasisType>
 {
-    return verified_type_basis<BasisType>{static_cast<BasisType>(lhs) + static_cast<BasisType>(rhs)};
+    return verified_type_basis<BasisType>{static_cast<BasisType>(lhs) * static_cast<BasisType>(rhs)};
 }
 
 template <library_type BasisType>
 [[nodiscard]] consteval auto operator/(const verified_type_basis<BasisType> lhs,
                                        const verified_type_basis<BasisType> rhs) -> verified_type_basis<BasisType>
 {
-    return verified_type_basis<BasisType>{static_cast<BasisType>(lhs) + static_cast<BasisType>(rhs)};
+    return verified_type_basis<BasisType>{static_cast<BasisType>(lhs) / static_cast<BasisType>(rhs)};
 }
 
 template <library_type BasisType>
 [[nodiscard]] consteval auto operator%(const verified_type_basis<BasisType> lhs,
                                        const verified_type_basis<BasisType> rhs) -> verified_type_basis<BasisType>
 {
-    return verified_type_basis<BasisType>{static_cast<BasisType>(lhs) + static_cast<BasisType>(rhs)};
+    return verified_type_basis<BasisType>{static_cast<BasisType>(lhs) % static_cast<BasisType>(rhs)};
 }
 
 template <library_type BasisType>
