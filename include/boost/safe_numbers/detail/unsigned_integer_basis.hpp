@@ -1490,6 +1490,12 @@ struct shl_helper<overflow_policy::overflow_tuple, BasisType>
         const auto lhs_width {static_cast<BasisType>(bit_width(raw_lhs))};
         const auto overflowed {lhs_width + raw_rhs >= static_cast<BasisType>(std::numeric_limits<BasisType>::digits)};
 
+        // Guard against UB: shifting by >= digits is undefined behavior
+        if (raw_rhs >= static_cast<BasisType>(std::numeric_limits<BasisType>::digits))
+        {
+            return std::make_pair(result_type{0U}, true);
+        }
+
         return std::make_pair(result_type{static_cast<BasisType>(raw_lhs << raw_rhs)}, overflowed);
     }
 };
@@ -1526,6 +1532,12 @@ struct shl_helper<overflow_policy::wrapping, BasisType>
 
         const auto raw_lhs {static_cast<BasisType>(lhs)};
         const auto raw_rhs {static_cast<BasisType>(rhs)};
+
+        // Guard against UB: shifting by >= digits is undefined behavior
+        if (raw_rhs >= static_cast<BasisType>(std::numeric_limits<BasisType>::digits))
+        {
+            return result_type{0U};
+        }
 
         return result_type{static_cast<BasisType>(raw_lhs << raw_rhs)};
     }
