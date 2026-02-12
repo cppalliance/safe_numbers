@@ -10,8 +10,8 @@ https://www.boost.org/LICENSE_1_0.txt
 
 == Description
 
-The library provides multiple overflow handling policies for arithmetic operations.
-The default arithmetic operators (`+`, `-`, `*`, `/`, `%`) use the `throw_exception` policy, but alternative free functions and a generic policy-parameterized interface allow selecting different behavior at the call site.
+The library provides multiple overflow handling policies for arithmetic and shift operations.
+The default arithmetic operators (`+`, `-`, `*`, `/`, `%`) and shift operators (`<<`, `>>`) use the `throw_exception` policy, but alternative free functions and a generic policy-parameterized interface allow selecting different behavior at the call site.
 
 == The `overflow_policy` Enum
 
@@ -245,6 +245,88 @@ Only addition and multiplication are provided because subtraction, division, and
 
 Both functions are `noexcept`.
 
+== Named Shift Functions
+
+The same policy variants available for arithmetic operations are also available for shift operations.
+The `widen` policy is not supported for shifts.
+
+=== Overflow Conditions
+
+- **Left shift (`<<`)**: Overflow occurs when `bit_width(lhs) + rhs >= std::numeric_limits<BasisType>::digits` (i.e., bits would be shifted past the type width).
+- **Right shift (`>>`)**: Overflow occurs when `rhs >= std::numeric_limits<BasisType>::digits` (i.e., the shift amount is greater than or equal to the type width).
+
+=== Saturating Shifts
+
+[source,c++]
+----
+template <UnsignedLibType T>
+constexpr T saturating_shl(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T saturating_shr(T lhs, T rhs) noexcept;
+----
+
+- `saturating_shl`: Returns the shifted value, saturating at `std::numeric_limits<T>::max()` on overflow
+- `saturating_shr`: Returns the shifted value, saturating at `0` when the shift amount is >= the type width
+
+=== Overflowing Shifts
+
+[source,c++]
+----
+template <UnsignedLibType T>
+constexpr std::pair<T, bool> overflowing_shl(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::pair<T, bool> overflowing_shr(T lhs, T rhs) noexcept;
+----
+
+- `overflowing_shl`: Returns the wrapped shifted value and `true` if overflow occurred
+- `overflowing_shr`: Returns `0` and `true` if the shift amount is >= the type width; otherwise the shifted value and `false`
+
+=== Checked Shifts
+
+[source,c++]
+----
+template <UnsignedLibType T>
+constexpr std::optional<T> checked_shl(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::optional<T> checked_shr(T lhs, T rhs) noexcept;
+----
+
+- `checked_shl`: Returns the shifted value, or `std::nullopt` on overflow
+- `checked_shr`: Returns the shifted value, or `std::nullopt` when the shift amount is >= the type width
+
+=== Wrapping Shifts
+
+[source,c++]
+----
+template <UnsignedLibType T>
+constexpr T wrapping_shl(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T wrapping_shr(T lhs, T rhs) noexcept;
+----
+
+- `wrapping_shl`: Performs the shift, allowing bits to be lost without indication
+- `wrapping_shr`: Returns `0` when the shift amount is >= the type width; otherwise performs the shift normally
+
+=== Strict Shifts
+
+[source,c++]
+----
+template <UnsignedLibType T>
+constexpr T strict_shl(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T strict_shr(T lhs, T rhs) noexcept;
+----
+
+- `strict_shl`: Returns the shifted value; calls `std::exit(EXIT_FAILURE)` on overflow
+- `strict_shr`: Returns the shifted value; calls `std::exit(EXIT_FAILURE)` when the shift amount is >= the type width
+
+All shift policy functions are `noexcept`.
+
 == Generic Policy-Parameterized Arithmetic
 
 [source,c++]
@@ -263,9 +345,16 @@ constexpr auto div(T lhs, T rhs);
 
 template <overflow_policy Policy, UnsignedLibType T>
 constexpr auto mod(T lhs, T rhs);
+
+template <overflow_policy Policy, UnsignedLibType T>
+constexpr auto shl(T lhs, T rhs);
+
+template <overflow_policy Policy, UnsignedLibType T>
+constexpr auto shr(T lhs, T rhs);
 ----
 
 These functions accept an `overflow_policy` as a template parameter and dispatch to the corresponding named function.
+The `widen` policy is not supported for `shl` or `shr`.
 The return type depends on the policy:
 
 |===
@@ -344,6 +433,14 @@ The default operators and some named functions throw exceptions on error:
 | `--` (pre/post)
 | `std::underflow_error`
 | Value is zero
+
+| `<<`, `<<=`
+| `std::overflow_error`
+| `bit_width(lhs) + rhs >= digits`
+
+| `>>`, `>>=`
+| `std::overflow_error`
+| `rhs >= digits`
 
 | `saturating_div`, `saturating_mod`
 | `std::domain_error`

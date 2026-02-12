@@ -225,6 +225,41 @@ constexpr T strict_div(T lhs, T rhs) noexcept;
 template <UnsignedLibType T>
 constexpr T strict_mod(T lhs, T rhs) noexcept;
 
+// Saturating shifts (clamp to max/0 on overflow)
+template <UnsignedLibType T>
+constexpr T saturating_shl(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T saturating_shr(T lhs, T rhs) noexcept;
+
+// Overflowing shifts (wrap and return overflow flag)
+template <UnsignedLibType T>
+constexpr std::pair<T, bool> overflowing_shl(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::pair<T, bool> overflowing_shr(T lhs, T rhs) noexcept;
+
+// Checked shifts (return std::nullopt on overflow)
+template <UnsignedLibType T>
+constexpr std::optional<T> checked_shl(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr std::optional<T> checked_shr(T lhs, T rhs) noexcept;
+
+// Wrapping shifts (wrap without indication)
+template <UnsignedLibType T>
+constexpr T wrapping_shl(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T wrapping_shr(T lhs, T rhs) noexcept;
+
+// Strict shifts (call std::exit(EXIT_FAILURE) on error)
+template <UnsignedLibType T>
+constexpr T strict_shl(T lhs, T rhs) noexcept;
+
+template <UnsignedLibType T>
+constexpr T strict_shr(T lhs, T rhs) noexcept;
+
 // Generic policy-parameterized arithmetic
 template <overflow_policy Policy, UnsignedLibType T>
 constexpr auto add(T lhs, T rhs);
@@ -240,6 +275,13 @@ constexpr auto div(T lhs, T rhs);
 
 template <overflow_policy Policy, UnsignedLibType T>
 constexpr auto mod(T lhs, T rhs);
+
+// Generic policy-parameterized shifts
+template <overflow_policy Policy, UnsignedLibType T>
+constexpr auto shl(T lhs, T rhs);
+
+template <overflow_policy Policy, UnsignedLibType T>
+constexpr auto shr(T lhs, T rhs);
 
 } // namespace boost::safe_numbers
 ----
@@ -395,6 +437,69 @@ The shift operators (`<<`, `>>`) perform runtime bounds checking:
 - `<<`: Throws `std::overflow_error` if the left shift would move bits past the type width. Specifically, this occurs when `bit_width(lhs) + rhs >= std::numeric_limits<BasisType>::digits`.
 - `>>`: Throws `std::overflow_error` if the shift amount is greater than or equal to the type width (i.e., `rhs >= std::numeric_limits<BasisType>::digits`).
 
+=== Shift Overflow Policies
+
+In addition to the default throwing behavior, the shift operators support the same overflow policies as arithmetic operations.
+The overflow condition for left shift is when `bit_width(lhs) + rhs >= digits`, and for right shift is when `rhs >= digits`.
+
+[source,c++]
+----
+// Saturating: clamp to max (left shift) or 0 (right shift) on overflow
+constexpr T saturating_shl(T lhs, T rhs) noexcept;
+constexpr T saturating_shr(T lhs, T rhs) noexcept;
+
+// Overflowing: wrap and return an overflow flag
+constexpr std::pair<T, bool> overflowing_shl(T lhs, T rhs) noexcept;
+constexpr std::pair<T, bool> overflowing_shr(T lhs, T rhs) noexcept;
+
+// Checked: return std::nullopt on overflow
+constexpr std::optional<T> checked_shl(T lhs, T rhs) noexcept;
+constexpr std::optional<T> checked_shr(T lhs, T rhs) noexcept;
+
+// Wrapping: perform the shift ignoring overflow
+constexpr T wrapping_shl(T lhs, T rhs) noexcept;
+constexpr T wrapping_shr(T lhs, T rhs) noexcept;
+
+// Strict: call std::exit(EXIT_FAILURE) on overflow
+constexpr T strict_shl(T lhs, T rhs) noexcept;
+constexpr T strict_shr(T lhs, T rhs) noexcept;
+
+// Generic policy-parameterized shifts
+template <overflow_policy Policy, UnsignedLibType T>
+constexpr auto shl(T lhs, T rhs);
+
+template <overflow_policy Policy, UnsignedLibType T>
+constexpr auto shr(T lhs, T rhs);
+----
+
+The behavior of each policy on shift overflow:
+
+|===
+| Policy | Left Shift Overflow | Right Shift Overflow
+
+| `saturating`
+| Returns `std::numeric_limits<T>::max()`
+| Returns `0`
+
+| `overflowing`
+| Returns the wrapped result with `true`
+| Returns `0` with `true`
+
+| `checked`
+| Returns `std::nullopt`
+| Returns `std::nullopt`
+
+| `wrapping`
+| Performs the shift (bits shifted out are lost)
+| Returns `0`
+
+| `strict`
+| Calls `std::exit(EXIT_FAILURE)`
+| Calls `std::exit(EXIT_FAILURE)`
+|===
+
+All shift policy functions are `noexcept`.
+
 === Compound Bitwise Assignment Operators
 
 [source,c++]
@@ -441,10 +546,10 @@ Use a wrapping subtraction policy from zero or the maximum value if modular nega
 Operations between different width safe integer types are compile-time errors.
 To perform operations between different widths, explicitly convert to the same type first.
 
-== Alternative Arithmetic Functions
+== Alternative Arithmetic and Shift Functions
 
-For cases where throwing exceptions is not desired, alternative arithmetic functions are provided with different overflow handling policies.
-See xref:policies.adoc[] for full documentation of all policies, named arithmetic functions, and the generic policy-parameterized interface.
+For cases where throwing exceptions is not desired, alternative arithmetic and shift functions are provided with different overflow handling policies.
+See xref:policies.adoc[] for full documentation of all policies, named functions, and the generic policy-parameterized interface.
 
 == Constexpr Support
 

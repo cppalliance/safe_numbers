@@ -621,6 +621,393 @@ void test_compound_right_shift_u128()
     BOOST_TEST_THROWS(one >>= u128{128}, std::overflow_error);
 }
 
+// =============================================
+// Saturating Left Shift
+// =============================================
+
+template <typename T>
+void test_saturating_shl()
+{
+    using basis_type = detail::underlying_type_t<T>;
+
+    // Non-overflow case: should return normal result
+    BOOST_TEST(T{4} == saturating_shl(T{2}, T{1}));
+    BOOST_TEST(T{8} == saturating_shl(T{1}, T{3}));
+    BOOST_TEST(T{0} == saturating_shl(T{0}, T{3}));
+
+    // Overflow case: should return max
+    BOOST_TEST(T{std::numeric_limits<basis_type>::max()} == saturating_shl(T{std::numeric_limits<basis_type>::max()}, T{1}));
+    constexpr auto digits {std::numeric_limits<basis_type>::digits};
+    BOOST_TEST(T{std::numeric_limits<basis_type>::max()} == saturating_shl(T{1}, T{static_cast<basis_type>(digits)}));
+}
+
+// =============================================
+// Saturating Right Shift
+// =============================================
+
+template <typename T>
+void test_saturating_shr()
+{
+    using basis_type = detail::underlying_type_t<T>;
+    constexpr auto digits {std::numeric_limits<basis_type>::digits};
+
+    // Non-overflow case: should return normal result
+    BOOST_TEST(T{4} == saturating_shr(T{8}, T{1}));
+    BOOST_TEST(T{1} == saturating_shr(T{8}, T{3}));
+    BOOST_TEST(T{0} == saturating_shr(T{0}, T{3}));
+
+    // Overflow case: shift >= digits should return 0
+    BOOST_TEST(T{0} == saturating_shr(T{42}, T{static_cast<basis_type>(digits)}));
+}
+
+// =============================================
+// Overflowing Left Shift
+// =============================================
+
+template <typename T>
+void test_overflowing_shl()
+{
+    using basis_type = detail::underlying_type_t<T>;
+    constexpr auto digits {std::numeric_limits<basis_type>::digits};
+
+    // Non-overflow case
+    {
+        const auto [result, flag] {overflowing_shl(T{2}, T{1})};
+        BOOST_TEST(T{4} == result);
+        BOOST_TEST(!flag);
+    }
+
+    // Overflow case
+    {
+        const auto [result, flag] {overflowing_shl(T{std::numeric_limits<basis_type>::max()}, T{1})};
+        BOOST_TEST(flag);
+    }
+
+    // Shift by full width
+    {
+        const auto [result, flag] {overflowing_shl(T{1}, T{static_cast<basis_type>(digits)})};
+        BOOST_TEST(flag);
+    }
+}
+
+// =============================================
+// Overflowing Right Shift
+// =============================================
+
+template <typename T>
+void test_overflowing_shr()
+{
+    using basis_type = detail::underlying_type_t<T>;
+    constexpr auto digits {std::numeric_limits<basis_type>::digits};
+
+    // Non-overflow case
+    {
+        const auto [result, flag] {overflowing_shr(T{8}, T{1})};
+        BOOST_TEST(T{4} == result);
+        BOOST_TEST(!flag);
+    }
+
+    // Overflow case: shift >= digits
+    {
+        const auto [result, flag] {overflowing_shr(T{42}, T{static_cast<basis_type>(digits)})};
+        BOOST_TEST(T{0} == result);
+        BOOST_TEST(flag);
+    }
+}
+
+// =============================================
+// Checked Left Shift
+// =============================================
+
+template <typename T>
+void test_checked_shl()
+{
+    using basis_type = detail::underlying_type_t<T>;
+    constexpr auto digits {std::numeric_limits<basis_type>::digits};
+
+    // Non-overflow case: should return optional with value
+    {
+        const auto result {checked_shl(T{2}, T{1})};
+        BOOST_TEST(result.has_value());
+        BOOST_TEST(T{4} == result.value());
+    }
+
+    // Overflow case: should return nullopt
+    {
+        const auto result {checked_shl(T{std::numeric_limits<basis_type>::max()}, T{1})};
+        BOOST_TEST(!result.has_value());
+    }
+
+    // Shift by full width: should return nullopt
+    {
+        const auto result {checked_shl(T{1}, T{static_cast<basis_type>(digits)})};
+        BOOST_TEST(!result.has_value());
+    }
+}
+
+// =============================================
+// Checked Right Shift
+// =============================================
+
+template <typename T>
+void test_checked_shr()
+{
+    using basis_type = detail::underlying_type_t<T>;
+    constexpr auto digits {std::numeric_limits<basis_type>::digits};
+
+    // Non-overflow case: should return optional with value
+    {
+        const auto result {checked_shr(T{8}, T{1})};
+        BOOST_TEST(result.has_value());
+        BOOST_TEST(T{4} == result.value());
+    }
+
+    // Overflow case: shift >= digits should return nullopt
+    {
+        const auto result {checked_shr(T{42}, T{static_cast<basis_type>(digits)})};
+        BOOST_TEST(!result.has_value());
+    }
+}
+
+// =============================================
+// Wrapping Left Shift
+// =============================================
+
+template <typename T>
+void test_wrapping_shl()
+{
+    using basis_type = detail::underlying_type_t<T>;
+
+    // Non-overflow case: should return normal result
+    BOOST_TEST(T{4} == wrapping_shl(T{2}, T{1}));
+    BOOST_TEST(T{8} == wrapping_shl(T{1}, T{3}));
+
+    // Overflow case: performs shift ignoring overflow (wraps)
+    const auto result {wrapping_shl(T{std::numeric_limits<basis_type>::max()}, T{1})};
+    const auto expected {static_cast<basis_type>(static_cast<basis_type>(std::numeric_limits<basis_type>::max()) << 1)};
+    BOOST_TEST(T{expected} == result);
+}
+
+// =============================================
+// Wrapping Right Shift
+// =============================================
+
+template <typename T>
+void test_wrapping_shr()
+{
+    using basis_type = detail::underlying_type_t<T>;
+    constexpr auto digits {std::numeric_limits<basis_type>::digits};
+
+    // Non-overflow case
+    BOOST_TEST(T{4} == wrapping_shr(T{8}, T{1}));
+
+    // Overflow case: shift >= digits returns 0
+    BOOST_TEST(T{0} == wrapping_shr(T{42}, T{static_cast<basis_type>(digits)}));
+}
+
+// =============================================
+// Strict Left Shift (success cases only - failure calls exit())
+// =============================================
+
+template <typename T>
+void test_strict_shl()
+{
+    // Non-overflow case
+    BOOST_TEST(T{4} == strict_shl(T{2}, T{1}));
+    BOOST_TEST(T{8} == strict_shl(T{1}, T{3}));
+    BOOST_TEST(T{0} == strict_shl(T{0}, T{3}));
+}
+
+// =============================================
+// Strict Right Shift (success cases only - failure calls exit())
+// =============================================
+
+template <typename T>
+void test_strict_shr()
+{
+    // Non-overflow case
+    BOOST_TEST(T{4} == strict_shr(T{8}, T{1}));
+    BOOST_TEST(T{1} == strict_shr(T{8}, T{3}));
+    BOOST_TEST(T{0} == strict_shr(T{0}, T{3}));
+}
+
+// =============================================
+// Generic shl<Policy> and shr<Policy>
+// =============================================
+
+template <typename T>
+void test_generic_shl()
+{
+    using basis_type = detail::underlying_type_t<T>;
+
+    // throw_exception policy
+    BOOST_TEST(T{4} == shl<overflow_policy::throw_exception>(T{2}, T{1}));
+
+    // saturate policy
+    BOOST_TEST(T{std::numeric_limits<basis_type>::max()} == shl<overflow_policy::saturate>(T{std::numeric_limits<basis_type>::max()}, T{1}));
+
+    // checked policy
+    {
+        const auto result {shl<overflow_policy::checked>(T{2}, T{1})};
+        BOOST_TEST(result.has_value());
+        BOOST_TEST(T{4} == result.value());
+    }
+
+    // overflow_tuple policy
+    {
+        const auto [result, flag] {shl<overflow_policy::overflow_tuple>(T{2}, T{1})};
+        BOOST_TEST(T{4} == result);
+        BOOST_TEST(!flag);
+    }
+
+    // wrapping policy
+    BOOST_TEST(T{4} == shl<overflow_policy::wrapping>(T{2}, T{1}));
+
+    // strict policy
+    BOOST_TEST(T{4} == shl<overflow_policy::strict>(T{2}, T{1}));
+}
+
+template <typename T>
+void test_generic_shr()
+{
+    using basis_type = detail::underlying_type_t<T>;
+    constexpr auto digits {std::numeric_limits<basis_type>::digits};
+
+    // throw_exception policy
+    BOOST_TEST(T{4} == shr<overflow_policy::throw_exception>(T{8}, T{1}));
+
+    // saturate policy
+    BOOST_TEST(T{0} == shr<overflow_policy::saturate>(T{42}, T{static_cast<basis_type>(digits)}));
+
+    // checked policy
+    {
+        const auto result {shr<overflow_policy::checked>(T{8}, T{1})};
+        BOOST_TEST(result.has_value());
+        BOOST_TEST(T{4} == result.value());
+    }
+
+    // overflow_tuple policy
+    {
+        const auto [result, flag] {shr<overflow_policy::overflow_tuple>(T{8}, T{1})};
+        BOOST_TEST(T{4} == result);
+        BOOST_TEST(!flag);
+    }
+
+    // wrapping policy
+    BOOST_TEST(T{4} == shr<overflow_policy::wrapping>(T{8}, T{1}));
+
+    // strict policy
+    BOOST_TEST(T{4} == shr<overflow_policy::strict>(T{8}, T{1}));
+}
+
+// =============================================
+// u128 specific shift policy tests
+// =============================================
+
+void test_saturating_shl_u128()
+{
+    using basis_type = detail::underlying_type_t<u128>;
+
+    BOOST_TEST(u128{4} == saturating_shl(u128{2}, u128{1}));
+    BOOST_TEST(u128{std::numeric_limits<basis_type>::max()} == saturating_shl(u128{std::numeric_limits<basis_type>::max()}, u128{1}));
+    BOOST_TEST(u128{std::numeric_limits<basis_type>::max()} == saturating_shl(u128{1}, u128{128}));
+}
+
+void test_saturating_shr_u128()
+{
+    BOOST_TEST(u128{4} == saturating_shr(u128{8}, u128{1}));
+    BOOST_TEST(u128{0} == saturating_shr(u128{42}, u128{128}));
+}
+
+void test_overflowing_shl_u128()
+{
+    using basis_type = detail::underlying_type_t<u128>;
+
+    {
+        const auto [result, flag] {overflowing_shl(u128{2}, u128{1})};
+        BOOST_TEST(u128{4} == result);
+        BOOST_TEST(!flag);
+    }
+    {
+        const auto [result, flag] {overflowing_shl(u128{std::numeric_limits<basis_type>::max()}, u128{1})};
+        BOOST_TEST(flag);
+    }
+}
+
+void test_overflowing_shr_u128()
+{
+    {
+        const auto [result, flag] {overflowing_shr(u128{8}, u128{1})};
+        BOOST_TEST(u128{4} == result);
+        BOOST_TEST(!flag);
+    }
+    {
+        const auto [result, flag] {overflowing_shr(u128{42}, u128{128})};
+        BOOST_TEST(u128{0} == result);
+        BOOST_TEST(flag);
+    }
+}
+
+void test_checked_shl_u128()
+{
+    {
+        const auto result {checked_shl(u128{2}, u128{1})};
+        BOOST_TEST(result.has_value());
+        BOOST_TEST(u128{4} == result.value());
+    }
+    {
+        const auto result {checked_shl(u128{1}, u128{128})};
+        BOOST_TEST(!result.has_value());
+    }
+}
+
+void test_checked_shr_u128()
+{
+    {
+        const auto result {checked_shr(u128{8}, u128{1})};
+        BOOST_TEST(result.has_value());
+        BOOST_TEST(u128{4} == result.value());
+    }
+    {
+        const auto result {checked_shr(u128{42}, u128{128})};
+        BOOST_TEST(!result.has_value());
+    }
+}
+
+void test_wrapping_shl_u128()
+{
+    BOOST_TEST(u128{4} == wrapping_shl(u128{2}, u128{1}));
+    // Wrapping: just does the shift
+    using basis_type = detail::underlying_type_t<u128>;
+    const auto result {wrapping_shl(u128{std::numeric_limits<basis_type>::max()}, u128{1})};
+    const auto expected {static_cast<basis_type>(std::numeric_limits<basis_type>::max() << 1)};
+    BOOST_TEST(u128{expected} == result);
+}
+
+void test_wrapping_shr_u128()
+{
+    BOOST_TEST(u128{4} == wrapping_shr(u128{8}, u128{1}));
+    BOOST_TEST(u128{0} == wrapping_shr(u128{42}, u128{128}));
+}
+
+void test_generic_shl_u128()
+{
+    using basis_type = detail::underlying_type_t<u128>;
+
+    BOOST_TEST(u128{4} == shl<overflow_policy::throw_exception>(u128{2}, u128{1}));
+    BOOST_TEST(u128{std::numeric_limits<basis_type>::max()} == shl<overflow_policy::saturate>(u128{std::numeric_limits<basis_type>::max()}, u128{1}));
+    BOOST_TEST(u128{4} == shl<overflow_policy::wrapping>(u128{2}, u128{1}));
+    BOOST_TEST(u128{4} == shl<overflow_policy::strict>(u128{2}, u128{1}));
+}
+
+void test_generic_shr_u128()
+{
+    BOOST_TEST(u128{4} == shr<overflow_policy::throw_exception>(u128{8}, u128{1}));
+    BOOST_TEST(u128{0} == shr<overflow_policy::saturate>(u128{42}, u128{128}));
+    BOOST_TEST(u128{4} == shr<overflow_policy::wrapping>(u128{8}, u128{1}));
+    BOOST_TEST(u128{4} == shr<overflow_policy::strict>(u128{8}, u128{1}));
+}
+
 int main()
 {
     // Bitwise NOT
@@ -713,6 +1100,88 @@ int main()
     test_compound_right_shift<u32>();
     test_compound_right_shift<u64>();
     test_compound_right_shift_u128();
+
+    // Saturating shl
+    test_saturating_shl<u8>();
+    test_saturating_shl<u16>();
+    test_saturating_shl<u32>();
+    test_saturating_shl<u64>();
+    test_saturating_shl_u128();
+
+    // Saturating shr
+    test_saturating_shr<u8>();
+    test_saturating_shr<u16>();
+    test_saturating_shr<u32>();
+    test_saturating_shr<u64>();
+    test_saturating_shr_u128();
+
+    // Overflowing shl
+    test_overflowing_shl<u8>();
+    test_overflowing_shl<u16>();
+    test_overflowing_shl<u32>();
+    test_overflowing_shl<u64>();
+    test_overflowing_shl_u128();
+
+    // Overflowing shr
+    test_overflowing_shr<u8>();
+    test_overflowing_shr<u16>();
+    test_overflowing_shr<u32>();
+    test_overflowing_shr<u64>();
+    test_overflowing_shr_u128();
+
+    // Checked shl
+    test_checked_shl<u8>();
+    test_checked_shl<u16>();
+    test_checked_shl<u32>();
+    test_checked_shl<u64>();
+    test_checked_shl_u128();
+
+    // Checked shr
+    test_checked_shr<u8>();
+    test_checked_shr<u16>();
+    test_checked_shr<u32>();
+    test_checked_shr<u64>();
+    test_checked_shr_u128();
+
+    // Wrapping shl
+    test_wrapping_shl<u8>();
+    test_wrapping_shl<u16>();
+    test_wrapping_shl<u32>();
+    test_wrapping_shl<u64>();
+    test_wrapping_shl_u128();
+
+    // Wrapping shr
+    test_wrapping_shr<u8>();
+    test_wrapping_shr<u16>();
+    test_wrapping_shr<u32>();
+    test_wrapping_shr<u64>();
+    test_wrapping_shr_u128();
+
+    // Strict shl (success only)
+    test_strict_shl<u8>();
+    test_strict_shl<u16>();
+    test_strict_shl<u32>();
+    test_strict_shl<u64>();
+
+    // Strict shr (success only)
+    test_strict_shr<u8>();
+    test_strict_shr<u16>();
+    test_strict_shr<u32>();
+    test_strict_shr<u64>();
+
+    // Generic shl<Policy>
+    test_generic_shl<u8>();
+    test_generic_shl<u16>();
+    test_generic_shl<u32>();
+    test_generic_shl<u64>();
+    test_generic_shl_u128();
+
+    // Generic shr<Policy>
+    test_generic_shr<u8>();
+    test_generic_shr<u16>();
+    test_generic_shr<u32>();
+    test_generic_shr<u64>();
+    test_generic_shr_u128();
 
     return boost::report_errors();
 }
