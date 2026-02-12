@@ -43,6 +43,31 @@ https://www.boost.org/LICENSE_1_0.txt
 | Safe unsigned integer constrained to a compile-time range `[Min, Max]`
 |===
 
+=== Verified Integer Types
+
+[cols="1,2", options="header"]
+|===
+| Type | Description
+
+| xref:verified_integers.adoc[`verified_u8`]
+| Compile-time verified safe unsigned 8-bit integer
+
+| xref:verified_integers.adoc[`verified_u16`]
+| Compile-time verified safe unsigned 16-bit integer
+
+| xref:verified_integers.adoc[`verified_u32`]
+| Compile-time verified safe unsigned 32-bit integer
+
+| xref:verified_integers.adoc[`verified_u64`]
+| Compile-time verified safe unsigned 64-bit integer
+
+| xref:verified_integers.adoc[`verified_u128`]
+| Compile-time verified safe unsigned 128-bit integer
+
+| xref:verified_integers.adoc[`verified_bounded_integer<Min, Max>`]
+| Compile-time verified bounded unsigned integer constrained to `[Min, Max]`
+|===
+
 === Enumerations
 
 [cols="1,2", options="header"]
@@ -197,4 +222,7 @@ This header is not included in the convenience header since it requires external
 
 | `<boost/safe_numbers/bounded_integers.hpp>`
 | Bounded unsigned integer type (`bounded_uint<Min, Max>`)
+
+| `<boost/safe_numbers/verified_integers.hpp>`
+| Verified integer types (`verified_u8`, `verified_u16`, `verified_u32`, `verified_u64`, `verified_u128`, `verified_bounded_integer<Min, Max>`)
 |===
