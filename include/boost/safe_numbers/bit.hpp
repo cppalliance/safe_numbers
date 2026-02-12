@@ -18,7 +18,7 @@
 namespace boost::safe_numbers {
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-constexpr auto has_single_bit(const UnsignedInt x) noexcept -> bool
+[[nodiscard]] constexpr auto has_single_bit(const UnsignedInt x) noexcept -> bool
 {
     using boost::core::has_single_bit;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -27,7 +27,7 @@ constexpr auto has_single_bit(const UnsignedInt x) noexcept -> bool
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-constexpr auto bit_ceil(const UnsignedInt x) noexcept -> UnsignedInt
+[[nodiscard]] constexpr auto bit_ceil(const UnsignedInt x) noexcept -> UnsignedInt
 {
     using boost::core::bit_ceil;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -36,7 +36,7 @@ constexpr auto bit_ceil(const UnsignedInt x) noexcept -> UnsignedInt
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-constexpr auto bit_floor(const UnsignedInt x) noexcept -> UnsignedInt
+[[nodiscard]] constexpr auto bit_floor(const UnsignedInt x) noexcept -> UnsignedInt
 {
     using boost::core::bit_floor;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -45,7 +45,7 @@ constexpr auto bit_floor(const UnsignedInt x) noexcept -> UnsignedInt
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-constexpr auto bit_width(const UnsignedInt x) noexcept -> int
+[[nodiscard]] constexpr auto bit_width(const UnsignedInt x) noexcept -> int
 {
     using boost::core::bit_width;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -54,7 +54,7 @@ constexpr auto bit_width(const UnsignedInt x) noexcept -> int
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type UnsignedInt>
-constexpr auto rotl(const UnsignedInt x, const int s) noexcept -> UnsignedInt
+[[nodiscard]] constexpr auto rotl(const UnsignedInt x, const int s) noexcept -> UnsignedInt
 {
     using boost::core::rotl;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -63,7 +63,7 @@ constexpr auto rotl(const UnsignedInt x, const int s) noexcept -> UnsignedInt
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type UnsignedInt>
-constexpr auto rotr(const UnsignedInt x, const int s) noexcept -> UnsignedInt
+[[nodiscard]] constexpr auto rotr(const UnsignedInt x, const int s) noexcept -> UnsignedInt
 {
     using boost::core::rotr;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -72,7 +72,7 @@ constexpr auto rotr(const UnsignedInt x, const int s) noexcept -> UnsignedInt
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-constexpr auto countl_zero(const UnsignedInt x) noexcept -> int
+[[nodiscard]] constexpr auto countl_zero(const UnsignedInt x) noexcept -> int
 {
     using boost::core::countl_zero;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -81,7 +81,7 @@ constexpr auto countl_zero(const UnsignedInt x) noexcept -> int
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-constexpr auto countl_one(const UnsignedInt x) noexcept -> int
+[[nodiscard]] constexpr auto countl_one(const UnsignedInt x) noexcept -> int
 {
     using boost::core::countl_one;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -90,7 +90,7 @@ constexpr auto countl_one(const UnsignedInt x) noexcept -> int
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-constexpr auto countr_zero(const UnsignedInt x) noexcept -> int
+[[nodiscard]] constexpr auto countr_zero(const UnsignedInt x) noexcept -> int
 {
     using boost::core::countr_zero;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -99,7 +99,7 @@ constexpr auto countr_zero(const UnsignedInt x) noexcept -> int
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-constexpr auto countr_one(const UnsignedInt x) noexcept -> int
+[[nodiscard]] constexpr auto countr_one(const UnsignedInt x) noexcept -> int
 {
     using boost::core::countr_one;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -108,7 +108,7 @@ constexpr auto countr_one(const UnsignedInt x) noexcept -> int
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-constexpr auto popcount(const UnsignedInt x) noexcept -> int
+[[nodiscard]] constexpr auto popcount(const UnsignedInt x) noexcept -> int
 {
     using boost::core::popcount;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -117,7 +117,7 @@ constexpr auto popcount(const UnsignedInt x) noexcept -> int
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type UnsignedInt>
-constexpr auto byteswap(const UnsignedInt x) noexcept -> UnsignedInt
+[[nodiscard]] constexpr auto byteswap(const UnsignedInt x) noexcept -> UnsignedInt
 {
     using boost::core::byteswap;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
