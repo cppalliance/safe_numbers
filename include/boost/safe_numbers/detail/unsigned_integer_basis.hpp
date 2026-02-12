@@ -1429,6 +1429,230 @@ constexpr auto unsigned_integer_basis<BasisType>::operator--(int)
     return temp;
 }
 
+// ------------------------------
+// Left Shift
+// ------------------------------
+
+// Primary template for non-tuple policies
+template <overflow_policy Policy, unsigned_integral BasisType>
+struct shl_helper
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs)
+        noexcept(Policy != overflow_policy::throw_exception)
+        -> unsigned_integer_basis<BasisType>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+        using core::bit_width;
+
+        const auto raw_lhs {static_cast<BasisType>(lhs)};
+        const auto raw_rhs {static_cast<BasisType>(rhs)};
+        const auto lhs_width {static_cast<BasisType>(bit_width(raw_lhs))};
+        const auto overflowed {lhs_width + raw_rhs >= static_cast<BasisType>(std::numeric_limits<BasisType>::digits)};
+
+        if (overflowed)
+        {
+            if constexpr (Policy == overflow_policy::throw_exception)
+            {
+                BOOST_THROW_EXCEPTION(std::overflow_error("Left shift past the end of the type width"));
+            }
+            else if constexpr (Policy == overflow_policy::saturate)
+            {
+                return result_type{std::numeric_limits<BasisType>::max()};
+            }
+            else if constexpr (Policy == overflow_policy::strict)
+            {
+                std::exit(EXIT_FAILURE);
+            }
+            else
+            {
+                BOOST_SAFE_NUMBERS_UNREACHABLE;
+            }
+        }
+
+        return result_type{static_cast<BasisType>(raw_lhs << raw_rhs)};
+    }
+};
+
+// Partial specialization for overflow_tuple policy
+template <unsigned_integral BasisType>
+struct shl_helper<overflow_policy::overflow_tuple, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+        -> std::pair<unsigned_integer_basis<BasisType>, bool>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+        using core::bit_width;
+
+        const auto raw_lhs {static_cast<BasisType>(lhs)};
+        const auto raw_rhs {static_cast<BasisType>(rhs)};
+        const auto lhs_width {static_cast<BasisType>(bit_width(raw_lhs))};
+        const auto overflowed {lhs_width + raw_rhs >= static_cast<BasisType>(std::numeric_limits<BasisType>::digits)};
+
+        return std::make_pair(result_type{static_cast<BasisType>(raw_lhs << raw_rhs)}, overflowed);
+    }
+};
+
+// Partial specialization for checked policy
+template <unsigned_integral BasisType>
+struct shl_helper<overflow_policy::checked, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+        -> std::optional<unsigned_integer_basis<BasisType>>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+        using core::bit_width;
+
+        const auto raw_lhs {static_cast<BasisType>(lhs)};
+        const auto raw_rhs {static_cast<BasisType>(rhs)};
+        const auto lhs_width {static_cast<BasisType>(bit_width(raw_lhs))};
+        const auto overflowed {lhs_width + raw_rhs >= static_cast<BasisType>(std::numeric_limits<BasisType>::digits)};
+
+        return overflowed ? std::nullopt : std::make_optional(result_type{static_cast<BasisType>(raw_lhs << raw_rhs)});
+    }
+};
+
+// Partial specialization for wrapping policy
+template <unsigned_integral BasisType>
+struct shl_helper<overflow_policy::wrapping, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+        -> unsigned_integer_basis<BasisType>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto raw_lhs {static_cast<BasisType>(lhs)};
+        const auto raw_rhs {static_cast<BasisType>(rhs)};
+
+        return result_type{static_cast<BasisType>(raw_lhs << raw_rhs)};
+    }
+};
+
+template <overflow_policy Policy, unsigned_integral BasisType>
+[[nodiscard]] constexpr auto shl_impl(const unsigned_integer_basis<BasisType> lhs,
+                                      const unsigned_integer_basis<BasisType> rhs)
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::wrapping || Policy == overflow_policy::strict)
+{
+    return shl_helper<Policy, BasisType>::apply(lhs, rhs);
+}
+
+// ------------------------------
+// Right Shift
+// ------------------------------
+
+// Primary template for non-tuple policies
+template <overflow_policy Policy, unsigned_integral BasisType>
+struct shr_helper
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs)
+        noexcept(Policy != overflow_policy::throw_exception)
+        -> unsigned_integer_basis<BasisType>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto raw_lhs {static_cast<BasisType>(lhs)};
+        const auto raw_rhs {static_cast<BasisType>(rhs)};
+        const auto overflowed {raw_rhs >= static_cast<BasisType>(std::numeric_limits<BasisType>::digits)};
+
+        if (overflowed)
+        {
+            if constexpr (Policy == overflow_policy::throw_exception)
+            {
+                BOOST_THROW_EXCEPTION(std::overflow_error("Right shift past the end of the type width"));
+            }
+            else if constexpr (Policy == overflow_policy::saturate)
+            {
+                return result_type{0U};
+            }
+            else if constexpr (Policy == overflow_policy::strict)
+            {
+                std::exit(EXIT_FAILURE);
+            }
+            else
+            {
+                BOOST_SAFE_NUMBERS_UNREACHABLE;
+            }
+        }
+
+        return result_type{static_cast<BasisType>(raw_lhs >> raw_rhs)};
+    }
+};
+
+// Partial specialization for overflow_tuple policy
+template <unsigned_integral BasisType>
+struct shr_helper<overflow_policy::overflow_tuple, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+        -> std::pair<unsigned_integer_basis<BasisType>, bool>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto raw_lhs {static_cast<BasisType>(lhs)};
+        const auto raw_rhs {static_cast<BasisType>(rhs)};
+        const auto overflowed {raw_rhs >= static_cast<BasisType>(std::numeric_limits<BasisType>::digits)};
+
+        if (overflowed)
+        {
+            return std::make_pair(result_type{0U}, true);
+        }
+
+        return std::make_pair(result_type{static_cast<BasisType>(raw_lhs >> raw_rhs)}, false);
+    }
+};
+
+// Partial specialization for checked policy
+template <unsigned_integral BasisType>
+struct shr_helper<overflow_policy::checked, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+        -> std::optional<unsigned_integer_basis<BasisType>>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto raw_lhs {static_cast<BasisType>(lhs)};
+        const auto raw_rhs {static_cast<BasisType>(rhs)};
+        const auto overflowed {raw_rhs >= static_cast<BasisType>(std::numeric_limits<BasisType>::digits)};
+
+        return overflowed ? std::nullopt : std::make_optional(result_type{static_cast<BasisType>(raw_lhs >> raw_rhs)});
+    }
+};
+
+// Partial specialization for wrapping policy
+template <unsigned_integral BasisType>
+struct shr_helper<overflow_policy::wrapping, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
+                                              const unsigned_integer_basis<BasisType> rhs) noexcept
+        -> unsigned_integer_basis<BasisType>
+    {
+        using result_type = unsigned_integer_basis<BasisType>;
+
+        const auto raw_lhs {static_cast<BasisType>(lhs)};
+        const auto raw_rhs {static_cast<BasisType>(rhs)};
+
+        if (raw_rhs >= static_cast<BasisType>(std::numeric_limits<BasisType>::digits))
+        {
+            return result_type{0U};
+        }
+
+        return result_type{static_cast<BasisType>(raw_lhs >> raw_rhs)};
+    }
+};
+
+template <overflow_policy Policy, unsigned_integral BasisType>
+[[nodiscard]] constexpr auto shr_impl(const unsigned_integer_basis<BasisType> lhs,
+                                      const unsigned_integer_basis<BasisType> rhs)
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::wrapping || Policy == overflow_policy::strict)
+{
+    return shr_helper<Policy, BasisType>::apply(lhs, rhs);
+}
+
 } // namespace boost::safe_numbers::detail
 
 // ------------------------------
@@ -1706,6 +1930,126 @@ template <detail::unsigned_integral BasisType>
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("widening mul", widening_mul)
 
 // ------------------------------
+// Saturating Shift
+// ------------------------------
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto saturating_shl(const detail::unsigned_integer_basis<BasisType> lhs,
+                                            const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::shl_impl<overflow_policy::saturate>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating left shift", saturating_shl)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto saturating_shr(const detail::unsigned_integer_basis<BasisType> lhs,
+                                            const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::shr_impl<overflow_policy::saturate>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating right shift", saturating_shr)
+
+// ------------------------------
+// Overflowing Shift
+// ------------------------------
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto overflowing_shl(const detail::unsigned_integer_basis<BasisType> lhs,
+                                             const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
+{
+    return detail::shl_impl<overflow_policy::overflow_tuple>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("overflowing left shift", overflowing_shl)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto overflowing_shr(const detail::unsigned_integer_basis<BasisType> lhs,
+                                             const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
+{
+    return detail::shr_impl<overflow_policy::overflow_tuple>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("overflowing right shift", overflowing_shr)
+
+// ------------------------------
+// Checked Shift
+// ------------------------------
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto checked_shl(const detail::unsigned_integer_basis<BasisType> lhs,
+                                         const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> std::optional<detail::unsigned_integer_basis<BasisType>>
+{
+    return detail::shl_impl<overflow_policy::checked>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("checked left shift", checked_shl)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto checked_shr(const detail::unsigned_integer_basis<BasisType> lhs,
+                                         const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> std::optional<detail::unsigned_integer_basis<BasisType>>
+{
+    return detail::shr_impl<overflow_policy::checked>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("checked right shift", checked_shr)
+
+// ------------------------------
+// Wrapping Shift
+// ------------------------------
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto wrapping_shl(const detail::unsigned_integer_basis<BasisType> lhs,
+                                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::shl_impl<overflow_policy::wrapping>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("wrapping left shift", wrapping_shl)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto wrapping_shr(const detail::unsigned_integer_basis<BasisType> lhs,
+                                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::shr_impl<overflow_policy::wrapping>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("wrapping right shift", wrapping_shr)
+
+// ------------------------------
+// Strict Shift
+// ------------------------------
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto strict_shl(const detail::unsigned_integer_basis<BasisType> lhs,
+                                        const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::shl_impl<overflow_policy::strict>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("strict left shift", strict_shl)
+
+template <detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto strict_shr(const detail::unsigned_integer_basis<BasisType> lhs,
+                                        const detail::unsigned_integer_basis<BasisType> rhs) noexcept
+    -> detail::unsigned_integer_basis<BasisType>
+{
+    return detail::shr_impl<overflow_policy::strict>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("strict right shift", strict_shr)
+
+// ------------------------------
 // Generic policy-parameterized functions
 // ------------------------------
 
@@ -1892,6 +2236,22 @@ template <overflow_policy Policy, detail::unsigned_integral BasisType>
     }
 }
 
+template <overflow_policy Policy, detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto shl(const detail::unsigned_integer_basis<BasisType> lhs,
+                                 const detail::unsigned_integer_basis<BasisType> rhs)
+    noexcept(Policy != overflow_policy::throw_exception)
+{
+    return detail::shl_impl<Policy>(lhs, rhs);
+}
+
+template <overflow_policy Policy, detail::unsigned_integral BasisType>
+[[nodiscard]] constexpr auto shr(const detail::unsigned_integer_basis<BasisType> lhs,
+                                 const detail::unsigned_integer_basis<BasisType> rhs)
+    noexcept(Policy != overflow_policy::throw_exception)
+{
+    return detail::shr_impl<Policy>(lhs, rhs);
+}
+
 template <detail::unsigned_integral BasisType>
 constexpr auto operator~(const detail::unsigned_integer_basis<BasisType> lhs) noexcept
 {
@@ -1927,36 +2287,14 @@ template <detail::unsigned_integral BasisType>
 constexpr auto operator<<(const detail::unsigned_integer_basis<BasisType> lhs,
                           const detail::unsigned_integer_basis<BasisType> rhs)
 {
-    using return_type = detail::unsigned_integer_basis<BasisType>;
-    using core::bit_width;
-
-    const auto raw_lhs {detail::raw_value(lhs)};
-    const auto raw_rhs {detail::raw_value(rhs)};
-
-    const auto lhs_width {static_cast<BasisType>(bit_width(raw_lhs))};
-
-    if (lhs_width + raw_rhs >= std::numeric_limits<BasisType>::digits)
-    {
-        BOOST_THROW_EXCEPTION(std::overflow_error("Left shift past the end of the type width"));
-    }
-
-    return return_type{static_cast<BasisType>(raw_lhs << raw_rhs)};
+    return detail::shl_impl<overflow_policy::throw_exception>(lhs, rhs);
 }
 
 template <detail::unsigned_integral BasisType>
 constexpr auto operator>>(const detail::unsigned_integer_basis<BasisType> lhs,
                           const detail::unsigned_integer_basis<BasisType> rhs)
 {
-    using return_type = detail::unsigned_integer_basis<BasisType>;
-    const auto raw_lhs {detail::raw_value(lhs)};
-    const auto raw_rhs {detail::raw_value(rhs)};
-
-    if (raw_rhs >= static_cast<BasisType>(std::numeric_limits<BasisType>::digits))
-    {
-        BOOST_THROW_EXCEPTION(std::overflow_error("Right shift past the end of the type width"));
-    }
-
-    return return_type{static_cast<BasisType>(raw_lhs >> raw_rhs)};
+    return detail::shr_impl<overflow_policy::throw_exception>(lhs, rhs);
 }
 
 // ------------------------------
