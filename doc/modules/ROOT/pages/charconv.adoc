@@ -158,6 +158,28 @@ Returns `boost::charconv::from_chars_result` with:
 - `ptr` pointing to the first character not matching the pattern
 - `ec` set to `std::errc{}` on success, `std::errc::invalid_argument` if no valid conversion, or `std::errc::result_out_of_range` if the value overflows
 
+== Verified Types
+
+`to_chars` works at runtime with xref:verified_integers.adoc[verified types] since it only reads the value.
+
+`from_chars` has a `consteval` overload for verified types -- it can only be used at compile time.
+The two overloads are distinguished via a `requires` clause:
+
+[source,c++]
+----
+// Runtime overload (non-verified types)
+template <detail::library_type T>
+    requires (!detail::is_verified_type_v<T>)
+constexpr auto from_chars(const char* first, const char* last,
+                          T& value, int base = 10) -> charconv::from_chars_result;
+
+// Compile-time overload (verified types only)
+template <detail::library_type T>
+    requires detail::is_verified_type_v<T>
+consteval auto from_chars(const char* first, const char* last,
+                          T& value, int base = 10) -> charconv::from_chars_result;
+----
+
 == Examples
 
 .This https://github.com/boostorg/safe_numbers/blob/develop/examples/charconv.cpp[example] demonstrates how to use `to_chars` and `from_chars` with safe integer types.
