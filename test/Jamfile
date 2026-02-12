@@ -122,6 +122,7 @@ run test_verified_streaming.cpp ;
 run test_verified_bit.cpp ;
 run test_verified_charconv.cpp ;
 run test_verified_fmt_format.cpp ;
+run test_verified_std_format.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
