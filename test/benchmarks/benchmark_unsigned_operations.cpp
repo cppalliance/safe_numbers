@@ -5,7 +5,6 @@
 #define BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
 #define BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
-#include <boost/config.hpp>
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
 #include <random>
@@ -41,7 +40,6 @@
 #  pragma GCC diagnostic ignored "-Wsign-compare"
 #  pragma GCC diagnostic ignored "-Wfloat-equal"
 #  pragma GCC diagnostic ignored "-Woverflow"
-#  pragma GCC diagnostic ignored "-Wundef"
 
 #elif defined(_MSC_VER)
 #  pragma warning(push)
@@ -49,6 +47,16 @@
 #  pragma warning(disable : 4127)
 #  pragma warning(disable : 4305)
 #  pragma warning(disable : 4309)
+#endif
+
+#include <boost/config.hpp>
+
+// Even with the pragma above for -Wundef, GCC-11 and GCC-12 still fail
+// This is a workaround to at least define BOOST_CLANG to a fail value for safe_numerics
+#if defined(__GNUC__) && __GNUC__ == 11 || __GNUC__ == 12
+#  ifndef BOOST_CLANG
+#    define BOOST_CLANG 0
+#  endif
 #endif
 
 #include <boost/random/uniform_int_distribution.hpp>
