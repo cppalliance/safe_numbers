@@ -39,14 +39,15 @@ int main()
     const auto raw = static_cast<std::uint32_t>(c);
     std::cout << "Converted to uint32_t: " << raw << '\n';
 
-    // Comparisons work at runtime
-    if (a < b)
+    // Comparisons work at runtime (same-type only)
+    constexpr verified_u32 f {u32{50000}};
+    if (e < f)
     {
-        std::cout << "42 < 1000: true\n";
+        std::cout << "42 < 50000: true\n";
     }
 
     // The three-way comparison operator is also available
-    if ((a <=> a) == std::strong_ordering::equal)
+    if ((e <=> e) == std::strong_ordering::equal)
     {
         std::cout << "42 == 42: true\n";
     }

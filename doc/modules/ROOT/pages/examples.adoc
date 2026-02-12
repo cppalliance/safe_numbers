@@ -436,7 +436,7 @@ verified_u64: 9999999999
 verified_u32: 42
 
 Converted to uint32_t: 100000
-42 < 1000: true
+42 < 50000: true
 42 == 42: true
 
 percent: 50
