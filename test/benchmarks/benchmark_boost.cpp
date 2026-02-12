@@ -43,6 +43,14 @@
 #define BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
 #define BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
+// Even with the pragma above for -Wundef, GCC-11 and GCC-12 still fail
+// This is a workaround to at least define BOOST_CLANG to a fail value for safe_numerics
+#if defined(__GNUC__) && __GNUC__ == 11 || __GNUC__ == 12
+#  ifndef BOOST_CLANG
+#    define BOOST_CLANG 0
+#  endif
+#endif
+
 #include <cstdio>
 #include <cstdint>
 #include <iostream>
