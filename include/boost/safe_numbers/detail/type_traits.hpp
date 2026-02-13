@@ -149,6 +149,39 @@ concept unsigned_library_type = is_unsigned_library_type_v<T>;
 template <typename T>
 concept non_bounded_unsigned_library_type = is_unsigned_library_type_v<T> && !is_bounded_type_v<T>;
 
+// Forward declaration of verified_type_basis
+template <library_type BasisType>
+class verified_type_basis;
+
+// is_verified_type trait
+
+namespace impl {
+
+template <typename>
+struct is_verified_type : std::false_type {};
+
+template <library_type BasisType>
+struct is_verified_type<verified_type_basis<BasisType>> : std::true_type {};
+
+template <library_type BasisType>
+struct is_library_type<verified_type_basis<BasisType>> : std::true_type {};
+
+template <library_type BasisType>
+    requires is_unsigned_library_type_v<BasisType>
+struct is_unsigned_library_type<verified_type_basis<BasisType>> : std::true_type {};
+
+template <library_type BasisType>
+    requires is_bounded_type_v<BasisType>
+struct is_bounded_type<verified_type_basis<BasisType>> : std::true_type {};
+
+} // namespace impl
+
+template <typename T>
+inline constexpr bool is_verified_type_v = impl::is_verified_type<T>::value;
+
+template <typename T>
+concept verified_type = is_verified_type_v<T>;
+
 // underlying specialization for bounded_uint
 
 namespace impl {
@@ -157,6 +190,12 @@ template <auto Min, auto Max>
 struct underlying<bounded_uint<Min, Max>>
 {
     using type = typename underlying<typename bounded_uint<Min, Max>::basis_type>::type;
+};
+
+template <library_type BasisType>
+struct underlying<verified_type_basis<BasisType>>
+{
+    using type = typename underlying<BasisType>::type;
 };
 
 } // namespace impl

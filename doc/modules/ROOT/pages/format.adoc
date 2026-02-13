@@ -124,6 +124,11 @@ The full format specifier order is:
 {[fill][align][sign][#][0][width][.precision][L][type]}
 ----
 
+== Verified Types
+
+Formatting works with xref:verified_integers.adoc[verified types] through the `library_type` concept.
+Both `std::format` and `pass:[{fmt}]` work at runtime via the `constexpr` conversion operator, since the formatter only reads the value.
+
 == Examples
 
 IMPORTANT: The header `<boost/safe_numbers/fmt_format.hpp>` is *NOT* part of the convenience header, because it is an optional dependency on a potentially compiled library.

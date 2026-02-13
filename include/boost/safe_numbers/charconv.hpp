@@ -17,7 +17,22 @@
 namespace boost::safe_numbers {
 
 template <detail::library_type T>
+    requires (!detail::is_verified_type_v<T>)
 constexpr auto from_chars(const char* first, const char* last, T& value, int base = 10)
+    -> charconv::from_chars_result
+{
+    using underlying_type = detail::underlying_type_t<T>;
+
+    underlying_type result {};
+    const auto r {charconv::from_chars(first, last, result, base)};
+    value = T{result};
+
+    return r;
+}
+
+template <detail::library_type T>
+    requires detail::is_verified_type_v<T>
+consteval auto from_chars(const char* first, const char* last, T& value, int base = 10)
     -> charconv::from_chars_result
 {
     using underlying_type = detail::underlying_type_t<T>;

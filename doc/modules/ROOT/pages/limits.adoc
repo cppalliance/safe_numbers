@@ -239,6 +239,37 @@ class numeric_limits<boost::safe_numbers::bounded_uint<Min, Max>>
 
 NOTE: The non-applicable member functions (`epsilon`, `round_error`, `infinity`, `quiet_NaN`, `signaling_NaN`, `denorm_min`) return `min()` rather than a zero-constructed value, since zero may fall outside the valid range for types with a non-zero lower bound.
 
+== Verified Integer Specialization
+
+A partial specialization of `std::numeric_limits` is provided for all `verified_type_basis<BasisType>` types, including both `verified_u8`-`verified_u128` and `verified_bounded_integer<Min, Max>`.
+
+[source,c++]
+----
+namespace std {
+
+template <boost::safe_numbers::detail::library_type BasisType>
+class numeric_limits<boost::safe_numbers::detail::verified_type_basis<BasisType>>
+{
+    using type = boost::safe_numbers::detail::verified_type_basis<BasisType>;
+    using basis_limits = std::numeric_limits<BasisType>;
+
+    // Static member constants delegate to std::numeric_limits<BasisType>
+    // ...
+
+    static constexpr type min();
+    static constexpr type max();
+    static constexpr type lowest();
+    // ... remaining functions delegate to basis_limits
+};
+
+} // namespace std
+----
+
+Static properties and functions delegate to `std::numeric_limits<BasisType>` (the safe integer basis type, not the underlying fundamental type).
+This means verified bounded types correctly report their bounded `min()` and `max()` values.
+
+The `static constexpr` member functions work because constructing the verified type with a constant expression invokes the `consteval` constructor as an immediate invocation, which is permitted in a `constexpr` context.
+
 === Example
 
 .This https://github.com/boostorg/safe_numbers/blob/develop/examples/bounded_limits.cpp[example] demonstrates `std::numeric_limits` with bounded integer types.

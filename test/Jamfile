@@ -117,6 +117,14 @@ run test_unsigned_bounded_std_format.cpp ;
 compile-fail compile_fail_bounded_mixed_ops.cpp ;
 compile-fail compile_fail_bounded_bool_bounds.cpp ;
 
+run test_verified_integers.cpp ;
+run test_verified_streaming.cpp ;
+run test_verified_bit.cpp ;
+run test_verified_charconv.cpp ;
+run test_verified_fmt_format.cpp ;
+run test_verified_std_format.cpp ;
+run test_verified_limits.cpp ;
+
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
 compile compile_tests/compile_test_iostream.cpp ;
@@ -144,3 +152,7 @@ run ../examples/charconv.cpp ;
 run ../examples/bit.cpp ;
 run ../examples/bounded_limits.cpp ;
 run ../examples/bitwise_ops.cpp ;
+run ../examples/verified_construction.cpp ;
+run ../examples/verified_arithmetic.cpp ;
+run ../examples/verified_runtime_usage.cpp ;
+compile-fail ../examples/compile_fail_verified_overflow.cpp ;

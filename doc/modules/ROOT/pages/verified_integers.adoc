@@ -1,0 +1,216 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#verified_integers]
+
+= Verified Integer Types
+
+== Description
+
+The library provides verified integer types that guarantee compile-time validation via `consteval` constructors and arithmetic.
+All values must be known at compile time -- at runtime, verified types are read-only constants.
+They wrap any `library_type` (both `u8`-`u128` and `bounded_uint`), adding a layer of compile-time-only enforcement on top of the existing safety guarantees.
+
+|===
+| Type | Basis Type | Underlying Type
+
+| `verified_u8`   | `u8`   | `std::uint8_t`
+| `verified_u16`  | `u16`  | `std::uint16_t`
+| `verified_u32`  | `u32`  | `std::uint32_t`
+| `verified_u64`  | `u64`  | `std::uint64_t`
+| `verified_u128` | `u128` | `uint128_t`
+| `verified_bounded_integer<Min, Max>` | `bounded_uint<Min, Max>` | smallest unsigned type fitting `Max`
+|===
+
+Each type exposes an `underlying_type` member type alias that refers to the underlying fundamental integer type.
+
+[source,c++]
+----
+#include <boost/safe_numbers/verified_integers.hpp>
+
+namespace boost::safe_numbers {
+
+using verified_u8   = detail::verified_type_basis<u8>;
+using verified_u16  = detail::verified_type_basis<u16>;
+using verified_u32  = detail::verified_type_basis<u32>;
+using verified_u64  = detail::verified_type_basis<u64>;
+using verified_u128 = detail::verified_type_basis<u128>;
+
+template <auto Min, auto Max>
+using verified_bounded_integer = detail::verified_type_basis<bounded_uint<Min, Max>>;
+
+template <library_type BasisType>
+class verified_type_basis {
+
+public:
+    using underlying_type = underlying_type_t<BasisType>;
+
+    // Construction (consteval -- compile-time only)
+    explicit consteval verified_type_basis(const BasisType basis);
+    explicit consteval verified_type_basis(const underlying_type val);
+
+    // Conversion to basis type and underlying type (constexpr -- works at runtime)
+    explicit constexpr operator BasisType() const noexcept;
+    explicit constexpr operator underlying_type() const noexcept;
+
+    // Comparison operators (constexpr -- works at runtime)
+    friend constexpr auto operator<=>(verified_type_basis lhs, verified_type_basis rhs) noexcept
+        -> std::strong_ordering = default;
+
+    // Compound assignment operators (consteval -- compile-time only)
+    consteval auto operator+=(verified_type_basis rhs) -> verified_type_basis&;
+    consteval auto operator-=(verified_type_basis rhs) -> verified_type_basis&;
+    consteval auto operator*=(verified_type_basis rhs) -> verified_type_basis&;
+    consteval auto operator/=(verified_type_basis rhs) -> verified_type_basis&;
+    consteval auto operator%=(verified_type_basis rhs) -> verified_type_basis&;
+
+    // Increment and decrement operators (consteval -- compile-time only)
+    consteval auto operator++() -> verified_type_basis&;
+    consteval auto operator++(int) -> verified_type_basis;
+    consteval auto operator--() -> verified_type_basis&;
+    consteval auto operator--(int) -> verified_type_basis;
+
+}; // class verified_type_basis
+
+// Arithmetic operators (consteval -- compile-time only, overflow = compile error)
+template <library_type BasisType>
+consteval auto operator+(const verified_type_basis<BasisType> lhs,
+                         const verified_type_basis<BasisType> rhs) -> verified_type_basis<BasisType>;
+
+template <library_type BasisType>
+consteval auto operator-(const verified_type_basis<BasisType> lhs,
+                         const verified_type_basis<BasisType> rhs) -> verified_type_basis<BasisType>;
+
+template <library_type BasisType>
+consteval auto operator*(const verified_type_basis<BasisType> lhs,
+                         const verified_type_basis<BasisType> rhs) -> verified_type_basis<BasisType>;
+
+template <library_type BasisType>
+consteval auto operator/(const verified_type_basis<BasisType> lhs,
+                         const verified_type_basis<BasisType> rhs) -> verified_type_basis<BasisType>;
+
+template <library_type BasisType>
+consteval auto operator%(const verified_type_basis<BasisType> lhs,
+                         const verified_type_basis<BasisType> rhs) -> verified_type_basis<BasisType>;
+
+} // namespace boost::safe_numbers
+----
+
+== Operator Behavior
+
+=== Construction
+
+[source,c++]
+----
+explicit consteval verified_type_basis(const BasisType basis);
+explicit consteval verified_type_basis(const underlying_type val);
+----
+
+Construction is `consteval` -- it can only occur at compile time.
+The first overload accepts the safe integer basis type directly; the second accepts the underlying fundamental type and constructs the basis type internally.
+If the value is out of range (e.g., for a bounded type), the compilation fails.
+
+=== Conversion
+
+[source,c++]
+----
+explicit constexpr operator BasisType() const noexcept;
+explicit constexpr operator underlying_type() const noexcept;
+----
+
+Conversion to the basis type or the underlying fundamental type is `constexpr` and explicit.
+These work at runtime, allowing verified values to be used in runtime contexts such as stream output, `to_chars`, and comparisons.
+
+=== Comparison Operators
+
+[source,c++]
+----
+friend constexpr auto operator<=>(verified_type_basis lhs, verified_type_basis rhs) noexcept
+    -> std::strong_ordering = default;
+----
+
+Full three-way comparison is supported via `pass:[operator<=>]`, which returns `std::strong_ordering`.
+All comparison operators (`<`, `<=`, `>`, `>=`, `==`, `!=`) are available.
+Comparisons are `constexpr` and work at runtime.
+
+=== Arithmetic Operators
+
+[source,c++]
+----
+template <library_type BasisType>
+consteval auto operator+(const verified_type_basis<BasisType> lhs,
+                         const verified_type_basis<BasisType> rhs) -> verified_type_basis<BasisType>;
+
+template <library_type BasisType>
+consteval auto operator-(const verified_type_basis<BasisType> lhs,
+                         const verified_type_basis<BasisType> rhs) -> verified_type_basis<BasisType>;
+
+template <library_type BasisType>
+consteval auto operator*(const verified_type_basis<BasisType> lhs,
+                         const verified_type_basis<BasisType> rhs) -> verified_type_basis<BasisType>;
+
+template <library_type BasisType>
+consteval auto operator/(const verified_type_basis<BasisType> lhs,
+                         const verified_type_basis<BasisType> rhs) -> verified_type_basis<BasisType>;
+
+template <library_type BasisType>
+consteval auto operator%(const verified_type_basis<BasisType> lhs,
+                         const verified_type_basis<BasisType> rhs) -> verified_type_basis<BasisType>;
+----
+
+All arithmetic operators are `consteval` -- they can only be evaluated at compile time.
+The operations delegate to the underlying basis type's operators, which perform overflow/underflow checking.
+If an overflow, underflow, or division-by-zero would occur, the compilation fails with a compiler error.
+
+=== Compound Assignment Operators
+
+[source,c++]
+----
+consteval auto operator+=(verified_type_basis rhs) -> verified_type_basis&;
+consteval auto operator-=(verified_type_basis rhs) -> verified_type_basis&;
+consteval auto operator*=(verified_type_basis rhs) -> verified_type_basis&;
+consteval auto operator/=(verified_type_basis rhs) -> verified_type_basis&;
+consteval auto operator%=(verified_type_basis rhs) -> verified_type_basis&;
+----
+
+Compound assignment operators are `consteval` and delegate to the corresponding arithmetic operators.
+Overflow at compile time produces a compiler error.
+
+=== Increment and Decrement Operators
+
+[source,c++]
+----
+consteval auto operator++() -> verified_type_basis&;
+consteval auto operator++(int) -> verified_type_basis;
+consteval auto operator--() -> verified_type_basis&;
+consteval auto operator--(int) -> verified_type_basis;
+----
+
+- `++` (pre/post): `consteval`. Produces a compile error if the value is already at the maximum.
+- `--` (pre/post): `consteval`. Produces a compile error if the value is already at the minimum (zero for unbounded types, `Min` for bounded types).
+
+== Compile-Time vs Runtime
+
+|===
+| Operation | Qualifier | Compile-Time | Runtime
+
+| Construction | `consteval` | Yes | No
+| Arithmetic (`+`, `-`, `*`, `/`, `%`) | `consteval` | Yes | No
+| Compound assignment (`+=`, `-=`, etc.) | `consteval` | Yes | No
+| Increment/decrement (`++`, `--`) | `consteval` | Yes | No
+| Conversion to `BasisType` / `underlying_type` | `constexpr` | Yes | Yes
+| Comparison (`<=>`, `==`, `<`, etc.) | `constexpr` | Yes | Yes
+|===
+
+== Integration with Other Features
+
+Verified types integrate with the library's other features:
+
+- **xref:bit.adoc[]**: Functions returning `int` or `bool` (`has_single_bit`, `bit_width`, `countl_zero`, `countl_one`, `countr_zero`, `countr_one`, `popcount`) work at runtime with verified types via their `constexpr` conversion operator. Functions returning the safe type (`bit_ceil`, `bit_floor`, `rotl`, `rotr`, `byteswap`) have `consteval` overloads for verified types.
+- **xref:charconv.adoc[]**: `to_chars` works at runtime (only reads the value). `from_chars` has a `consteval` overload for verified types.
+- **xref:iostream.adoc[]**: `operator<<` works normally at runtime. `operator>>` is excluded for verified types since they cannot be constructed at runtime.
+- **xref:limits.adoc[]**: `std::numeric_limits` is fully specialized for all verified types, delegating to the basis type's limits. For verified bounded types, `min()` and `max()` correctly report the bounded range.
+- **xref:format.adoc[]**: Both `std::format` and `pass:[{fmt}]` work at runtime via the `constexpr` conversion operator.

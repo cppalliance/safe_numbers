@@ -8,6 +8,7 @@
 #include <boost/safe_numbers/detail/type_traits.hpp>
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/bounded_integers.hpp>
+#include <boost/safe_numbers/verified_integers.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -134,6 +135,52 @@ public:
     static constexpr type quiet_NaN() { return min(); }
     static constexpr type signaling_NaN() { return min(); }
     static constexpr type denorm_min() { return min(); }
+};
+
+template <boost::safe_numbers::detail::library_type BasisType>
+class numeric_limits<boost::safe_numbers::detail::verified_type_basis<BasisType>>
+{
+    using type = boost::safe_numbers::detail::verified_type_basis<BasisType>;
+    using basis_limits = std::numeric_limits<BasisType>;
+
+public:
+    static constexpr bool is_specialized = basis_limits::is_specialized;
+    static constexpr bool is_signed = basis_limits::is_signed;
+    static constexpr bool is_integer = basis_limits::is_integer;
+    static constexpr bool is_exact = basis_limits::is_exact;
+    static constexpr bool has_infinity = basis_limits::has_infinity;
+    static constexpr bool has_quiet_NaN = basis_limits::has_quiet_NaN;
+    static constexpr bool has_signaling_NaN = basis_limits::has_signaling_NaN;
+
+    #if ((!defined(_MSC_VER) && (__cplusplus <= 202002L)) || (defined(_MSC_VER) && (_MSVC_LANG <= 202002L)))
+    static constexpr std::float_denorm_style has_denorm = basis_limits::has_denorm;
+    static constexpr bool has_denorm_loss = basis_limits::has_denorm_loss;
+    #endif
+
+    static constexpr std::float_round_style round_style = basis_limits::round_style;
+    static constexpr bool is_iec559 = basis_limits::is_iec559;
+    static constexpr bool is_bounded = basis_limits::is_bounded;
+    static constexpr bool is_modulo = basis_limits::is_modulo;
+    static constexpr int digits = basis_limits::digits;
+    static constexpr int digits10 = basis_limits::digits10;
+    static constexpr int max_digits10 = basis_limits::max_digits10;
+    static constexpr int radix = basis_limits::radix;
+    static constexpr int min_exponent = basis_limits::min_exponent;
+    static constexpr int min_exponent10 = basis_limits::min_exponent10;
+    static constexpr int max_exponent = basis_limits::max_exponent;
+    static constexpr int max_exponent10 = basis_limits::max_exponent10;
+    static constexpr bool traps = basis_limits::traps;
+    static constexpr bool tinyness_before = basis_limits::tinyness_before;
+
+    static constexpr type min() { return type{basis_limits::min()}; }
+    static constexpr type max() { return type{basis_limits::max()}; }
+    static constexpr type lowest() { return type{basis_limits::lowest()}; }
+    static constexpr type epsilon() { return type{basis_limits::epsilon()}; }
+    static constexpr type round_error() { return type{basis_limits::round_error()}; }
+    static constexpr type infinity() { return type{basis_limits::infinity()}; }
+    static constexpr type quiet_NaN() { return type{basis_limits::quiet_NaN()}; }
+    static constexpr type signaling_NaN() { return type{basis_limits::signaling_NaN()}; }
+    static constexpr type denorm_min() { return type{basis_limits::denorm_min()}; }
 };
 
 #ifdef __clang__

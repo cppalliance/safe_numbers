@@ -169,6 +169,31 @@ See https://en.cppreference.com/w/cpp/numeric/byteswap.html[`std::byteswap`].
 
 NOTE: `byteswap` is not available for `bounded_uint` types. Byte reversal can produce values outside the valid bounded range, making the operation semantically meaningless for bounded integers.
 
+== Verified Types
+
+The bit functions have special behavior with xref:verified_integers.adoc[verified types]:
+
+Functions that return `int` or `bool` (`has_single_bit`, `bit_width`, `countl_zero`, `countl_one`, `countr_zero`, `countr_one`, `popcount`) work at runtime with verified types.
+These functions only read the value via the `constexpr` conversion operator.
+
+Functions that return the safe type (`bit_ceil`, `bit_floor`, `rotl`, `rotr`, `byteswap`) have `consteval` overloads for verified types, meaning they can only be called at compile time.
+The `consteval` overloads use a `requires` clause to distinguish them:
+
+[source,c++]
+----
+// Runtime overload (non-verified types)
+template <unsigned_library_type UnsignedInt>
+    requires (!is_verified_type_v<UnsignedInt>)
+constexpr auto bit_ceil(UnsignedInt x) noexcept -> UnsignedInt;
+
+// Compile-time overload (verified types only)
+template <unsigned_library_type UnsignedInt>
+    requires is_verified_type_v<UnsignedInt>
+consteval auto bit_ceil(UnsignedInt x) noexcept -> UnsignedInt;
+----
+
+The same pattern applies to `bit_floor`, `rotl`, `rotr`, and `byteswap`.
+
 == Examples
 
 .This https://github.com/boostorg/safe_numbers/blob/develop/examples/bit.cpp[example] demonstrates the bit manipulation functions.

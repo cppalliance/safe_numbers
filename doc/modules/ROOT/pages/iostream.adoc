@@ -72,6 +72,23 @@ Standard stream manipulators (`std::hex`, `std::oct`, `std::dec`, `std::setw`, e
 
 For `u8`, the input is read as a `std::uint32_t` to avoid character interpretation, then narrowed to `std::uint8_t`.
 
+== Verified Types
+
+`operator>>` is not available for xref:verified_integers.adoc[verified types].
+The overload is excluded via a `requires` clause:
+
+[source,c++]
+----
+template <typename charT, typename traits, library_type LibType>
+    requires (!is_verified_type_v<LibType>)
+auto operator>>(std::basic_istream<charT, traits>& is, LibType& v)
+    -> std::basic_istream<charT, traits>&;
+----
+
+This is by design: verified types can only be constructed at compile time, so reading a value from a stream into a verified type is not meaningful.
+
+`operator<<` works normally with verified types via their `constexpr` conversion operator, since output only reads the value.
+
 == Examples
 
 .This https://github.com/boostorg/safe_numbers/blob/develop/examples/iostream.cpp[example] demonstrates stream I/O with safe integer types.

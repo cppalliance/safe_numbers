@@ -489,6 +489,9 @@ constexpr auto OP_SYMBOL(const boost::safe_numbers::detail::unsigned_integer_bas
 
 namespace boost::safe_numbers::detail {
 
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("comparison", operator<=>)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("equality", operator==)
+
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("addition", operator+)
 
 template <unsigned_integral BasisType>

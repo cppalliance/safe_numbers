@@ -25,6 +25,7 @@ namespace boost::safe_numbers::detail {
 #endif
 
 BOOST_SAFE_NUMBERS_EXPORT template <typename charT, typename traits, library_type LibType>
+    requires (!is_verified_type_v<LibType>)
 auto operator>>(std::basic_istream<charT, traits>& is, LibType& v) -> std::basic_istream<charT, traits>&
 {
     using underlying_type = underlying_type_t<LibType>;
