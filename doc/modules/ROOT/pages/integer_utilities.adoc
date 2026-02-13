@@ -1,0 +1,82 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#integer_utilities]
+= Integer Utilities
+:idprefix: integer_utilities_
+
+== Description
+
+The library provides utility functions for safe integer types.
+These operate on the non-bounded unsigned types (`u8`, `u16`, `u32`, `u64`, `u128`) and their verified counterparts.
+
+[source,c++]
+----
+#include <boost/safe_numbers/integer_utilities.hpp>
+----
+
+== isqrt
+
+=== Runtime Overload
+
+[source,c++]
+----
+template <non_bounded_unsigned_library_type T>
+    requires (!is_verified_type_v<T>)
+constexpr auto isqrt(const T val) -> T;
+----
+
+Returns the integer square root of `val`, i.e., the largest integer `r` such that `r * r \<= val`.
+
+Uses Newton's method on the underlying hardware type.
+The computation cannot overflow and converges rapidly.
+
+==== Parameters
+
+* `val` -- The value to compute the integer square root of.
+
+==== Return Value
+
+The floor of the square root of `val`, as the same safe integer type `T`.
+
+==== Complexity
+
+O(log(val)) iterations of Newton's method.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+auto r = isqrt(u32{100});   // r == u32{10}
+auto s = isqrt(u32{200});   // s == u32{14}  (floor of sqrt(200))
+auto t = isqrt(u32{0});     // t == u32{0}
+auto u = isqrt(u32{1});     // u == u32{1}
+----
+
+=== Verified Overload
+
+[source,c++]
+----
+template <non_bounded_unsigned_library_type T>
+consteval auto isqrt(const verified_type_basis<T> val) -> verified_type_basis<T>;
+----
+
+Compile-time only overload for verified types.
+Delegates to the runtime overload after extracting the basis value, and wraps the result back into a verified type.
+
+Since `isqrt` is `consteval` for verified types, the result is guaranteed to be a compile-time constant.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+constexpr auto r = isqrt(verified_u32{u32{144}});  // r == verified_u32{u32{12}}
+constexpr auto s = isqrt(verified_u64{u64{1000000}});  // s == verified_u64{u64{1000}}
+----
