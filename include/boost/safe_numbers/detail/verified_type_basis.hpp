@@ -212,6 +212,164 @@ constexpr auto operator==(const verified_type_basis<LHSBasis>,
     return false;
 }
 
+// At runtime, we want to enable mixed operations between verified and unverified values of the same width
+// e.g., u32 + verified_u32 = u32 or u32 <=> verified_u32
+// These operations will always result in the runtime value
+
+#define BOOST_SAFE_NUMBERS_MIXED_VERIFIED_OPERATOR(op)                                              \
+template <library_type VerifiedBasisType>                                                           \
+constexpr auto operator op(const verified_type_basis<VerifiedBasisType> lhs,                        \
+                           const VerifiedBasisType rhs) -> VerifiedBasisType                        \
+{                                                                                                   \
+    return static_cast<VerifiedBasisType>(lhs) op rhs;                                              \
+}                                                                                                   \
+                                                                                                    \
+template <library_type VerifiedBasisType>                                                           \
+constexpr auto operator op(const VerifiedBasisType lhs,                                             \
+                           const verified_type_basis<VerifiedBasisType> rhs) -> VerifiedBasisType   \
+{                                                                                                   \
+    return lhs op static_cast<VerifiedBasisType>(rhs);                                              \
+}                                                                                                   \
+                                                                                                    \
+template <library_type VerifiedBasisType, library_type OtherBasis>                                  \
+constexpr auto operator op(const verified_type_basis<VerifiedBasisType> lhs,                        \
+                           const OtherBasis rhs) -> VerifiedBasisType                               \
+{                                                                                                   \
+    return static_cast<VerifiedBasisType>(lhs) op rhs;                                              \
+}                                                                                                   \
+                                                                                                    \
+template <library_type OtherBasis, library_type VerifiedBasisType>                                  \
+constexpr auto operator op(const OtherBasis lhs,                                                    \
+                           const verified_type_basis<VerifiedBasisType> rhs) -> VerifiedBasisType   \
+{                                                                                                   \
+    return static_cast<VerifiedBasisType>(lhs) op rhs;                                              \
+}
+
+BOOST_SAFE_NUMBERS_MIXED_VERIFIED_OPERATOR(+)
+BOOST_SAFE_NUMBERS_MIXED_VERIFIED_OPERATOR(-)
+BOOST_SAFE_NUMBERS_MIXED_VERIFIED_OPERATOR(*)
+BOOST_SAFE_NUMBERS_MIXED_VERIFIED_OPERATOR(/)
+BOOST_SAFE_NUMBERS_MIXED_VERIFIED_OPERATOR(%)
+
+#undef BOOST_SAFE_NUMBERS_MIXED_VERIFIED_OPERATOR
+
+// Bitwise mixed operators (&, |, ^) need separate treatment because the native
+// unsigned_integer_basis bitwise operators live in boost::safe_numbers (not detail),
+// so ADL cannot find them from within detail. We operate on raw values directly.
+
+#define BOOST_SAFE_NUMBERS_MIXED_VERIFIED_BITWISE_OPERATOR(op)                                      \
+template <non_bounded_unsigned_library_type VerifiedBasisType>                                      \
+constexpr auto operator op(const verified_type_basis<VerifiedBasisType> lhs,                        \
+                           const VerifiedBasisType rhs) -> VerifiedBasisType                        \
+{                                                                                                   \
+    using raw = underlying_type_t<VerifiedBasisType>;                                               \
+    return VerifiedBasisType{static_cast<raw>(                                                      \
+        raw_value(static_cast<VerifiedBasisType>(lhs)) op raw_value(rhs))};                         \
+}                                                                                                   \
+                                                                                                    \
+template <non_bounded_unsigned_library_type VerifiedBasisType>                                      \
+constexpr auto operator op(const VerifiedBasisType lhs,                                             \
+                           const verified_type_basis<VerifiedBasisType> rhs) -> VerifiedBasisType   \
+{                                                                                                   \
+    using raw = underlying_type_t<VerifiedBasisType>;                                               \
+    return VerifiedBasisType{static_cast<raw>(                                                      \
+        raw_value(lhs) op raw_value(static_cast<VerifiedBasisType>(rhs)))};                         \
+}
+
+BOOST_SAFE_NUMBERS_MIXED_VERIFIED_BITWISE_OPERATOR(&)
+BOOST_SAFE_NUMBERS_MIXED_VERIFIED_BITWISE_OPERATOR(|)
+BOOST_SAFE_NUMBERS_MIXED_VERIFIED_BITWISE_OPERATOR(^)
+
+#undef BOOST_SAFE_NUMBERS_MIXED_VERIFIED_BITWISE_OPERATOR
+
+// Shift mixed operators (<<, >>) call shl_impl/shr_impl directly (in detail namespace)
+
+template <non_bounded_unsigned_library_type VerifiedBasisType>
+constexpr auto operator<<(const verified_type_basis<VerifiedBasisType> lhs,
+                          const VerifiedBasisType rhs) -> VerifiedBasisType
+{
+    return shl_impl<overflow_policy::throw_exception>(static_cast<VerifiedBasisType>(lhs), rhs);
+}
+
+template <non_bounded_unsigned_library_type VerifiedBasisType>
+constexpr auto operator<<(const VerifiedBasisType lhs,
+                          const verified_type_basis<VerifiedBasisType> rhs) -> VerifiedBasisType
+{
+    return shl_impl<overflow_policy::throw_exception>(lhs, static_cast<VerifiedBasisType>(rhs));
+}
+
+template <non_bounded_unsigned_library_type VerifiedBasisType>
+constexpr auto operator>>(const verified_type_basis<VerifiedBasisType> lhs,
+                          const VerifiedBasisType rhs) -> VerifiedBasisType
+{
+    return shr_impl<overflow_policy::throw_exception>(static_cast<VerifiedBasisType>(lhs), rhs);
+}
+
+template <non_bounded_unsigned_library_type VerifiedBasisType>
+constexpr auto operator>>(const VerifiedBasisType lhs,
+                          const verified_type_basis<VerifiedBasisType> rhs) -> VerifiedBasisType
+{
+    return shr_impl<overflow_policy::throw_exception>(lhs, static_cast<VerifiedBasisType>(rhs));
+}
+
+// Separate implementations for the comparisons since we can't shoehorn them into the macros above
+
+template <library_type VerifiedBasisType>
+constexpr auto operator<=>(const verified_type_basis<VerifiedBasisType> lhs,
+                           const VerifiedBasisType rhs) -> std::strong_ordering
+{
+    return static_cast<VerifiedBasisType>(lhs) <=> rhs;
+}
+
+template <library_type VerifiedBasisType>
+constexpr auto operator==(const verified_type_basis<VerifiedBasisType> lhs,
+                          const VerifiedBasisType rhs) -> bool
+{
+    return static_cast<VerifiedBasisType>(lhs) == rhs;
+}
+
+template <library_type VerifiedBasisType>
+constexpr auto operator<=>(const VerifiedBasisType lhs,
+                           const verified_type_basis<VerifiedBasisType> rhs) -> std::strong_ordering
+{
+    return lhs <=> static_cast<VerifiedBasisType>(rhs);
+}
+
+template <library_type VerifiedBasisType>
+constexpr auto operator==(const VerifiedBasisType lhs,
+                          const verified_type_basis<VerifiedBasisType> rhs) -> bool
+{
+    return lhs == static_cast<VerifiedBasisType>(rhs);
+}
+
+template <library_type VerifiedBasisType, library_type OtherBasis>
+constexpr auto operator<=>(const verified_type_basis<VerifiedBasisType> lhs,
+                           const OtherBasis rhs) -> std::strong_ordering
+{
+    return static_cast<VerifiedBasisType>(lhs) <=> rhs;
+}
+
+template <library_type VerifiedBasisType, library_type OtherBasis>
+constexpr auto operator==(const verified_type_basis<VerifiedBasisType> lhs,
+                          const OtherBasis rhs) -> bool
+{
+    return static_cast<VerifiedBasisType>(lhs) == rhs;
+}
+
+template <library_type OtherBasis, library_type VerifiedBasisType>
+constexpr auto operator<=>(const OtherBasis lhs,
+                           const verified_type_basis<VerifiedBasisType> rhs) -> std::strong_ordering
+{
+    return lhs <=> static_cast<VerifiedBasisType>(rhs);
+}
+
+template <library_type OtherBasis, library_type VerifiedBasisType>
+constexpr auto operator==(const OtherBasis lhs,
+                          const verified_type_basis<VerifiedBasisType> rhs) -> bool
+{
+    return lhs == static_cast<VerifiedBasisType>(rhs);
+}
+
 } // namespace boost::safe_numbers::detail
 
 #endif // BOOST_SAFE_NUMBERS_VERIFIED_INTEGER_BASIS_HPP
