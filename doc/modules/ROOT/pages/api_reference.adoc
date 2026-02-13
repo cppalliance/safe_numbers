@@ -157,6 +157,16 @@ https://www.boost.org/LICENSE_1_0.txt
 | Reverses the bytes of the value
 |===
 
+=== Integer Utilities
+
+[cols="1,2", options="header"]
+|===
+| Function | Description
+
+| xref:integer_utilities.adoc[`isqrt`]
+| Returns the integer square root (floor of sqrt) of a safe unsigned integer
+|===
+
 === Arithmetic
 
 [cols="1,2", options="header"]
@@ -204,6 +214,9 @@ This header is not included in the convenience header since it requires external
 
 | `<boost/safe_numbers/format.hpp>`
 | Contains specializations of `<format>` for library types
+
+| `<boost/safe_numbers/integer_utilities.hpp>`
+| Integer utility functions (`isqrt`)
 
 | `<boost/safe_numbers/iostream.hpp>`
 | Stream I/O operators (`operator<<`, `operator>>`) for library types

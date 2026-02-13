@@ -33,4 +33,5 @@
 * xref:iostream.adoc[]
 * xref:charconv.adoc[]
 * xref:bit.adoc[]
+* xref:integer_utilities.adoc[]
 * xref:reference.adoc[]
