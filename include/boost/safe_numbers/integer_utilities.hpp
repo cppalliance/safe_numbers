@@ -17,20 +17,24 @@ constexpr auto isqrt(const T val) -> T
 {
     using underlying = typename detail::underlying_type_t<T>;
 
+    constexpr auto zero {static_cast<underlying>(0)};
+    constexpr auto one {static_cast<underlying>(1)};
+    constexpr auto two {static_cast<underlying>(2)};
+
     auto n {static_cast<underlying>(val)};
 
-    if (n < 2U)
+    if (n < two)
     {
         return val;
     }
 
     auto x {n};
-    auto y {static_cast<underlying>(x / 2U + (x & 1U))}; // (x + 1) / 2 without overflow
+    auto y {static_cast<underlying>(x / two + (x & one))}; // (x + 1) / 2 without overflow
 
     while (y < x)
     {
         x = y;
-        y = (x + n / x) / 2U;
+        y = (x + n / x) / two;
     }
 
     return T{x};

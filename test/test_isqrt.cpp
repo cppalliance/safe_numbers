@@ -85,6 +85,40 @@ void test_isqrt_u64_large()
     BOOST_TEST_EQ(isqrt(u64{10000000000ULL}), u64{100000});
 }
 
+void test_isqrt_u128_large()
+{
+    using boost::int128::uint128_t;
+
+    // Perfect squares
+    BOOST_TEST_EQ(isqrt(u128{uint128_t{0}}), u128{uint128_t{0}});
+    BOOST_TEST_EQ(isqrt(u128{uint128_t{1}}), u128{uint128_t{1}});
+    BOOST_TEST_EQ(isqrt(u128{uint128_t{4}}), u128{uint128_t{2}});
+    BOOST_TEST_EQ(isqrt(u128{uint128_t{100}}), u128{uint128_t{10}});
+    BOOST_TEST_EQ(isqrt(u128{uint128_t{10000}}), u128{uint128_t{100}});
+    BOOST_TEST_EQ(isqrt(u128{uint128_t{1000000}}), u128{uint128_t{1000}});
+
+    // Non-perfect squares
+    BOOST_TEST_EQ(isqrt(u128{uint128_t{2}}), u128{uint128_t{1}});
+    BOOST_TEST_EQ(isqrt(u128{uint128_t{3}}), u128{uint128_t{1}});
+    BOOST_TEST_EQ(isqrt(u128{uint128_t{10}}), u128{uint128_t{3}});
+    BOOST_TEST_EQ(isqrt(u128{uint128_t{200}}), u128{uint128_t{14}});
+
+    // Large values beyond u64 range
+    // 10^20 = (10^10)^2, so isqrt(10^20) == 10^10
+    const auto ten_pow_20 = uint128_t{10000000000ULL} * uint128_t{10000000000ULL};
+    BOOST_TEST_EQ(isqrt(u128{ten_pow_20}), u128{uint128_t{10000000000ULL}});
+
+    // 10^20 + 1 is not a perfect square, floor(sqrt) should still be 10^10
+    const auto ten_pow_20_plus_1 = ten_pow_20 + uint128_t{1};
+    BOOST_TEST_EQ(isqrt(u128{ten_pow_20_plus_1}), u128{uint128_t{10000000000ULL}});
+
+    // (2^64)^2 = 2^128 doesn't fit, but (2^64 - 1)^2 does:
+    // isqrt((2^64-1)^2) == 2^64-1
+    const auto max_u64_val = uint128_t{UINT64_MAX};
+    const auto max_u64_squared = max_u64_val * max_u64_val;
+    BOOST_TEST_EQ(isqrt(u128{max_u64_squared}), u128{max_u64_val});
+}
+
 // =============================================================================
 // Constexpr isqrt tests (runtime types, compile-time evaluation)
 // =============================================================================
@@ -138,6 +172,10 @@ void test_isqrt_verified()
 
     constexpr auto r64_val = isqrt(verified_u64{u64{1000000}});
     BOOST_TEST_EQ(r64_val, verified_u64{u64{1000}});
+
+    using boost::int128::uint128_t;
+    constexpr auto r128_val = isqrt(verified_u128{u128{uint128_t{10000}}});
+    BOOST_TEST_EQ(r128_val, verified_u128{u128{uint128_t{100}}});
 }
 
 // =============================================================================
@@ -168,23 +206,27 @@ int main()
     test_isqrt_perfect_squares<u16>();
     test_isqrt_perfect_squares<u32>();
     test_isqrt_perfect_squares<u64>();
+    test_isqrt_perfect_squares<u128>();
 
     // Non-perfect squares
     test_isqrt_non_perfect_squares<u8>();
     test_isqrt_non_perfect_squares<u16>();
     test_isqrt_non_perfect_squares<u32>();
     test_isqrt_non_perfect_squares<u64>();
+    test_isqrt_non_perfect_squares<u128>();
 
     // Edge cases
     test_isqrt_edge_cases<u8>();
     test_isqrt_edge_cases<u16>();
     test_isqrt_edge_cases<u32>();
     test_isqrt_edge_cases<u64>();
+    test_isqrt_edge_cases<u128>();
 
     // Larger values for wider types
     test_isqrt_u16_large();
     test_isqrt_u32_large();
     test_isqrt_u64_large();
+    test_isqrt_u128_large();
 
     // Constexpr evaluation
     test_isqrt_constexpr();
@@ -192,9 +234,10 @@ int main()
     // Verified types (consteval)
     test_isqrt_verified();
 
-    // Property: r^2 <= n < (r+1)^2 for all u16 values 0..255
+    // Property: r^2 <= n < (r+1)^2 for all values 0..255
     test_isqrt_property<u16>();
     test_isqrt_property<u32>();
+    test_isqrt_property<u128>();
 
     return boost::report_errors();
 }
