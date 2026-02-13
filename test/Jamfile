@@ -118,6 +118,10 @@ compile-fail compile_fail_bounded_mixed_ops.cpp ;
 compile-fail compile_fail_bounded_bool_bounds.cpp ;
 
 run test_verified_integers.cpp ;
+run test_verified_mixed_ops.cpp ;
+compile-fail compile_fail_verified_mixed_width_add.cpp ;
+compile-fail compile_fail_verified_cross_type_add.cpp ;
+compile-fail compile_fail_verified_cross_type_comparison.cpp ;
 run test_verified_streaming.cpp ;
 run test_verified_bit.cpp ;
 run test_verified_charconv.cpp ;
