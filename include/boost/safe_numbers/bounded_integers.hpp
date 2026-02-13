@@ -267,9 +267,38 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("subtraction", operator-)
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("multiplication", operator*)
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("division", operator/)
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("modulo", operator%)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("and", operator&)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("or", operator|)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("xor", operator^)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("right shift", operator>>)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP("left shift", operator<<)
 
 } // namespace boost::safe_numbers
 
 #undef BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_UINT_OP
+
+#define BOOST_SAFE_NUMBERS_DEFINE_BITWISE_OP(OP_NAME, OP_SYMBOL)                                                    \
+template <auto Min, auto Max>                                                                                       \
+constexpr auto OP_SYMBOL(const boost::safe_numbers::bounded_uint<Min, Max>,                                         \
+                         const boost::safe_numbers::bounded_uint<Min, Max>)                                         \
+{                                                                                                                   \
+    static_assert(boost::safe_numbers::detail::dependent_false<boost::safe_numbers::bounded_uint<Min, Max>>,        \
+                  "Can not perform " OP_NAME "between bounded_uint types as the results would be non-sensical");    \
+                                                                                                                    \
+    return boost::safe_numbers::bounded_uint<Min, Max>(                                                             \
+        typename boost::safe_numbers::bounded_uint<Min, Max>::basis_type{0});                                       \
+}                                                                                                                   \
+
+namespace boost::safe_numbers {
+
+BOOST_SAFE_NUMBERS_DEFINE_BITWISE_OP("and", operator&)
+BOOST_SAFE_NUMBERS_DEFINE_BITWISE_OP("or", operator|)
+BOOST_SAFE_NUMBERS_DEFINE_BITWISE_OP("xor", operator^)
+BOOST_SAFE_NUMBERS_DEFINE_BITWISE_OP("right shift", operator>>)
+BOOST_SAFE_NUMBERS_DEFINE_BITWISE_OP("left shift", operator<<)
+
+}
+
+#undef BOOST_SAFE_NUMBERS_DEFINE_BITWISE_OP
 
 #endif // BOOST_SAFE_NUMBERS_BOUNDED_INTEGERS_HPP
