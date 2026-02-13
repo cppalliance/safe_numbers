@@ -511,42 +511,49 @@ int main()
     test_verified_op_basis_arithmetic<verified_u16, u16>();
     test_verified_op_basis_arithmetic<verified_u32, u32>();
     test_verified_op_basis_arithmetic<verified_u64, u64>();
+    test_verified_op_basis_arithmetic<verified_u128, u128>();
 
     // --- Mixed arithmetic: basis op verified ---
     test_basis_op_verified_arithmetic<verified_u8, u8>();
     test_basis_op_verified_arithmetic<verified_u16, u16>();
     test_basis_op_verified_arithmetic<verified_u32, u32>();
     test_basis_op_verified_arithmetic<verified_u64, u64>();
+    test_basis_op_verified_arithmetic<verified_u128, u128>();
 
     // --- Asymmetric operand tests ---
     test_asymmetric_operands<verified_u8, u8>();
     test_asymmetric_operands<verified_u16, u16>();
     test_asymmetric_operands<verified_u32, u32>();
     test_asymmetric_operands<verified_u64, u64>();
+    test_asymmetric_operands<verified_u128, u128>();
 
     // --- Mixed comparisons ---
     test_mixed_comparisons<verified_u8, u8>();
     test_mixed_comparisons<verified_u16, u16>();
     test_mixed_comparisons<verified_u32, u32>();
     test_mixed_comparisons<verified_u64, u64>();
+    test_mixed_comparisons<verified_u128, u128>();
 
     // --- Constexpr mixed ops ---
     test_constexpr_mixed_ops<verified_u8, u8>();
     test_constexpr_mixed_ops<verified_u16, u16>();
     test_constexpr_mixed_ops<verified_u32, u32>();
     test_constexpr_mixed_ops<verified_u64, u64>();
+    test_constexpr_mixed_ops<verified_u128, u128>();
 
     // --- Zero operations ---
     test_zero_operations<verified_u8, u8>();
     test_zero_operations<verified_u16, u16>();
     test_zero_operations<verified_u32, u32>();
     test_zero_operations<verified_u64, u64>();
+    test_zero_operations<verified_u128, u128>();
 
     // --- Max value comparisons ---
     test_max_value_comparisons<verified_u8, u8>();
     test_max_value_comparisons<verified_u16, u16>();
     test_max_value_comparisons<verified_u32, u32>();
     test_max_value_comparisons<verified_u64, u64>();
+    test_max_value_comparisons<verified_u128, u128>();
 
     // --- Bounded integer mixed ops ---
     test_bounded_mixed_arithmetic();
@@ -560,6 +567,7 @@ int main()
     test_mixed_bitwise<verified_u16, u16>();
     test_mixed_bitwise<verified_u32, u32>();
     test_mixed_bitwise<verified_u64, u64>();
+    test_mixed_bitwise<verified_u128, u128>();
 
     return boost::report_errors();
 }
