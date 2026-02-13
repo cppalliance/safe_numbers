@@ -203,7 +203,99 @@ consteval auto operator--(int) -> verified_type_basis;
 | Increment/decrement (`++`, `--`) | `consteval` | Yes | No
 | Conversion to `BasisType` / `underlying_type` | `constexpr` | Yes | Yes
 | Comparison (`<=>`, `==`, `<`, etc.) | `constexpr` | Yes | Yes
+| Mixed-type arithmetic (verified op basis) | `constexpr` | Yes | Yes
+| Mixed-type comparison (verified vs basis) | `constexpr` | Yes | Yes
+| Mixed-type bitwise (verified op basis) | `constexpr` | Yes | Yes
 |===
+
+== Mixed-Type Operations
+
+Verified types can participate in runtime expressions when combined with their basis types.
+The result is always the runtime (basis) type, effectively treating the verified value as a read-only constant operand.
+
+=== Arithmetic
+
+[source,c++]
+----
+// verified op basis -> basis
+template <library_type VerifiedBasisType>
+constexpr auto operator+(const verified_type_basis<VerifiedBasisType> lhs,
+                         const VerifiedBasisType rhs) -> VerifiedBasisType;
+
+// basis op verified -> basis
+template <library_type VerifiedBasisType>
+constexpr auto operator+(const VerifiedBasisType lhs,
+                         const verified_type_basis<VerifiedBasisType> rhs) -> VerifiedBasisType;
+----
+
+All five arithmetic operators (`+`, `-`, `*`, `/`, `%`) are supported in both directions.
+Cross-width operations (e.g., `verified_u32 + u64`) are allowed and follow the same rules as the basis types.
+
+=== Comparisons
+
+[source,c++]
+----
+template <library_type VerifiedBasisType>
+constexpr auto operator<=>(const verified_type_basis<VerifiedBasisType> lhs,
+                           const VerifiedBasisType rhs) -> std::strong_ordering;
+
+template <library_type VerifiedBasisType>
+constexpr auto operator==(const verified_type_basis<VerifiedBasisType> lhs,
+                          const VerifiedBasisType rhs) -> bool;
+----
+
+Full three-way and equality comparisons are supported in both directions (verified vs basis, basis vs verified).
+
+=== Bitwise Operations
+
+[source,c++]
+----
+template <non_bounded_unsigned_library_type VerifiedBasisType>
+constexpr auto operator&(const verified_type_basis<VerifiedBasisType> lhs,
+                         const VerifiedBasisType rhs) -> VerifiedBasisType;
+----
+
+Bitwise operators (`&`, `|`, `^`, `<<`, `>>`) are supported for non-bounded unsigned types in both directions.
+Shift operators include overflow checking via `throw_exception` policy.
+
+=== Type Safety
+
+Mixed operations between verified types with *different* basis types produce clear `static_assert` errors:
+
+[source,c++]
+----
+constexpr auto a = verified_u32{u32{10}};
+constexpr auto b = verified_u64{u64{20}};
+
+auto c = a + b;  // error: "Can not perform addition between verified types with different basis types"
+auto d = (a == b);  // error: "Can not compare verified types with different basis types"
+----
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/verified_mixed_ops.cpp[example] demonstrates mixed-type operations between verified constants and runtime values.
+====
+[source, c++]
+----
+include::example$verified_mixed_ops.cpp[]
+----
+
+Output:
+----
+Tax on 500 at 20%: 100
+500 - 50 discount = 450
+
+500 < 1000: true
+1000 > 500: true
+500 == 1000: false
+
+0xABCD & 0xFF = 205
+0xFF | 0xABCD = 44031
+0xABCD << 4 = 703696
+
+bounded 50 + 10 = 60
+bounded 50 - 10 = 40
+bounded 50 > 10: true
+----
+====
 
 == Integration with Other Features
 

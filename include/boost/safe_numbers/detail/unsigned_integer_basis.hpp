@@ -2320,7 +2320,7 @@ template <detail::unsigned_integral BasisType>
 constexpr auto detail::unsigned_integer_basis<BasisType>::operator&=(const unsigned_integer_basis rhs) noexcept
     -> unsigned_integer_basis&
 {
-    *this = *this & rhs;
+    *this = boost::safe_numbers::operator&(*this, rhs);
     return *this;
 }
 
@@ -2328,7 +2328,7 @@ template <detail::unsigned_integral BasisType>
 constexpr auto detail::unsigned_integer_basis<BasisType>::operator|=(const unsigned_integer_basis rhs) noexcept
     -> unsigned_integer_basis&
 {
-    *this = *this | rhs;
+    *this = boost::safe_numbers::operator|(*this, rhs);
     return *this;
 }
 
@@ -2336,7 +2336,7 @@ template <detail::unsigned_integral BasisType>
 constexpr auto detail::unsigned_integer_basis<BasisType>::operator^=(const unsigned_integer_basis rhs) noexcept
     -> unsigned_integer_basis&
 {
-    *this = *this ^ rhs;
+    *this = boost::safe_numbers::operator^(*this, rhs);
     return *this;
 }
 
