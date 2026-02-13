@@ -511,6 +511,39 @@ numeric_limits<verified_u32>::digits = 32
 ----
 ====
 
+[#examples_verified_mixed_ops]
+== Verified Types: Mixed-Type Operations
+
+Verified types are compile-time constants, but they can participate in runtime expressions when mixed with their basis types.
+The result is always the runtime (basis) type, treating the verified value as a read-only constant operand.
+Arithmetic, comparisons, and bitwise operations are all supported.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/verified_mixed_ops.cpp[example] demonstrates mixed-type operations between verified constants and runtime values.
+====
+[source, c++]
+----
+include::example$verified_mixed_ops.cpp[]
+----
+
+Output:
+----
+Tax on 500 at 20%: 100
+500 - 50 discount = 450
+
+500 < 1000: true
+1000 > 500: true
+500 == 1000: false
+
+0xABCD & 0xFF = 205
+0xFF | 0xABCD = 44031
+0xABCD << 4 = 703696
+
+bounded 50 + 10 = 60
+bounded 50 - 10 = 40
+bounded 50 > 10: true
+----
+====
+
 [#examples_verified_compile_fail]
 == Verified Types: Compile-Time Overflow Detection
 
