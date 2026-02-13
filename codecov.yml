@@ -27,3 +27,5 @@ ignore:
   # This is covered here: https://github.com/cppalliance/int128
   - include/boost/safe_numbers/detail/int128/**
   - include/boost/safe_numbers/detail/int128/*
+  - test/benchmarks/*
+  - test/benchmarks/**
