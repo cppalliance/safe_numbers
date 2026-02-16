@@ -171,6 +171,9 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:integer_utilities.adoc[`is_power_10`]
 | Tests whether a safe unsigned integer is an exact power of 10
+
+| xref:integer_utilities.adoc[`is_power_2`]
+| Tests whether a safe unsigned integer is an exact power of 2
 |===
 
 === Arithmetic

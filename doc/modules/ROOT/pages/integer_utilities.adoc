@@ -245,3 +245,58 @@ using namespace boost::safe_numbers;
 static_assert(is_power_10(verified_u32{u32{100}}));
 static_assert(!is_power_10(verified_u32{u32{200}}));
 ----
+
+== is_power_2
+
+Tests whether an unsigned integer value is an exact power of 2 (i.e., has exactly one bit set).
+
+=== Runtime Overload
+
+[source,c++]
+----
+template <non_bounded_unsigned_library_type T>
+    requires (!is_verified_type_v<T>)
+constexpr auto is_power_2(const T n) noexcept -> bool;
+----
+
+==== Parameters
+
+* `n` -- The value to test.
+
+==== Return Value
+
+`true` if `n` is a power of 2, `false` otherwise.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+is_power_2(u32{1024});     // true
+is_power_2(u32{1});        // true
+is_power_2(u32{1000});     // false
+is_power_2(u64{9223372036854775808ULL});  // true  (2^63)
+----
+
+=== Verified Overload
+
+[source,c++]
+----
+template <non_bounded_unsigned_library_type T>
+consteval auto is_power_2(const verified_type_basis<T> n) noexcept -> bool;
+----
+
+Compile-time-only overload for verified types.
+
+Since `is_power_2` is `consteval` for verified types, the result is guaranteed to be a compile-time constant and can be used directly in `static_assert`.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+static_assert(is_power_2(verified_u32{u32{1048576}}));   // 2^20
+static_assert(!is_power_2(verified_u32{u32{1000000}}));
+----
