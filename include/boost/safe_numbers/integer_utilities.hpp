@@ -10,6 +10,12 @@
 #include <boost/safe_numbers/detail/rtz.hpp>
 #include <boost/safe_numbers/bit.hpp>
 
+#ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
+
+#include <boost/core/no_exceptions_support.hpp>
+
+#endif
+
 namespace boost::safe_numbers {
 
 // Newton's method as it can't possibly overflow, and converges rapidly
@@ -104,6 +110,53 @@ template <detail::non_bounded_unsigned_library_type T>
 consteval auto is_power_2(const detail::verified_type_basis<T> n) noexcept -> bool
 {
     return has_single_bit(n);
+}
+
+namespace detail {
+
+// Uses simple exponentiation by squaring, which is normally quite performant
+// Power (a, b) = 1                     if b = 0
+// Power (a, b) = a * Power(a, b - 1)   if b is odd
+// Power (a, b) = Power(a, b/2)^2       if b is even
+template <non_bounded_unsigned_library_type T>
+constexpr auto ipow_impl(T a, T b) -> T
+{
+    BOOST_TRY
+    {
+        if (b == T{})
+        {
+            return T{1};
+        }
+        else if ((b & T{1}) != T{0})
+        {
+            return a * ipow_impl(a, b - T{1});
+        }
+        else
+        {
+            const auto p {ipow_impl(a, b / T{2})};
+            return p * p;
+        }
+    }
+    BOOST_CATCH (const std::overflow_error&)
+    {
+        BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in ipow"));
+    }
+    BOOST_CATCH_END
+}
+
+} // namespace detail
+
+template <detail::non_bounded_unsigned_library_type T>
+    requires (!detail::is_verified_type_v<T>)
+constexpr auto ipow(const T a, const T b) noexcept -> T
+{
+    return detail::ipow_impl(a, b);
+}
+
+template <detail::non_bounded_unsigned_library_type T>
+consteval auto ipow(const detail::verified_type_basis<T> a, const detail::verified_type_basis<T> b) noexcept -> T
+{
+    return detail::ipow_impl(a, b);
 }
 
 } // namespace boost::safe_numbers
