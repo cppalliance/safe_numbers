@@ -37,6 +37,8 @@ private:
 
 public:
 
+    consteval verified_type_basis() = default;
+
     explicit consteval verified_type_basis(const BasisType basis) : basis_{basis} {}
 
     explicit consteval verified_type_basis(const underlying_type val) : verified_type_basis{BasisType{val}} {}

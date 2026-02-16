@@ -106,6 +106,50 @@ consteval auto is_power_2(const detail::verified_type_basis<T> n) noexcept -> bo
     return has_single_bit(n);
 }
 
+namespace detail {
+
+// Iterative exponentiation by squaring: O(log b) multiplications
+template <non_bounded_unsigned_library_type T>
+constexpr auto ipow_impl(T base, T exp) -> T
+{
+    using underlying = underlying_type_t<T>;
+
+    auto result = T{static_cast<underlying>(1)};
+
+    while (exp != T{static_cast<underlying>(0)})
+    {
+        if (static_cast<underlying>(exp) & underlying{1})
+        {
+            result = result * base;
+        }
+        exp = exp / T{static_cast<underlying>(2)};
+        if (exp != T{static_cast<underlying>(0)})
+        {
+            base = base * base;
+        }
+    }
+
+    return result;
+}
+
+} // namespace detail
+
+template <detail::non_bounded_unsigned_library_type T>
+    requires (!detail::is_verified_type_v<T>)
+constexpr auto ipow(const T a, const T b) -> T
+{
+    return detail::ipow_impl(a, b);
+}
+
+template <detail::non_bounded_unsigned_library_type T>
+consteval auto ipow(const detail::verified_type_basis<T> a,
+                    const detail::verified_type_basis<T> b) -> detail::verified_type_basis<T>
+{
+    // This is a workaround for P2564R3 "Consteval should propagate up"
+    // Operate on the underlying type rather than on the verfied type directly
+    return detail::verified_type_basis<T>{detail::ipow_impl(static_cast<T>(a), static_cast<T>(b))};
+}
+
 } // namespace boost::safe_numbers
 
 #endif // BOOST_SAFE_NUMBERS_INTEGER_UTILITIES_HPP

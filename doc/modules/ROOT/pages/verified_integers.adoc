@@ -49,6 +49,7 @@ public:
     using underlying_type = underlying_type_t<BasisType>;
 
     // Construction (consteval -- compile-time only)
+    consteval verified_type_basis() = default;  // zero-initializes
     explicit consteval verified_type_basis(const BasisType basis);
     explicit consteval verified_type_basis(const underlying_type val);
 
@@ -105,12 +106,14 @@ consteval auto operator%(const verified_type_basis<BasisType> lhs,
 
 [source,c++]
 ----
+consteval verified_type_basis() = default;
 explicit consteval verified_type_basis(const BasisType basis);
 explicit consteval verified_type_basis(const underlying_type val);
 ----
 
 Construction is `consteval` -- it can only occur at compile time.
-The first overload accepts the safe integer basis type directly; the second accepts the underlying fundamental type and constructs the basis type internally.
+The default constructor zero-initializes the value, consistent with the behavior of the basis types.
+The second overload accepts the safe integer basis type directly; the third accepts the underlying fundamental type and constructs the basis type internally.
 If the value is out of range (e.g., for a bounded type), the compilation fails.
 
 === Conversion
@@ -197,7 +200,8 @@ consteval auto operator--(int) -> verified_type_basis;
 |===
 | Operation | Qualifier | Compile-Time | Runtime
 
-| Construction | `consteval` | Yes | No
+| Default construction | `consteval` | Yes | No
+| Explicit construction | `consteval` | Yes | No
 | Arithmetic (`+`, `-`, `*`, `/`, `%`) | `consteval` | Yes | No
 | Compound assignment (`+=`, `-=`, etc.) | `consteval` | Yes | No
 | Increment/decrement (`++`, `--`) | `consteval` | Yes | No
