@@ -297,13 +297,13 @@ auto r4 = ipow(u32{5}, u32{0});      // r4 == u32{1}
 [source,c++]
 ----
 template <non_bounded_unsigned_library_type T>
-consteval auto ipow(const verified_type_basis<T> a, const verified_type_basis<T> b) noexcept -> T;
+consteval auto ipow(const verified_type_basis<T> a, const verified_type_basis<T> b) -> verified_type_basis<T>;
 ----
 
 Compile-time only overload for verified types.
-Returns the base safe integer type `T` (not a verified type).
+Returns a verified type, preserving the compile-time guarantee.
 
-Since `ipow` is `consteval` for verified types, the computation is guaranteed to occur at compile time.
+Since `ipow` is `consteval` for verified types, the computation is guaranteed to occur at compile time. Overflow produces a compile error.
 
 ==== Example
 
@@ -311,8 +311,8 @@ Since `ipow` is `consteval` for verified types, the computation is guaranteed to
 ----
 using namespace boost::safe_numbers;
 
-constexpr auto r = ipow(verified_u32{u32{2}}, verified_u32{u32{20}});  // r == u32{1048576}
-constexpr auto s = ipow(verified_u64{u64{10}}, verified_u64{u64{18}}); // s == u64{1000000000000000000}
+constexpr auto r = ipow(verified_u32{u32{2}}, verified_u32{u32{20}});  // r == verified_u32{u32{1048576}}
+constexpr auto s = ipow(verified_u64{u64{10}}, verified_u64{u64{18}}); // s == verified_u64{u64{1000000000000000000}}
 ----
 
 == is_power_2
