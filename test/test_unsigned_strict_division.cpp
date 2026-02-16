@@ -27,6 +27,7 @@ int main()
     const auto result {strict_div(one, zero)};
 
     // Should never reach here
+    // We don't use BOOST_SAFE_NUMBERS_UNREACHABLE because run-fail is what we are testing for
     static_cast<void>(result);
-    return 0;
+    return 0;   // LCOV_EXCL_LINE
 }
