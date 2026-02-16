@@ -210,8 +210,41 @@ void test_is_power_2_verified()
     static_assert(!is_power_2(verified_u128{u128{uint128_t{UINT64_C(1099511627775)}}}));
 }
 
+// =============================================================================
+// Zero input tests
+// =============================================================================
+
+template <typename T>
+void test_is_power_2_zero()
+{
+    using underlying = typename detail::underlying_type_t<T>;
+    BOOST_TEST(!is_power_2(T{static_cast<underlying>(0)}));
+}
+
+void test_is_power_2_zero_constexpr()
+{
+    static_assert(!is_power_2(u8{static_cast<std::uint8_t>(0)}));
+    static_assert(!is_power_2(u32{UINT32_C(0)}));
+    static_assert(!is_power_2(u64{UINT64_C(0)}));
+}
+
+void test_is_power_2_zero_verified()
+{
+    static_assert(!is_power_2(verified_u8{u8{static_cast<std::uint8_t>(0)}}));
+    static_assert(!is_power_2(verified_u32{u32{UINT32_C(0)}}));
+}
+
 int main()
 {
+    // Zero input - all types
+    test_is_power_2_zero<u8>();
+    test_is_power_2_zero<u16>();
+    test_is_power_2_zero<u32>();
+    test_is_power_2_zero<u64>();
+    test_is_power_2_zero<u128>();
+    test_is_power_2_zero_constexpr();
+    test_is_power_2_zero_verified();
+
     // Powers of 2 - all types
     test_is_power_2_true<u8>();
     test_is_power_2_true<u16>();

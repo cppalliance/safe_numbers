@@ -273,8 +273,53 @@ void test_rtz_verified()
     BOOST_TEST_EQ(v128.number_of_removed_zeros, static_cast<std::size_t>(5));
 }
 
+// =============================================================================
+// Zero input tests
+// =============================================================================
+
+template <typename T>
+void test_rtz_zero()
+{
+    using underlying = typename detail::underlying_type_t<T>;
+
+    auto result = remove_trailing_zeros(T{static_cast<underlying>(0)});
+    BOOST_TEST_EQ(result.trimmed_number, static_cast<underlying>(0));
+    BOOST_TEST_EQ(result.number_of_removed_zeros, static_cast<std::size_t>(0));
+}
+
+void test_rtz_zero_constexpr()
+{
+    constexpr auto r8 = remove_trailing_zeros(u8{static_cast<std::uint8_t>(0)});
+    BOOST_TEST_EQ(r8.trimmed_number, static_cast<std::uint8_t>(0));
+    BOOST_TEST_EQ(r8.number_of_removed_zeros, static_cast<std::size_t>(0));
+
+    constexpr auto r32 = remove_trailing_zeros(u32{UINT32_C(0)});
+    BOOST_TEST_EQ(r32.trimmed_number, UINT32_C(0));
+    BOOST_TEST_EQ(r32.number_of_removed_zeros, static_cast<std::size_t>(0));
+}
+
+void test_rtz_zero_verified()
+{
+    constexpr auto v8 = remove_trailing_zeros(verified_u8{u8{static_cast<std::uint8_t>(0)}});
+    BOOST_TEST_EQ(v8.trimmed_number, static_cast<std::uint8_t>(0));
+    BOOST_TEST_EQ(v8.number_of_removed_zeros, static_cast<std::size_t>(0));
+
+    constexpr auto v32 = remove_trailing_zeros(verified_u32{u32{UINT32_C(0)}});
+    BOOST_TEST_EQ(v32.trimmed_number, UINT32_C(0));
+    BOOST_TEST_EQ(v32.number_of_removed_zeros, static_cast<std::size_t>(0));
+}
+
 int main()
 {
+    // Zero input - all types
+    test_rtz_zero<u8>();
+    test_rtz_zero<u16>();
+    test_rtz_zero<u32>();
+    test_rtz_zero<u64>();
+    test_rtz_zero<u128>();
+    test_rtz_zero_constexpr();
+    test_rtz_zero_verified();
+
     // No trailing zeros - all types
     test_rtz_no_trailing_zeros<u8>();
     test_rtz_no_trailing_zeros<u16>();

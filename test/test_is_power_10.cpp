@@ -199,8 +199,41 @@ void test_is_power_10_verified()
     static_assert(!is_power_10(verified_u128{u128{uint128_t{UINT64_C(100001)}}}));
 }
 
+// =============================================================================
+// Zero input tests
+// =============================================================================
+
+template <typename T>
+void test_is_power_10_zero()
+{
+    using underlying = typename detail::underlying_type_t<T>;
+    BOOST_TEST(!is_power_10(T{static_cast<underlying>(0)}));
+}
+
+void test_is_power_10_zero_constexpr()
+{
+    static_assert(!is_power_10(u8{static_cast<std::uint8_t>(0)}));
+    static_assert(!is_power_10(u32{UINT32_C(0)}));
+    static_assert(!is_power_10(u64{UINT64_C(0)}));
+}
+
+void test_is_power_10_zero_verified()
+{
+    static_assert(!is_power_10(verified_u8{u8{static_cast<std::uint8_t>(0)}}));
+    static_assert(!is_power_10(verified_u32{u32{UINT32_C(0)}}));
+}
+
 int main()
 {
+    // Zero input - all types
+    test_is_power_10_zero<u8>();
+    test_is_power_10_zero<u16>();
+    test_is_power_10_zero<u32>();
+    test_is_power_10_zero<u64>();
+    test_is_power_10_zero<u128>();
+    test_is_power_10_zero_constexpr();
+    test_is_power_10_zero_verified();
+
     // Powers of 10 - all types
     test_is_power_10_true<u8>();
     test_is_power_10_true<u16>();

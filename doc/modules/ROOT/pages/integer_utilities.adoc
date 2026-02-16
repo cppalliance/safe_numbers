@@ -114,7 +114,7 @@ It processes the exponent in O(log(max_digits)) steps, where `max_digits` is the
 
 ==== Parameters
 
-* `n` -- The value to remove trailing zeros from. Must be non-zero.
+* `n` -- The value to remove trailing zeros from. If `n` is zero, returns `{0, 0}`.
 
 ==== Return Value
 
@@ -174,7 +174,7 @@ template <non_bounded_unsigned_library_type T>
 consteval auto remove_trailing_zeros(const verified_type_basis<T> val);
 ----
 
-Compile-time only overload for verified types.
+Compile-time-only overload for verified types.
 Delegates to the detail implementation after extracting the underlying value.
 
 Since `remove_trailing_zeros` is `consteval` for verified types, the result is guaranteed to be a compile-time constant.
@@ -193,8 +193,6 @@ constexpr auto r = remove_trailing_zeros(verified_u32{u32{5000}});
 
 Tests whether an unsigned integer value is an exact power of 10 (i.e., one of 1, 10, 100, 1000, ...).
 
-Implemented using `remove_trailing_zeros` and checking that the trimmed result equals 1.
-
 === Runtime Overload
 
 [source,c++]
@@ -206,7 +204,7 @@ constexpr auto is_power_10(const T n) -> bool;
 
 ==== Parameters
 
-* `n` -- The value to test. Must be non-zero.
+* `n` -- The value to test.
 
 ==== Return Value
 
@@ -232,7 +230,7 @@ template <non_bounded_unsigned_library_type T>
 consteval auto is_power_10(const verified_type_basis<T> n) -> bool;
 ----
 
-Compile-time only overload for verified types.
+Compile-time-only overload for verified types.
 
 Since `is_power_10` is `consteval` for verified types, the result is guaranteed to be a compile-time constant and can be used directly in `static_assert`.
 
