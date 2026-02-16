@@ -7,6 +7,7 @@
 
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
+#include <boost/safe_numbers/detail/rtz.hpp>
 
 namespace boost::safe_numbers {
 
@@ -43,6 +44,21 @@ template <detail::non_bounded_unsigned_library_type T>
 consteval auto isqrt(const detail::verified_type_basis<T> val) -> detail::verified_type_basis<T>
 {
     return detail::verified_type_basis<T>{isqrt(static_cast<T>(val))};
+}
+
+template <detail::non_bounded_unsigned_library_type T>
+    requires (!detail::is_verified_type_v<T>)
+constexpr auto remove_trailing_zeros(const T n)
+{
+    using underlying = typename detail::underlying_type_t<T>;
+    return detail::remove_trailing_zeros(static_cast<underlying>(n));
+}
+
+template <detail::non_bounded_unsigned_library_type T>
+consteval auto remove_trailing_zeros(const detail::verified_type_basis<T> val)
+{
+    using underlying = typename detail::underlying_type_t<T>;
+    return detail::remove_trailing_zeros(static_cast<underlying>(val));
 }
 
 } // namespace boost::safe_numbers
