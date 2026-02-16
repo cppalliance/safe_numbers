@@ -28,7 +28,7 @@ constexpr auto rotr(UInt n, unsigned int r) noexcept -> UInt
     constexpr auto bit_width_m1 {bit_width - 1U};
 
     r &= bit_width_m1;
-    return (n >> r) | (n << ((bit_width - r) & bit_width_m1));
+    return static_cast<UInt>((n >> r) | (n << ((bit_width - r) & bit_width_m1)));
 }
 
 template <is_fundamental_unsigned_integral UInt>
