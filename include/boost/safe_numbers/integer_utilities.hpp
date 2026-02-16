@@ -8,6 +8,7 @@
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
 #include <boost/safe_numbers/detail/rtz.hpp>
+#include <boost/safe_numbers/bit.hpp>
 
 namespace boost::safe_numbers {
 
@@ -78,6 +79,19 @@ consteval auto is_power_10(const detail::verified_type_basis<T> n) -> bool
 
     const auto [trimmed_number, _] = detail::remove_trailing_zeros(static_cast<underlying>(n));
     return trimmed_number == static_cast<underlying>(1);
+}
+
+template <detail::non_bounded_unsigned_library_type T>
+    requires (!detail::is_verified_type_v<T>)
+constexpr auto is_power_2(const T n) noexcept -> bool
+{
+    return has_single_bit(n);
+}
+
+template <detail::non_bounded_unsigned_library_type T>
+consteval auto is_power_2(const detail::verified_type_basis<T> n) noexcept -> bool
+{
+    return has_single_bit(n);
 }
 
 } // namespace boost::safe_numbers
