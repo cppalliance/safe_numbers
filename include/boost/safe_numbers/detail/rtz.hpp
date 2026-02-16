@@ -13,21 +13,17 @@
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
-#include <boost/assert.hpp>
 #include <cstdint>
 
 #endif
 
-namespace boost::safe_numbers {
-
-namespace detail {
+namespace boost::safe_numbers::detail {
 
 // n is assumed to be at most of bit_width bits
 template <std::size_t bit_width, is_fundamental_unsigned_integral UInt>
 constexpr auto rotr(UInt n, unsigned int r) noexcept -> UInt
 {
-    using larger_type = std::conditional_t<(std::numeric_limits<UInt>::digits > std::numeric_limits<std::size_t>::digits), UInt, std::size_t>;
-    BOOST_ASSERT(static_cast<larger_type>(n) <= (static_cast<larger_type>(1) << bit_width + 1U));
+    static_assert(bit_width >= std::numeric_limits<UInt>::digits);
 
     constexpr auto bit_width_m1 {bit_width - 1U};
 
@@ -35,9 +31,7 @@ constexpr auto rotr(UInt n, unsigned int r) noexcept -> UInt
     return (n >> r) | (n << ((bit_width - r) & bit_width_m1));
 }
 
-} // namespace detail
-
-template <detail::is_fundamental_unsigned_integral UInt>
+template <is_fundamental_unsigned_integral UInt>
 struct remove_trailing_zeros_return
 {
     UInt trimmed_number;
@@ -48,12 +42,12 @@ constexpr auto remove_trailing_zeros(std::uint8_t n) noexcept -> remove_trailing
 {
     std::size_t s {};
 
-    auto r = detail::rotr<8>(static_cast<std::uint8_t>(n * 41U), 2);
+    auto r = rotr<8>(static_cast<std::uint8_t>(n * 41U), 2);
     auto b = r < static_cast<std::uint8_t>(3);
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
 
-    r = detail::rotr<8>(static_cast<std::uint8_t>(n * 77U), 1);
+    r = rotr<8>(static_cast<std::uint8_t>(n * 77U), 1);
     b = r < static_cast<std::uint8_t>(26);
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
@@ -65,17 +59,17 @@ constexpr auto remove_trailing_zeros(std::uint16_t n) noexcept -> remove_trailin
 {
     std::size_t s {};
 
-    auto r = detail::rotr<16>(static_cast<std::uint16_t>(n * 3729U), 4);
+    auto r = rotr<16>(static_cast<std::uint16_t>(n * 3729U), 4);
     auto b = r < static_cast<std::uint16_t>(7);
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
 
-    r = detail::rotr<16>(static_cast<std::uint16_t>(n * 7209U), 2);
+    r = rotr<16>(static_cast<std::uint16_t>(n * 7209U), 2);
     b = r < static_cast<std::uint16_t>(656);
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
 
-    r = detail::rotr<16>(static_cast<std::uint16_t>(n * 19661U), 1);
+    r = rotr<16>(static_cast<std::uint16_t>(n * 19661U), 1);
     b = r < static_cast<std::uint16_t>(6554);
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
@@ -87,22 +81,22 @@ constexpr auto remove_trailing_zeros(std::uint32_t n) noexcept -> remove_trailin
 {
     std::size_t s {};
 
-    auto r = detail::rotr<32>(n * UINT32_C(15273505), 8);
+    auto r = rotr<32>(n * UINT32_C(15273505), 8);
     auto b = r < UINT32_C(43);
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
 
-    r = detail::rotr<32>(n * UINT32_C(184254097), 4);
+    r = rotr<32>(n * UINT32_C(184254097), 4);
     b = r < UINT32_C(429497);
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
 
-    r = detail::rotr<32>(n * UINT32_C(42949673), 2);
+    r = rotr<32>(n * UINT32_C(42949673), 2);
     b = r < UINT32_C(42949673);
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
 
-    r = detail::rotr<32>(n * UINT32_C(1288490189), 1);
+    r = rotr<32>(n * UINT32_C(1288490189), 1);
     b = r < UINT32_C(429496730);
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
@@ -114,27 +108,27 @@ constexpr auto remove_trailing_zeros(std::uint64_t n) noexcept -> remove_trailin
 {
     std::size_t s {};
 
-    auto r = detail::rotr<64>(n * UINT64_C(230079197716545), 16);
+    auto r = rotr<64>(n * UINT64_C(230079197716545), 16);
     auto b = r < UINT64_C(1845);
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
 
-    r = detail::rotr<64>(n * UINT64_C(28999941890838049), 8);
+    r = rotr<64>(n * UINT64_C(28999941890838049), 8);
     b = r < UINT64_C(184467440738);
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
 
-    r = detail::rotr<64>(n * UINT64_C(182622766329724561), 4);
+    r = rotr<64>(n * UINT64_C(182622766329724561), 4);
     b = r < UINT64_C(1844674407370956);
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
 
-    r = detail::rotr<64>(n * UINT64_C(10330176681277348905), 2);
+    r = rotr<64>(n * UINT64_C(10330176681277348905), 2);
     b = r < UINT64_C(184467440737095517);
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
 
-    r = detail::rotr<64>(n * UINT64_C(14757395258967641293), 1);
+    r = rotr<64>(n * UINT64_C(14757395258967641293), 1);
     b = r < UINT64_C(1844674407370955162);
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
@@ -146,32 +140,32 @@ constexpr auto remove_trailing_zeros(int128::uint128_t n) noexcept -> remove_tra
 {
     std::size_t s {};
 
-    auto r = detail::rotr<128>(n * boost::int128::uint128_t(UINT64_C(0x62B42691AD836EB1), UINT64_C(0x16590F420A835081)), 32);
+    auto r = rotr<128>(n * boost::int128::uint128_t(UINT64_C(0x62B42691AD836EB1), UINT64_C(0x16590F420A835081)), 32);
     auto b = r < boost::int128::uint128_t {UINT64_C(0x0), UINT64_C(0x33EC48)};
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
 
-    r = detail::rotr<128>(n * boost::int128::uint128_t {UINT64_C(0x3275305C1066), UINT64_C(0xE4A4D1417CD9A041)}, 16);
+    r = rotr<128>(n * boost::int128::uint128_t {UINT64_C(0x3275305C1066), UINT64_C(0xE4A4D1417CD9A041)}, 16);
     b = r < boost::int128::uint128_t {UINT64_C(0x734), UINT64_C(0xACA5F6226F0ADA62)};
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
 
-    r = detail::rotr<128>(n * boost::int128::uint128_t {UINT64_C(0x6B7213EE9F5A78), UINT64_C(0xC767074B22E90E21)}, 8);
+    r = rotr<128>(n * boost::int128::uint128_t {UINT64_C(0x6B7213EE9F5A78), UINT64_C(0xC767074B22E90E21)}, 8);
     b = r < boost::int128::uint128_t {UINT64_C(0x2AF31DC461), UINT64_C(0x1873BF3F70834ACE)};
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
 
-    r = detail::rotr<128>(n * boost::int128::uint128_t {UINT64_C(0x95182A9930BE0DE), UINT64_C(0xD288CE703AFB7E91)}, 4);
+    r = rotr<128>(n * boost::int128::uint128_t {UINT64_C(0x95182A9930BE0DE), UINT64_C(0xD288CE703AFB7E91)}, 4);
     b = r < boost::int128::uint128_t {UINT64_C(0x68DB8BAC710CB), UINT64_C(0x295E9E1B089A0276)};
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
 
-    r = detail::rotr<128>(n * boost::int128::uint128_t {UINT64_C(0x28F5C28F5C28F5C2), UINT64_C(0x8F5C28F5C28F5C29)}, 2);
+    r = rotr<128>(n * boost::int128::uint128_t {UINT64_C(0x28F5C28F5C28F5C2), UINT64_C(0x8F5C28F5C28F5C29)}, 2);
     b = r < boost::int128::uint128_t {UINT64_C(0x28F5C28F5C28F5C), UINT64_C(0x28F5C28F5C28F5C3)};
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
 
-    r = detail::rotr<128>(n * boost::int128::uint128_t {UINT64_C(0xCCCCCCCCCCCCCCCC), UINT64_C(0xCCCCCCCCCCCCCCCD)}, 1);
+    r = rotr<128>(n * boost::int128::uint128_t {UINT64_C(0xCCCCCCCCCCCCCCCC), UINT64_C(0xCCCCCCCCCCCCCCCD)}, 1);
     b = r < boost::int128::uint128_t {UINT64_C(0x1999999999999999), UINT64_C(0x999999999999999A)};
     s = s * 2U + static_cast<std::size_t>(b);
     n = b ? r : n;
@@ -179,6 +173,6 @@ constexpr auto remove_trailing_zeros(int128::uint128_t n) noexcept -> remove_tra
     return {n, s};
 }
 
-} // namespace boost::safe_numbers
+} // namespace boost::safe_numbers::detail
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_RTZ_HPP
