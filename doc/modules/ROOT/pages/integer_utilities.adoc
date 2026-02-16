@@ -80,3 +80,111 @@ using namespace boost::safe_numbers;
 constexpr auto r = isqrt(verified_u32{u32{144}});  // r == verified_u32{u32{12}}
 constexpr auto s = isqrt(verified_u64{u64{1000000}});  // s == verified_u64{u64{1000}}
 ----
+
+== remove_trailing_zeros
+
+Removes trailing decimal zeros from an unsigned integer value using a branchless algorithm based on modular multiplicative inverses (Granlund-Montgomery division).
+
+=== Return Type
+
+[source,c++]
+----
+template <typename UInt>
+struct remove_trailing_zeros_return
+{
+    UInt trimmed_number;
+    std::size_t number_of_removed_zeros;
+};
+----
+
+=== Runtime Overload
+
+[source,c++]
+----
+template <non_bounded_unsigned_library_type T>
+    requires (!is_verified_type_v<T>)
+constexpr auto remove_trailing_zeros(const T n);
+----
+
+Removes all trailing decimal zeros from `n`.
+Returns a `remove_trailing_zeros_return` containing the trimmed value and the count of removed zeros, such that `trimmed_number * 10^number_of_removed_zeros == n`.
+
+The algorithm is entirely branchless (no data-dependent branches), operating via modular inverse multiplication and bit rotation.
+It processes the exponent in O(log(max_digits)) steps, where `max_digits` is the maximum number of decimal digits for the type.
+
+==== Parameters
+
+* `n` -- The value to remove trailing zeros from. Must be non-zero.
+
+==== Return Value
+
+A `remove_trailing_zeros_return` where:
+
+* `trimmed_number` is `n` with all trailing decimal zeros removed.
+* `number_of_removed_zeros` is the count of removed zeros.
+
+==== Supported Types and Ranges
+
+[cols="1,1,1", options="header"]
+|===
+| Type | Max Trailing Zeros | Algorithm Steps
+
+| `u8`
+| 2
+| 2
+
+| `u16`
+| 4
+| 3
+
+| `u32`
+| 9
+| 4
+
+| `u64`
+| 19
+| 5
+
+| `u128`
+| 38
+| 6
+|===
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+auto r1 = remove_trailing_zeros(u32{12300});
+// r1.trimmed_number == 123, r1.number_of_removed_zeros == 2
+
+auto r2 = remove_trailing_zeros(u64{1000000});
+// r2.trimmed_number == 1, r2.number_of_removed_zeros == 6
+
+auto r3 = remove_trailing_zeros(u8{static_cast<std::uint8_t>(7)});
+// r3.trimmed_number == 7, r3.number_of_removed_zeros == 0
+----
+
+=== Verified Overload
+
+[source,c++]
+----
+template <non_bounded_unsigned_library_type T>
+consteval auto remove_trailing_zeros(const verified_type_basis<T> val);
+----
+
+Compile-time only overload for verified types.
+Delegates to the detail implementation after extracting the underlying value.
+
+Since `remove_trailing_zeros` is `consteval` for verified types, the result is guaranteed to be a compile-time constant.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+constexpr auto r = remove_trailing_zeros(verified_u32{u32{5000}});
+// r.trimmed_number == 5, r.number_of_removed_zeros == 3
+----

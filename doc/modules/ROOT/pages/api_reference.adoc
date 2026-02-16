@@ -165,6 +165,9 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:integer_utilities.adoc[`isqrt`]
 | Returns the integer square root (floor of sqrt) of a safe unsigned integer
+
+| xref:integer_utilities.adoc[`remove_trailing_zeros`]
+| Branchlessly removes trailing decimal zeros from a safe unsigned integer
 |===
 
 === Arithmetic
@@ -216,7 +219,7 @@ This header is not included in the convenience header since it requires external
 | Contains specializations of `<format>` for library types
 
 | `<boost/safe_numbers/integer_utilities.hpp>`
-| Integer utility functions (`isqrt`)
+| Integer utility functions (`isqrt`, `remove_trailing_zeros`)
 
 | `<boost/safe_numbers/iostream.hpp>`
 | Stream I/O operators (`operator<<`, `operator>>`) for library types
