@@ -117,7 +117,7 @@ constexpr auto ipow_impl(T a, T b) -> T
 {
     using underlying = underlying_type_t<T>;
 
-    if (b == T{})
+    if (b == T{static_cast<underlying>(0)})
     {
         return T{static_cast<underlying>(1)};
     }
