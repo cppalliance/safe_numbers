@@ -145,7 +145,7 @@ template <detail::non_bounded_unsigned_library_type T>
 consteval auto ipow(const detail::verified_type_basis<T> a,
                     const detail::verified_type_basis<T> b) -> detail::verified_type_basis<T>
 {
-    return detail::ipow_impl(a, b);
+    return detail::verified_type_basis<T>{detail::ipow_impl(static_cast<T>(a), static_cast<T>(b))};
 }
 
 } // namespace boost::safe_numbers
