@@ -61,6 +61,25 @@ consteval auto remove_trailing_zeros(const detail::verified_type_basis<T> val)
     return detail::remove_trailing_zeros(static_cast<underlying>(val));
 }
 
+template <detail::non_bounded_unsigned_library_type T>
+    requires (!detail::is_verified_type_v<T>)
+constexpr auto is_power_10(const T n) -> bool
+{
+    using underlying = typename detail::underlying_type_t<T>;
+
+    const auto [trimmed_number, _] = detail::remove_trailing_zeros(static_cast<underlying>(n));
+    return trimmed_number == static_cast<underlying>(1);
+}
+
+template <detail::non_bounded_unsigned_library_type T>
+consteval auto is_power_10(const detail::verified_type_basis<T> n) -> bool
+{
+    using underlying = typename detail::underlying_type_t<T>;
+
+    const auto [trimmed_number, _] = detail::remove_trailing_zeros(static_cast<underlying>(n));
+    return trimmed_number == static_cast<underlying>(1);
+}
+
 } // namespace boost::safe_numbers
 
 #endif // BOOST_SAFE_NUMBERS_INTEGER_UTILITIES_HPP

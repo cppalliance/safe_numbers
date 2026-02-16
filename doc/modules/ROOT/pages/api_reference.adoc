@@ -168,6 +168,9 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:integer_utilities.adoc[`remove_trailing_zeros`]
 | Branchlessly removes trailing decimal zeros from a safe unsigned integer
+
+| xref:integer_utilities.adoc[`is_power_10`]
+| Tests whether a safe unsigned integer is an exact power of 10
 |===
 
 === Arithmetic

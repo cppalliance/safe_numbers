@@ -26,7 +26,7 @@ Bugs like these are subtle, difficult to catch in code review, and can have seve
 
 Existing tools help but leave gaps.
 Compiler flags like `-Wsign-conversion` and `-Wconversion` catch many issues at compile time, and UBSan catches undefined behavior at runtime.
-But UBSan explicitly allows unsigned integer rollover because the standard defines it as well-defined behavior -- even though silent rollover is the source of countless bugs.
+But UBSan explicitly allows unsigned integer rollover because the standard defines it as well-defined behavior, even though silent rollover is the source of countless bugs.
 Boost.SafeNumbers aims to go further: by default, unsigned rollover is an error.
 
 == Core Design Principles
@@ -42,7 +42,7 @@ The cost is slightly more verbose code at type boundaries; the benefit is that e
 
 === Fail Early, Fail Loudly
 
-When an operation would produce an incorrect result -- overflow, underflow, division by zero -- the library makes this visible rather than silently continuing with a wrong value.
+When an operation produces an incorrect result, (e.g., overflow, underflow, division by zero) the library makes this visible rather than silently continuing with a wrong value.
 
 At compile time, errors become compiler errors.
 At runtime, errors throw exceptions by default.
@@ -50,7 +50,7 @@ There is no mode where an error is silently ignored unless the programmer explic
 
 === Type Safety as a First-Class Concern
 
-The safe types (`u8`, `u16`, `u32`, `u64`, `u128`) are concrete, named types -- not template wrappers around a policy.
+The safe types (`u8`, `u16`, `u32`, `u64`, `u128`) are concrete, named types, not template wrappers around a policy.
 This makes them easy to read, easy to teach, and easy to use as drop-in replacements for builtin types.
 
 Overflow policies are expressed through named free functions (`saturating_add`, `wrapping_add`, etc.) rather than through type-level policy parameters.
@@ -101,7 +101,7 @@ Different domains require different responses to overflow:
 - General application code benefits from *exceptions*: the error is reported and can be handled.
 - Some code needs to *detect and branch*: check whether overflow occurred without changing control flow.
 
-The library's default -- `throw_exception` -- is the safest general-purpose choice because it makes errors impossible to ignore.
+The library's default, `throw_exception`, is the safest general-purpose choice because it makes errors impossible to ignore.
 For other needs, named free functions make the policy explicit at each call site:
 
 [source,c++]
@@ -135,24 +135,24 @@ See xref:policies.adoc[] for the full API reference.
 
 The library intentionally prohibits several operations that are legal in pass:[C++] but are common sources of bugs:
 
-**Construction from `bool`** -- Prevents conflation of boolean logic and integer arithmetic.
+**Construction from `bool`**: Prevents conflation of boolean logic and integer arithmetic.
 In pass:[C++], `true + true == 2`, which is rarely the intended behavior.
 Constructing a safe integer from `bool` is a compile-time error.
 
-**Mixed-width arithmetic** -- Adding a `u8` to a `u32` is a compile-time error.
+**Mixed-width arithmetic**: Adding a `u8` to a `u32` is a compile-time error.
 In pass:[C++], the narrower operand would be implicitly promoted, which hides the fact that two different-sized values are being combined.
 The library requires an explicit conversion so the programmer acknowledges the width difference.
 
-**Unary minus on unsigned types** -- In pass:[C++], `-x` on an unsigned value performs modular negation, producing a large positive number.
+**Unary minus on unsigned types**: In pass:[C++], `-x` on an unsigned value performs modular negation, producing a large positive number.
 This is almost never intentional.
-The library does not define unary minus for unsigned types, so attempting it is a compile-time error.
+The library will provide a `static_assert` message should this operation be attempted.
 
-**Implicit conversions to and from builtin types** -- All conversions between safe types and builtin types require an explicit cast.
+**Implicit conversions to and from builtin types**: All conversions between safe types and builtin types require an explicit cast.
 This prevents accidental loss of safety guarantees when passing values across API boundaries.
 
 == Performance Considerations
 
-The library uses compiler intrinsics for overflow detection: `__builtin_add_overflow`, `__builtin_sub_overflow`, and `__builtin_mul_overflow` on GCC and Clang, and platform-specific intrinsics (`_addcarry_u64`, `_subborrow_u64`, `_umul128`) on MSVC.
+The library uses compiler intrinsics for overflow detection: `pass:[__builtin_add_overflow]`, `pass:[__builtin_sub_overflow]`, and `pass:[__builtin_mul_overflow]` on GCC and Clang, and platform-specific intrinsics (`_addcarry_u64`, `_subborrow_u64`, `_umul128`) on MSVC.
 These compile to efficient hardware instructions (typically a single arithmetic instruction followed by a conditional branch on the carry or overflow flag).
 
 The target is a runtime penalty of less than 2x compared to builtin types.

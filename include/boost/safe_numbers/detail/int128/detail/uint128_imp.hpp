@@ -26,10 +26,8 @@ namespace boost {
 namespace int128 {
 
 struct
-    #if defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128) || defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_MSVC_INT128)
+    #if (defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128) || defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_MSVC_INT128)) && !defined(_M_IX86)
     alignas(alignof(detail::builtin_u128))
-    #else
-    alignas(16)
     #endif
 uint128_t
 {

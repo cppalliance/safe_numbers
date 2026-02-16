@@ -132,6 +132,7 @@ run test_verified_limits.cpp ;
 # Utility function tests
 run test_isqrt.cpp ;
 run test_remove_trailing_zeros.cpp ;
+run test_is_power_10.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;

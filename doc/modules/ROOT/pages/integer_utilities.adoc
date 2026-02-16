@@ -188,3 +188,60 @@ using namespace boost::safe_numbers;
 constexpr auto r = remove_trailing_zeros(verified_u32{u32{5000}});
 // r.trimmed_number == 5, r.number_of_removed_zeros == 3
 ----
+
+== is_power_10
+
+Tests whether an unsigned integer value is an exact power of 10 (i.e., one of 1, 10, 100, 1000, ...).
+
+Implemented using `remove_trailing_zeros` and checking that the trimmed result equals 1.
+
+=== Runtime Overload
+
+[source,c++]
+----
+template <non_bounded_unsigned_library_type T>
+    requires (!is_verified_type_v<T>)
+constexpr auto is_power_10(const T n) -> bool;
+----
+
+==== Parameters
+
+* `n` -- The value to test. Must be non-zero.
+
+==== Return Value
+
+`true` if `n` is a power of 10, `false` otherwise.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+is_power_10(u32{1000});      // true
+is_power_10(u32{1});         // true
+is_power_10(u32{1234});      // false
+is_power_10(u64{10000000000000000000ULL});  // true
+----
+
+=== Verified Overload
+
+[source,c++]
+----
+template <non_bounded_unsigned_library_type T>
+consteval auto is_power_10(const verified_type_basis<T> n) -> bool;
+----
+
+Compile-time only overload for verified types.
+
+Since `is_power_10` is `consteval` for verified types, the result is guaranteed to be a compile-time constant and can be used directly in `static_assert`.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+static_assert(is_power_10(verified_u32{u32{100}}));
+static_assert(!is_power_10(verified_u32{u32{200}}));
+----
