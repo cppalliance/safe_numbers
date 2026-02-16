@@ -10,12 +10,6 @@
 #include <boost/safe_numbers/detail/rtz.hpp>
 #include <boost/safe_numbers/bit.hpp>
 
-#ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
-
-#include <boost/core/no_exceptions_support.hpp>
-
-#endif
-
 namespace boost::safe_numbers {
 
 // Newton's method as it can't possibly overflow, and converges rapidly
@@ -121,40 +115,35 @@ namespace detail {
 template <non_bounded_unsigned_library_type T>
 constexpr auto ipow_impl(T a, T b) -> T
 {
-    BOOST_TRY
+    using underlying = underlying_type_t<T>;
+
+    if (b == T{})
     {
-        if (b == T{})
-        {
-            return T{1};
-        }
-        else if ((b & T{1}) != T{0})
-        {
-            return a * ipow_impl(a, b - T{1});
-        }
-        else
-        {
-            const auto p {ipow_impl(a, b / T{2})};
-            return p * p;
-        }
+        return T{static_cast<underlying>(1)};
     }
-    BOOST_CATCH (const std::overflow_error&)
+    else if (static_cast<underlying>(b) & underlying{1})
     {
-        BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in ipow"));
+        return a * ipow_impl(a, b - T{static_cast<underlying>(1)});
     }
-    BOOST_CATCH_END
+    else
+    {
+        const auto p {ipow_impl(a, b / T{static_cast<underlying>(2)})};
+        return p * p;
+    }
 }
 
 } // namespace detail
 
 template <detail::non_bounded_unsigned_library_type T>
     requires (!detail::is_verified_type_v<T>)
-constexpr auto ipow(const T a, const T b) noexcept -> T
+constexpr auto ipow(const T a, const T b) -> T
 {
     return detail::ipow_impl(a, b);
 }
 
 template <detail::non_bounded_unsigned_library_type T>
-consteval auto ipow(const detail::verified_type_basis<T> a, const detail::verified_type_basis<T> b) noexcept -> T
+consteval auto ipow(const detail::verified_type_basis<T> a,
+                    const detail::verified_type_basis<T> b) -> detail::verified_type_basis<T>
 {
     return detail::ipow_impl(a, b);
 }
