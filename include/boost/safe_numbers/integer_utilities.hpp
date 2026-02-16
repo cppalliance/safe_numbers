@@ -145,6 +145,8 @@ template <detail::non_bounded_unsigned_library_type T>
 consteval auto ipow(const detail::verified_type_basis<T> a,
                     const detail::verified_type_basis<T> b) -> detail::verified_type_basis<T>
 {
+    // This is a workaround for P2564R3 "Consteval should propagate up"
+    // Operate on the underlying type rather than on the verfied type directly
     return detail::verified_type_basis<T>{detail::ipow_impl(static_cast<T>(a), static_cast<T>(b))};
 }
 
