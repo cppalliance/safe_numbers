@@ -108,28 +108,28 @@ consteval auto is_power_2(const detail::verified_type_basis<T> n) noexcept -> bo
 
 namespace detail {
 
-// Uses simple exponentiation by squaring, which is normally quite performant
-// Power (a, b) = 1                     if b = 0
-// Power (a, b) = a * Power(a, b - 1)   if b is odd
-// Power (a, b) = Power(a, b/2)^2       if b is even
+// Iterative exponentiation by squaring: O(log b) multiplications
 template <non_bounded_unsigned_library_type T>
-constexpr auto ipow_impl(T a, T b) -> T
+constexpr auto ipow_impl(T base, T exp) -> T
 {
     using underlying = underlying_type_t<T>;
 
-    if (b == T{static_cast<underlying>(0)})
+    auto result = T{static_cast<underlying>(1)};
+
+    while (exp != T{static_cast<underlying>(0)})
     {
-        return T{static_cast<underlying>(1)};
+        if (static_cast<underlying>(exp) & underlying{1})
+        {
+            result = result * base;
+        }
+        exp = exp / T{static_cast<underlying>(2)};
+        if (exp != T{static_cast<underlying>(0)})
+        {
+            base = base * base;
+        }
     }
-    else if (static_cast<underlying>(b) & underlying{1})
-    {
-        return a * ipow_impl(a, b - T{static_cast<underlying>(1)});
-    }
-    else
-    {
-        const auto p {ipow_impl(a, b / T{static_cast<underlying>(2)})};
-        return p * p;
-    }
+
+    return result;
 }
 
 } // namespace detail
