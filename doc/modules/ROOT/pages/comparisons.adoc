@@ -55,6 +55,19 @@ This page summarizes the key differences and provides a runnable example demonst
 | C++14
 |===
 
+== Type Deduction Readability
+
+Another practical difference is how each library's types appear in IDE tooltips and debugger output.
+The deduced type for bounded arithmetic results illustrates this clearly.
+
+Boost.SafeNumbers deduces a clean, readable type:
+
+image::safe_numbers_bounded_uint.png[SafeNumbers bounded_uint type deduction,align="center"]
+
+Boost.SafeNumerics deduces a deeply nested template type that can be difficult to read at a glance:
+
+image::safe_numerics_bounded_uint.png[SafeNumerics safe_unsigned_range type deduction,align="center"]
+
 == Runnable Example
 
 .This https://github.com/boostorg/safe_numbers/blob/develop/examples/safe_numerics_comparison.cpp[example] demonstrates each of the differences listed above side-by-side.
