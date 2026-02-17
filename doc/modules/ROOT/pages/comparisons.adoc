@@ -46,6 +46,10 @@ This page summarizes the key differences and provides a runnable example demonst
 | Explicit `static_cast` required. Throws `std::domain_error` if the value does not fit.
 | Both implicit and explicit narrowing throw `std::system_error` if the value does not fit.
 
+| *Bounded / range-constrained types*
+| `bounded_uint<Min, Max>` enforces bounds on every arithmetic result. `60 + 50` on a `[0, 100]` range throws immediately.
+| `safe_unsigned_range<Min, Max>` only enforces bounds on construction and assignment. Arithmetic results are promoted and can silently exceed the declared range (e.g. `60 + 50 = 110` on a `[0, 100]` range succeeds).
+
 | *C++ standard required*
 | C++20
 | C++14
@@ -95,5 +99,13 @@ safe_numerics: -5u = -5
 safe_numbers narrowing threw: Overflow in conversion to smaller type
 safe_numerics implicit narrowing threw: converted unsigned value too large: positive overflow error
 safe_numerics explicit narrowing threw: converted unsigned value too large: positive overflow error
+
+--- Bounded / range-constrained types ---
+safe_numbers bounded(150) threw: Construction from value outside the bounds
+safe_numerics range(150) threw: converted signed value too large: positive overflow error
+safe_numbers bounded: 60 + 30 = 90
+safe_numerics range: 60 + 30 = 90
+safe_numbers bounded 60+50 threw: Construction from value outside the bounds
+safe_numerics range: 60 + 50 = 110
 ----
 ====

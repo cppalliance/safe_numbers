@@ -21,8 +21,10 @@
 //      SafeNumerics promotes and allows it silently.
 
 #include <boost/safe_numbers/unsigned_integers.hpp>
+#include <boost/safe_numbers/bounded_integers.hpp>
 #include <boost/safe_numbers/iostream.hpp>
 #include <boost/safe_numerics/safe_integer.hpp>
+#include <boost/safe_numerics/safe_integer_range.hpp>
 
 #include <iostream>
 #include <cstdint>
@@ -271,6 +273,78 @@ int main()
     catch (const std::exception& e)
     {
         std::cout << "safe_numerics explicit narrowing threw: " << e.what() << std::endl;
+    }
+
+    // -----------------------------------------------------------------------
+    // 9. Bounded / range-constrained types
+    // -----------------------------------------------------------------------
+    // Both libraries provide types constrained to a compile-time range.
+    // SafeNumbers: bounded_uint<Min, Max>
+    // SafeNumerics: safe_unsigned_range<Min, Max>
+    //
+    // Critical difference: SafeNumbers enforces bounds on every arithmetic
+    // result. SafeNumerics only enforces bounds on construction/assignment
+    // back to the range type - the promoted result of arithmetic can exceed
+    // the declared range silently.
+    std::cout << "\n--- Bounded / range-constrained types ---\n";
+
+    using percent_sn = safe_num::bounded_uint<0U, 100U>;
+    using percent_snr = safe_nrc::safe_unsigned_range<0, 100>;
+
+    // Both reject out-of-range construction
+    try
+    {
+        auto x = percent_sn{150U};
+        std::cout << "safe_numbers bounded(150): " << x << std::endl;
+    }
+    catch (const std::domain_error& e)
+    {
+        std::cout << "safe_numbers bounded(150) threw: " << e.what() << std::endl;
+    }
+
+    try
+    {
+        percent_snr x = 150;
+        std::cout << "safe_numerics range(150): " << static_cast<int>(x) << std::endl;
+    }
+    catch (const std::exception& e)
+    {
+        std::cout << "safe_numerics range(150) threw: " << e.what() << std::endl;
+    }
+
+    // Arithmetic within bounds works for both
+    {
+        const auto result = percent_sn{60U} + percent_sn{30U};
+        std::cout << "safe_numbers bounded: 60 + 30 = " << result << std::endl;
+        // Output: 90
+    }
+
+    {
+        percent_snr a = 60;
+        percent_snr b = 30;
+        auto result = a + b;
+        std::cout << "safe_numerics range: 60 + 30 = " << static_cast<int>(result) << std::endl;
+        // Output: 90
+    }
+
+    // Arithmetic exceeding the declared range:
+    // SafeNumbers catches it immediately, SafeNumerics does not
+    try
+    {
+        const auto result = percent_sn{60U} + percent_sn{50U};
+        std::cout << "safe_numbers bounded: 60 + 50 = " << result << std::endl;
+    }
+    catch (const std::exception& e)
+    {
+        std::cout << "safe_numbers bounded 60+50 threw: " << e.what() << std::endl;
+    }
+
+    {
+        percent_snr a = 60;
+        percent_snr b = 50;
+        auto result = a + b;
+        std::cout << "safe_numerics range: 60 + 50 = " << static_cast<int>(result) << std::endl;
+        // Output: 110 (exceeds declared range of [0,100] but no error!)
     }
 
     return 0;
