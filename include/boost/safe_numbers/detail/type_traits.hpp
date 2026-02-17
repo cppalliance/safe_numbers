@@ -153,7 +153,7 @@ template <typename T>
 inline constexpr bool is_library_type_v = impl::is_library_type<T>::value;
 
 template <typename T>
-inline constexpr bool is_integral_library_type = impl::is_integral_library_type<T>::value;
+inline constexpr bool is_integral_library_type_v = impl::is_integral_library_type<T>::value;
 
 template <typename T>
 concept library_type = is_library_type_v<T>;
@@ -165,7 +165,7 @@ template <typename T>
 concept non_bounded_unsigned_library_type = is_unsigned_library_type_v<T> && !is_bounded_type_v<T>;
 
 template <typename T>
-concept non_bounded_integral_library_type = is_integral_library_type<T> && !is_bounded_type_v<T>;
+concept non_bounded_integral_library_type = is_integral_library_type_v<T> && !is_bounded_type_v<T>;
 
 // Forward declaration of verified_type_basis
 template <library_type BasisType>
