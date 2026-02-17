@@ -24,10 +24,19 @@
 #include <boost/safe_numbers/bounded_integers.hpp>
 #include <boost/safe_numbers/iostream.hpp>
 
+// Warning suppression required for safe_numerics
 #if defined(__GNUC__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wold-style-cast"
 #  pragma GCC diagnostic ignored "-Wundef"
+#elif defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable : 4804) // Unsafe use of type bool in operation
+#endif
+
+// Workaround for GCC-11 and GCC-12 not following the -Wundef pragma above
+#ifndef BOOST_CLANG
+#  define BOOST_CLANG 0
 #endif
 
 #include <boost/safe_numerics/safe_integer.hpp>
