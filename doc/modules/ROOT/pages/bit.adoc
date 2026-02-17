@@ -158,8 +158,8 @@ See https://en.cppreference.com/w/cpp/numeric/popcount.html[`std::popcount`].
 
 [source,c++]
 ----
-template <non_bounded_unsigned_library_type UnsignedInt>
-constexpr auto byteswap(UnsignedInt x) noexcept -> UnsignedInt;
+template <non_bounded_integral_library_type Int>
+constexpr auto byteswap(Int x) noexcept -> Int;
 ----
 
 Reverses the bytes of `x`.
