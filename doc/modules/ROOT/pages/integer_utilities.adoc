@@ -306,6 +306,65 @@ static_assert(log2(verified_u32{u32{1048576}}) == 20);    // 2^20
 static_assert(log2(verified_u64{u64{9223372036854775808ULL}}) == 63);
 ----
 
+== log10
+
+Returns the integer base-10 logarithm (floor of log~10~) of a value.
+
+Uses an O(1) algorithm based on the most significant bit position to approximate `log~10~`, refined with a single power-of-10 table lookup.
+
+=== Runtime Overload
+
+[source,c++]
+----
+template <non_bounded_unsigned_library_type T>
+    requires (!is_verified_type_v<T>)
+constexpr auto log10(const T n) noexcept -> int;
+----
+
+Computes `floor(log~10~(n))` using `num_digits(n) - 1`, where `num_digits` approximates the digit count via `log~10~(x) {tilde}{equals} log~2~(x) / log~2~(10)` and refines with at most two comparisons against a power-of-10 lookup table.
+
+==== Parameters
+
+* `n` -- The value to compute the logarithm of. Must be non-zero.
+
+==== Return Value
+
+The floor of the base-10 logarithm of `n`.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+auto r1 = log10(u32{1000});        // r1 == 3
+auto r2 = log10(u32{999});         // r2 == 2   (floor of log10(999))
+auto r3 = log10(u32{1});           // r3 == 0
+auto r4 = log10(u64{10000000000000000000ULL});  // r4 == 19
+----
+
+=== Verified Overload
+
+[source,c++]
+----
+template <non_bounded_unsigned_library_type T>
+consteval auto log10(const verified_type_basis<T> n) noexcept -> int;
+----
+
+Compile-time only overload for verified types.
+
+Since `log10` is `consteval` for verified types, the result is guaranteed to be a compile-time constant.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+static_assert(log10(verified_u32{u32{1000000000}}) == 9);
+static_assert(log10(verified_u64{u64{10000000000000000000ULL}}) == 19);
+----
+
 == ipow
 
 Integer exponentiation using the exponentiation-by-squaring algorithm.

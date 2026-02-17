@@ -8,6 +8,7 @@
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
 #include <boost/safe_numbers/detail/rtz.hpp>
+#include <boost/safe_numbers/detail/num_digits.hpp>
 #include <boost/safe_numbers/bit.hpp>
 
 namespace boost::safe_numbers {
@@ -118,6 +119,23 @@ template <detail::non_bounded_unsigned_library_type T>
 consteval auto log2(const detail::verified_type_basis<T> n) noexcept -> int
 {
     return bit_width(n) - 1;
+}
+
+// Integer log base 10: floor(log10(n)) == num_digits(n) - 1
+// Uses MSB-based approximation with power-of-10 table lookup (O(1))
+template <detail::non_bounded_unsigned_library_type T>
+    requires (!detail::is_verified_type_v<T>)
+constexpr auto log10(const T n) noexcept -> int
+{
+    using underlying = detail::underlying_type_t<T>;
+    return detail::num_digits(static_cast<underlying>(n)) - 1;
+}
+
+template <detail::non_bounded_unsigned_library_type T>
+consteval auto log10(const detail::verified_type_basis<T> n) noexcept -> int
+{
+    using underlying = detail::underlying_type_t<T>;
+    return detail::num_digits(static_cast<underlying>(n)) - 1;
 }
 
 namespace detail {
