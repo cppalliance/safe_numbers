@@ -160,24 +160,24 @@ BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
     return popcount(static_cast<underlying_type>(x));
 }
 
-BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type UnsignedInt>
-    requires (!detail::is_verified_type_v<UnsignedInt>)
-[[nodiscard]] constexpr auto byteswap(const UnsignedInt x) noexcept -> UnsignedInt
+BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_integral_library_type Int>
+    requires (!detail::is_verified_type_v<Int>)
+[[nodiscard]] constexpr auto byteswap(const Int x) noexcept -> Int
 {
     using boost::core::byteswap;
-    using underlying_type = detail::underlying_type_t<UnsignedInt>;
+    using underlying_type = detail::underlying_type_t<Int>;
 
-    return UnsignedInt{byteswap(static_cast<underlying_type>(x))};
+    return Int{byteswap(static_cast<underlying_type>(x))};
 }
 
-BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type UnsignedInt>
-    requires detail::is_verified_type_v<UnsignedInt>
-[[nodiscard]] consteval auto byteswap(const UnsignedInt x) noexcept -> UnsignedInt
+BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_integral_library_type Int>
+    requires detail::is_verified_type_v<Int>
+[[nodiscard]] consteval auto byteswap(const Int x) noexcept -> Int
 {
     using boost::core::byteswap;
-    using underlying_type = detail::underlying_type_t<UnsignedInt>;
+    using underlying_type = detail::underlying_type_t<Int>;
 
-    return UnsignedInt{byteswap(static_cast<underlying_type>(x))};
+    return Int{byteswap(static_cast<underlying_type>(x))};
 }
 
 } // namespace boost::safe_numbers
