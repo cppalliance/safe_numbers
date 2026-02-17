@@ -23,6 +23,13 @@
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/bounded_integers.hpp>
 #include <boost/safe_numbers/iostream.hpp>
+
+#if defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+#  pragma GCC diagnostic ignored "-Wundef"
+#endif
+
 #include <boost/safe_numerics/safe_integer.hpp>
 #include <boost/safe_numerics/safe_integer_range.hpp>
 
