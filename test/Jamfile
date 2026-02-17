@@ -129,6 +129,9 @@ run test_verified_fmt_format.cpp ;
 run test_verified_std_format.cpp ;
 run test_verified_limits.cpp ;
 
+# Byte conversion tests
+run test_to_from_be.cpp ;
+
 # Utility function tests
 run test_isqrt.cpp ;
 run test_remove_trailing_zeros.cpp ;
