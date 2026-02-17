@@ -185,6 +185,19 @@ https://www.boost.org/LICENSE_1_0.txt
 | Returns the floor of the base-10 logarithm
 |===
 
+=== Byte Conversions
+
+[cols="1,2", options="header"]
+|===
+| Function | Description
+
+| xref:byte_conversions.adoc[`to_be`]
+| Converts a safe integer from native byte order to big-endian
+
+| xref:byte_conversions.adoc[`from_be`]
+| Converts a safe integer from big-endian to native byte order
+|===
+
 === Arithmetic
 
 [cols="1,2", options="header"]
@@ -253,6 +266,9 @@ This header is not included in the convenience header since it requires external
 
 | `<boost/safe_numbers/bounded_integers.hpp>`
 | Bounded unsigned integer type (`bounded_uint<Min, Max>`)
+
+| `<boost/safe_numbers/byte_conversions.hpp>`
+| Byte order conversion functions (`to_be`, `from_be`)
 
 | `<boost/safe_numbers/verified_integers.hpp>`
 | Verified integer types (`verified_u8`, `verified_u16`, `verified_u32`, `verified_u64`, `verified_u128`, `verified_bounded_integer<Min, Max>`)

@@ -15,5 +15,6 @@
 #include <boost/safe_numbers/charconv.hpp>
 #include <boost/safe_numbers/bit.hpp>
 #include <boost/safe_numbers/integer_utilities.hpp>
+#include <boost/safe_numbers/byte_conversions.hpp>
 
 #endif //BOOST_SAFENUMBERS_HPP
