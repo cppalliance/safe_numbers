@@ -1,0 +1,142 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#byte_conversions]
+= Byte Conversions
+:idprefix: byte_conversions_
+
+== Description
+
+The library provides functions for converting safe integer types to and from big-endian byte order.
+These operate on the non-bounded unsigned types (`u8`, `u16`, `u32`, `u64`, `u128`) and their verified counterparts.
+
+On big-endian platforms these are no-ops.
+On little-endian platforms they delegate to `byteswap`.
+
+[source,c++]
+----
+#include <boost/safe_numbers/byte_conversions.hpp>
+----
+
+== to_be
+
+Converts a value from the native byte order to big-endian byte order.
+
+=== Runtime Overload
+
+[source,c++]
+----
+template <non_bounded_integral_library_type T>
+    requires (!is_verified_type_v<T>)
+constexpr auto to_be(const T value) noexcept -> T;
+----
+
+==== Parameters
+
+* `value` -- The value to convert.
+
+==== Return Value
+
+If `std::endian::native == std::endian::big`, returns `value` unchanged.
+Otherwise, returns `byteswap(value)`.
+
+==== Complexity
+
+O(1).
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+auto be_val = to_be(u32{0x01020304});
+// On little-endian: be_val == u32{0x04030201}
+// On big-endian:    be_val == u32{0x01020304}
+----
+
+=== Verified Overload
+
+[source,c++]
+----
+template <non_bounded_integral_library_type T>
+consteval auto to_be(const verified_type_basis<T> value) noexcept -> verified_type_basis<T>;
+----
+
+Compile-time only overload for verified types.
+
+Since `to_be` is `consteval` for verified types, the result is guaranteed to be a compile-time constant.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+constexpr auto be_val = to_be(verified_u32{u32{0x01020304}});
+----
+
+== from_be
+
+Converts a value from big-endian byte order to the native byte order.
+
+This is the inverse of `to_be`.
+Since byte swapping is its own inverse, `from_be` delegates directly to `to_be`.
+
+=== Runtime Overload
+
+[source,c++]
+----
+template <non_bounded_integral_library_type T>
+    requires (!is_verified_type_v<T>)
+constexpr auto from_be(const T value) noexcept -> T;
+----
+
+==== Parameters
+
+* `value` -- The big-endian value to convert to native byte order.
+
+==== Return Value
+
+The value in native byte order.
+Equivalent to `to_be(value)`.
+
+==== Complexity
+
+O(1).
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+auto native_val = from_be(to_be(u64{0x0123456789ABCDEF}));
+// native_val == u64{0x0123456789ABCDEF}  (round-trip)
+----
+
+=== Verified Overload
+
+[source,c++]
+----
+template <non_bounded_integral_library_type T>
+consteval auto from_be(const verified_type_basis<T> value) noexcept -> verified_type_basis<T>;
+----
+
+Compile-time only overload for verified types.
+
+Since `from_be` is `consteval` for verified types, the result is guaranteed to be a compile-time constant.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+constexpr auto val = verified_u32{u32{0xDEADBEEF}};
+constexpr auto round_tripped = from_be(to_be(val));
+static_assert(round_tripped == val);
+----
