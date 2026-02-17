@@ -59,6 +59,48 @@ consteval auto from_be(const detail::verified_type_basis<T> value) noexcept -> d
     return to_be(value);
 }
 
+template <detail::non_bounded_integral_library_type T>
+    requires (!detail::is_verified_type_v<T>)
+constexpr auto to_le(const T value) noexcept -> T
+{
+    if constexpr (std::endian::native == std::endian::little)
+    {
+        return value;
+    }
+    else
+    {
+        return byteswap(value);
+    }
+}
+
+template <detail::non_bounded_integral_library_type T>
+consteval auto to_le(const detail::verified_type_basis<T> value) noexcept -> detail::verified_type_basis<T>
+{
+    if constexpr (std::endian::native == std::endian::little)
+    {
+        return value;
+    }
+    else
+    {
+        return byteswap(value);
+    }
+}
+
+template <detail::non_bounded_integral_library_type T>
+    requires (!detail::is_verified_type_v<T>)
+constexpr auto from_le(const T value) noexcept -> T
+{
+    // Self-inverse
+    return to_le(value);
+}
+
+template <detail::non_bounded_integral_library_type T>
+consteval auto from_le(const detail::verified_type_basis<T> value) noexcept -> detail::verified_type_basis<T>
+{
+    // Self-inverse
+    return to_le(value);
+}
+
 } // namespace boost::safe_numbers
 
 #endif //BOOST_SAFE_NUMBERS_BYTE_CONVERSIONS_HPP

@@ -10,11 +10,12 @@ https://www.boost.org/LICENSE_1_0.txt
 
 == Description
 
-The library provides functions for converting safe integer types to and from big-endian byte order.
+The library provides functions for converting safe integer types to and from big-endian or little-endian byte order.
 These operate on the non-bounded unsigned types (`u8`, `u16`, `u32`, `u64`, `u128`) and their verified counterparts.
 
-On big-endian platforms these are no-ops.
-On little-endian platforms they delegate to `byteswap`.
+For big-endian conversions (`to_be`/`from_be`): on big-endian platforms these are no-ops; on little-endian platforms they delegate to `byteswap`.
+
+For little-endian conversions (`to_le`/`from_le`): on little-endian platforms these are no-ops; on big-endian platforms they delegate to `byteswap`.
 
 [source,c++]
 ----
@@ -138,5 +139,125 @@ using namespace boost::safe_numbers;
 
 constexpr auto val = verified_u32{u32{0xDEADBEEF}};
 constexpr auto round_tripped = from_be(to_be(val));
+static_assert(round_tripped == val);
+----
+
+== to_le
+
+Converts a value from the native byte order to little-endian byte order.
+
+=== Runtime Overload
+
+[source,c++]
+----
+template <non_bounded_integral_library_type T>
+    requires (!is_verified_type_v<T>)
+constexpr auto to_le(const T value) noexcept -> T;
+----
+
+==== Parameters
+
+* `value` -- The value to convert.
+
+==== Return Value
+
+If `std::endian::native == std::endian::little`, returns `value` unchanged.
+Otherwise, returns `byteswap(value)`.
+
+==== Complexity
+
+O(1).
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+auto le_val = to_le(u32{0x01020304});
+// On little-endian: le_val == u32{0x01020304}  (identity)
+// On big-endian:    le_val == u32{0x04030201}
+----
+
+=== Verified Overload
+
+[source,c++]
+----
+template <non_bounded_integral_library_type T>
+consteval auto to_le(const verified_type_basis<T> value) noexcept -> verified_type_basis<T>;
+----
+
+Compile-time only overload for verified types.
+
+Since `to_le` is `consteval` for verified types, the result is guaranteed to be a compile-time constant.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+constexpr auto le_val = to_le(verified_u32{u32{0x01020304}});
+----
+
+== from_le
+
+Converts a value from little-endian byte order to the native byte order.
+
+This is the inverse of `to_le`.
+Since byte swapping is its own inverse, `from_le` delegates directly to `to_le`.
+
+=== Runtime Overload
+
+[source,c++]
+----
+template <non_bounded_integral_library_type T>
+    requires (!is_verified_type_v<T>)
+constexpr auto from_le(const T value) noexcept -> T;
+----
+
+==== Parameters
+
+* `value` -- The little-endian value to convert to native byte order.
+
+==== Return Value
+
+The value in native byte order.
+Equivalent to `to_le(value)`.
+
+==== Complexity
+
+O(1).
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+auto native_val = from_le(to_le(u64{0x0123456789ABCDEF}));
+// native_val == u64{0x0123456789ABCDEF}  (round-trip)
+----
+
+=== Verified Overload
+
+[source,c++]
+----
+template <non_bounded_integral_library_type T>
+consteval auto from_le(const verified_type_basis<T> value) noexcept -> verified_type_basis<T>;
+----
+
+Compile-time only overload for verified types.
+
+Since `from_le` is `consteval` for verified types, the result is guaranteed to be a compile-time constant.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+constexpr auto val = verified_u32{u32{0xDEADBEEF}};
+constexpr auto round_tripped = from_le(to_le(val));
 static_assert(round_tripped == val);
 ----

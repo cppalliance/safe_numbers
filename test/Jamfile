@@ -131,6 +131,7 @@ run test_verified_limits.cpp ;
 
 # Byte conversion tests
 run test_to_from_be.cpp ;
+run test_to_from_le.cpp ;
 
 # Utility function tests
 run test_isqrt.cpp ;
