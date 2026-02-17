@@ -18,3 +18,4 @@ The following books: papers and blog posts serve as the basis for the algorithms
 4. Jean-Michel Muller, Nicolas Brisebarre, Florent De Dinechin, Claude-Pierre Jeannerod, Vincent Lefèvre, Guillaume Melquiond, Nathalie Revol, Damien Stehlé, Serge Torres, _Handbook of Floating-Point Arithmetic_, 2000
 5. Benjamin C. Pierce, _Types and Programming Languages_, 2002
 6. Benjamin C. Pierce, _Advanced Topics in Types and Programming Languages_, 2005
+7. S. Glesner, “Finite Integer Computations: An Algebraic Foundation for Their Correctness,” Formal Aspects of Computing, vol. 18, no. 2, pp. 244-262, 2006.
