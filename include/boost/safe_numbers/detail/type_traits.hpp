@@ -138,10 +138,22 @@ struct is_library_type<unsigned_integer_basis<T>> : std::true_type {};
 template <auto Min, auto Max>
 struct is_library_type<bounded_uint<Min, Max>> : std::true_type {};
 
+template <typename>
+struct is_integral_library_type : std::false_type {};
+
+template <typename T>
+struct is_integral_library_type<unsigned_integer_basis<T>> : std::true_type {};
+
+template <auto Min, auto Max>
+struct is_integral_library_type<bounded_uint<Min, Max>> : std::true_type {};
+
 } // namespace impl
 
 template <typename T>
 inline constexpr bool is_library_type_v = impl::is_library_type<T>::value;
+
+template <typename T>
+inline constexpr bool is_integral_library_type = impl::is_integral_library_type<T>::value;
 
 template <typename T>
 concept library_type = is_library_type_v<T>;
@@ -151,6 +163,9 @@ concept unsigned_library_type = is_unsigned_library_type_v<T>;
 
 template <typename T>
 concept non_bounded_unsigned_library_type = is_unsigned_library_type_v<T> && !is_bounded_type_v<T>;
+
+template <typename T>
+concept non_bounded_integral_library_type = is_integral_library_type<T> && !is_bounded_type_v<T>;
 
 // Forward declaration of verified_type_basis
 template <library_type BasisType>
