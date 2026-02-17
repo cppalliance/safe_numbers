@@ -106,6 +106,20 @@ consteval auto is_power_2(const detail::verified_type_basis<T> n) noexcept -> bo
     return has_single_bit(n);
 }
 
+// Integer log base 2: floor(log2(n)) == bit_width(n) - 1
+template <detail::non_bounded_unsigned_library_type T>
+    requires (!detail::is_verified_type_v<T>)
+constexpr auto log2(const T n) noexcept -> int
+{
+    return bit_width(n) - 1;
+}
+
+template <detail::non_bounded_unsigned_library_type T>
+consteval auto log2(const detail::verified_type_basis<T> n) noexcept -> int
+{
+    return bit_width(n) - 1;
+}
+
 namespace detail {
 
 // Iterative exponentiation by squaring: O(log b) multiplications

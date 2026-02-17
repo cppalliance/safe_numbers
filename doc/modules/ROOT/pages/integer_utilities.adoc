@@ -244,6 +244,68 @@ static_assert(is_power_10(verified_u32{u32{100}}));
 static_assert(!is_power_10(verified_u32{u32{200}}));
 ----
 
+== log2
+
+Returns the integer base-2 logarithm (floor of log~2~) of a value.
+
+=== Runtime Overload
+
+[source,c++]
+----
+template <non_bounded_unsigned_library_type T>
+    requires (!is_verified_type_v<T>)
+constexpr auto log2(const T n) noexcept -> int;
+----
+
+Computes `floor(log~2~(n))` using `bit_width(n) - 1`.
+
+==== Parameters
+
+* `n` -- The value to compute the logarithm of. Must be non-zero.
+
+==== Return Value
+
+The floor of the base-2 logarithm of `n`.
+For `n == 0`, returns `-1` (since `bit_width(0) == 0`).
+
+==== Complexity
+
+O(1).
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+auto r1 = log2(u32{1024});   // r1 == 10  (2^10 = 1024)
+auto r2 = log2(u32{1000});   // r2 == 9   (floor of log2(1000))
+auto r3 = log2(u32{1});      // r3 == 0
+auto r4 = log2(u64{9223372036854775808ULL});  // r4 == 63  (2^63)
+----
+
+=== Verified Overload
+
+[source,c++]
+----
+template <non_bounded_unsigned_library_type T>
+consteval auto log2(const verified_type_basis<T> n) noexcept -> int;
+----
+
+Compile-time only overload for verified types.
+
+Since `log2` is `consteval` for verified types, the result is guaranteed to be a compile-time constant.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+static_assert(log2(verified_u32{u32{1048576}}) == 20);    // 2^20
+static_assert(log2(verified_u64{u64{9223372036854775808ULL}}) == 63);
+----
+
 == ipow
 
 Integer exponentiation using the exponentiation-by-squaring algorithm.

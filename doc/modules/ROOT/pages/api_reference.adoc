@@ -177,6 +177,9 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:integer_utilities.adoc[`ipow`]
 | Integer exponentiation by squaring
+
+| xref:integer_utilities.adoc[`log2`]
+| Returns the floor of the base-2 logarithm
 |===
 
 === Arithmetic
@@ -228,7 +231,7 @@ This header is not included in the convenience header since it requires external
 | Contains specializations of `<format>` for library types
 
 | `<boost/safe_numbers/integer_utilities.hpp>`
-| Integer utility functions (`isqrt`, `remove_trailing_zeros`, `is_power_10`, `is_power_2`, `ipow`)
+| Integer utility functions (`isqrt`, `remove_trailing_zeros`, `is_power_10`, `is_power_2`, `ipow`, `log2`)
 
 | `<boost/safe_numbers/iostream.hpp>`
 | Stream I/O operators (`operator<<`, `operator>>`) for library types

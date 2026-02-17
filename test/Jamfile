@@ -135,6 +135,7 @@ run test_remove_trailing_zeros.cpp ;
 run test_is_power_10.cpp ;
 run test_is_power_2.cpp ;
 run test_ipow.cpp ;
+run test_log2.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
