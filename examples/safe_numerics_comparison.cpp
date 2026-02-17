@@ -25,7 +25,9 @@
 #include <boost/safe_numbers/iostream.hpp>
 
 // Warning suppression required for safe_numerics
-#if defined(__GNUC__)
+#if defined (__clang__)
+#  pragma clang diagnostic ignored "-Wold-style-cast"
+#elif defined(__GNUC__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wold-style-cast"
 #  pragma GCC diagnostic ignored "-Wundef"
