@@ -349,7 +349,9 @@ int main()
     // SafeNumbers catches it immediately, SafeNumerics does not
     try
     {
-        const auto result = percent_sn{60U} + percent_sn{50U};
+        percent_sn a {60U};
+        percent_sn b {50U};
+        auto result = a + b;
         std::cout << "safe_numbers bounded: 60 + 50 = " << result << std::endl;
     }
     catch (const std::exception& e)
