@@ -192,6 +192,10 @@ template <library_type BasisType>
     requires is_bounded_type_v<BasisType>
 struct is_bounded_type<verified_type_basis<BasisType>> : std::true_type {};
 
+template <library_type BasisType>
+    requires is_integral_library_type_v<BasisType>
+struct is_integral_library_type<verified_type_basis<BasisType>> : std::true_type {};
+
 } // namespace impl
 
 template <typename T>
