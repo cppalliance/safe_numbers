@@ -1,0 +1,99 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#comparisons]
+= Comparison with Boost.SafeNumerics
+
+Boost.SafeNumbers and Boost.SafeNumerics both aim to make integer arithmetic safer, but they differ substantially in philosophy and behavior.
+This page summarizes the key differences and provides a runnable example demonstrating each one.
+
+== Key Differences
+
+[cols="1,1,1", options="header"]
+|===
+| Feature
+| Boost.SafeNumbers
+| Boost.SafeNumerics
+
+| *Default overflow behavior*
+| Throws `std::overflow_error` / `std::underflow_error` immediately at the declared width.
+| With the default `native` promotion policy, operands are promoted following C++ integer promotion rules. For small types like `uint8_t`, this means overflow is absorbed silently (e.g. `safe<uint8_t>(255) + safe<uint8_t>(1)` produces 256 as an `int`).
+
+| *Construction*
+| Explicit only. Construction from `bool` is a compile-time error.
+| Implicit construction from built-in types is allowed, including from `bool`.
+
+| *Overflow policies*
+| Named free functions per-operation: `wrapping_add`, `saturating_sub`, `checked_mul`, `overflowing_div`, etc. The default operator always throws.
+| Policy is selected as a template parameter on the type itself (`safe<T, PromotionPolicy, ExceptionPolicy>`). No per-operation policy functions.
+
+| *Mixed-width arithmetic*
+| Compile-time error. Both operands must be the same type.
+| Allowed. Operands are promoted following C++ rules.
+
+| *Mixed safe/built-in arithmetic*
+| Compile-time error. Built-in types cannot be used as operands with safe types.
+| Allowed. The built-in operand is implicitly accepted.
+
+| *Unary minus on unsigned*
+| Compile-time error via `static_assert`.
+| Allowed with `native` promotion: promotes to signed `int` and negates (e.g. `-safe<uint8_t>(5)` produces `-5`).
+
+| *Narrowing conversions*
+| Explicit `static_cast` required. Throws `std::domain_error` if the value does not fit.
+| Both implicit and explicit narrowing throw `std::system_error` if the value does not fit.
+
+| *C++ standard required*
+| C++20
+| C++14
+|===
+
+== Runnable Example
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/safe_numerics_comparison.cpp[example] demonstrates each of the differences listed above side-by-side.
+====
+[source, c++]
+----
+include::example$safe_numerics_comparison.cpp[]
+----
+
+Output:
+----
+--- Construction ---
+safe_numbers explicit: u8{200} = 200
+safe_numerics implicit: u8 = 200 -> 200
+safe_numerics from bool: 1
+
+--- Overflow on addition ---
+safe_numbers threw: Overflow detected in unsigned addition
+safe_numerics: 256
+
+--- Underflow on subtraction ---
+safe_numbers threw: Underflow detected in unsigned subtraction
+safe_numerics: -1
+
+--- Alternative policies (SafeNumbers) ---
+wrapping_add(250, 10) = 4
+saturating_add(250, 10) = 255
+checked_add(250, 10) = nullopt
+overflowing_add(250, 10) = {4, true}
+
+--- Mixed-width arithmetic ---
+safe_numerics mixed: u8(200) + u32(100) = 300
+safe_numbers explicit: u32(u8(200)) + u32(100) = 300
+
+--- Mixed safe/built-in arithmetic ---
+safe_numerics: safe<u8>(200) + 100 = 300
+
+--- Unary minus on unsigned ---
+safe_numerics: -5u = -5
+
+--- Narrowing conversions ---
+safe_numbers narrowing threw: Overflow in conversion to smaller type
+safe_numerics implicit narrowing threw: converted unsigned value too large: positive overflow error
+safe_numerics explicit narrowing threw: converted unsigned value too large: positive overflow error
+----
+====
