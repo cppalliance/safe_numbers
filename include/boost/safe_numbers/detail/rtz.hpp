@@ -20,7 +20,7 @@
 namespace boost::safe_numbers::detail {
 
 // n is assumed to be at most of bit_width bits
-template <std::size_t bit_width, is_fundamental_unsigned_integral UInt>
+template <std::size_t bit_width, fundamental_unsigned_integral UInt>
 constexpr auto rotr(UInt n, unsigned int r) noexcept -> UInt
 {
     static_assert(bit_width >= std::numeric_limits<UInt>::digits);
@@ -31,7 +31,7 @@ constexpr auto rotr(UInt n, unsigned int r) noexcept -> UInt
     return static_cast<UInt>((n >> r) | (n << ((bit_width - r) & bit_width_m1)));
 }
 
-template <is_fundamental_unsigned_integral UInt>
+template <fundamental_unsigned_integral UInt>
 struct remove_trailing_zeros_return
 {
     UInt trimmed_number;
