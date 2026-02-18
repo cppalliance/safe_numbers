@@ -77,6 +77,8 @@ import boost.safe_numbers;
 #endif
 
 using namespace boost::safe_numbers;
+using boost::charconv::to_chars;
+using boost::charconv::from_chars;
 
 static std::mt19937_64 rng {42};
 
