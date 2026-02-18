@@ -365,3 +365,107 @@ auto original = u32{0xDEADBEEF};
 auto reconstructed = from_be_bytes<u32>(std::span<const std::byte, 4>{to_be_bytes(original)});
 // reconstructed == original
 ----
+
+== to_le_bytes
+
+Converts a safe integer value to a little-endian byte array.
+The value is first converted to little-endian byte order using `to_le`, then reinterpreted as an array of `std::byte`.
+
+=== Runtime Overload
+
+[source,c++]
+----
+template <non_bounded_integral_library_type T>
+    requires (!is_verified_type_v<T>)
+constexpr auto to_le_bytes(const T value) noexcept -> std::array<std::byte, sizeof(T)>;
+----
+
+==== Parameters
+
+* `value` -- The value to convert.
+
+==== Return Value
+
+A `std::array<std::byte, sizeof(T)>` containing the value's bytes in little-endian order (least significant byte first).
+
+==== Complexity
+
+O(1).
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+auto bytes = to_le_bytes(u32{0x01020304});
+// bytes == {0x04, 0x03, 0x02, 0x01}
+----
+
+=== Verified Overload
+
+[source,c++]
+----
+template <non_bounded_integral_library_type T>
+consteval auto to_le_bytes(const verified_type_basis<T> value) noexcept -> std::array<std::byte, sizeof(T)>;
+----
+
+Compile-time only overload for verified types.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+constexpr auto bytes = to_le_bytes(verified_u32{u32{0x01020304}});
+// bytes == {0x04, 0x03, 0x02, 0x01}
+----
+
+== from_le_bytes
+
+Reconstructs a safe integer value from a little-endian byte array.
+The bytes are reinterpreted as the underlying type and then converted from little-endian to native byte order using `from_le`.
+
+[source,c++]
+----
+template <non_bounded_integral_library_type T, std::size_t N>
+constexpr auto from_le_bytes(const std::span<const std::byte, N> bytes) -> T;
+----
+
+==== Parameters
+
+* `bytes` -- A span of bytes in little-endian order. May have a fixed extent or `std::dynamic_extent`.
+
+==== Return Value
+
+The reconstructed safe integer value in native byte order.
+
+==== Extent Matching
+
+The function validates that the number of input bytes matches `sizeof(T)`:
+
+* **Fixed extent matches `sizeof(T)`**: Compiles and executes normally.
+* **Fixed extent does not match `sizeof(T)`**: Produces a `static_assert` failure at compile time.
+* **Dynamic extent**: Checks at runtime and throws `std::domain_error` if the sizes do not match.
+
+==== Complexity
+
+O(1).
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+// From a fixed-extent span
+std::array<std::byte, 4> bytes {std::byte{0x04}, std::byte{0x03}, std::byte{0x02}, std::byte{0x01}};
+auto val = from_le_bytes<u32>(std::span<const std::byte, 4>{bytes});
+// val == u32{0x01020304}
+
+// Round-trip
+auto original = u32{0xDEADBEEF};
+auto reconstructed = from_le_bytes<u32>(std::span<const std::byte, 4>{to_le_bytes(original)});
+// reconstructed == original
+----
