@@ -459,6 +459,47 @@ verified_u32 NE round-trip: 0xcafebabe
 ----
 ====
 
+[#examples_std_numeric_usage]
+== Standard Library Compatibility
+
+Safe integer types work seamlessly with standard library algorithms that require only comparison operators, such as `std::min`, `std::max`, `std::clamp`, `std::sort`, and `std::minmax_element`.
+
+NOTE: `std::gcd`, `std::lcm`, and `std::midpoint` do *not* work because they `static_assert` on `std::is_integral<T>`, which is `false` for class types.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/std_numeric_usage.cpp[example] demonstrates standard library algorithm compatibility.
+====
+[source, c++]
+----
+include::example$std_numeric_usage.cpp[]
+----
+
+Output:
+----
+=== std::min / std::max ===
+std::min(42, 100) = 42
+std::max(42, 100) = 100
+std::min({30, 10, 50}) = 10
+std::max({30, 10, 50}) = 50
+
+=== std::clamp ===
+std::clamp(5, 10, 200)   = 10
+std::clamp(50, 10, 200)  = 50
+std::clamp(999, 10, 200) = 200
+
+=== std::sort ===
+sorted: 10 20 30 40 50
+
+=== std::minmax_element ===
+min element = 10
+max element = 50
+
+=== Other widths ===
+std::min(u8(10), u8(20))     = 10
+std::max(u16(100), u16(200)) = 200
+std::clamp(u64(500), u64(0), u64(100)) = 100
+----
+====
+
 [#examples_verified_construction]
 == Verified Types: Construction and Runtime Usage
 
