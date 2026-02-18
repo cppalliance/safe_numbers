@@ -136,6 +136,7 @@ run test_to_from_be_bytes.cpp ;
 compile-fail compile_fail_from_be_bytes_extent.cpp ;
 run test_to_from_le_bytes.cpp ;
 compile-fail compile_fail_from_le_bytes_extent.cpp ;
+run test_to_from_ne_bytes.cpp ;
 
 # Utility function tests
 run test_isqrt.cpp ;
@@ -179,3 +180,4 @@ run ../examples/verified_runtime_usage.cpp ;
 run ../examples/verified_mixed_ops.cpp ;
 compile-fail ../examples/compile_fail_verified_overflow.cpp ;
 run ../examples/safe_numerics_comparison.cpp ;
+run ../examples/byte_conversions.cpp ;
