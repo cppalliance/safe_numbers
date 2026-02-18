@@ -224,6 +224,12 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:byte_conversions.adoc[`from_le_bytes`]
 | Reconstructs a safe integer from a little-endian byte array
+
+| xref:byte_conversions.adoc[`to_ne_bytes`]
+| Converts a safe integer to a native-endian byte array
+
+| xref:byte_conversions.adoc[`from_ne_bytes`]
+| Reconstructs a safe integer from a native-endian byte array
 |===
 
 === Arithmetic
@@ -296,7 +302,7 @@ This header is not included in the convenience header since it requires external
 | Bounded unsigned integer type (`bounded_uint<Min, Max>`)
 
 | `<boost/safe_numbers/byte_conversions.hpp>`
-| Byte order conversion functions (`to_be`, `from_be`, `to_le`, `from_le`, `to_be_bytes`, `from_be_bytes`, `to_le_bytes`, `from_le_bytes`)
+| Byte order conversion functions (`to_be`, `from_be`, `to_le`, `from_le`, `to_be_bytes`, `from_be_bytes`, `to_le_bytes`, `from_le_bytes`, `to_ne_bytes`, `from_ne_bytes`)
 
 | `<boost/safe_numbers/verified_integers.hpp>`
 | Verified integer types (`verified_u8`, `verified_u16`, `verified_u32`, `verified_u64`, `verified_u128`, `verified_bounded_integer<Min, Max>`)
