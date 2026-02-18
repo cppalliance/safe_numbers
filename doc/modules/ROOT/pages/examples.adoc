@@ -414,6 +414,51 @@ shr<checked>(u32(8), 1)     = 4
 ----
 ====
 
+[#examples_byte_conversions]
+== Byte Conversions
+
+The library provides functions for converting safe integers to and from byte arrays in big-endian, little-endian, or native byte order.
+Verified types support the same conversions at compile time via `consteval` overloads.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/byte_conversions.cpp[example] demonstrates byte conversion functions with all safe integer types.
+====
+[source, c++]
+----
+include::example$byte_conversions.cpp[]
+----
+
+Output:
+----
+=== to_be_bytes ===
+u32(0x01020304) -> BE bytes: 01 02 03 04
+u16(0xABCD)     -> BE bytes: ab cd
+
+=== from_be_bytes ===
+BE bytes {01,02,03,04} -> u32: 0x1020304
+
+=== to_le_bytes ===
+u32(0x01020304) -> LE bytes: 04 03 02 01
+u64(0x01..08)   -> LE bytes: 08 07 06 05 04 03 02 01
+
+=== from_le_bytes ===
+LE bytes {04,03,02,01} -> u32: 0x1020304
+
+=== to_ne_bytes / from_ne_bytes (native endian) ===
+u32(0xDEADBEEF) -> NE bytes: ef be ad de
+Round-trip:      -> u32: 0xdeadbeef
+
+=== u8 round-trip ===
+u8(0x42) -> BE: 42
+u8(0x42) -> LE: 42
+
+=== Verified types (compile-time) ===
+verified_u32 to_be_bytes: 01 02 03 04
+verified_u32 BE round-trip: 0xdeadbeef
+verified_u64 LE round-trip: 0x123456789abcdef
+verified_u32 NE round-trip: 0xcafebabe
+----
+====
+
 [#examples_verified_construction]
 == Verified Types: Construction and Runtime Usage
 

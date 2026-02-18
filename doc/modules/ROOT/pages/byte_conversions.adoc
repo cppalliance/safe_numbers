@@ -655,3 +655,7 @@ constexpr auto original = verified_u32{u32{0xDEADBEEF}};
 constexpr auto reconstructed = from_ne_bytes<verified_u32>(std::span<const std::byte, 4>{to_ne_bytes(original)});
 static_assert(reconstructed == original);
 ----
+
+== Example
+
+For a complete example demonstrating all byte conversion functions, see xref:examples.adoc#examples_byte_conversions[Byte Conversions].
