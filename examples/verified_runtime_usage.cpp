@@ -51,14 +51,14 @@ int main()
     // Writing to a character buffer works at runtime since it only
     // reads the value through the constexpr conversion operator
     char buffer[32];
-    auto result = to_chars(buffer, buffer + sizeof(buffer), val);
+    auto result = boost::charconv::to_chars(buffer, buffer + sizeof(buffer), val);
     if (result)
     {
         *result.ptr = '\0';
         std::cout << "to_chars (base 10): " << buffer << '\n';
     }
 
-    result = to_chars(buffer, buffer + sizeof(buffer), val, 16);
+    result = boost::charconv::to_chars(buffer, buffer + sizeof(buffer), val, 16);
     if (result)
     {
         *result.ptr = '\0';
