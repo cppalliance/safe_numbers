@@ -79,8 +79,42 @@ bounded_uint<1u, 65535u> port {u16{8080}};
 Debugger output:
 
 ----
-percentage = [0u, 100u] 42
-port = [1u, 65535u] 8,080
+percentage = [0, 100] 42
+port = [1, 65535] 8,080
 ----
 
-The bounds shown are the raw template parameters as the compiler records them, so the exact suffix (e.g. `0u` vs `0`) may vary between compilers.
+=== Verified Unsigned Integers (`verified_u8`, `verified_u16`, `verified_u32`, `verified_u64`, `verified_u128`)
+
+Verified unsigned integer types display identically to their underlying type as comma-separated decimal values.
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+constexpr auto rate = verified_u32{u32{20}};
+constexpr auto limit = verified_u64{u64{1'000'000}};
+----
+
+Debugger output:
+
+----
+rate = 20
+limit = 1,000,000
+----
+
+=== Verified Bounded Integers (`verified_bounded_integer`)
+
+Verified bounded integers display identically to `bounded_uint` -- showing the compile-time bounds and the current value in the format `[Min, Max] Current`:
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+constexpr auto offset = verified_bounded_integer<0u, 100u>{10u};
+----
+
+Debugger output:
+
+----
+offset = [0, 100] 10
+----
