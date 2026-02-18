@@ -8,6 +8,16 @@ https://www.boost.org/LICENSE_1_0.txt
 = API Reference
 :idprefix: api_ref_
 
+[#api_namespaces]
+== Namespaces
+
+[cols="1,2", options="header"]
+|===
+| Name | Description
+| `boost::charconv` | `to_chars` and `from_chars` overloads
+| `boost::safe_numbers` | All other parts of the library
+|===
+
 [#api_types]
 == Types
 
