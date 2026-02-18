@@ -6,13 +6,13 @@ https://www.boost.org/LICENSE_1_0.txt
 
 [#overview]
 
-= Safe_numbers: Safer fundamental numeric types in C++20
+= SafeNumbers: Safer fundamental numeric types in C++20
 
 Matt Borland
 
 == Description
 
-Safe_numbers strives to enhance the type safety of fundamental numeric types, with an acceptable performance degradation.
+SafeNumbers strives to enhance the type safety of fundamental numeric types, with an acceptable performance degradation.
 
 The library is header-only, minimal dependencies (Boost.Assert, Config, and Throw_Exception), and requires only C++20.
 
@@ -27,7 +27,7 @@ Safety critical applications
 == Supported Compilers
 
 
-Boost.safe_numbers is tested natively on Ubuntu (x86_64, x86_32, s390x, aarch64, ARM32v7), macOS (x86_64, and Apple Silicon), and Windows (x86_64, x86_32, and ARM64);
+Boost.SafeNumbers is tested natively on Ubuntu (x86_64, x86_32, s390x, aarch64, ARM32v7), macOS (x86_64, and Apple Silicon), and Windows (x86_64, x86_32, and ARM64);
 as well as emulated PPC64LE using QEMU with the following compilers:
 
 * GCC 11 and later
