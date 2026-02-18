@@ -323,9 +323,12 @@ constexpr auto bytes = to_be_bytes(verified_u32{u32{0x01020304}});
 Reconstructs a safe integer value from a big-endian byte array.
 The bytes are reinterpreted as the underlying type and then converted from big-endian to native byte order using `from_be`.
 
+=== Runtime Overload
+
 [source,c++]
 ----
 template <non_bounded_integral_library_type T, std::size_t N>
+    requires (!is_verified_type_v<T>)
 constexpr auto from_be_bytes(const std::span<const std::byte, N> bytes) -> T;
 ----
 
@@ -364,6 +367,33 @@ auto val = from_be_bytes<u32>(std::span<const std::byte, 4>{bytes});
 auto original = u32{0xDEADBEEF};
 auto reconstructed = from_be_bytes<u32>(std::span<const std::byte, 4>{to_be_bytes(original)});
 // reconstructed == original
+----
+
+=== Verified Overload
+
+[source,c++]
+----
+template <verified_type T, std::size_t N>
+consteval auto from_be_bytes(const std::span<const std::byte, N> bytes) -> T;
+----
+
+Compile-time only overload for verified types.
+The span must have a fixed extent matching `sizeof(T)`; a mismatched extent produces a `static_assert` failure.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+constexpr std::array<std::byte, 4> bytes {std::byte{0x01}, std::byte{0x02}, std::byte{0x03}, std::byte{0x04}};
+constexpr auto val = from_be_bytes<verified_u32>(std::span<const std::byte, 4>{bytes});
+// val == verified_u32{u32{0x01020304}}
+
+// Round-trip
+constexpr auto original = verified_u32{u32{0xDEADBEEF}};
+constexpr auto reconstructed = from_be_bytes<verified_u32>(std::span<const std::byte, 4>{to_be_bytes(original)});
+static_assert(reconstructed == original);
 ----
 
 == to_le_bytes
@@ -427,9 +457,12 @@ constexpr auto bytes = to_le_bytes(verified_u32{u32{0x01020304}});
 Reconstructs a safe integer value from a little-endian byte array.
 The bytes are reinterpreted as the underlying type and then converted from little-endian to native byte order using `from_le`.
 
+=== Runtime Overload
+
 [source,c++]
 ----
 template <non_bounded_integral_library_type T, std::size_t N>
+    requires (!is_verified_type_v<T>)
 constexpr auto from_le_bytes(const std::span<const std::byte, N> bytes) -> T;
 ----
 
@@ -468,4 +501,31 @@ auto val = from_le_bytes<u32>(std::span<const std::byte, 4>{bytes});
 auto original = u32{0xDEADBEEF};
 auto reconstructed = from_le_bytes<u32>(std::span<const std::byte, 4>{to_le_bytes(original)});
 // reconstructed == original
+----
+
+=== Verified Overload
+
+[source,c++]
+----
+template <verified_type T, std::size_t N>
+consteval auto from_le_bytes(const std::span<const std::byte, N> bytes) -> T;
+----
+
+Compile-time only overload for verified types.
+The span must have a fixed extent matching `sizeof(T)`; a mismatched extent produces a `static_assert` failure.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+constexpr std::array<std::byte, 4> bytes {std::byte{0x04}, std::byte{0x03}, std::byte{0x02}, std::byte{0x01}};
+constexpr auto val = from_le_bytes<verified_u32>(std::span<const std::byte, 4>{bytes});
+// val == verified_u32{u32{0x01020304}}
+
+// Round-trip
+constexpr auto original = verified_u32{u32{0xDEADBEEF}};
+constexpr auto reconstructed = from_le_bytes<verified_u32>(std::span<const std::byte, 4>{to_le_bytes(original)});
+static_assert(reconstructed == original);
 ----
