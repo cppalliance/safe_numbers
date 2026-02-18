@@ -234,6 +234,60 @@ consteval auto from_le_bytes(const std::span<const std::byte, N> bytes) -> T
     return from_le(T{std::bit_cast<underlying_type>(arr)});
 }
 
+template <detail::non_bounded_integral_library_type T>
+    requires (!detail::is_verified_type_v<T>)
+constexpr auto to_ne_bytes(const T value) noexcept -> std::array<std::byte, sizeof(T)>
+{
+    if constexpr (std::endian::native == std::endian::little)
+    {
+        return to_le_bytes(value);
+    }
+    else
+    {
+        return to_be_bytes(value);
+    }
+}
+
+template <detail::non_bounded_integral_library_type T>
+consteval auto to_ne_bytes(const detail::verified_type_basis<T> value) noexcept -> std::array<std::byte, sizeof(T)>
+{
+    if constexpr (std::endian::native == std::endian::little)
+    {
+        return to_le_bytes(value);
+    }
+    else
+    {
+        return to_be_bytes(value);
+    }
+}
+
+template <detail::non_bounded_integral_library_type T, std::size_t N>
+    requires (!detail::is_verified_type_v<T>)
+constexpr auto from_ne_bytes(const std::span<const std::byte, N> bytes) -> T
+{
+    if constexpr (std::endian::native == std::endian::little)
+    {
+        return from_le_bytes<T>(bytes);
+    }
+    else
+    {
+        return from_be_bytes<T>(bytes);
+    }
+}
+
+template <detail::verified_type T, std::size_t N>
+consteval auto from_ne_bytes(const std::span<const std::byte, N> bytes) -> T
+{
+    if constexpr (std::endian::native == std::endian::little)
+    {
+        return from_le_bytes<T>(bytes);
+    }
+    else
+    {
+        return from_be_bytes<T>(bytes);
+    }
+}
+
 } // namespace boost::safe_numbers
 
 #endif //BOOST_SAFE_NUMBERS_BYTE_CONVERSIONS_HPP
