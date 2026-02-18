@@ -180,3 +180,4 @@ run ../examples/verified_runtime_usage.cpp ;
 run ../examples/verified_mixed_ops.cpp ;
 compile-fail ../examples/compile_fail_verified_overflow.cpp ;
 run ../examples/safe_numerics_comparison.cpp ;
+run ../examples/byte_conversions.cpp ;
