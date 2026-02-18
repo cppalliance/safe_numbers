@@ -159,6 +159,83 @@ void test_round_trips()
 // from_be_bytes with dynamic extent: runtime size mismatch throws
 // =============================================================================
 
+// =============================================================================
+// Verified overloads: to_be_bytes and from_be_bytes at compile time
+// =============================================================================
+
+void test_verified_to_be_bytes()
+{
+    {
+        constexpr auto bytes = to_be_bytes(verified_u8{u8{0x42}});
+        static_assert(bytes[0] == std::byte{0x42});
+    }
+    {
+        constexpr auto bytes = to_be_bytes(verified_u16{u16{static_cast<std::uint16_t>(0x0102)}});
+        static_assert(bytes[0] == std::byte{0x01});
+        static_assert(bytes[1] == std::byte{0x02});
+    }
+    {
+        constexpr auto bytes = to_be_bytes(verified_u32{u32{0x01020304U}});
+        static_assert(bytes[0] == std::byte{0x01});
+        static_assert(bytes[1] == std::byte{0x02});
+        static_assert(bytes[2] == std::byte{0x03});
+        static_assert(bytes[3] == std::byte{0x04});
+    }
+    {
+        constexpr auto bytes = to_be_bytes(verified_u64{u64{0x0102030405060708ULL}});
+        static_assert(bytes[0] == std::byte{0x01});
+        static_assert(bytes[1] == std::byte{0x02});
+        static_assert(bytes[2] == std::byte{0x03});
+        static_assert(bytes[3] == std::byte{0x04});
+        static_assert(bytes[4] == std::byte{0x05});
+        static_assert(bytes[5] == std::byte{0x06});
+        static_assert(bytes[6] == std::byte{0x07});
+        static_assert(bytes[7] == std::byte{0x08});
+    }
+}
+
+void test_verified_from_be_bytes()
+{
+    {
+        constexpr std::array<std::byte, 1> bytes {std::byte{0x42}};
+        constexpr auto val = from_be_bytes<verified_u8>(std::span<const std::byte, 1>{bytes});
+        static_assert(static_cast<u8>(val) == u8{0x42});
+    }
+    {
+        constexpr std::array<std::byte, 4> bytes {std::byte{0x01}, std::byte{0x02}, std::byte{0x03}, std::byte{0x04}};
+        constexpr auto val = from_be_bytes<verified_u32>(std::span<const std::byte, 4>{bytes});
+        static_assert(static_cast<u32>(val) == u32{0x01020304U});
+    }
+    {
+        constexpr std::array<std::byte, 8> bytes {
+            std::byte{0x01}, std::byte{0x02}, std::byte{0x03}, std::byte{0x04},
+            std::byte{0x05}, std::byte{0x06}, std::byte{0x07}, std::byte{0x08}
+        };
+        constexpr auto val = from_be_bytes<verified_u64>(std::span<const std::byte, 8>{bytes});
+        static_assert(static_cast<u64>(val) == u64{0x0102030405060708ULL});
+    }
+}
+
+void test_verified_be_bytes_round_trip()
+{
+    {
+        constexpr auto original = verified_u32{u32{0xDEADBEEFU}};
+        constexpr auto bytes = to_be_bytes(original);
+        constexpr auto reconstructed = from_be_bytes<verified_u32>(std::span<const std::byte, 4>{bytes});
+        static_assert(reconstructed == original);
+    }
+    {
+        constexpr auto original = verified_u64{u64{0x0123456789ABCDEFULL}};
+        constexpr auto bytes = to_be_bytes(original);
+        constexpr auto reconstructed = from_be_bytes<verified_u64>(std::span<const std::byte, 8>{bytes});
+        static_assert(reconstructed == original);
+    }
+}
+
+// =============================================================================
+// from_be_bytes with dynamic extent: runtime size mismatch throws
+// =============================================================================
+
 void test_from_be_bytes_dynamic_size_mismatch()
 {
     const std::array<std::byte, 2> bytes {std::byte{0x01}, std::byte{0x02}};
@@ -191,6 +268,10 @@ int main()
     test_from_be_bytes_zero();
 
     test_round_trips();
+
+    test_verified_to_be_bytes();
+    test_verified_from_be_bytes();
+    test_verified_be_bytes_round_trip();
 
     test_from_be_bytes_dynamic_size_mismatch();
     test_from_be_bytes_dynamic_size_match();
