@@ -14,14 +14,14 @@
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
-namespace boost::safe_numbers {
+namespace boost::charconv {
 
-template <detail::library_type T>
-    requires (!detail::is_verified_type_v<T>)
+template <safe_numbers::detail::library_type T>
+    requires (!safe_numbers::detail::is_verified_type_v<T>)
 constexpr auto from_chars(const char* first, const char* last, T& value, int base = 10)
     -> charconv::from_chars_result
 {
-    using underlying_type = detail::underlying_type_t<T>;
+    using underlying_type = safe_numbers::detail::underlying_type_t<T>;
 
     underlying_type result {};
     const auto r {charconv::from_chars(first, last, result, base)};
@@ -30,12 +30,12 @@ constexpr auto from_chars(const char* first, const char* last, T& value, int bas
     return r;
 }
 
-template <detail::library_type T>
-    requires detail::is_verified_type_v<T>
+template <safe_numbers::detail::library_type T>
+    requires safe_numbers::detail::is_verified_type_v<T>
 consteval auto from_chars(const char* first, const char* last, T& value, int base = 10)
     -> charconv::from_chars_result
 {
-    using underlying_type = detail::underlying_type_t<T>;
+    using underlying_type = safe_numbers::detail::underlying_type_t<T>;
 
     underlying_type result {};
     const auto r {charconv::from_chars(first, last, result, base)};
@@ -44,14 +44,14 @@ consteval auto from_chars(const char* first, const char* last, T& value, int bas
     return r;
 }
 
-template <detail::library_type T>
+template <safe_numbers::detail::library_type T>
 constexpr auto to_chars(char* first, char* last, const T value, int base = 10)
     -> charconv::to_chars_result
 {
-    using underlying_type = detail::underlying_type_t<T>;
+    using underlying_type = safe_numbers::detail::underlying_type_t<T>;
     return charconv::to_chars(first, last, static_cast<underlying_type>(value), base);
 }
 
-} // namespace boost::safe_numbers
+} // namespace boost::charconv
 
 #endif // BOOST_SAFE_NUMBERS_CHARCONV_HPP
