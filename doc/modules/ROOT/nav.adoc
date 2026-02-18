@@ -20,6 +20,7 @@
 ** xref:examples.adoc#examples_verified_compile_fail[Verified Types: Compile-Time Overflow]
 * xref:pretty_printers.adoc[]
 * xref:api_reference.adoc[]
+** xref:api_reference.adoc#api_namespaces[Namespaces]
 ** xref:api_reference.adoc#api_types[Types]
 ** xref:api_reference.adoc#api_functions[Functions]
 ** xref:api_reference.adoc#api_headers[Headers]

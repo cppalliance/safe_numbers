@@ -11,6 +11,8 @@
 int main()
 {
     using namespace boost::safe_numbers;
+    using boost::charconv::to_chars;
+    using boost::charconv::from_chars;
 
     // to_chars: Convert safe integer to string
     u32 value {12345};

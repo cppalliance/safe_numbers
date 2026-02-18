@@ -28,7 +28,7 @@ void test_to_chars()
     constexpr auto val = VerifiedT{BasisT{42}};
 
     char buffer[256];
-    const auto r = boost::safe_numbers::to_chars(buffer, buffer + sizeof(buffer), val);
+    const auto r = boost::charconv::to_chars(buffer, buffer + sizeof(buffer), val);
     BOOST_TEST(r.ec == std::errc{});
 
     const auto len = static_cast<std::size_t>(r.ptr - buffer);
@@ -43,7 +43,7 @@ void test_to_chars_zero()
     constexpr auto val = VerifiedT{BasisT{0}};
 
     char buffer[256];
-    const auto r = boost::safe_numbers::to_chars(buffer, buffer + sizeof(buffer), val);
+    const auto r = boost::charconv::to_chars(buffer, buffer + sizeof(buffer), val);
     BOOST_TEST(r.ec == std::errc{});
 
     const auto len = static_cast<std::size_t>(r.ptr - buffer);
@@ -57,7 +57,7 @@ void test_to_chars_255()
     constexpr auto val = VerifiedT{BasisT{255}};
 
     char buffer[256];
-    const auto r = boost::safe_numbers::to_chars(buffer, buffer + sizeof(buffer), val);
+    const auto r = boost::charconv::to_chars(buffer, buffer + sizeof(buffer), val);
     BOOST_TEST(r.ec == std::errc{});
 
     const auto len = static_cast<std::size_t>(r.ptr - buffer);
@@ -73,7 +73,7 @@ void test_to_chars_hex()
     constexpr auto val = VerifiedT{BasisT{255}};
 
     char buffer[256];
-    const auto r = boost::safe_numbers::to_chars(buffer, buffer + sizeof(buffer), val, 16);
+    const auto r = boost::charconv::to_chars(buffer, buffer + sizeof(buffer), val, 16);
     BOOST_TEST(r.ec == std::errc{});
 
     const auto len = static_cast<std::size_t>(r.ptr - buffer);
@@ -91,7 +91,7 @@ consteval auto test_from_chars_impl() -> bool
 {
     const char str[] = "42";
     auto val = VerifiedT{BasisT{0}};
-    const auto r = boost::safe_numbers::from_chars(str, str + 2, val);
+    const auto r = boost::charconv::from_chars(str, str + 2, val);
     return r.ec == std::errc{} && val == VerifiedT{BasisT{42}};
 }
 
@@ -100,7 +100,7 @@ consteval auto test_from_chars_zero_impl() -> bool
 {
     const char str[] = "0";
     auto val = VerifiedT{BasisT{1}};
-    const auto r = boost::safe_numbers::from_chars(str, str + 1, val);
+    const auto r = boost::charconv::from_chars(str, str + 1, val);
     return r.ec == std::errc{} && val == VerifiedT{BasisT{0}};
 }
 
@@ -109,7 +109,7 @@ consteval auto test_from_chars_255_impl() -> bool
 {
     const char str[] = "255";
     auto val = VerifiedT{BasisT{0}};
-    const auto r = boost::safe_numbers::from_chars(str, str + 3, val);
+    const auto r = boost::charconv::from_chars(str, str + 3, val);
     return r.ec == std::errc{} && val == VerifiedT{BasisT{255}};
 }
 
@@ -118,7 +118,7 @@ consteval auto test_from_chars_hex_impl() -> bool
 {
     const char str[] = "ff";
     auto val = VerifiedT{BasisT{0}};
-    const auto r = boost::safe_numbers::from_chars(str, str + 2, val, 16);
+    const auto r = boost::charconv::from_chars(str, str + 2, val, 16);
     return r.ec == std::errc{} && val == VerifiedT{BasisT{255}};
 }
 

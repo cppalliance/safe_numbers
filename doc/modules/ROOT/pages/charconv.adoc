@@ -29,21 +29,21 @@ This will disable auto-linking for Boost.Charconv.
 ----
 #include <boost/safe_numbers/charconv.hpp>
 
-namespace boost::safe_numbers {
+namespace boost::charconv {
 
 // Convert safe integer to character string
-template <detail::library_type T>
+template <safe_numbers::detail::library_type T>
 constexpr auto to_chars(char* first, char* last,
                         T value,
                         int base = 10) -> charconv::to_chars_result;
 
 // Convert character string to safe integer
-template <detail::library_type T>
+template <safe_numbers::detail::library_type T>
 constexpr auto from_chars(const char* first, const char* last,
                           T& value,
                           int base = 10) -> charconv::from_chars_result;
 
-} // namespace boost::safe_numbers
+} // namespace boost::charconv
 ----
 
 == to_chars_result
@@ -102,7 +102,7 @@ struct from_chars_result
 
 [source,c++]
 ----
-template <detail::library_type T>
+template <safe_numbers::detail::library_type T>
 constexpr auto to_chars(char* first, char* last,
                         T value,
                         int base = 10) -> charconv::to_chars_result;
@@ -132,7 +132,7 @@ Returns `boost::charconv::to_chars_result` with:
 
 [source,c++]
 ----
-template <detail::library_type T>
+template <safe_numbers::detail::library_type T>
 constexpr auto from_chars(const char* first, const char* last,
                           T& value,
                           int base = 10) -> charconv::from_chars_result;
@@ -168,14 +168,14 @@ The two overloads are distinguished via a `requires` clause:
 [source,c++]
 ----
 // Runtime overload (non-verified types)
-template <detail::library_type T>
-    requires (!detail::is_verified_type_v<T>)
+template <safe_numbers::detail::library_type T>
+    requires (!safe_numbers::detail::is_verified_type_v<T>)
 constexpr auto from_chars(const char* first, const char* last,
                           T& value, int base = 10) -> charconv::from_chars_result;
 
 // Compile-time overload (verified types only)
-template <detail::library_type T>
-    requires detail::is_verified_type_v<T>
+template <safe_numbers::detail::library_type T>
+    requires safe_numbers::detail::is_verified_type_v<T>
 consteval auto from_chars(const char* first, const char* last,
                           T& value, int base = 10) -> charconv::from_chars_result;
 ----
