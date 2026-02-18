@@ -11,7 +11,10 @@
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
+#include <array>
 #include <bit>
+#include <cstddef>
+#include <span>
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -99,6 +102,56 @@ consteval auto from_le(const detail::verified_type_basis<T> value) noexcept -> d
 {
     // Self-inverse
     return to_le(value);
+}
+
+template <detail::non_bounded_integral_library_type T>
+    requires (!detail::is_verified_type_v<T>)
+constexpr auto to_be_bytes(const T value) noexcept -> std::array<std::byte, sizeof(T)>
+{
+    const auto be_value {to_be(value)};
+    return std::bit_cast<std::array<std::byte, sizeof(T)>>(be_value);
+}
+
+template <detail::non_bounded_integral_library_type T>
+consteval auto to_be_bytes(const detail::verified_type_basis<T> value) noexcept -> std::array<std::byte, sizeof(T)>
+{
+    const auto be_value {to_be(value)};
+    return std::bit_cast<std::array<std::byte, sizeof(T)>>(be_value);
+}
+
+template <detail::non_bounded_integral_library_type T, std::size_t N>
+constexpr auto from_be_bytes(const std::span<const std::byte, N> bytes) -> T
+{
+    using underlying_type = detail::underlying_type_t<T>;
+
+    if constexpr (N == sizeof(T))
+    {
+        std::array<std::byte, sizeof(T)> arr {};
+        for (std::size_t i {}; i < N; ++i)
+        {
+            arr[i] = bytes[i];
+        }
+        return from_be(T{std::bit_cast<underlying_type>(arr)});
+    }
+    else if constexpr (N != std::dynamic_extent)
+    {
+        static_assert(detail::dependent_false<T>, "The number of bytes provided, and the target type number of bytes do not match");
+        return T{}; // LCOV_EXCL_LINE
+    }
+    else
+    {
+        if (bytes.size_bytes() != sizeof(T))
+        {
+            BOOST_THROW_EXCEPTION(std::domain_error("The number of bytes provided, and the target type number of bytes do not match"));
+        }
+
+        std::array<std::byte, sizeof(T)> arr {};
+        for (std::size_t i {}; i < sizeof(T); ++i)
+        {
+            arr[i] = bytes[i];
+        }
+        return from_be(T{std::bit_cast<underlying_type>(arr)});
+    }
 }
 
 } // namespace boost::safe_numbers

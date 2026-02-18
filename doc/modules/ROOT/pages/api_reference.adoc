@@ -212,6 +212,12 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:byte_conversions.adoc[`from_le`]
 | Converts a safe integer from little-endian to native byte order
+
+| xref:byte_conversions.adoc[`to_be_bytes`]
+| Converts a safe integer to a big-endian byte array
+
+| xref:byte_conversions.adoc[`from_be_bytes`]
+| Reconstructs a safe integer from a big-endian byte array
 |===
 
 === Arithmetic
