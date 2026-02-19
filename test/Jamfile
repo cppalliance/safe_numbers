@@ -147,6 +147,7 @@ run test_ipow.cpp ;
 run test_log2.cpp ;
 run test_log10.cpp ;
 run test_gcd.cpp ;
+run test_lcm.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
