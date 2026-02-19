@@ -16,5 +16,6 @@
 #include <boost/safe_numbers/bit.hpp>
 #include <boost/safe_numbers/integer_utilities.hpp>
 #include <boost/safe_numbers/byte_conversions.hpp>
+#include <boost/safe_numbers/numeric.hpp>
 
 #endif //BOOST_SAFENUMBERS_HPP
