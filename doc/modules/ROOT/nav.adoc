@@ -35,6 +35,7 @@
 * xref:charconv.adoc[]
 * xref:bit.adoc[]
 * xref:integer_utilities.adoc[]
+* xref:numeric.adoc[]
 * xref:byte_conversions.adoc[]
 * xref:comparisons.adoc[]
 * xref:reference.adoc[]
