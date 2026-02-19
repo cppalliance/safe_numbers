@@ -149,3 +149,70 @@ using namespace boost::safe_numbers;
 constexpr auto r = lcm(verified_u32{u32{12}}, verified_u32{u32{18}});  // r == verified_u32{u32{36}}
 static_assert(lcm(verified_u64{u64{1000}}, verified_u64{u64{750}}) == verified_u64{u64{3000}});
 ----
+
+== midpoint
+
+Computes the midpoint of two integers without overflow.
+The result is rounded towards the first argument `a`.
+
+=== Runtime Overload
+
+[source,c++]
+----
+template <non_bounded_integral_library_type T>
+    requires (!is_verified_type_v<T>)
+constexpr auto midpoint(const T a, const T b) noexcept -> T;
+----
+
+Returns the midpoint of `a` and `b`, computed without overflow.
+Delegates to `std::midpoint` on the underlying hardware type, or to `int128::midpoint` for 128-bit types.
+
+==== Parameters
+
+* `a` -- The first value. The result rounds towards this value.
+* `b` -- The second value.
+
+==== Return Value
+
+The integer midpoint of `a` and `b`, as the same safe integer type `T`.
+When the mathematical midpoint is not an integer, the result is rounded towards `a`.
+
+==== Complexity
+
+O(1).
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+auto r1 = midpoint(u32{0}, u32{10});    // r1 == u32{5}
+auto r2 = midpoint(u32{1}, u32{4});     // r2 == u32{2}  (rounds towards a)
+auto r3 = midpoint(u32{4}, u32{1});     // r3 == u32{3}  (rounds towards a)
+auto r4 = midpoint(u32{0}, u32{0});     // r4 == u32{0}
+auto r5 = midpoint(u32{3}, u32{3});     // r5 == u32{3}
+----
+
+=== Verified Overload
+
+[source,c++]
+----
+template <non_bounded_integral_library_type T>
+consteval auto midpoint(const verified_type_basis<T> a, const verified_type_basis<T> b) noexcept -> verified_type_basis<T>;
+----
+
+Compile-time only overload for verified types.
+Delegates to the same underlying algorithm after extracting the basis value, and wraps the result back into a verified type.
+
+Since `midpoint` is `consteval` for verified types, the result is guaranteed to be a compile-time constant.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+constexpr auto r = midpoint(verified_u32{u32{0}}, verified_u32{u32{10}});  // r == verified_u32{u32{5}}
+static_assert(midpoint(verified_u64{u64{100}}, verified_u64{u64{200}}) == verified_u64{u64{150}});
+----
