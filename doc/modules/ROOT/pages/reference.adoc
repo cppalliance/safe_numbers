@@ -20,6 +20,9 @@ The following books: papers and blog posts serve as the basis for the algorithms
 
 | xref:numeric.adoc[`gcd`]
 | Computes the greatest common divisor of two safe integers
+
+| xref:numeric.adoc[`lcm`]
+| Computes the least common multiple of two safe integers
 |===
 
 :linkattrs:

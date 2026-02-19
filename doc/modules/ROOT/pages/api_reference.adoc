@@ -175,6 +175,9 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:numeric.adoc[`gcd`]
 | Computes the greatest common divisor of two safe integers
+
+| xref:numeric.adoc[`lcm`]
+| Computes the least common multiple of two safe integers
 |===
 
 === Integer Utilities
@@ -294,7 +297,7 @@ This header is not included in the convenience header since it requires external
 | Integer utility functions (`isqrt`, `remove_trailing_zeros`, `is_power_10`, `is_power_2`, `ipow`, `log2`, `log10`)
 
 | `<boost/safe_numbers/numeric.hpp>`
-| Standard numeric algorithms (`gcd`)
+| Standard numeric algorithms (`gcd`, `lcm`)
 
 | `<boost/safe_numbers/iostream.hpp>`
 | Stream I/O operators (`operator<<`, `operator>>`) for library types
