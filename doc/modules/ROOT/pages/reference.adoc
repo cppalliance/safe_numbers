@@ -20,3 +20,4 @@ The following books: papers and blog posts serve as the basis for the algorithms
 6. B. C. Pierce, Advanced Topics in Types and Programming Languages. Cambridge, MA, USA: MIT Press, 2005.
 7. S. Glesner, “Finite Integer Computations: An Algebraic Foundation for Their Correctness,” Formal Aspects of Computing, vol. 18, no. 2, pp. 244-262, 2006.
 8. R. Rieu-Helft, C. Marché, and G. Melquiond, “How to Get an Efficient yet Verified Arbitrary-Precision Integer Library,” in Verified Software. Theories, Tools, and Experiments (VSTTE 2017), A. Paskevich and T. Wies, Eds. Lecture Notes in Computer Science, vol. 10712. Cham, Switzerland: Springer, 2017, pp. 84-101.
+9. G. Melquiond and R. Rieu-Helft, "A Why3 framework for reflection proofs and its application to GMP's algorithms," in Proc. 9th Int. Joint Conf. Automated Reasoning (IJCAR), Oxford, UK, Jul. 2018, vol. 10900, pp. 178–193.
