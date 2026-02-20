@@ -1,0 +1,1550 @@
+(*
+ * Formal Verification of Unsigned Integer Overflow Detection
+ * for Boost.SafeNumbers
+ *
+ * Copyright 2026 Matt Borland
+ * Distributed under the Boost Software License, Version 1.0.
+ * https://www.boost.org/LICENSE_1_0.txt
+ *
+ * This file formally proves the correctness of all five unsigned
+ * arithmetic operations (+, -, *, /, %) in Boost.SafeNumbers.
+ * The C++ implementation is in:
+ *
+ *   include/boost/safe_numbers/detail/unsigned_integer_basis.hpp
+ *
+ * The portable overflow detection for addition (lines 184-197) is:
+ *
+ *   result = static_cast<T>(lhs + rhs);  // wrapping addition
+ *   return result < lhs;                  // overflow detection
+ *
+ * The portable underflow detection for subtraction (lines 570-583) is:
+ *
+ *   result = static_cast<T>(lhs - rhs);  // wrapping subtraction
+ *   return result > lhs;                  // underflow detection
+ *
+ * Multiplication overflow detection uses two strategies:
+ *
+ * 1. Wide multiplication (u8-u64, lines 842-852):
+ *    Promote to 2N-bit type, compute exact product, check temp > max(T).
+ *
+ * 2. Division check (u128, lines 854-858):
+ *    return rhs != 0 && lhs > max(uint128) / rhs;
+ *
+ * We model these as: given N-bit unsigned values a, b in [0, 2^N - 1],
+ * the wrapping result is (a op b) mod 2^N, and overflow/underflow is
+ * detected by comparing the result against a (for add/sub) or using
+ * the division check (for mul).
+ *
+ * The default operator+ (line 391-395) throws std::overflow_error.
+ * The default operator- (line 762-766) throws std::underflow_error.
+ * The default operator* (line 1046-1050) throws std::overflow_error.
+ * The default operator/ (line 1201-1205) throws std::domain_error on div-by-zero.
+ * The default operator% (line 1356-1360) throws std::domain_error on mod-by-zero.
+ *
+ * The connection between this Why3 model and the C++ code is established
+ * by inspection: C++ unsigned arithmetic wraps modulo 2^N by definition
+ * (C++ [basic.fundamental]/4), and the comparison result < lhs is a
+ * standard unsigned comparison.
+ *
+ * Verification: All 168 lemmas are proved using two complementary provers:
+ *   - Alt-Ergo 2.4.3: proves 160/168
+ *   - Z3 4.15.4: proves 131/168
+ *   Every lemma is proved by at least one prover (zero gaps).
+ *
+ *   why3 prove -P alt-ergo -t 10 -L theorems theorems/unsigned_integers.why
+ *   why3 prove -P z3 -t 30 -L theorems theorems/unsigned_integers.why
+ *)
+
+(* ================================================================
+ * Theory: PowerOfTwo
+ *
+ * Step-by-step computation of power 2 N for specific bit widths.
+ * Automated provers struggle to unfold the recursive definition of
+ * power more than a few levels. This theory provides a doubling
+ * chain: each step uses Power_sum to derive power 2 (2*k) from
+ * (power 2 k)^2, giving the provers concrete values to work with.
+ * ================================================================ *)
+theory PowerOfTwo
+
+  use int.Int
+  use int.Power
+
+  (* Base cases: direct unfolding of the Power_s axiom *)
+  lemma p2_1: power 2 1 = 2
+  lemma p2_2: power 2 2 = 4
+  lemma p2_4: power 2 4 = 16
+
+  (* Doubling via Power_sum: power 2 (n+n) = power 2 n * power 2 n *)
+  lemma p2_8: power 2 8 = 256
+  lemma p2_16: power 2 16 = 65536
+  lemma p2_32: power 2 32 = 4294967296
+  lemma p2_64: power 2 64 = 18446744073709551616
+  lemma p2_128: power 2 128 = 340282366920938463463374607431768211456
+
+end
+
+(* ================================================================
+ * Theory: UnsignedAddOverflow
+ *
+ * Parametric proofs over an arbitrary bit-width N >= 1.
+ * All four main properties are proved:
+ *   1. Soundness          -- overflow implies detection
+ *   2. No false positives -- no overflow implies no detection
+ *   3. Correctness        -- no overflow implies exact result
+ *   4. Biconditional      -- detection iff overflow
+ * ================================================================ *)
+theory UnsignedAddOverflow
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+
+  (* ---- Definitions modeling the C++ implementation ---- *)
+
+  (* The modulus for an N-bit unsigned type: M = 2^N *)
+  function modulus (n: int) : int = power 2 n
+
+  (* The maximum representable value for an N-bit unsigned type *)
+  function max_val (n: int) : int = power 2 n - 1
+
+  (* Whether a value is a valid N-bit unsigned integer *)
+  predicate valid (x: int) (n: int) =
+    0 <= x /\ x <= max_val n
+
+  (* The wrapping addition result: (a + b) mod 2^N
+   * Models: result = static_cast<T>(lhs + rhs)
+   * Reference: unsigned_integer_basis.hpp line 193 *)
+  function wrap_add (a b: int) (n: int) : int =
+    mod (a + b) (modulus n)
+
+  (* The overflow detection predicate: result < lhs
+   * Models: return result < lhs
+   * Reference: unsigned_integer_basis.hpp line 196 *)
+  predicate detected (a b: int) (n: int) =
+    wrap_add a b n < a
+
+  (* True mathematical overflow: a + b exceeds the representable range *)
+  predicate overflows (a b: int) (n: int) =
+    a + b > max_val n
+
+  (* ---- Helper lemmas ---- *)
+
+  (* These intermediate lemmas guide the automated provers (Alt-Ergo, Z3,
+   * CVC5) through the key steps of the reasoning. The central insight is
+   * that when adding two N-bit values, the true sum lies in
+   * [0, 2*(2^N - 1)] = [0, 2^(N+1) - 2], which is strictly less than
+   * 2 * 2^N. Therefore the sum wraps at most once, and mod behaves in
+   * one of exactly two ways:
+   *
+   *   Case 1 (no overflow): 0 <= a+b < 2^N  ==>  mod(a+b, 2^N) = a+b
+   *   Case 2 (overflow):    2^N <= a+b       ==>  mod(a+b, 2^N) = a+b - 2^N
+   *)
+
+  (* Lemma: 2^N > 0 for any N >= 1. Required by mod properties. *)
+  lemma power_pos:
+    forall n: int. n >= 1 -> power 2 n > 0
+
+  (* Lemma: For valid N-bit values, mod is identity when sum < 2^N *)
+  lemma mod_identity:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      a + b < modulus n ->
+      mod (a + b) (modulus n) = a + b
+
+  (* Lemma: The true sum of two N-bit values is bounded above by
+   * 2*(2^N - 1), which is strictly less than 2 * 2^N.
+   * This means at most one wrap occurs. *)
+  lemma sum_upper_bound:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      a + b <= 2 * (modulus n) - 2
+
+  (* Lemma: When a value is in [m, 2m), mod subtracts m exactly once.
+   * This is the "single-wrap" case: if m <= x < 2*m, then
+   * x = 1*m + (x - m) with 0 <= x-m < m, so mod x m = x - m. *)
+  lemma mod_single_wrap:
+    forall x m: int.
+      m > 0 ->
+      x >= m ->
+      x < 2 * m ->
+      mod x m = x - m
+
+  (* Corollary: For valid N-bit values, mod subtracts 2^N when sum >= 2^N.
+   * Follows from mod_single_wrap and sum_upper_bound. *)
+  lemma mod_subtract:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      a + b >= modulus n ->
+      mod (a + b) (modulus n) = a + b - modulus n
+
+  (* Lemma: When overflow occurs, the wrapped result is strictly less
+   * than a. This is the core of soundness.
+   *
+   * Proof sketch: If a + b >= 2^N, then wrap_add = a + b - 2^N.
+   * Since b <= 2^N - 1, we have a + b - 2^N <= a - 1 < a. *)
+  lemma overflow_implies_wrap_lt:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      a + b >= modulus n ->
+      a + b - modulus n < a
+
+  (* Lemma: When no overflow occurs, the wrapped result equals the
+   * true sum, which is >= a (since b >= 0). *)
+  lemma no_overflow_implies_wrap_ge:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      a + b < modulus n ->
+      a + b >= a
+
+  (* ---- Main Theorems ---- *)
+
+  (* Theorem 1 (Soundness / No False Negatives):
+   * If the true sum overflows, the detection fires.
+   *
+   * In C++ terms: if lhs + rhs > max(T), then result < lhs is true.
+   * Equivalently: unsigned_no_intrin_add returns true.
+   * Consequence: throw_exception policy always throws on overflow. *)
+  lemma soundness:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      overflows a b n ->
+      detected a b n
+
+  (* Theorem 2 (No False Positives):
+   * If the true sum does not overflow, detection does not fire.
+   *
+   * In C++ terms: if lhs + rhs <= max(T), then result < lhs is false.
+   * Equivalently: unsigned_no_intrin_add returns false.
+   * Consequence: throw_exception policy never throws for valid sums. *)
+  lemma no_false_positives:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      not (overflows a b n) ->
+      not (detected a b n)
+
+  (* Theorem 3 (Correctness):
+   * When no overflow occurs, the wrapping result equals the true sum.
+   *
+   * In C++ terms: if lhs + rhs <= max(T), then
+   *   static_cast<T>(lhs + rhs) == lhs + rhs
+   * (no information is lost in the cast). *)
+  lemma correctness:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      not (overflows a b n) ->
+      wrap_add a b n = a + b
+
+  (* Theorem 4 (Biconditional / Completeness):
+   * Detection fires if and only if overflow occurs.
+   * This combines Theorems 1 and 2. *)
+  lemma biconditional:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      (detected a b n <-> overflows a b n)
+
+end
+
+(* ================================================================
+ * Theory: UnsignedSubUnderflow
+ *
+ * Parametric proofs over an arbitrary bit-width N >= 1.
+ * Proves the underflow detection for unsigned subtraction.
+ *
+ * The portable underflow detection (lines 570-583) is:
+ *
+ *   template <std::unsigned_integral T>
+ *   constexpr bool unsigned_no_intrin_sub(const T lhs, const T rhs, T& result)
+ *   {
+ *       result = static_cast<T>(lhs - rhs);  // wrapping subtraction
+ *       return result > lhs;                  // underflow detection
+ *   }
+ *
+ * The default operator- (lines 762-766) uses throw_exception policy,
+ * throwing std::underflow_error when the detection fires.
+ * ================================================================ *)
+theory UnsignedSubUnderflow
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+  use UnsignedAddOverflow
+
+  (* ---- Subtraction-specific definitions ---- *)
+
+  (* Wrapping subtraction: (a - b) mod 2^N
+   * Models: result = static_cast<T>(lhs - rhs)
+   * Reference: unsigned_integer_basis.hpp line 579 *)
+  function wrap_sub (a b: int) (n: int) : int =
+    mod (a - b) (modulus n)
+
+  (* Underflow detection: result > lhs
+   * Models: return result > lhs
+   * Reference: unsigned_integer_basis.hpp line 582 *)
+  predicate sub_detected (a b: int) (n: int) =
+    wrap_sub a b n > a
+
+  (* True mathematical underflow: a - b goes below zero *)
+  predicate underflows (a b: int) =
+    a < b
+
+  (* ---- Helper lemmas ---- *)
+
+  (* For unsigned subtraction the difference a - b lies in
+   * [-(2^N - 1), 2^N - 1]. There are two cases:
+   *
+   *   Case 1 (no underflow): a >= b, so 0 <= a-b < 2^N
+   *       => mod(a-b, 2^N) = a-b
+   *
+   *   Case 2 (underflow): a < b, so -2^N < a-b < 0
+   *       => mod(a-b, 2^N) = a-b + 2^N
+   *)
+
+  (* General mod property: mod is identity for non-negative values < m *)
+  lemma mod_nonneg_small:
+    forall x m: int.
+      m > 0 ->
+      0 <= x ->
+      x < m ->
+      mod x m = x
+
+  (* General mod property: for negative values in (-m, 0), mod adds m *)
+  lemma mod_neg_wrap:
+    forall x m: int.
+      m > 0 ->
+      x < 0 ->
+      x > -m ->
+      mod x m = x + m
+
+  (* The difference of two N-bit values is bounded below by -(2^N - 1),
+   * which is strictly greater than -2^N. *)
+  lemma sub_bounded_below:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      a - b > -(modulus n)
+
+  (* When no underflow, the wrapped result equals the true difference *)
+  lemma no_underflow_wrap_eq:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      a >= b ->
+      wrap_sub a b n = a - b
+
+  (* When no underflow, result <= lhs (since b >= 0) *)
+  lemma no_underflow_wrap_le:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      a >= b ->
+      a - b <= a
+
+  (* When underflow, the wrapped result = a - b + 2^N *)
+  lemma underflow_wrap_eq:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      a < b ->
+      wrap_sub a b n = a - b + modulus n
+
+  (* When underflow, result > lhs because 2^N > b for any valid b *)
+  lemma underflow_wrap_gt:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      a < b ->
+      a - b + modulus n > a
+
+  (* ---- Main Theorems ---- *)
+
+  (* Theorem 1 (Soundness / No False Negatives):
+   * If a < b (underflow), the detection fires.
+   *
+   * In C++ terms: if lhs < rhs, then result > lhs is true.
+   * Equivalently: unsigned_no_intrin_sub returns true.
+   * Consequence: throw_exception policy always throws on underflow. *)
+  lemma sub_soundness:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      underflows a b ->
+      sub_detected a b n
+
+  (* Theorem 2 (No False Positives):
+   * If a >= b (no underflow), the detection does not fire.
+   *
+   * In C++ terms: if lhs >= rhs, then result > lhs is false.
+   * Equivalently: unsigned_no_intrin_sub returns false.
+   * Consequence: throw_exception policy never throws for valid differences. *)
+  lemma sub_no_false_positives:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      not (underflows a b) ->
+      not (sub_detected a b n)
+
+  (* Theorem 3 (Correctness):
+   * When no underflow, the wrapping result equals the true difference.
+   *
+   * In C++ terms: if lhs >= rhs, then
+   *   static_cast<T>(lhs - rhs) == lhs - rhs
+   * (no information is lost in the cast). *)
+  lemma sub_correctness:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      not (underflows a b) ->
+      wrap_sub a b n = a - b
+
+  (* Theorem 4 (Biconditional / Completeness):
+   * Detection fires if and only if underflow occurs.
+   * Combines Theorems 1 and 2. *)
+  lemma sub_biconditional:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      (sub_detected a b n <-> underflows a b)
+
+end
+
+(* ================================================================
+ * Theory: UnsignedMulOverflow
+ *
+ * Parametric proofs over an arbitrary bit-width N >= 1.
+ * Proves the overflow detection for unsigned multiplication.
+ *
+ * Two detection strategies are used in the C++ implementation:
+ *
+ * 1. Wide multiplication (u8, u16, u32, u64) - lines 842-852:
+ *    Promotes to a type with >= 2N bits, computes the exact product,
+ *    and checks: temp > max(T).
+ *    This is trivially correct since the wide type holds the full
+ *    product without loss.
+ *
+ * 2. Division check (u128) - lines 854-858:
+ *    result = lhs * rhs;                          // wrapping
+ *    return rhs != 0 && lhs > max(uint128) / rhs; // overflow detection
+ *    This is the classic overflow-safe check for unsigned multiplication.
+ *
+ * Both strategies detect the same condition: a * b > max_val(n).
+ * The default operator* (lines 1046-1050) throws std::overflow_error.
+ * ================================================================ *)
+theory UnsignedMulOverflow
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+  use UnsignedAddOverflow
+
+  (* ---- Multiplication-specific definitions ---- *)
+
+  (* Wrapping multiplication: (a * b) mod 2^N
+   * Models: result = static_cast<T>(lhs * rhs) *)
+  function wrap_mul (a b: int) (n: int) : int =
+    mod (a * b) (modulus n)
+
+  (* True mathematical overflow: product exceeds representable range *)
+  predicate mul_overflows (a b: int) (n: int) =
+    a * b > max_val n
+
+  (* Division-check detection (used for u128):
+   * rhs != 0 && lhs > max / rhs  (integer division)
+   * Reference: unsigned_integer_basis.hpp line 857 *)
+  predicate div_check_detected (a b: int) (n: int) =
+    b > 0 /\ a > div (max_val n) b
+
+  (* ---- Helper lemmas ---- *)
+
+  (* Product of two non-negative values is non-negative *)
+  lemma product_nonneg:
+    forall a b: int.
+      0 <= a -> 0 <= b -> 0 <= a * b
+
+  (* Multiplication is monotone in each argument for non-negative values.
+   * This guides the provers for product_bounded below. *)
+  lemma mul_mono_right:
+    forall a b c: int.
+      0 <= c -> 0 <= a -> a <= b -> a * c <= b * c
+
+  lemma mul_mono_left:
+    forall a b c: int.
+      0 <= c -> 0 <= a -> a <= b -> c * a <= c * b
+
+  (* Product of two N-bit values is bounded: a*b <= (2^N - 1)^2.
+   * Step 1: a <= max => a*b <= max*b (mono in first arg)
+   * Step 2: b <= max => max*b <= max*max (mono in second arg) *)
+  lemma product_bounded_step1:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      a * b <= max_val n * b
+
+  lemma product_bounded:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      a * b <= max_val n * max_val n
+
+  (* (2^N - 1)^2 < 2^(2N), so the product fits in 2N bits.
+   * This justifies the wide-multiplication approach: promoting
+   * to a type with >= 2N bits guarantees no overflow in the
+   * intermediate computation.
+   * Uses Power_sum: power 2 (2*n) = power 2 n * power 2 n *)
+  lemma product_fits_in_2n:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      a * b < modulus (2 * n)
+
+  (* When no overflow, the product is within [0, max_val n],
+   * so mod is identity *)
+  lemma mul_mod_identity:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      not (mul_overflows a b n) ->
+      mod (a * b) (modulus n) = a * b
+
+  (* ---- Division-check correctness (u128 path) ---- *)
+
+  (* Multiplying by zero never overflows *)
+  lemma mul_by_zero_no_overflow:
+    forall a n: int.
+      n >= 1 ->
+      valid a n ->
+      not (mul_overflows a 0 n)
+
+  (* When b = 0, detection correctly does not fire *)
+  lemma div_check_zero_rhs:
+    forall a n: int.
+      n >= 1 ->
+      valid a n ->
+      not (div_check_detected a 0 n)
+
+  (* Division-check soundness: a > max/b implies a*b > max.
+   *
+   * Proof sketch: Let q = div(max, b) and r = mod(max, b).
+   * Then max = q*b + r with 0 <= r < b.
+   * If a > q, then a >= q+1, so a*b >= (q+1)*b = q*b + b > q*b + r = max.
+   *
+   * We provide two helpers to guide the provers through this reasoning. *)
+
+  (* Helper: a > q implies a*b >= (q+1)*b *)
+  lemma div_check_step1:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      b > 0 ->
+      a > div (max_val n) b ->
+      a * b >= (div (max_val n) b + 1) * b
+
+  (* Helper: (q+1)*b > max, because max = q*b + r with r < b *)
+  lemma div_check_step2:
+    forall b n: int.
+      n >= 1 ->
+      valid b n ->
+      b > 0 ->
+      (div (max_val n) b + 1) * b > max_val n
+
+  lemma div_check_soundness:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      b > 0 ->
+      a > div (max_val n) b ->
+      mul_overflows a b n
+
+  (* Division-check no false positives: a <= max/b implies a*b <= max.
+   *
+   * Proof sketch: If a <= q = div(max, b), then
+   * a*b <= q*b = max - r <= max. *)
+  lemma div_check_no_false_positives:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      b > 0 ->
+      a <= div (max_val n) b ->
+      not (mul_overflows a b n)
+
+  (* Division check is equivalent to overflow when b > 0 *)
+  lemma div_check_iff_overflow_pos:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      b > 0 ->
+      (a > div (max_val n) b <-> mul_overflows a b n)
+
+  (* Full division-check detection equivalence including b = 0 case *)
+  lemma div_check_biconditional:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      (div_check_detected a b n <-> mul_overflows a b n)
+
+  (* ---- Main Theorems ---- *)
+
+  (* Theorem 1 (Correctness):
+   * When no overflow occurs, the wrapping result equals the true product.
+   *
+   * In C++ terms: if lhs * rhs <= max(T), then
+   *   static_cast<T>(lhs * rhs) == lhs * rhs *)
+  lemma mul_correctness:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      not (mul_overflows a b n) ->
+      wrap_mul a b n = a * b
+
+  (* Theorem 2 (Wide multiplication safety):
+   * The product of two N-bit values fits in 2N bits.
+   * This proves that promoting to a wider type (u8->u16, u16->u32,
+   * u32->u64, u64->u128) allows exact computation of the product,
+   * making the subsequent "temp > max" check trivially correct. *)
+  lemma wide_mul_safe:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      valid (a * b) (2 * n)
+
+  (* Theorem 3 (Division-check equivalence):
+   * The division-based detection (b != 0 && a > max/b) correctly
+   * identifies all and only overflowing multiplications.
+   * This covers the u128 code path. *)
+  lemma div_check_complete:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      (div_check_detected a b n <-> mul_overflows a b n)
+
+end
+
+(* ================================================================
+ * Theory: UnsignedDivSafety
+ *
+ * Proves that unsigned integer division is safe: the only error
+ * case is division by zero, and for any non-zero divisor the result
+ * is always a valid N-bit unsigned value.
+ *
+ * The C++ implementation (lines 1069-1107, 1201-1205):
+ *
+ *   if (rhs == 0) throw std::domain_error("Unsigned division by zero");
+ *   return lhs / rhs;
+ *
+ * The default operator/ (lines 1201-1205) uses throw_exception policy.
+ *
+ * Unlike addition/subtraction/multiplication, unsigned division
+ * CANNOT overflow: a / b <= a <= max_val(n) for all b >= 1.
+ * ================================================================ *)
+theory UnsignedDivSafety
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+  use UnsignedAddOverflow
+
+  (* ---- Definitions ---- *)
+
+  (* Integer division for unsigned values.
+   * Models: static_cast<T>(lhs) / static_cast<T>(rhs)
+   * Reference: unsigned_integer_basis.hpp line 1100/1104 *)
+  function udiv (a b: int) : int = div a b
+
+  (* The only error condition: divisor is zero *)
+  predicate div_by_zero (b: int) = b = 0
+
+  (* ---- Helper lemmas ---- *)
+
+  (* Division of non-negative by positive is non-negative *)
+  lemma div_nonneg:
+    forall a b: int.
+      0 <= a -> b > 0 -> 0 <= div a b
+
+  (* Division reduces the dividend: a / b <= a for a >= 0, b >= 1 *)
+  lemma div_le_dividend:
+    forall a b: int.
+      0 <= a -> b >= 1 -> div a b <= a
+
+  (* ---- Main Theorems ---- *)
+
+  (* Theorem 1 (Result validity):
+   * For non-zero divisor, the quotient is a valid N-bit value.
+   * Since 0 <= a/b <= a <= max_val(n), the result fits. *)
+  lemma div_result_valid:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      b > 0 ->
+      valid (udiv a b) n
+
+  (* Theorem 2 (Correctness):
+   * The result is the true mathematical (Euclidean) quotient.
+   * No wrapping or truncation occurs. *)
+  lemma div_correctness:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      b > 0 ->
+      udiv a b = div a b
+
+  (* Theorem 3 (No overflow):
+   * Unsigned division never overflows. The only error is div-by-zero.
+   * This justifies the C++ implementation having no overflow check. *)
+  lemma div_no_overflow:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      b > 0 ->
+      udiv a b <= max_val n
+
+  (* Theorem 4 (Complete error detection):
+   * The div-by-zero check (rhs == 0) catches exactly the error cases.
+   * There are no other failure modes for unsigned division. *)
+  lemma div_error_iff_zero:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      (div_by_zero b <-> b = 0)
+
+end
+
+(* ================================================================
+ * Theory: UnsignedModSafety
+ *
+ * Proves that unsigned integer modulo is safe: the only error
+ * case is modulo by zero, and for any non-zero divisor the result
+ * is always a valid N-bit unsigned value.
+ *
+ * The C++ implementation (lines 1224-1262, 1356-1360):
+ *
+ *   if (rhs == 0) throw std::domain_error("Unsigned modulo by zero");
+ *   return lhs % rhs;
+ *
+ * The default operator% (lines 1356-1360) uses throw_exception policy.
+ *
+ * Unsigned modulo CANNOT overflow: a % b < b <= max_val(n) for b >= 1.
+ * ================================================================ *)
+theory UnsignedModSafety
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+  use UnsignedAddOverflow
+
+  (* ---- Definitions ---- *)
+
+  (* Integer modulo for unsigned values.
+   * Models: static_cast<T>(lhs) % static_cast<T>(rhs)
+   * Reference: unsigned_integer_basis.hpp line 1255/1259 *)
+  function umod (a b: int) : int = mod a b
+
+  (* The only error condition: divisor is zero *)
+  predicate mod_by_zero (b: int) = b = 0
+
+  (* ---- Helper lemmas ---- *)
+
+  (* Modulo of non-negative by positive is non-negative *)
+  lemma mod_nonneg:
+    forall a b: int.
+      0 <= a -> b > 0 -> 0 <= mod a b
+
+  (* Modulo is strictly less than the divisor *)
+  lemma mod_lt_divisor:
+    forall a b: int.
+      0 <= a -> b > 0 -> mod a b < b
+
+  (* ---- Main Theorems ---- *)
+
+  (* Theorem 1 (Result validity):
+   * For non-zero divisor, the remainder is a valid N-bit value.
+   * Since 0 <= a%b < b <= max_val(n), the result fits. *)
+  lemma mod_result_valid:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      b > 0 ->
+      valid (umod a b) n
+
+  (* Theorem 2 (Correctness):
+   * The result is the true mathematical (Euclidean) remainder.
+   * No wrapping or truncation occurs. *)
+  lemma mod_correctness:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      b > 0 ->
+      umod a b = mod a b
+
+  (* Theorem 3 (No overflow):
+   * Unsigned modulo never overflows. The only error is mod-by-zero.
+   * This justifies the C++ implementation having no overflow check. *)
+  lemma mod_no_overflow:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      b > 0 ->
+      umod a b <= max_val n
+
+  (* Theorem 4 (Euclidean relationship):
+   * The quotient and remainder satisfy: a = (a/b)*b + (a%b).
+   * This is the fundamental property that ties division and modulo. *)
+  lemma div_mod_relationship:
+    forall a b: int.
+      0 <= a -> b > 0 ->
+      a = div a b * b + mod a b
+
+  (* Theorem 5 (Complete error detection):
+   * The mod-by-zero check (rhs == 0) catches exactly the error cases. *)
+  lemma mod_error_iff_zero:
+    forall a b n: int.
+      n >= 1 ->
+      valid a n ->
+      valid b n ->
+      (mod_by_zero b <-> b = 0)
+
+end
+
+(* ================================================================
+ * Theory: UnsignedU8
+ *
+ * Concrete instantiation for uint8_t (N = 8, modulus = 256).
+ *
+ * Models: boost::safe_numbers::u8
+ *         = detail::unsigned_integer_basis<std::uint8_t>
+ * Reference: unsigned_integers.hpp line 20
+ *
+ * Note: For uint8_t and uint16_t, the C++ implementation performs
+ * intermediate arithmetic in uint32_t before truncating:
+ *   result = static_cast<T>(static_cast<std::uint32_t>(lhs +/- rhs));
+ * (unsigned_integer_basis.hpp lines 187-190, 573-576)
+ * The mathematical model is identical: the final stored result is
+ * still (a +/- b) mod 2^N.
+ * ================================================================ *)
+theory UnsignedU8
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+  use PowerOfTwo
+  use UnsignedAddOverflow
+  use UnsignedSubUnderflow
+  use UnsignedMulOverflow
+  use UnsignedDivSafety
+  use UnsignedModSafety
+
+  constant n8 : int = 8
+
+  lemma n8_valid: n8 >= 1
+
+  lemma u8_modulus: modulus n8 = 256
+
+  lemma u8_max: max_val n8 = 255
+
+  (* ---- Addition ---- *)
+
+  lemma u8_add_soundness:
+    forall a b: int.
+      valid a n8 -> valid b n8 ->
+      overflows a b n8 ->
+      detected a b n8
+
+  lemma u8_add_no_false_positives:
+    forall a b: int.
+      valid a n8 -> valid b n8 ->
+      not (overflows a b n8) ->
+      not (detected a b n8)
+
+  lemma u8_add_correctness:
+    forall a b: int.
+      valid a n8 -> valid b n8 ->
+      not (overflows a b n8) ->
+      wrap_add a b n8 = a + b
+
+  lemma u8_add_biconditional:
+    forall a b: int.
+      valid a n8 -> valid b n8 ->
+      (detected a b n8 <-> overflows a b n8)
+
+  (* Addition boundary tests *)
+
+  lemma u8_add_max_plus_one:
+    overflows 255 1 n8
+
+  lemma u8_add_max_plus_zero:
+    not (overflows 255 0 n8)
+
+  lemma u8_add_half_plus_half:
+    overflows 128 128 n8
+
+  lemma u8_add_half_plus_half_minus_one:
+    not (overflows 128 127 n8)
+
+  (* ---- Subtraction ---- *)
+
+  lemma u8_sub_soundness:
+    forall a b: int.
+      valid a n8 -> valid b n8 ->
+      underflows a b ->
+      sub_detected a b n8
+
+  lemma u8_sub_no_false_positives:
+    forall a b: int.
+      valid a n8 -> valid b n8 ->
+      not (underflows a b) ->
+      not (sub_detected a b n8)
+
+  lemma u8_sub_correctness:
+    forall a b: int.
+      valid a n8 -> valid b n8 ->
+      not (underflows a b) ->
+      wrap_sub a b n8 = a - b
+
+  lemma u8_sub_biconditional:
+    forall a b: int.
+      valid a n8 -> valid b n8 ->
+      (sub_detected a b n8 <-> underflows a b)
+
+  (* Subtraction boundary tests *)
+
+  (* 0 - 1 underflows *)
+  lemma u8_sub_zero_minus_one:
+    underflows 0 1
+
+  (* 0 - 0 does not underflow *)
+  lemma u8_sub_zero_minus_zero:
+    not (underflows 0 0)
+
+  (* 100 - 101 underflows *)
+  lemma u8_sub_small_underflow:
+    underflows 100 101
+
+  (* 200 - 100 does not underflow *)
+  lemma u8_sub_no_underflow:
+    not (underflows 200 100)
+
+  (* ---- Multiplication ---- *)
+
+  lemma u8_mul_correctness:
+    forall a b: int.
+      valid a n8 -> valid b n8 ->
+      not (mul_overflows a b n8) ->
+      wrap_mul a b n8 = a * b
+
+  lemma u8_mul_wide_safe:
+    forall a b: int.
+      valid a n8 -> valid b n8 ->
+      valid (a * b) (2 * n8)
+
+  lemma u8_mul_div_check:
+    forall a b: int.
+      valid a n8 -> valid b n8 ->
+      (div_check_detected a b n8 <-> mul_overflows a b n8)
+
+  (* Multiplication boundary tests *)
+
+  (* 16 * 16 = 256 overflows u8 *)
+  lemma u8_mul_overflow:
+    mul_overflows 16 16 n8
+
+  (* 15 * 17 = 255 does not overflow u8 *)
+  lemma u8_mul_no_overflow:
+    not (mul_overflows 15 17 n8)
+
+  (* 255 * 0 = 0 does not overflow *)
+  lemma u8_mul_by_zero:
+    not (mul_overflows 255 0 n8)
+
+  (* ---- Division ---- *)
+
+  lemma u8_div_valid:
+    forall a b: int.
+      valid a n8 -> valid b n8 -> b > 0 ->
+      valid (udiv a b) n8
+
+  lemma u8_div_correctness:
+    forall a b: int.
+      valid a n8 -> valid b n8 -> b > 0 ->
+      udiv a b = div a b
+
+  (* Division boundary tests *)
+
+  (* 255 / 1 = 255, valid u8 *)
+  lemma u8_div_max_by_one:
+    udiv 255 1 = 255
+
+  (* 200 / 3 = 66, valid u8 *)
+  lemma u8_div_normal:
+    udiv 200 3 = 66
+
+  (* 0 / 255 = 0 *)
+  lemma u8_div_zero_dividend:
+    udiv 0 255 = 0
+
+  (* ---- Modulo ---- *)
+
+  lemma u8_mod_valid:
+    forall a b: int.
+      valid a n8 -> valid b n8 -> b > 0 ->
+      valid (umod a b) n8
+
+  lemma u8_mod_correctness:
+    forall a b: int.
+      valid a n8 -> valid b n8 -> b > 0 ->
+      umod a b = mod a b
+
+  (* Modulo boundary tests *)
+
+  (* 255 % 1 = 0 *)
+  lemma u8_mod_by_one:
+    umod 255 1 = 0
+
+  (* 200 % 3 = 2 *)
+  lemma u8_mod_normal:
+    umod 200 3 = 2
+
+  (* 0 % 255 = 0 *)
+  lemma u8_mod_zero_dividend:
+    umod 0 255 = 0
+
+  (* 100 % 100 = 0 *)
+  lemma u8_mod_equal:
+    umod 100 100 = 0
+
+end
+
+(* ================================================================
+ * Theory: UnsignedU16
+ *
+ * Concrete instantiation for uint16_t (N = 16, modulus = 65536).
+ *
+ * Models: boost::safe_numbers::u16
+ *         = detail::unsigned_integer_basis<std::uint16_t>
+ * Reference: unsigned_integers.hpp line 22
+ * ================================================================ *)
+theory UnsignedU16
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+  use PowerOfTwo
+  use UnsignedAddOverflow
+  use UnsignedSubUnderflow
+  use UnsignedMulOverflow
+  use UnsignedDivSafety
+  use UnsignedModSafety
+
+  constant n16 : int = 16
+
+  lemma n16_valid: n16 >= 1
+
+  lemma u16_modulus: modulus n16 = 65536
+
+  lemma u16_max: max_val n16 = 65535
+
+  (* ---- Addition ---- *)
+
+  lemma u16_add_soundness:
+    forall a b: int.
+      valid a n16 -> valid b n16 ->
+      overflows a b n16 ->
+      detected a b n16
+
+  lemma u16_add_no_false_positives:
+    forall a b: int.
+      valid a n16 -> valid b n16 ->
+      not (overflows a b n16) ->
+      not (detected a b n16)
+
+  lemma u16_add_correctness:
+    forall a b: int.
+      valid a n16 -> valid b n16 ->
+      not (overflows a b n16) ->
+      wrap_add a b n16 = a + b
+
+  lemma u16_add_biconditional:
+    forall a b: int.
+      valid a n16 -> valid b n16 ->
+      (detected a b n16 <-> overflows a b n16)
+
+  (* ---- Subtraction ---- *)
+
+  lemma u16_sub_soundness:
+    forall a b: int.
+      valid a n16 -> valid b n16 ->
+      underflows a b ->
+      sub_detected a b n16
+
+  lemma u16_sub_no_false_positives:
+    forall a b: int.
+      valid a n16 -> valid b n16 ->
+      not (underflows a b) ->
+      not (sub_detected a b n16)
+
+  lemma u16_sub_correctness:
+    forall a b: int.
+      valid a n16 -> valid b n16 ->
+      not (underflows a b) ->
+      wrap_sub a b n16 = a - b
+
+  lemma u16_sub_biconditional:
+    forall a b: int.
+      valid a n16 -> valid b n16 ->
+      (sub_detected a b n16 <-> underflows a b)
+
+  (* ---- Multiplication ---- *)
+
+  lemma u16_mul_correctness:
+    forall a b: int.
+      valid a n16 -> valid b n16 ->
+      not (mul_overflows a b n16) ->
+      wrap_mul a b n16 = a * b
+
+  lemma u16_mul_wide_safe:
+    forall a b: int.
+      valid a n16 -> valid b n16 ->
+      valid (a * b) (2 * n16)
+
+  lemma u16_mul_div_check:
+    forall a b: int.
+      valid a n16 -> valid b n16 ->
+      (div_check_detected a b n16 <-> mul_overflows a b n16)
+
+  (* ---- Division ---- *)
+
+  lemma u16_div_valid:
+    forall a b: int.
+      valid a n16 -> valid b n16 -> b > 0 ->
+      valid (udiv a b) n16
+
+  lemma u16_div_correctness:
+    forall a b: int.
+      valid a n16 -> valid b n16 -> b > 0 ->
+      udiv a b = div a b
+
+  (* ---- Modulo ---- *)
+
+  lemma u16_mod_valid:
+    forall a b: int.
+      valid a n16 -> valid b n16 -> b > 0 ->
+      valid (umod a b) n16
+
+  lemma u16_mod_correctness:
+    forall a b: int.
+      valid a n16 -> valid b n16 -> b > 0 ->
+      umod a b = mod a b
+
+end
+
+(* ================================================================
+ * Theory: UnsignedU32
+ *
+ * Concrete instantiation for uint32_t (N = 32, modulus = 2^32).
+ *
+ * Models: boost::safe_numbers::u32
+ *         = detail::unsigned_integer_basis<std::uint32_t>
+ * Reference: unsigned_integers.hpp line 24
+ * ================================================================ *)
+theory UnsignedU32
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+  use PowerOfTwo
+  use UnsignedAddOverflow
+  use UnsignedSubUnderflow
+  use UnsignedMulOverflow
+  use UnsignedDivSafety
+  use UnsignedModSafety
+
+  constant n32 : int = 32
+
+  lemma n32_valid: n32 >= 1
+
+  lemma u32_modulus: modulus n32 = 4294967296
+
+  lemma u32_max: max_val n32 = 4294967295
+
+  (* ---- Addition ---- *)
+
+  lemma u32_add_soundness:
+    forall a b: int.
+      valid a n32 -> valid b n32 ->
+      overflows a b n32 ->
+      detected a b n32
+
+  lemma u32_add_no_false_positives:
+    forall a b: int.
+      valid a n32 -> valid b n32 ->
+      not (overflows a b n32) ->
+      not (detected a b n32)
+
+  lemma u32_add_correctness:
+    forall a b: int.
+      valid a n32 -> valid b n32 ->
+      not (overflows a b n32) ->
+      wrap_add a b n32 = a + b
+
+  lemma u32_add_biconditional:
+    forall a b: int.
+      valid a n32 -> valid b n32 ->
+      (detected a b n32 <-> overflows a b n32)
+
+  (* ---- Subtraction ---- *)
+
+  lemma u32_sub_soundness:
+    forall a b: int.
+      valid a n32 -> valid b n32 ->
+      underflows a b ->
+      sub_detected a b n32
+
+  lemma u32_sub_no_false_positives:
+    forall a b: int.
+      valid a n32 -> valid b n32 ->
+      not (underflows a b) ->
+      not (sub_detected a b n32)
+
+  lemma u32_sub_correctness:
+    forall a b: int.
+      valid a n32 -> valid b n32 ->
+      not (underflows a b) ->
+      wrap_sub a b n32 = a - b
+
+  lemma u32_sub_biconditional:
+    forall a b: int.
+      valid a n32 -> valid b n32 ->
+      (sub_detected a b n32 <-> underflows a b)
+
+  (* ---- Multiplication ---- *)
+
+  lemma u32_mul_correctness:
+    forall a b: int.
+      valid a n32 -> valid b n32 ->
+      not (mul_overflows a b n32) ->
+      wrap_mul a b n32 = a * b
+
+  lemma u32_mul_wide_safe:
+    forall a b: int.
+      valid a n32 -> valid b n32 ->
+      valid (a * b) (2 * n32)
+
+  lemma u32_mul_div_check:
+    forall a b: int.
+      valid a n32 -> valid b n32 ->
+      (div_check_detected a b n32 <-> mul_overflows a b n32)
+
+  (* ---- Division ---- *)
+
+  lemma u32_div_valid:
+    forall a b: int.
+      valid a n32 -> valid b n32 -> b > 0 ->
+      valid (udiv a b) n32
+
+  lemma u32_div_correctness:
+    forall a b: int.
+      valid a n32 -> valid b n32 -> b > 0 ->
+      udiv a b = div a b
+
+  (* ---- Modulo ---- *)
+
+  lemma u32_mod_valid:
+    forall a b: int.
+      valid a n32 -> valid b n32 -> b > 0 ->
+      valid (umod a b) n32
+
+  lemma u32_mod_correctness:
+    forall a b: int.
+      valid a n32 -> valid b n32 -> b > 0 ->
+      umod a b = mod a b
+
+end
+
+(* ================================================================
+ * Theory: UnsignedU64
+ *
+ * Concrete instantiation for uint64_t (N = 64, modulus = 2^64).
+ *
+ * Models: boost::safe_numbers::u64
+ *         = detail::unsigned_integer_basis<std::uint64_t>
+ * Reference: unsigned_integers.hpp line 26
+ * ================================================================ *)
+theory UnsignedU64
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+  use PowerOfTwo
+  use UnsignedAddOverflow
+  use UnsignedSubUnderflow
+  use UnsignedMulOverflow
+  use UnsignedDivSafety
+  use UnsignedModSafety
+
+  constant n64 : int = 64
+
+  lemma n64_valid: n64 >= 1
+
+  lemma u64_modulus: modulus n64 = 18446744073709551616
+
+  lemma u64_max: max_val n64 = 18446744073709551615
+
+  (* ---- Addition ---- *)
+
+  lemma u64_add_soundness:
+    forall a b: int.
+      valid a n64 -> valid b n64 ->
+      overflows a b n64 ->
+      detected a b n64
+
+  lemma u64_add_no_false_positives:
+    forall a b: int.
+      valid a n64 -> valid b n64 ->
+      not (overflows a b n64) ->
+      not (detected a b n64)
+
+  lemma u64_add_correctness:
+    forall a b: int.
+      valid a n64 -> valid b n64 ->
+      not (overflows a b n64) ->
+      wrap_add a b n64 = a + b
+
+  lemma u64_add_biconditional:
+    forall a b: int.
+      valid a n64 -> valid b n64 ->
+      (detected a b n64 <-> overflows a b n64)
+
+  (* ---- Subtraction ---- *)
+
+  lemma u64_sub_soundness:
+    forall a b: int.
+      valid a n64 -> valid b n64 ->
+      underflows a b ->
+      sub_detected a b n64
+
+  lemma u64_sub_no_false_positives:
+    forall a b: int.
+      valid a n64 -> valid b n64 ->
+      not (underflows a b) ->
+      not (sub_detected a b n64)
+
+  lemma u64_sub_correctness:
+    forall a b: int.
+      valid a n64 -> valid b n64 ->
+      not (underflows a b) ->
+      wrap_sub a b n64 = a - b
+
+  lemma u64_sub_biconditional:
+    forall a b: int.
+      valid a n64 -> valid b n64 ->
+      (sub_detected a b n64 <-> underflows a b)
+
+  (* ---- Multiplication ---- *)
+
+  lemma u64_mul_correctness:
+    forall a b: int.
+      valid a n64 -> valid b n64 ->
+      not (mul_overflows a b n64) ->
+      wrap_mul a b n64 = a * b
+
+  lemma u64_mul_wide_safe:
+    forall a b: int.
+      valid a n64 -> valid b n64 ->
+      valid (a * b) (2 * n64)
+
+  lemma u64_mul_div_check:
+    forall a b: int.
+      valid a n64 -> valid b n64 ->
+      (div_check_detected a b n64 <-> mul_overflows a b n64)
+
+  (* ---- Division ---- *)
+
+  lemma u64_div_valid:
+    forall a b: int.
+      valid a n64 -> valid b n64 -> b > 0 ->
+      valid (udiv a b) n64
+
+  lemma u64_div_correctness:
+    forall a b: int.
+      valid a n64 -> valid b n64 -> b > 0 ->
+      udiv a b = div a b
+
+  (* ---- Modulo ---- *)
+
+  lemma u64_mod_valid:
+    forall a b: int.
+      valid a n64 -> valid b n64 -> b > 0 ->
+      valid (umod a b) n64
+
+  lemma u64_mod_correctness:
+    forall a b: int.
+      valid a n64 -> valid b n64 -> b > 0 ->
+      umod a b = mod a b
+
+end
+
+(* ================================================================
+ * Theory: UnsignedU128
+ *
+ * Concrete instantiation for uint128_t (N = 128, modulus = 2^128).
+ *
+ * Models: boost::safe_numbers::u128
+ *         = detail::unsigned_integer_basis<int128::uint128_t>
+ * Reference: unsigned_integers.hpp line 28
+ * ================================================================ *)
+theory UnsignedU128
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+  use PowerOfTwo
+  use UnsignedAddOverflow
+  use UnsignedSubUnderflow
+  use UnsignedMulOverflow
+  use UnsignedDivSafety
+  use UnsignedModSafety
+
+  constant n128 : int = 128
+
+  lemma n128_valid: n128 >= 1
+
+  (* 2^128 = 340282366920938463463374607431768211456 *)
+  lemma u128_modulus: modulus n128 = 340282366920938463463374607431768211456
+
+  (* 2^128 - 1 = 340282366920938463463374607431768211455 *)
+  lemma u128_max: max_val n128 = 340282366920938463463374607431768211455
+
+  (* ---- Addition ---- *)
+
+  lemma u128_add_soundness:
+    forall a b: int.
+      valid a n128 -> valid b n128 ->
+      overflows a b n128 ->
+      detected a b n128
+
+  lemma u128_add_no_false_positives:
+    forall a b: int.
+      valid a n128 -> valid b n128 ->
+      not (overflows a b n128) ->
+      not (detected a b n128)
+
+  lemma u128_add_correctness:
+    forall a b: int.
+      valid a n128 -> valid b n128 ->
+      not (overflows a b n128) ->
+      wrap_add a b n128 = a + b
+
+  lemma u128_add_biconditional:
+    forall a b: int.
+      valid a n128 -> valid b n128 ->
+      (detected a b n128 <-> overflows a b n128)
+
+  (* ---- Subtraction ---- *)
+
+  lemma u128_sub_soundness:
+    forall a b: int.
+      valid a n128 -> valid b n128 ->
+      underflows a b ->
+      sub_detected a b n128
+
+  lemma u128_sub_no_false_positives:
+    forall a b: int.
+      valid a n128 -> valid b n128 ->
+      not (underflows a b) ->
+      not (sub_detected a b n128)
+
+  lemma u128_sub_correctness:
+    forall a b: int.
+      valid a n128 -> valid b n128 ->
+      not (underflows a b) ->
+      wrap_sub a b n128 = a - b
+
+  lemma u128_sub_biconditional:
+    forall a b: int.
+      valid a n128 -> valid b n128 ->
+      (sub_detected a b n128 <-> underflows a b)
+
+  (* ---- Multiplication ---- *)
+  (* Note: u128 uses the division-check path exclusively since
+   * there is no wider type available.
+   * Reference: unsigned_integer_basis.hpp lines 854-858 *)
+
+  lemma u128_mul_correctness:
+    forall a b: int.
+      valid a n128 -> valid b n128 ->
+      not (mul_overflows a b n128) ->
+      wrap_mul a b n128 = a * b
+
+  lemma u128_mul_div_check:
+    forall a b: int.
+      valid a n128 -> valid b n128 ->
+      (div_check_detected a b n128 <-> mul_overflows a b n128)
+
+  (* ---- Division ---- *)
+
+  lemma u128_div_valid:
+    forall a b: int.
+      valid a n128 -> valid b n128 -> b > 0 ->
+      valid (udiv a b) n128
+
+  lemma u128_div_correctness:
+    forall a b: int.
+      valid a n128 -> valid b n128 -> b > 0 ->
+      udiv a b = div a b
+
+  (* ---- Modulo ---- *)
+
+  lemma u128_mod_valid:
+    forall a b: int.
+      valid a n128 -> valid b n128 -> b > 0 ->
+      valid (umod a b) n128
+
+  lemma u128_mod_correctness:
+    forall a b: int.
+      valid a n128 -> valid b n128 -> b > 0 ->
+      umod a b = mod a b
+
+end
