@@ -273,6 +273,24 @@ https://www.boost.org/LICENSE_1_0.txt
 | Generic policy-parameterized arithmetic (takes `overflow_policy` as template parameter)
 |===
 
+== `<numeric>`
+
+=== `gcd`
+
+[cols="1,2", options="header"]
+|===
+| Function | Description
+
+| xref:numeric.adoc[`gcd`]
+| Computes the greatest common divisor of two safe integers
+
+| xref:numeric.adoc[`lcm`]
+| Computes the least common multiple of two safe integers
+
+| xref:numeric.adoc[`midpoint`]
+| Computes the midpoint of two safe integers without overflow
+|===
+
 [#api_headers]
 == Headers
 

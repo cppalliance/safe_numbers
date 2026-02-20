@@ -10,31 +10,13 @@ https://www.boost.org/LICENSE_1_0.txt
 
 The following books: papers and blog posts serve as the basis for the algorithms used in the library:
 
-== `<numeric>`
-
-=== `gcd`
-
-[cols="1,2", options="header"]
-|===
-| Function | Description
-
-| xref:numeric.adoc[`gcd`]
-| Computes the greatest common divisor of two safe integers
-
-| xref:numeric.adoc[`lcm`]
-| Computes the least common multiple of two safe integers
-
-| xref:numeric.adoc[`midpoint`]
-| Computes the midpoint of two safe integers without overflow
-|===
-
 :linkattrs:
 
-1. Donald E. Knuth, _The Art of Computer Programming Volume 2 Seminumerical Algorithms_, 3rd edition, 1998
-2. Michael L. Scott and Jonathan Aldrich, _Programming Language Pragmatics_, 5th edition, 2025
-3. Steve Klabnik, Carol Nichols, and Chris Krycho, _The Rust Programming Language_, Version 1.90.0, 2025
-4. Jean-Michel Muller, Nicolas Brisebarre, Florent De Dinechin, Claude-Pierre Jeannerod, Vincent Lefèvre, Guillaume Melquiond, Nathalie Revol, Damien Stehlé, Serge Torres, _Handbook of Floating-Point Arithmetic_, 2000
-5. Benjamin C. Pierce, _Types and Programming Languages_, 2002
-6. Benjamin C. Pierce, _Advanced Topics in Types and Programming Languages_, 2005
+1. D. E. Knuth, The Art of Computer Programming, Volume 2: Seminumerical Algorithms, 3rd ed. Reading, MA, USA: Addison-Wesley, 1998.
+2. M. L. Scott and J. Aldrich, Programming Language Pragmatics, 5th ed. Burlington, MA, USA: Morgan Kaufmann, 2025.
+3. S. Klabnik, C. Nichols, and C. Krycho, The Rust Programming Language, ver. 1.90.0. San Francisco, CA, USA: No Starch Press, 2025.
+4. J.-M. Muller, N. Brisebarre, F. De Dinechin, C.-P. Jeannerod, V. Lefèvre, G. Melquiond, N. Revol, D. Stehlé, and S. Torres, Handbook of Floating-Point Arithmetic. Boston, MA, USA: Birkhäuser, 2000.
+5. B. C. Pierce, Types and Programming Languages. Cambridge, MA, USA: MIT Press, 2002.
+6. B. C. Pierce, Advanced Topics in Types and Programming Languages. Cambridge, MA, USA: MIT Press, 2005.
 7. S. Glesner, “Finite Integer Computations: An Algebraic Foundation for Their Correctness,” Formal Aspects of Computing, vol. 18, no. 2, pp. 244-262, 2006.
 8. R. Rieu-Helft, C. Marché, and G. Melquiond, “How to Get an Efficient yet Verified Arbitrary-Precision Integer Library,” in Verified Software. Theories, Tools, and Experiments (VSTTE 2017), A. Paskevich and T. Wies, Eds. Lecture Notes in Computer Science, vol. 10712. Cham, Switzerland: Springer, 2017, pp. 84-101.
