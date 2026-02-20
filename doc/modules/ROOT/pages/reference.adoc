@@ -23,6 +23,9 @@ The following books: papers and blog posts serve as the basis for the algorithms
 
 | xref:numeric.adoc[`lcm`]
 | Computes the least common multiple of two safe integers
+
+| xref:numeric.adoc[`midpoint`]
+| Computes the midpoint of two safe integers without overflow
 |===
 
 :linkattrs:

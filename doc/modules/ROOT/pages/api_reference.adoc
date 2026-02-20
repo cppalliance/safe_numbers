@@ -178,6 +178,9 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:numeric.adoc[`lcm`]
 | Computes the least common multiple of two safe integers
+
+| xref:numeric.adoc[`midpoint`]
+| Computes the midpoint of two safe integers without overflow
 |===
 
 === Integer Utilities
@@ -297,7 +300,7 @@ This header is not included in the convenience header since it requires external
 | Integer utility functions (`isqrt`, `remove_trailing_zeros`, `is_power_10`, `is_power_2`, `ipow`, `log2`, `log10`)
 
 | `<boost/safe_numbers/numeric.hpp>`
-| Standard numeric algorithms (`gcd`, `lcm`)
+| Standard numeric algorithms (`gcd`, `lcm`, `midpoint`)
 
 | `<boost/safe_numbers/iostream.hpp>`
 | Stream I/O operators (`operator<<`, `operator>>`) for library types
