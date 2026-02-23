@@ -182,6 +182,12 @@ consteval auto ipow(const detail::verified_type_basis<T> a,
     return detail::verified_type_basis<T>{detail::ipow_impl(static_cast<T>(a), static_cast<T>(b))};
 }
 
+template <detail::integral_library_type T>
+[[nodiscard]] constexpr auto abs_diff(const T a, const T b) noexcept -> T
+{
+    return a > b ? a - b : b - a;
+}
+
 } // namespace boost::safe_numbers
 
 #endif // BOOST_SAFE_NUMBERS_INTEGER_UTILITIES_HPP
