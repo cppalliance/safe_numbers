@@ -12,7 +12,7 @@ https://www.boost.org/LICENSE_1_0.txt
 
 Much of the recent focus on pass:[C++] safety has centered on memory safety, driven in part by the US Government's https://www.cisa.gov/resources-tools/resources/product-security-bad-practices[CISA recommendations] to transition away from memory-unsafe languages.
 Library hardening and safety profiles (https://isocpp.org/files/papers/P3471R1.html[P3471R1]) are important steps forward.
-However, arithmetic safety is an equally dangerous and far less discussed class of bugs.
+However, arithmetic safety is another dangerous and far less discussed class of bugs.
 
 Consider this expression:
 
@@ -23,49 +23,29 @@ Consider this expression:
 
 Intuitively this evaluates to `true`, but in pass:[C++] it evaluates to `false` because the signed value is implicitly converted to an unsigned 128-bit integer, making the two values bitwise equal.
 Bugs like these are subtle, difficult to catch in code review, and can have severe consequences in safety-critical and financial software.
-
 Existing tools help but leave gaps.
 Compiler flags like `-Wsign-conversion` and `-Wconversion` catch many issues at compile time, and UBSan catches undefined behavior at runtime.
 But UBSan explicitly allows unsigned integer rollover because the standard defines it as well-defined behavior, even though silent rollover is the source of countless bugs.
-Boost.SafeNumbers aims to go further: by default, unsigned rollover is an error.
+Boost.SafeNumbers aims to address many of these issues by default.
 
 == Core Design Principles
 
 [#design_explicit]
 === Explicit Over Implicit
 
-The library prohibits implicit conversions entirely.
-There are no implicit conversions between safe types and builtin types, no implicit widening or narrowing between safe types of different widths, and no implicit conversion to or from `bool`.
-Every boundary crossing must be stated explicitly by the programmer.
-
+The library prohibits implicit conversions entirely, both widening and narrowing.
+There are also no implicit conversions between safe types and builtin types even of the same width.
 This is a deliberate departure from pass:[C++]'s usual implicit promotion and conversion rules, which are a major source of arithmetic bugs.
 The cost is slightly more verbose code at type boundaries; the benefit is that every conversion is visible and intentional.
 
-=== Fail Early, Fail Loudly
+We also do not allow any mixed-width operation between safe types (e.g., `u32 + u64` or `u16 < u32`).
+This includes both arithmetic operations and comparisons.
+Again, the programmer must be explicit in their intent.
+
+=== Fail as Early as Possible
 
 When an operation produces an incorrect result, (e.g., overflow, underflow, division by zero) the library makes this visible rather than silently continuing with a wrong value.
-
-At compile time, errors become compiler errors.
-At runtime, errors throw exceptions by default.
-There is no mode where an error is silently ignored unless the programmer explicitly opts into wrapping behavior.
-
-=== Type Safety as a First-Class Concern
-
-The safe types (`u8`, `u16`, `u32`, `u64`, `u128`) are concrete, named types, not template wrappers around a policy.
-This makes them easy to read, easy to teach, and easy to use as drop-in replacements for builtin types.
-
-Overflow policies are expressed through named free functions (`saturating_add`, `wrapping_add`, etc.) rather than through type-level policy parameters.
-This keeps the type system simple while still allowing full control over overflow behavior at each call site.
-
-=== Deliberately Restrictive
-
-Operations that are technically well-defined in pass:[C++] but commonly cause bugs are compile-time errors in this library.
-This includes mixed-width arithmetic, unary minus on unsigned types, and construction from `bool`.
-The philosophy is that it is better to require the programmer to be explicit about intent than to silently do something that is likely unintended.
-
-== Compile-Time vs Runtime Error Detection
-
-All operations in the library are `constexpr`.
+All operations in the library are `constexpr` or `consteval`.
 This means the same code path provides two levels of safety depending on context:
 
 - **Compile time**: When an operation is evaluated in a constant expression context (`constexpr` or `consteval`), any overflow, underflow, or domain error causes a *compile-time failure*.
@@ -76,6 +56,13 @@ The compiler rejects the program before it is ever run.
 
 This dual behavior is automatic.
 The programmer writes the same code regardless of whether it will be evaluated at compile time or runtime, and gets the strongest available safety guarantee in each context.
+
+=== Type Safety as a First-Class Concern
+
+The safe types (`u8`, `u16`, `u32`, `u64`, `u128`) are concrete, named types, not template wrappers around a policy.
+This makes them easy to read, easy to teach, and easy to use as drop-in replacements for builtin types.
+Overflow policies are expressed through named free functions (`saturating_add`, `checked_add`, etc.) rather than through type-level policy parameters.
+This keeps the type system simple (and readable in a debugger) while still allowing full control over overflow behavior at each call site.
 
 [source,c++]
 ----
@@ -138,7 +125,7 @@ The library intentionally prohibits several operations that are legal in pass:[C
 
 **Construction from `bool`**: Prevents conflation of boolean logic and integer arithmetic.
 In pass:[C++], `true + true == 2`, which is rarely the intended behavior.
-Constructing a safe integer from `bool` is a compile-time error.
+Constructing a safe integer from `bool` is a compile-time error with a `static_assert` message stating this.
 
 **Mixed-width arithmetic**: Adding a `u8` to a `u32` is a compile-time error.
 In pass:[C++], the narrower operand would be implicitly promoted, which hides the fact that two different-sized values are being combined.
@@ -147,6 +134,8 @@ The library requires an explicit conversion so the programmer acknowledges the w
 **Unary minus on unsigned types**: In pass:[C++], `-x` on an unsigned value performs modular negation, producing a large positive number.
 This is almost never intentional.
 The library will provide a `static_assert` message should this operation be attempted.
+The only typically "correct" use of this is `-1` to produce the maximum value of an unsigned type.
+We overload and recommend the use of `std::numeric_limits::max()` instead.
 
 **Implicit conversions to and from builtin types**: All conversions between safe types and builtin types require an explicit cast.
 This prevents accidental loss of safety guarantees when passing values across API boundaries.
