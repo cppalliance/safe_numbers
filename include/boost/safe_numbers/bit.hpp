@@ -209,16 +209,24 @@ inline constexpr auto reverse_table {make_byte_reverse_table()};
 template <fundamental_unsigned_integral UnsignedInt>
 [[nodiscard]] constexpr auto bitswap_impl(UnsignedInt x) noexcept -> UnsignedInt
 {
-    constexpr auto n {sizeof (UnsignedInt)};
-
-    UnsignedInt result {};
-    for (std::size_t i {}; i < n; ++i)
+    if constexpr (sizeof(UnsignedInt) == 1)
     {
-        result = (result << 8U) | static_cast<UnsignedInt>(reverse_table[static_cast<std::uint8_t>(x & 0xFFU)]);
-        x >>= 8;
+        return static_cast<UnsignedInt>(reverse_table[static_cast<std::uint8_t>(x)]);
     }
+    else
+    {
+        constexpr auto n {sizeof(UnsignedInt)};
 
-    return result;
+        UnsignedInt result {};
+        for (std::size_t i {}; i < n; ++i)
+        {
+            result = static_cast<UnsignedInt>(static_cast<UnsignedInt>(result << 8U) |
+                     static_cast<UnsignedInt>(reverse_table[static_cast<std::uint8_t>(x & 0xFFU)]));
+            x >>= 8U;
+        }
+
+        return result;
+    }
 }
 
 } // namespace detail
