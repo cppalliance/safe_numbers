@@ -183,9 +183,16 @@ consteval auto ipow(const detail::verified_type_basis<T> a,
 }
 
 template <detail::integral_library_type T>
+    requires (!detail::is_verified_type_v<T>)
 [[nodiscard]] constexpr auto abs_diff(const T a, const T b) noexcept -> T
 {
     return a > b ? a - b : b - a;
+}
+
+template <detail::integral_library_type T>
+[[nodiscard]] consteval auto abs_diff(const detail::verified_type_basis<T> a, const detail::verified_type_basis<T> b) noexcept -> detail::verified_type_basis<T>
+{
+    return detail::verified_type_basis<T>{abs_diff(static_cast<T>(a), static_cast<T>(b))};
 }
 
 } // namespace boost::safe_numbers
