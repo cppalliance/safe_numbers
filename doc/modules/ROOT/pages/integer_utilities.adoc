@@ -321,7 +321,7 @@ template <non_bounded_unsigned_library_type T>
 constexpr auto log10(const T n) noexcept -> int;
 ----
 
-Computes `floor(log~10~(n))` using `num_digits(n) - 1`, where `num_digits` approximates the digit count via `log~10~(x) {tilde}{equals} log~2~(x) / log~2~(10)` and refines with at most two comparisons against a power-of-10 lookup table.
+Computes `floor(log~10~(n))` using `num_digits(n) - 1`, where `num_digits` approximates the digit count via `log~10~(x) ~= log~2~(x) / log~2~(10)` and refines with at most two comparisons against a power-of-10 lookup table.
 
 ==== Parameters
 
@@ -382,7 +382,7 @@ Computes `a` raised to the power `b` using exponentiation by squaring.
 
 The algorithm runs in O(log(b)) multiplications:
 
-* If `b == 0`, returns `T{1}`.
+* If `b == 0`, returns `pass:[T{1}]`.
 * If `b` is odd, returns `a * ipow(a, b - 1)`.
 * If `b` is even, returns `ipow(a, b / 2)^2`.
 
