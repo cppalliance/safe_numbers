@@ -169,6 +169,20 @@ See https://en.cppreference.com/w/cpp/numeric/byteswap.html[`std::byteswap`].
 
 NOTE: `byteswap` is not available for `bounded_uint` types. Byte reversal can produce values outside the valid bounded range, making the operation semantically meaningless for bounded integers.
 
+=== bitswap
+
+[source,c++]
+----
+template <non_bounded_integral_library_type Int>
+constexpr auto bitswap(Int x) noexcept -> Int;
+----
+
+Reverses all bits of `x`.
+This performs a full bit-reversal: for an N-bit integer, bit 0 becomes bit N-1, bit 1 becomes bit N-2, and so on.
+Implemented using a lookup-table approach that reverses each byte individually and then reverses the byte order.
+
+NOTE: `bitswap` is not available for `bounded_uint` types. Bit reversal can produce values outside the valid bounded range, making the operation semantically meaningless for bounded integers.
+
 == Verified Types
 
 The bit functions have special behavior with xref:verified_integers.adoc[verified types]:
@@ -176,7 +190,7 @@ The bit functions have special behavior with xref:verified_integers.adoc[verifie
 Functions that return `int` or `bool` (`has_single_bit`, `bit_width`, `countl_zero`, `countl_one`, `countr_zero`, `countr_one`, `popcount`) work at runtime with verified types.
 These functions only read the value via the `constexpr` conversion operator.
 
-Functions that return the safe type (`bit_ceil`, `bit_floor`, `rotl`, `rotr`, `byteswap`) have `consteval` overloads for verified types, meaning they can only be called at compile time.
+Functions that return the safe type (`bit_ceil`, `bit_floor`, `rotl`, `rotr`, `byteswap`, `bitswap`) have `consteval` overloads for verified types, meaning they can only be called at compile time.
 The `consteval` overloads use a `requires` clause to distinguish them:
 
 [source,c++]
@@ -192,7 +206,7 @@ template <unsigned_library_type UnsignedInt>
 consteval auto bit_ceil(UnsignedInt x) noexcept -> UnsignedInt;
 ----
 
-The same pattern applies to `bit_floor`, `rotl`, `rotr`, and `byteswap`.
+The same pattern applies to `bit_floor`, `rotl`, `rotr`, `byteswap`, and `bitswap`.
 
 == Examples
 
@@ -221,6 +235,7 @@ countr_one(0x0F00)  = 0
 popcount(0x0F00)    = 4
 
 byteswap(0x12345678) = 0x78563412
+bitswap(0x12345678)  = 0x1e6a2c48
 
 bounded has_single_bit(40) = 0
 bounded bit_ceil(40)       = 64
