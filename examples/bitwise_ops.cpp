@@ -138,14 +138,6 @@ int main()
 
     std::cout << '\n';
 
-    // Wrapping shifts: perform the shift ignoring overflow
-    std::cout << "wrapping_shl(u8(255), 1)    = "
-              << static_cast<unsigned>(wrapping_shl(u8{0xFF}, u8{1})) << '\n';
-    std::cout << "wrapping_shr(u8(1), 8)      = "
-              << static_cast<unsigned>(wrapping_shr(u8{1}, u8{8})) << '\n';
-
-    std::cout << '\n';
-
     // Generic policy-parameterized shifts
     std::cout << "shl<saturate>(u32(1), 30)   = "
               << shl<overflow_policy::saturate>(u32{1}, u32{30}) << '\n';

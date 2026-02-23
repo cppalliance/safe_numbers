@@ -31,12 +31,10 @@ int main()
     {
         const auto throwing  {add<overflow_policy::throw_exception>(a, b)};
         const auto saturated {add<overflow_policy::saturate>(a, b)};
-        const auto wrapped   {add<overflow_policy::wrapping>(a, b)};
         const auto strict    {add<overflow_policy::strict>(a, b)};
 
         std::cout << "add<throw_exception>(100, 50) = " << throwing << std::endl;
         std::cout << "add<saturate>(100, 50)        = " << saturated << std::endl;
-        std::cout << "add<wrapping>(100, 50)        = " << wrapped << std::endl;
         std::cout << "add<strict>(100, 50)          = " << strict << std::endl;
     }
 
@@ -69,10 +67,6 @@ int main()
         // saturate policy clamps to max
         const auto sat_result {add<overflow_policy::saturate>(max_val, one)};
         std::cout << "add<saturate>(max, 1)          = " << sat_result << std::endl;
-
-        // wrapping policy wraps around
-        const auto wrap_result {add<overflow_policy::wrapping>(max_val, one)};
-        std::cout << "add<wrapping>(max, 1)          = " << wrap_result << std::endl;
     }
 
     return 0;

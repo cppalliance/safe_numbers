@@ -13,7 +13,7 @@
 //   2. SafeNumbers requires explicit construction and forbids implicit
 //      conversions; SafeNumerics allows implicit construction from built-ins.
 //   3. SafeNumbers provides named free functions for alternative overflow
-//      policies (wrapping_add, saturating_sub, checked_mul, etc.);
+//      policies (saturating_add, saturating_sub, checked_mul, etc.);
 //      SafeNumerics selects behavior via template policy parameters on the type.
 //   4. SafeNumbers forbids mixed-width arithmetic at compile time;
 //      SafeNumerics promotes operands using C++ native promotion rules.
@@ -154,11 +154,6 @@ int main()
     {
         const auto x = safe_num::u8{250U};
         const auto y = safe_num::u8{10U};
-
-        // Wrapping: modular arithmetic like built-in unsigned
-        const auto wrapped = safe_num::wrapping_add(x, y);
-        std::cout << "wrapping_add(250, 10) = " << wrapped << std::endl;
-        // Output: 4
 
         // Saturating: clamp at the max/min boundary
         const auto saturated = safe_num::saturating_add(x, y);

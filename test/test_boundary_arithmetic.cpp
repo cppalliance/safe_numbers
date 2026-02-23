@@ -197,28 +197,6 @@ void test_boundary_checked_add()
     }
 }
 
-template <typename SafeT, typename BasisType>
-void test_boundary_wrapping_add()
-{
-    const auto boundary_vals {get_boundary_values<BasisType>()};
-
-    for (const auto lhs_val : boundary_vals)
-    {
-        for (const auto rhs_val : boundary_vals)
-        {
-            const SafeT lhs {lhs_val};
-            const SafeT rhs {rhs_val};
-
-            using wider = wider_type_t<BasisType>;
-            const auto wide_sum {static_cast<wider>(lhs_val) + static_cast<wider>(rhs_val)};
-            const auto expected {static_cast<BasisType>(wide_sum)};
-
-            const auto result {wrapping_add(lhs, rhs)};
-            BOOST_TEST_EQ(static_cast<BasisType>(result), expected);
-        }
-    }
-}
-
 // ============================================
 // Subtraction boundary tests
 // ============================================
@@ -291,26 +269,6 @@ void test_boundary_checked_sub()
                 BOOST_TEST(result.has_value());
                 BOOST_TEST_EQ(static_cast<BasisType>(result.value()), static_cast<BasisType>(lhs_val - rhs_val));
             }
-        }
-    }
-}
-
-template <typename SafeT, typename BasisType>
-void test_boundary_wrapping_sub()
-{
-    const auto boundary_vals {get_boundary_values<BasisType>()};
-
-    for (const auto lhs_val : boundary_vals)
-    {
-        for (const auto rhs_val : boundary_vals)
-        {
-            const SafeT lhs {lhs_val};
-            const SafeT rhs {rhs_val};
-
-            const auto expected {static_cast<BasisType>(lhs_val - rhs_val)};
-
-            const auto result {wrapping_sub(lhs, rhs)};
-            BOOST_TEST_EQ(static_cast<BasisType>(result), expected);
         }
     }
 }
@@ -406,28 +364,6 @@ void test_boundary_checked_mul()
                 BOOST_TEST(result.has_value());
                 BOOST_TEST_EQ(static_cast<BasisType>(result.value()), static_cast<BasisType>(wide_product));
             }
-        }
-    }
-}
-
-template <typename SafeT, typename BasisType>
-void test_boundary_wrapping_mul()
-{
-    const auto boundary_vals {get_boundary_values<BasisType>()};
-
-    for (const auto lhs_val : boundary_vals)
-    {
-        for (const auto rhs_val : boundary_vals)
-        {
-            const SafeT lhs {lhs_val};
-            const SafeT rhs {rhs_val};
-
-            using wider = wider_type_t<BasisType>;
-            const auto wide_product {static_cast<wider>(lhs_val) * static_cast<wider>(rhs_val)};
-            const auto expected {static_cast<BasisType>(wide_product)};
-
-            const auto result {wrapping_mul(lhs, rhs)};
-            BOOST_TEST_EQ(static_cast<BasisType>(result), expected);
         }
     }
 }
@@ -599,19 +535,16 @@ void run_all_boundary_tests()
     test_boundary_saturating_add<SafeT, BasisType>();
     test_boundary_overflowing_add<SafeT, BasisType>();
     test_boundary_checked_add<SafeT, BasisType>();
-    test_boundary_wrapping_add<SafeT, BasisType>();
 
     // Subtraction
     test_boundary_saturating_sub<SafeT, BasisType>();
     test_boundary_overflowing_sub<SafeT, BasisType>();
     test_boundary_checked_sub<SafeT, BasisType>();
-    test_boundary_wrapping_sub<SafeT, BasisType>();
 
     // Multiplication
     test_boundary_saturating_mul<SafeT, BasisType>();
     test_boundary_overflowing_mul<SafeT, BasisType>();
     test_boundary_checked_mul<SafeT, BasisType>();
-    test_boundary_wrapping_mul<SafeT, BasisType>();
 
     // Division (checked only, others throw on div by zero)
     test_boundary_checked_div<SafeT, BasisType>();
@@ -628,7 +561,6 @@ void run_u128_boundary_tests()
     test_boundary_saturating_sub<u128, uint128_t>();
     test_boundary_overflowing_sub<u128, uint128_t>();
     test_boundary_checked_sub<u128, uint128_t>();
-    test_boundary_wrapping_sub<u128, uint128_t>();
     test_boundary_u128_saturating_mul();
     test_boundary_u128_overflowing_mul();
     test_boundary_checked_div<u128, uint128_t>();
@@ -636,9 +568,7 @@ void run_u128_boundary_tests()
 
     // These use the generic templates which work for subtraction, div, mod
     test_boundary_checked_add<u128, uint128_t>();
-    test_boundary_wrapping_add<u128, uint128_t>();
     test_boundary_checked_mul<u128, uint128_t>();
-    test_boundary_wrapping_mul<u128, uint128_t>();
 }
 
 int main()
