@@ -235,6 +235,23 @@ static_assert(test_byteswap_impl<verified_u64, u64>());
 static_assert(test_byteswap_impl<verified_u128, u128>());
 
 // =============================================================================
+// bitswap (returns Int - compile-time only, non-bounded only)
+// =============================================================================
+
+template <typename VerifiedT, typename BasisT>
+consteval auto test_bitswap_impl() -> bool
+{
+    // bitswap(0) == 0 for any width
+    return boost::safe_numbers::bitswap(VerifiedT{BasisT{0}}) == VerifiedT{BasisT{0}};
+}
+
+static_assert(test_bitswap_impl<verified_u8, u8>());
+static_assert(test_bitswap_impl<verified_u16, u16>());
+static_assert(test_bitswap_impl<verified_u32, u32>());
+static_assert(test_bitswap_impl<verified_u64, u64>());
+static_assert(test_bitswap_impl<verified_u128, u128>());
+
+// =============================================================================
 // Main - runtime tests for functions returning int/bool
 // =============================================================================
 

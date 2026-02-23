@@ -321,6 +321,27 @@ void test_byteswap()
     BOOST_TEST(T{boost::core::byteswap(std::numeric_limits<basis_type>::max())} == boost::safe_numbers::byteswap(T{std::numeric_limits<basis_type>::max()}));
 }
 
+template <typename T>
+void test_bitswap()
+{
+    using basis_type = detail::underlying_type_t<T>;
+    boost::random::uniform_int_distribution<basis_type> dist {0, std::numeric_limits<basis_type>::max()};
+
+    for (std::size_t i {}; i < N; ++i)
+    {
+        const auto raw {dist(rng)};
+        const auto expected {detail::bitswap_impl(raw)};
+        const T wrapped {raw};
+        const auto result {boost::safe_numbers::bitswap(wrapped)};
+
+        BOOST_TEST(T{expected} == result);
+    }
+
+    // Edge cases
+    BOOST_TEST(T{detail::bitswap_impl(static_cast<basis_type>(0))} == boost::safe_numbers::bitswap(T{0}));
+    BOOST_TEST(T{detail::bitswap_impl(std::numeric_limits<basis_type>::max())} == boost::safe_numbers::bitswap(T{std::numeric_limits<basis_type>::max()}));
+}
+
 // u128 tests use boost::int128 functions as reference since std:: doesn't support 128-bit types
 
 void test_has_single_bit_u128()
@@ -517,6 +538,22 @@ void test_byteswap_u128()
     }
 }
 
+void test_bitswap_u128()
+{
+    using basis_type = detail::underlying_type_t<u128>;
+    boost::random::uniform_int_distribution<basis_type> dist {0, std::numeric_limits<basis_type>::max()};
+
+    for (std::size_t i {}; i < N; ++i)
+    {
+        const auto raw {dist(rng)};
+        const auto expected {detail::bitswap_impl(raw)};
+        const u128 wrapped {raw};
+        const auto result {boost::safe_numbers::bitswap(wrapped)};
+
+        BOOST_TEST(u128{expected} == result);
+    }
+}
+
 // -----------------------------------------------
 // bounded_uint types covering full underlying range
 // -----------------------------------------------
@@ -706,6 +743,13 @@ int main()
     test_byteswap<u64>();
 
     test_byteswap_u128();
+
+    test_bitswap<u8>();
+    test_bitswap<u16>();
+    test_bitswap<u32>();
+    test_bitswap<u64>();
+
+    test_bitswap_u128();
 
     // Full-range bounded_uint tests (reuse existing templates)
     test_has_single_bit<bounded_u8_full>();
