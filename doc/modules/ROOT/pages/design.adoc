@@ -31,6 +31,7 @@ Boost.SafeNumbers aims to go further: by default, unsigned rollover is an error.
 
 == Core Design Principles
 
+[#design_explicit]
 === Explicit Over Implicit
 
 The library prohibits implicit conversions entirely.
