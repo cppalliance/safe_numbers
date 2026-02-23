@@ -58,9 +58,6 @@ class u32
     // Saturates to std::numeric_limits<u32>::max()
     friend constexpr u32 saturating_add(u32 lhs, u32 rhs) noexcept;
 
-    // Allows well defined wrapping behavior
-    friend constexpr u32 wrapping_add(u32 lhs, u32 rhs) noexcept;
-
     ...
 };
 ----

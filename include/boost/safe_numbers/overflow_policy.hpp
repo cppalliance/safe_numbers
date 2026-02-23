@@ -13,7 +13,6 @@ enum class overflow_policy
     saturate,
     overflow_tuple,
     checked,
-    wrapping,
     strict,
     widen,
 };

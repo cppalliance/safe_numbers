@@ -84,7 +84,6 @@ auto b = u8{255} + u8{1}; // throws
 Different domains require different responses to overflow:
 
 - Signal processing often needs *saturation*: clamp to the representable range and continue.
-- Cryptographic algorithms require *wrapping*: modular arithmetic is the correct behavior.
 - Safety-critical systems may require *hard termination*: no exceptions, no recovery, just stop.
 - General application code benefits from *exceptions*: the error is reported and can be handled.
 - Some code needs to *detect and branch*: check whether overflow occurred without changing control flow.
@@ -97,12 +96,11 @@ For other needs, named free functions make the policy explicit at each call site
 using boost::safe_numbers::u8;
 
 auto a = saturating_add(u8{200}, u8{100}); // a == u8{255}
-auto b = wrapping_add(u8{200}, u8{100});   // b == u8{44}
-auto c = checked_add(u8{200}, u8{100});    // c == std::nullopt
-auto [d, overflow] = overflowing_add(u8{200}, u8{100}); // d == u8{44}, overflow == true
+auto b = checked_add(u8{200}, u8{100});    // b == std::nullopt
+auto [c, overflow] = overflowing_add(u8{200}, u8{100}); // c == u8{44}, overflow == true
 ----
 
-This approach is inspired by Rust's primitive type API, where `checked_add`, `saturating_add`, and `wrapping_add` are methods on integer types.
+This approach is inspired by Rust's primitive type API, where `checked_add` and `saturating_add` are methods on integer types.
 
 For generic code that needs to be parameterized on the overflow policy, the library provides policy-parameterized free functions:
 

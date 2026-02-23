@@ -7,7 +7,6 @@
 ** xref:examples.adoc#examples_saturating[Saturating Arithmetic]
 ** xref:examples.adoc#examples_overflowing[Overflowing Arithmetic]
 ** xref:examples.adoc#examples_checked[Checked Arithmetic]
-** xref:examples.adoc#examples_wrapping[Wrapping Arithmetic]
 ** xref:examples.adoc#examples_strict[Strict Arithmetic]
 ** xref:examples.adoc#examples_generic[Generic Policy-Parameterized Arithmetic]
 ** xref:examples.adoc#examples_literals[Literals]

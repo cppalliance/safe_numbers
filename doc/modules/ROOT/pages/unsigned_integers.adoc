@@ -193,22 +193,6 @@ constexpr std::optional<T> checked_div(T lhs, T rhs) noexcept;
 template <UnsignedLibType T>
 constexpr std::optional<T> checked_mod(T lhs, T rhs) noexcept;
 
-// Wrapping arithmetic (wrap without indication)
-template <UnsignedLibType T>
-constexpr T wrapping_add(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr T wrapping_sub(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr T wrapping_mul(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr T wrapping_div(T lhs, T rhs);
-
-template <UnsignedLibType T>
-constexpr T wrapping_mod(T lhs, T rhs);
-
 // Strict arithmetic (call std::exit(EXIT_FAILURE) on error)
 template <UnsignedLibType T>
 constexpr T strict_add(T lhs, T rhs) noexcept;
@@ -245,13 +229,6 @@ constexpr std::optional<T> checked_shl(T lhs, T rhs) noexcept;
 
 template <UnsignedLibType T>
 constexpr std::optional<T> checked_shr(T lhs, T rhs) noexcept;
-
-// Wrapping shifts (wrap without indication)
-template <UnsignedLibType T>
-constexpr T wrapping_shl(T lhs, T rhs) noexcept;
-
-template <UnsignedLibType T>
-constexpr T wrapping_shr(T lhs, T rhs) noexcept;
 
 // Strict shifts (call std::exit(EXIT_FAILURE) on error)
 template <UnsignedLibType T>
@@ -456,10 +433,6 @@ constexpr std::pair<T, bool> overflowing_shr(T lhs, T rhs) noexcept;
 constexpr std::optional<T> checked_shl(T lhs, T rhs) noexcept;
 constexpr std::optional<T> checked_shr(T lhs, T rhs) noexcept;
 
-// Wrapping: perform the shift ignoring overflow
-constexpr T wrapping_shl(T lhs, T rhs) noexcept;
-constexpr T wrapping_shr(T lhs, T rhs) noexcept;
-
 // Strict: call std::exit(EXIT_FAILURE) on overflow
 constexpr T strict_shl(T lhs, T rhs) noexcept;
 constexpr T strict_shr(T lhs, T rhs) noexcept;
@@ -488,10 +461,6 @@ The behavior of each policy on shift overflow:
 | `checked`
 | Returns `std::nullopt`
 | Returns `std::nullopt`
-
-| `wrapping`
-| Performs the shift (bits shifted out are lost)
-| Returns `0`
 
 | `strict`
 | Calls `std::exit(EXIT_FAILURE)`
@@ -539,7 +508,7 @@ constexpr auto operator-() const noexcept; // compile-time error
 - `+`: Returns a copy of the value (identity). This is consistent with built-in unsigned integer behavior.
 - `-`: Deliberately disabled. Any use of unary minus on an unsigned safe integer is a compile-time error via `static_assert`.
 While pass:[C++] defines unary minus on unsigned integers as modular negation (`2^N - x`), this is a common source of bugs and is prohibited by this library.
-Use a wrapping subtraction policy from zero or the maximum value if modular negation is needed.
+Use an overflowing subtraction from zero or `std::numeric_limits::max()` if modular negation is needed.
 
 === Mixed-Width Operations
 

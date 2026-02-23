@@ -123,33 +123,6 @@ Safe: 1000000000 * 5 = 5000000000
 ----
 ====
 
-[#examples_wrapping]
-== Wrapping Arithmetic
-
-Wrapping arithmetic performs standard C unsigned integer wrapping behavior - results wrap around modulo 2^N.
-This matches the behavior of built-in unsigned integers and is useful for implementing counters, checksums, or hash functions.
-
-.This https://github.com/boostorg/safe_numbers/blob/develop/examples/wrapping_arithmetic.cpp[example] demonstrates wrapping arithmetic operations.
-====
-[source, c++]
-----
-include::example$wrapping_arithmetic.cpp[]
-----
-
-Output:
-----
-wrapping_add(255, 2) = 1
-wrapping_sub(0, 1) = 255
-wrapping_mul(200, 2) = 144
-wrapping_add(UINT32_MAX, 1) = 0
-wrapping_sub(0, 1) = 4294967295
-wrapping_add(100, 50) = 150
-wrapping_sub(100, 50) = 50
-wrapping_mul(100, 50) = 5000
-Counter sequence: 254 255 0 1 2
-----
-====
-
 [#examples_strict]
 == Strict Arithmetic
 
@@ -193,13 +166,11 @@ Output:
 ----
 add<throw_exception>(100, 50) = 150
 add<saturate>(100, 50)        = 150
-add<wrapping>(100, 50)        = 150
 add<strict>(100, 50)          = 150
 add<overflow_tuple>(100, 50)   = 150 (overflowed: false)
 add<checked>(100, 50)          = 150
 add<checked>(max, 1)           = nullopt (overflow)
 add<saturate>(max, 1)          = 4294967295
-add<wrapping>(max, 1)          = 0
 ----
 ====
 
@@ -404,9 +375,6 @@ overflowing_shr(u8(1), 8)   = 0 (overflow: true)
 checked_shl(u8(1), 4)       = 16
 checked_shl(u8(255), 1)     = nullopt (overflow)
 checked_shr(u8(1), 8)       = nullopt (overflow)
-
-wrapping_shl(u8(255), 1)    = 254
-wrapping_shr(u8(1), 8)      = 0
 
 shl<saturate>(u32(1), 30)   = 1073741824
 shl<saturate>(u32(max), 1)  = 4294967295

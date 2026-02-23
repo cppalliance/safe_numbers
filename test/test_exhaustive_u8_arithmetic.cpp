@@ -94,24 +94,6 @@ void test_exhaustive_checked_add()
     }
 }
 
-void test_exhaustive_wrapping_add()
-{
-    for (std::uint32_t lhs_val {0}; lhs_val <= U8_MAX; ++lhs_val)
-    {
-        for (std::uint32_t rhs_val {0}; rhs_val <= U8_MAX; ++rhs_val)
-        {
-            const auto lhs {u8{static_cast<std::uint8_t>(lhs_val)}};
-            const auto rhs {u8{static_cast<std::uint8_t>(rhs_val)}};
-
-            const auto wide_sum {lhs_val + rhs_val};
-            const auto expected {static_cast<std::uint8_t>(wide_sum & 0xFFU)};
-
-            const auto result {wrapping_add(lhs, rhs)};
-            BOOST_TEST_EQ(static_cast<std::uint8_t>(result), expected);
-        }
-    }
-}
-
 // ============================================
 // Subtraction Tests
 // ============================================
@@ -176,24 +158,6 @@ void test_exhaustive_checked_sub()
                 BOOST_TEST(result.has_value());
                 BOOST_TEST_EQ(static_cast<std::uint8_t>(result.value()), static_cast<std::uint8_t>(lhs_val - rhs_val));
             }
-        }
-    }
-}
-
-void test_exhaustive_wrapping_sub()
-{
-    for (std::uint32_t lhs_val {0}; lhs_val <= U8_MAX; ++lhs_val)
-    {
-        for (std::uint32_t rhs_val {0}; rhs_val <= U8_MAX; ++rhs_val)
-        {
-            const auto lhs {u8{static_cast<std::uint8_t>(lhs_val)}};
-            const auto rhs {u8{static_cast<std::uint8_t>(rhs_val)}};
-
-            const auto wide_diff {static_cast<std::int32_t>(lhs_val) - static_cast<std::int32_t>(rhs_val)};
-            const auto expected {static_cast<std::uint8_t>((wide_diff + 256) & 0xFFU)};
-
-            const auto result {wrapping_sub(lhs, rhs)};
-            BOOST_TEST_EQ(static_cast<std::uint8_t>(result), expected);
         }
     }
 }
@@ -267,24 +231,6 @@ void test_exhaustive_checked_mul()
     }
 }
 
-void test_exhaustive_wrapping_mul()
-{
-    for (std::uint32_t lhs_val {0}; lhs_val <= U8_MAX; ++lhs_val)
-    {
-        for (std::uint32_t rhs_val {0}; rhs_val <= U8_MAX; ++rhs_val)
-        {
-            const auto lhs {u8{static_cast<std::uint8_t>(lhs_val)}};
-            const auto rhs {u8{static_cast<std::uint8_t>(rhs_val)}};
-
-            const auto wide_product {lhs_val * rhs_val};
-            const auto expected {static_cast<std::uint8_t>(wide_product & 0xFFU)};
-
-            const auto result {wrapping_mul(lhs, rhs)};
-            BOOST_TEST_EQ(static_cast<std::uint8_t>(result), expected);
-        }
-    }
-}
-
 // ============================================
 // Division Tests
 // ============================================
@@ -343,23 +289,20 @@ void test_exhaustive_checked_mod()
 
 int main()
 {
-    // Addition: 4 policies tested exhaustively
+    // Addition: 3 policies tested exhaustively
     test_exhaustive_saturating_add();
     test_exhaustive_overflowing_add();
     test_exhaustive_checked_add();
-    test_exhaustive_wrapping_add();
 
-    // Subtraction: 4 policies tested exhaustively
+    // Subtraction: 3 policies tested exhaustively
     test_exhaustive_saturating_sub();
     test_exhaustive_overflowing_sub();
     test_exhaustive_checked_sub();
-    test_exhaustive_wrapping_sub();
 
-    // Multiplication: 4 policies tested exhaustively
+    // Multiplication: 3 policies tested exhaustively
     test_exhaustive_saturating_mul();
     test_exhaustive_overflowing_mul();
     test_exhaustive_checked_mul();
-    test_exhaustive_wrapping_mul();
 
     // Division: checked policy tested exhaustively (others throw on div by zero)
     test_exhaustive_checked_div();
