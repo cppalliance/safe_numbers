@@ -6,6 +6,7 @@
   },
   "dependencies": {
     "@antora/lunr-extension": "^1.0.0-alpha.12",
-    "@cppalliance/antora-downloads-extension": "^0.0.2"
+    "@cppalliance/antora-downloads-extension": "^0.0.2",
+    "@djencks/asciidoctor-mathjax": "^0.0.9"
   }
 }
