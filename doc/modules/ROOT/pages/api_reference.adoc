@@ -165,6 +165,9 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:bit.adoc[`byteswap`]
 | Reverses the bytes of the value
+
+| xref:bit.adoc[`bitswap`]
+| Reverses all bits of the value
 |===
 
 === Numeric
@@ -209,6 +212,12 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:integer_utilities.adoc[`log10`]
 | Returns the floor of the base-10 logarithm
+
+| xref:integer_utilities.adoc[`abs_diff`]
+| Computes the absolute difference between two safe integers
+
+| xref:integer_utilities.adoc[`div_ceil`]
+| Computes the ceiling of integer division
 |===
 
 === Byte Conversions
@@ -299,7 +308,7 @@ https://www.boost.org/LICENSE_1_0.txt
 | Convenience header including all library types
 
 | `<boost/safe_numbers/bit.hpp>`
-| Bit manipulation functions (`has_single_bit`, `bit_ceil`, `bit_floor`, `bit_width`, `rotl`, `rotr`, `countl_zero`, `countl_one`, `countr_zero`, `countr_one`, `popcount`, `byteswap`)
+| Bit manipulation functions (`has_single_bit`, `bit_ceil`, `bit_floor`, `bit_width`, `rotl`, `rotr`, `countl_zero`, `countl_one`, `countr_zero`, `countr_one`, `popcount`, `byteswap`, `bitswap`)
 
 | `<boost/safe_numbers/charconv.hpp>`
 | Character conversion functions (`to_chars`, `from_chars`)
@@ -312,7 +321,7 @@ This header is not included in the convenience header since it requires external
 | Contains specializations of `<format>` for library types
 
 | `<boost/safe_numbers/integer_utilities.hpp>`
-| Integer utility functions (`isqrt`, `remove_trailing_zeros`, `is_power_10`, `is_power_2`, `ipow`, `log2`, `log10`)
+| Integer utility functions (`isqrt`, `remove_trailing_zeros`, `is_power_10`, `is_power_2`, `ipow`, `log2`, `log10`, `abs_diff`, `div_ceil`)
 
 | `<boost/safe_numbers/numeric.hpp>`
 | Standard numeric algorithms (`gcd`, `lcm`, `midpoint`)
