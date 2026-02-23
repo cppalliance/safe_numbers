@@ -1,0 +1,49 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#verification]
+
+:stem: latexmath
+
+= Formal Verification of Fundamental Operations
+
+Taking inspiration from efforts to verify selected integer operations in GMP (See: xref:reference.adoc[7] and xref:reference.adoc[8]), we seek to formally verify the behavior of our library so that the term "safe" has more meaning.
+As noted in xref:design.adoc#design_explicit[the design decisions,] type coercion is a compiler error.
+This restricts all operations to endomorphisms on a fixed residue class, stem:[\mathit{f} : \{\mathbb{Z}/2^n\mathbb{Z} \rightarrow \mathbb{Z}/2^n\mathbb{Z}\}] rather than the more general stem:[\mathit{f} : \{\mathbb{Z}/2^a\mathbb{Z} \rightarrow \mathbb{Z}/2^b\mathbb{Z}\ | a \ne b \}] which comes with complications as stem:[a < b] is implicit widening, and stem:[a > b] is implicit narrowing.
+With this restriction we can more readily perform verification of the library.
+We use the https://why3.org[Why3] platform to conduct our program verification.
+
+== Unsigned Integers
+
+=== Addition and Subtraction
+
+As shown in xref:reference.adoc[5], the integers form a https://en.wikipedia.org/wiki/Ring_(mathematics)[commutative ring] with the operations addition, unary negation, multiplication, and contain the constant 0.
+Subtraction is a derived operation as it is nothing but stem:[a + (-b)].
+This allows us to detect overflow in addition (and underflow in subtraction) easily by detecting instances where the result is less than (or greater than) the left operand.
+Examples are `UINT32_MAX` + 1 = 0 and `0_u32` - 1 = UINT32_MAX.
+
+=== Multiplication
+
+We are also given from Definition 1xref:reference.adoc[pass:[[5]]] that an integer arithmetic A is more precise than an integer arithmetic B, denoted by stem:[A \succeq B], iff there exists a surjective homomorphism stem:[\mathit{f} : A \rightarrow B].
+This means that we can lift the computation into A and compare the results of the operation in both A and B.
+If they are equivalent then no overflow occurred, otherwise it did.
+In the `u128` case we do not have an integer arithmetic A to lift the computation into.
+For this operation between `a` and `b` we check if stem:[a > \frac{2^{128} - 1}{b}].
+If it is, then overflow must occur; otherwise it does not.
+
+=== Division and Modulo
+
+Division and modulo do not belong to the ring operations xref:reference.adoc[pass:[[5]]].
+What we do know is that stem:[\forall a \in \{0, \ldots, 2^n -1\}] and stem:[\forall b \in \{1, \ldots, 2^n -1\}] the result of stem:[a / b \in \{0, \ldots, 2^n - 1\}].
+This means that we need only check for the case where b = 0 as this operation is undefined.
+
+////
+== Signed Integers
+
+Since the library is written using C++20 we get the language level guarantee that signed integers are defined as two's complement
+This allows us re-interpret all operations as unsigned integers, and then verify that the results are sane
+
+////

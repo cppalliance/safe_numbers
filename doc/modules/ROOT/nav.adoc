@@ -1,5 +1,6 @@
 * xref:overview.adoc[]
 * xref:design.adoc[]
+* xref:verification.adoc[]
 * xref:examples.adoc[]
 ** xref:examples.adoc#examples_basic_usage[Basic Usage]
 ** xref:examples.adoc#examples_construction[Construction and Conversion]
