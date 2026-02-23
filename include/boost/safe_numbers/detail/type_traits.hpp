@@ -159,6 +159,9 @@ template <typename T>
 concept library_type = is_library_type_v<T>;
 
 template <typename T>
+concept integral_library_type = is_integral_library_type_v<T>;
+
+template <typename T>
 concept unsigned_library_type = is_unsigned_library_type_v<T>;
 
 template <typename T>

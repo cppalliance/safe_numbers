@@ -144,6 +144,7 @@ run test_log10.cpp ;
 run test_gcd.cpp ;
 run test_lcm.cpp ;
 run test_midpoint.cpp ;
+run test_abs_diff.cpp ;
 
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
