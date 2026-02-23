@@ -21,13 +21,13 @@ We use the https://why3.org[Why3] platform to conduct our program verification.
 As shown in xref:reference.adoc[5], the integers form a https://en.wikipedia.org/wiki/Ring_(mathematics)[commutative ring] with the operations addition, unary negation, multiplication, and contain the constant 0.
 Subtraction is a derived operation as it is nothing but latexmath:[a + (-b)].
 This allows us to detect overflow in addition (and underflow in subtraction) easily by detecting instances where the result is less than (or greater than) the left operand.
-Examples are `UINT32_MAX` + 1 = 0 and `0_u32` - 1 = UINT32_MAX.
+Examples are `UINT32_MAX + 1 = 0` and `0U - 1 = UINT32_MAX`.
 
 === Multiplication
 
 We are also given from Definition 1xref:reference.adoc[pass:[[5]]] that an integer arithmetic A is more precise than an integer arithmetic B, denoted by latexmath:[A \succeq B], iff there exists a surjective homomorphism latexmath:[\mathit{f} : A \rightarrow B].
 This means that we can lift the computation into A and compare the results of the operation in both A and B.
-If they are equivalent then no overflow occurred, otherwise it did.
+If they are equivalent then no overflow occurred; otherwise it did.
 In the `u128` case we do not have an integer arithmetic A to lift the computation into.
 For this operation between `a` and `b` we check if latexmath:[a > \frac{2^{128} - 1}{b}].
 If it is, then overflow must occur; otherwise it does not.
@@ -36,7 +36,7 @@ If it is, then overflow must occur; otherwise it does not.
 
 Division and modulo do not belong to the ring operations xref:reference.adoc[pass:[[5]]].
 What we do know is that latexmath:[\forall a \in \{0, \ldots, 2^n -1\}] and latexmath:[\forall b \in \{1, \ldots, 2^n -1\}] the result of latexmath:[a / b \in \{0, \ldots, 2^n - 1\}].
-This means that we need only check for the case where b = 0 as this operation is undefined.
+This means that we need only check for the case where b = 0, as this operation is undefined.
 
 ////
 == Signed Integers
