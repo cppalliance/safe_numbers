@@ -43,6 +43,7 @@ int main()
     const u32 w {0x12345678};
     std::cout << std::hex;
     std::cout << "byteswap(0x12345678) = 0x" << static_cast<std::uint32_t>(byteswap(w)) << '\n';
+    std::cout << "bitswap(0x12345678)  = 0x" << static_cast<std::uint32_t>(bitswap(w)) << '\n';
 
     std::cout << std::dec << '\n';
 

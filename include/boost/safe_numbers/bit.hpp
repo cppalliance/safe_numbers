@@ -12,6 +12,7 @@
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 #include <boost/core/bit.hpp>
+#include <array>
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -178,6 +179,72 @@ BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_integral_library_type In
     using underlying_type = detail::underlying_type_t<Int>;
 
     return Int{byteswap(static_cast<underlying_type>(x))};
+}
+
+namespace detail {
+
+consteval auto reverse_byte(std::uint8_t b) noexcept -> std::uint8_t
+{
+    b = static_cast<std::uint8_t>(((b & UINT8_C(0x55)) << 1u) | ((b & UINT8_C(0xAA)) >> 1u));
+    b = static_cast<std::uint8_t>(((b & UINT8_C(0x33)) << 2u) | ((b & UINT8_C(0xCC)) >> 2u));
+    b = static_cast<std::uint8_t>(((b & UINT8_C(0x0F)) << 4u) | ((b & UINT8_C(0xF0)) >> 4u));
+
+    return b;
+}
+
+consteval auto make_byte_reverse_table() -> std::array<std::uint8_t, 256>
+{
+    std::array<std::uint8_t, 256> table {};
+
+    for (int i {}; i < 256; ++i)
+    {
+        table[i] = reverse_byte(static_cast<std::uint8_t>(i));
+    }
+
+    return table;
+}
+
+inline constexpr auto reverse_table {make_byte_reverse_table()};
+
+template <fundamental_unsigned_integral UnsignedInt>
+[[nodiscard]] constexpr auto bitswap_impl(UnsignedInt x) noexcept -> UnsignedInt
+{
+    if constexpr (sizeof(UnsignedInt) == 1)
+    {
+        return static_cast<UnsignedInt>(reverse_table[static_cast<std::uint8_t>(x)]);
+    }
+    else
+    {
+        constexpr auto n {sizeof(UnsignedInt)};
+
+        UnsignedInt result {};
+        for (std::size_t i {}; i < n; ++i)
+        {
+            result = static_cast<UnsignedInt>(static_cast<UnsignedInt>(result << 8U) |
+                     static_cast<UnsignedInt>(reverse_table[static_cast<std::uint8_t>(x & 0xFFU)]));
+            x >>= 8U;
+        }
+
+        return result;
+    }
+}
+
+} // namespace detail
+
+BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_integral_library_type Int>
+    requires (!detail::is_verified_type_v<Int>)
+[[nodiscard]] constexpr auto bitswap(Int x) noexcept -> Int
+{
+    using underlying_type = detail::underlying_type_t<Int>;
+    return static_cast<Int>(detail::bitswap_impl(static_cast<underlying_type>(x)));
+}
+
+BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_integral_library_type Int>
+    requires detail::is_verified_type_v<Int>
+[[nodiscard]] consteval auto bitswap(const Int x) noexcept -> Int
+{
+    using underlying_type = detail::underlying_type_t<Int>;
+    return static_cast<Int>(detail::bitswap_impl(static_cast<underlying_type>(x)));
 }
 
 } // namespace boost::safe_numbers
