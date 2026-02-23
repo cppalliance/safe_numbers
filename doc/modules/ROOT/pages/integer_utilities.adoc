@@ -490,3 +490,60 @@ using namespace boost::safe_numbers;
 static_assert(is_power_2(verified_u32{u32{1048576}}));   // 2^20
 static_assert(!is_power_2(verified_u32{u32{1000000}}));
 ----
+
+== abs_diff
+
+Computes the absolute difference between two integers without risk of underflow.
+For unsigned types, naive subtraction `a - b` when `b > a` would underflow; `abs_diff` always returns the non-negative distance between the two values.
+
+=== Runtime Overload
+
+[source,c++]
+----
+template <integral_library_type T>
+constexpr auto abs_diff(const T a, const T b) noexcept -> T;
+----
+
+Returns `|a - b|`, computed as `a - b` if `a >= b`, or `b - a` otherwise.
+
+Works with all safe integer types: `u8`, `u16`, `u32`, `u64`, `u128`, and `bounded_uint<Min, Max>`.
+
+==== Parameters
+
+* `a` -- The first value.
+* `b` -- The second value.
+
+==== Return Value
+
+The absolute difference between `a` and `b`, as the same safe integer type `T`.
+The result is always commutative: `abs_diff(a, b) == abs_diff(b, a)`.
+
+==== Complexity
+
+O(1).
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+auto r1 = abs_diff(u32{10}, u32{3});      // r1 == u32{7}
+auto r2 = abs_diff(u32{3}, u32{10});      // r2 == u32{7}  (commutative)
+auto r3 = abs_diff(u32{42}, u32{42});     // r3 == u32{0}
+auto r4 = abs_diff(u32{0}, u32{100});     // r4 == u32{100}
+----
+
+=== Verified Types
+
+Since `abs_diff` uses comparison and subtraction operators, it works with verified types at compile time via the `consteval` operators on verified types.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+static_assert(abs_diff(verified_u32{u32{100}}, verified_u32{u32{200}}) == verified_u32{u32{100}});
+static_assert(abs_diff(verified_u64{u64{1000}}, verified_u64{u64{3000}}) == verified_u64{u64{2000}});
+----
