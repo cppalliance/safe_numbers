@@ -263,9 +263,6 @@ https://www.boost.org/LICENSE_1_0.txt
 | xref:policies.adoc[`checked_add`, `checked_sub`, `checked_mul`, `checked_div`, `checked_mod`]
 | Checked arithmetic (return `std::nullopt` on overflow)
 
-| xref:policies.adoc[`wrapping_add`, `wrapping_sub`, `wrapping_mul`, `wrapping_div`, `wrapping_mod`]
-| Wrapping arithmetic (wrap silently)
-
 | xref:policies.adoc[`strict_add`, `strict_sub`, `strict_mul`, `strict_div`, `strict_mod`]
 | Strict arithmetic (call `std::exit(EXIT_FAILURE)` on error)
 

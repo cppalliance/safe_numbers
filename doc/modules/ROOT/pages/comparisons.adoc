@@ -27,7 +27,7 @@ This page summarizes the key differences and provides a runnable example demonst
 | Implicit construction from built-in types is allowed, including from `bool`.
 
 | *Overflow policies*
-| Named free functions per-operation: `wrapping_add`, `saturating_sub`, `checked_mul`, `overflowing_div`, etc. The default operator always throws.
+| Named free functions per-operation: `saturating_add`, `saturating_sub`, `checked_mul`, `overflowing_div`, etc. The default operator always throws.
 | Policy is selected as a template parameter on the type itself (`safe<T, PromotionPolicy, ExceptionPolicy>`). No per-operation policy functions.
 
 | *Mixed-width arithmetic*
@@ -93,7 +93,6 @@ safe_numbers threw: Underflow detected in unsigned subtraction
 safe_numerics: -1
 
 --- Alternative policies (SafeNumbers) ---
-wrapping_add(250, 10) = 4
 saturating_add(250, 10) = 255
 checked_add(250, 10) = nullopt
 overflowing_add(250, 10) = {4, true}
