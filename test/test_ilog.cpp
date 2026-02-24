@@ -240,6 +240,24 @@ void test_ilog_zero_throws()
 }
 
 // =============================================================================
+// Domain error: ilog(n, base) with base < 2 throws
+// =============================================================================
+
+template <typename T>
+void test_ilog_bad_base_throws()
+{
+    using underlying = typename detail::underlying_type_t<T>;
+
+    // base = 0: would be division by zero
+    BOOST_TEST_THROWS(static_cast<void>(ilog(T{static_cast<underlying>(1)}, T{static_cast<underlying>(0)})), std::domain_error);
+    BOOST_TEST_THROWS(static_cast<void>(ilog(T{static_cast<underlying>(100)}, T{static_cast<underlying>(0)})), std::domain_error);
+
+    // base = 1: would be infinite loop
+    BOOST_TEST_THROWS(static_cast<void>(ilog(T{static_cast<underlying>(1)}, T{static_cast<underlying>(1)})), std::domain_error);
+    BOOST_TEST_THROWS(static_cast<void>(ilog(T{static_cast<underlying>(100)}, T{static_cast<underlying>(1)})), std::domain_error);
+}
+
+// =============================================================================
 // Constexpr tests
 // =============================================================================
 
@@ -308,6 +326,13 @@ int main()
     test_ilog_zero_throws<u32>();
     test_ilog_zero_throws<u64>();
     test_ilog_zero_throws<u128>();
+
+    // Domain error: ilog(n, base) with base < 2
+    test_ilog_bad_base_throws<u8>();
+    test_ilog_bad_base_throws<u16>();
+    test_ilog_bad_base_throws<u32>();
+    test_ilog_bad_base_throws<u64>();
+    test_ilog_bad_base_throws<u128>();
 
     // Constexpr evaluation
     test_ilog_constexpr();

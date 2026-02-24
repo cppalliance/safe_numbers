@@ -262,7 +262,8 @@ For the common cases of base 2 and base 10, prefer the specialized `log2` and `l
 
 ==== Throws
 
-`std::domain_error` if `n == 0`.
+* `std::domain_error` if `n == 0`.
+* `std::domain_error` if `base < 2` (base 0 would cause division by zero; base 1 would cause an infinite loop).
 
 ==== Return Value
 

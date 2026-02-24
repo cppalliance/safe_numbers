@@ -117,6 +117,11 @@ template <detail::non_bounded_unsigned_library_type T>
         BOOST_THROW_EXCEPTION(std::domain_error("ilog(0, base) is undefined"));
     }
 
+    if (static_cast<underlying_type>(base) < underlying_type{2})
+    {
+        BOOST_THROW_EXCEPTION(std::domain_error("ilog(n, base) requires base >= 2"));
+    }
+
     auto result {0};
     auto val {static_cast<underlying_type>(n)};
     const auto b {static_cast<underlying_type>(base)};
