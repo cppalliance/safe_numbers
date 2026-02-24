@@ -17,12 +17,12 @@ namespace boost::safe_numbers {
 template <detail::non_bounded_unsigned_library_type T>
 [[nodiscard]] constexpr auto isqrt(const T val) -> T
 {
-    using underlying = typename detail::underlying_type_t<T>;
+    using underlying_type = detail::underlying_type_t<T>;
 
-    constexpr auto one {static_cast<underlying>(1)};
-    constexpr auto two {static_cast<underlying>(2)};
+    constexpr auto one {static_cast<underlying_type>(1)};
+    constexpr auto two {static_cast<underlying_type>(2)};
 
-    auto n {static_cast<underlying>(val)};
+    auto n {static_cast<underlying_type>(val)};
 
     if (n < two)
     {
@@ -30,12 +30,12 @@ template <detail::non_bounded_unsigned_library_type T>
     }
 
     auto x {n};
-    auto y {static_cast<underlying>(x / two + (x & one))}; // (x + 1) / 2 without overflow
+    auto y {static_cast<underlying_type>(x / two + (x & one))}; // (x + 1) / 2 without overflow
 
     while (y < x)
     {
         x = y;
-        y = static_cast<underlying>(x + n / x) / two;
+        y = static_cast<underlying_type>(x + n / x) / two;
     }
 
     return T{x};
@@ -44,23 +44,23 @@ template <detail::non_bounded_unsigned_library_type T>
 template <detail::non_bounded_unsigned_library_type T>
 [[nodiscard]] constexpr auto remove_trailing_zeros(const T n)
 {
-    using underlying = typename detail::underlying_type_t<T>;
+    using underlying_type = detail::underlying_type_t<T>;
 
-    if (static_cast<underlying>(n) == static_cast<underlying>(0))
+    if (static_cast<underlying_type>(n) == static_cast<underlying_type>(0))
     {
-        return detail::remove_trailing_zeros_return<underlying>{static_cast<underlying>(0), static_cast<std::size_t>(0)};
+        return detail::remove_trailing_zeros_return<underlying_type>{static_cast<underlying_type>(0), static_cast<std::size_t>(0)};
     }
 
-    return detail::remove_trailing_zeros(static_cast<underlying>(n));
+    return detail::remove_trailing_zeros(static_cast<underlying_type>(n));
 }
 
 template <detail::non_bounded_unsigned_library_type T>
 [[nodiscard]] constexpr auto is_power_10(const T n) -> bool
 {
-    using underlying = typename detail::underlying_type_t<T>;
+    using underlying_type = detail::underlying_type_t<T>;
 
-    const auto [trimmed_number, _] = detail::remove_trailing_zeros(static_cast<underlying>(n));
-    return trimmed_number == static_cast<underlying>(1);
+    const auto [trimmed_number, _] = detail::remove_trailing_zeros(static_cast<underlying_type>(n));
+    return trimmed_number == static_cast<underlying_type>(1);
 }
 
 template <detail::non_bounded_unsigned_library_type T>
@@ -81,8 +81,8 @@ template <detail::non_bounded_unsigned_library_type T>
 template <detail::non_bounded_unsigned_library_type T>
 [[nodiscard]] constexpr auto log10(const T n) noexcept -> int
 {
-    using underlying = detail::underlying_type_t<T>;
-    return detail::num_digits(static_cast<underlying>(n)) - 1;
+    using underlying_type = detail::underlying_type_t<T>;
+    return detail::num_digits(static_cast<underlying_type>(n)) - 1;
 }
 
 namespace detail {
@@ -91,18 +91,18 @@ namespace detail {
 template <non_bounded_unsigned_library_type T>
 [[nodiscard]] constexpr auto ipow_impl(T base, T exp) -> T
 {
-    using underlying = underlying_type_t<T>;
+    using underlying_type = underlying_type_t<T>;
 
-    auto result = T{static_cast<underlying>(1)};
+    auto result = T{static_cast<underlying_type>(1)};
 
-    while (exp != T{static_cast<underlying>(0)})
+    while (exp != T{static_cast<underlying_type>(0)})
     {
-        if (static_cast<underlying>(exp) & underlying{1})
+        if (static_cast<underlying_type>(exp) & underlying_type{1})
         {
             result = result * base;
         }
-        exp = exp / T{static_cast<underlying>(2)};
-        if (exp != T{static_cast<underlying>(0)})
+        exp = exp / T{static_cast<underlying_type>(2)};
+        if (exp != T{static_cast<underlying_type>(0)})
         {
             base = base * base;
         }
@@ -128,18 +128,18 @@ template <detail::integral_library_type T>
 template <detail::integral_library_type T>
 [[nodiscard]] constexpr auto div_ceil(const T a, const T b) noexcept -> T
 {
-    using underlying = detail::underlying_type_t<T>;
+    using underlying_type = detail::underlying_type_t<T>;
 
     const auto d {a / b};
     const auto r {a % b};
 
     if constexpr (std::numeric_limits<T>::is_signed)
     {
-        return d + T{static_cast<underlying>(r != static_cast<T>(0) && (r ^ b) > static_cast<T>(0) ? 1 : 0)};
+        return d + T{static_cast<underlying_type>(r != static_cast<T>(0) && (r ^ b) > static_cast<T>(0) ? 1 : 0)};
     }
     else
     {
-        return d + T{static_cast<underlying>(r != static_cast<T>(0) ? 1 : 0)};
+        return d + T{static_cast<underlying_type>(r != static_cast<T>(0) ? 1 : 0)};
     }
 }
 
