@@ -217,27 +217,6 @@ void test_log10_constexpr()
     static_assert(log10(u64{UINT64_C(10000000000000000000)}) == 19);
 }
 
-// =============================================================================
-// Verified type tests (consteval)
-// =============================================================================
-
-void test_log10_verified()
-{
-    static_assert(log10(verified_u8{u8{static_cast<std::uint8_t>(1)}}) == 0);
-    static_assert(log10(verified_u8{u8{static_cast<std::uint8_t>(10)}}) == 1);
-    static_assert(log10(verified_u8{u8{static_cast<std::uint8_t>(100)}}) == 2);
-
-    static_assert(log10(verified_u16{u16{static_cast<std::uint16_t>(10000)}}) == 4);
-
-    static_assert(log10(verified_u32{u32{UINT32_C(1000000000)}}) == 9);
-    static_assert(log10(verified_u32{u32{UINT32_C(4294967295)}}) == 9);
-
-    static_assert(log10(verified_u64{u64{UINT64_C(10000000000000000000)}}) == 19);
-
-    using boost::int128::uint128_t;
-    static_assert(log10(verified_u128{u128{uint128_t{UINT64_C(1000000000000)}}}) == 12);
-}
-
 int main()
 {
     // Powers of 10 - all types
@@ -276,9 +255,6 @@ int main()
 
     // Constexpr evaluation
     test_log10_constexpr();
-
-    // Verified types (consteval)
-    test_log10_verified();
 
     return boost::report_errors();
 }

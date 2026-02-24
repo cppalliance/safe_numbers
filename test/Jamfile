@@ -112,18 +112,6 @@ run test_unsigned_bounded_std_format.cpp ;
 compile-fail compile_fail_bounded_mixed_ops.cpp ;
 compile-fail compile_fail_bounded_bool_bounds.cpp ;
 
-run test_verified_integers.cpp ;
-run test_verified_mixed_ops.cpp ;
-compile-fail compile_fail_verified_mixed_width_add.cpp ;
-compile-fail compile_fail_verified_cross_type_add.cpp ;
-compile-fail compile_fail_verified_cross_type_comparison.cpp ;
-run test_verified_streaming.cpp ;
-run test_verified_bit.cpp ;
-run test_verified_charconv.cpp ;
-run test_verified_fmt_format.cpp ;
-run test_verified_std_format.cpp ;
-run test_verified_limits.cpp ;
-
 # Byte conversion tests
 run test_to_from_be.cpp ;
 run test_to_from_le.cpp ;
@@ -173,11 +161,6 @@ run ../examples/charconv.cpp ;
 run ../examples/bit.cpp ;
 run ../examples/bounded_limits.cpp ;
 run ../examples/bitwise_ops.cpp ;
-run ../examples/verified_construction.cpp ;
-run ../examples/verified_arithmetic.cpp ;
-run ../examples/verified_runtime_usage.cpp ;
-run ../examples/verified_mixed_ops.cpp ;
-compile-fail ../examples/compile_fail_verified_overflow.cpp ;
 run ../examples/safe_numerics_comparison.cpp ;
 run ../examples/byte_conversions.cpp ;
 run ../examples/std_numeric_usage.cpp ;

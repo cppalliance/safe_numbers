@@ -246,34 +246,6 @@ void test_rtz_constexpr()
 }
 
 // =============================================================================
-// Verified type tests (consteval)
-// =============================================================================
-
-void test_rtz_verified()
-{
-    constexpr auto v8 = remove_trailing_zeros(verified_u8{u8{static_cast<std::uint8_t>(50)}});
-    BOOST_TEST_EQ(v8.trimmed_number, static_cast<std::uint8_t>(5));
-    BOOST_TEST_EQ(v8.number_of_removed_zeros, static_cast<std::size_t>(1));
-
-    constexpr auto v16 = remove_trailing_zeros(verified_u16{u16{static_cast<std::uint16_t>(3000)}});
-    BOOST_TEST_EQ(v16.trimmed_number, static_cast<std::uint16_t>(3));
-    BOOST_TEST_EQ(v16.number_of_removed_zeros, static_cast<std::size_t>(3));
-
-    constexpr auto v32 = remove_trailing_zeros(verified_u32{u32{UINT32_C(200)}});
-    BOOST_TEST_EQ(v32.trimmed_number, UINT32_C(2));
-    BOOST_TEST_EQ(v32.number_of_removed_zeros, static_cast<std::size_t>(2));
-
-    constexpr auto v64 = remove_trailing_zeros(verified_u64{u64{UINT64_C(9000000000)}});
-    BOOST_TEST_EQ(v64.trimmed_number, UINT64_C(9));
-    BOOST_TEST_EQ(v64.number_of_removed_zeros, static_cast<std::size_t>(9));
-
-    using boost::int128::uint128_t;
-    constexpr auto v128 = remove_trailing_zeros(verified_u128{u128{uint128_t{UINT64_C(100000)}}});
-    BOOST_TEST_EQ(v128.trimmed_number, uint128_t{1});
-    BOOST_TEST_EQ(v128.number_of_removed_zeros, static_cast<std::size_t>(5));
-}
-
-// =============================================================================
 // Zero input tests
 // =============================================================================
 
@@ -298,17 +270,6 @@ void test_rtz_zero_constexpr()
     BOOST_TEST_EQ(r32.number_of_removed_zeros, static_cast<std::size_t>(0));
 }
 
-void test_rtz_zero_verified()
-{
-    constexpr auto v8 = remove_trailing_zeros(verified_u8{u8{static_cast<std::uint8_t>(0)}});
-    BOOST_TEST_EQ(v8.trimmed_number, static_cast<std::uint8_t>(0));
-    BOOST_TEST_EQ(v8.number_of_removed_zeros, static_cast<std::size_t>(0));
-
-    constexpr auto v32 = remove_trailing_zeros(verified_u32{u32{UINT32_C(0)}});
-    BOOST_TEST_EQ(v32.trimmed_number, UINT32_C(0));
-    BOOST_TEST_EQ(v32.number_of_removed_zeros, static_cast<std::size_t>(0));
-}
-
 int main()
 {
     // Zero input - all types
@@ -318,7 +279,6 @@ int main()
     test_rtz_zero<u64>();
     test_rtz_zero<u128>();
     test_rtz_zero_constexpr();
-    test_rtz_zero_verified();
 
     // No trailing zeros - all types
     test_rtz_no_trailing_zeros<u8>();
@@ -353,9 +313,6 @@ int main()
 
     // Constexpr evaluation
     test_rtz_constexpr();
-
-    // Verified types (consteval)
-    test_rtz_verified();
 
     return boost::report_errors();
 }

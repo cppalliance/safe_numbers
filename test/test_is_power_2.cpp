@@ -187,30 +187,6 @@ void test_is_power_2_constexpr()
 }
 
 // =============================================================================
-// Verified type tests (consteval)
-// =============================================================================
-
-void test_is_power_2_verified()
-{
-    static_assert(is_power_2(verified_u8{u8{static_cast<std::uint8_t>(1)}}));
-    static_assert(is_power_2(verified_u8{u8{static_cast<std::uint8_t>(64)}}));
-    static_assert(!is_power_2(verified_u8{u8{static_cast<std::uint8_t>(5)}}));
-
-    static_assert(is_power_2(verified_u16{u16{static_cast<std::uint16_t>(4096)}}));
-    static_assert(!is_power_2(verified_u16{u16{static_cast<std::uint16_t>(4095)}}));
-
-    static_assert(is_power_2(verified_u32{u32{UINT32_C(1048576)}}));
-    static_assert(!is_power_2(verified_u32{u32{UINT32_C(1000000)}}));
-
-    static_assert(is_power_2(verified_u64{u64{UINT64_C(4294967296)}}));
-    static_assert(!is_power_2(verified_u64{u64{UINT64_C(4294967295)}}));
-
-    using boost::int128::uint128_t;
-    static_assert(is_power_2(verified_u128{u128{uint128_t{UINT64_C(1099511627776)}}}));
-    static_assert(!is_power_2(verified_u128{u128{uint128_t{UINT64_C(1099511627775)}}}));
-}
-
-// =============================================================================
 // Zero input tests
 // =============================================================================
 
@@ -228,12 +204,6 @@ void test_is_power_2_zero_constexpr()
     static_assert(!is_power_2(u64{UINT64_C(0)}));
 }
 
-void test_is_power_2_zero_verified()
-{
-    static_assert(!is_power_2(verified_u8{u8{static_cast<std::uint8_t>(0)}}));
-    static_assert(!is_power_2(verified_u32{u32{UINT32_C(0)}}));
-}
-
 int main()
 {
     // Zero input - all types
@@ -243,7 +213,6 @@ int main()
     test_is_power_2_zero<u64>();
     test_is_power_2_zero<u128>();
     test_is_power_2_zero_constexpr();
-    test_is_power_2_zero_verified();
 
     // Powers of 2 - all types
     test_is_power_2_true<u8>();
@@ -272,9 +241,6 @@ int main()
 
     // Constexpr evaluation
     test_is_power_2_constexpr();
-
-    // Verified types (consteval)
-    test_is_power_2_verified();
 
     return boost::report_errors();
 }

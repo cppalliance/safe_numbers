@@ -11,7 +11,7 @@ import boost.safe_numbers;
 #else
 
 #include <boost/safe_numbers/byte_conversions.hpp>
-#include <boost/safe_numbers/verified_integers.hpp>
+#include <boost/safe_numbers/unsigned_integers.hpp>
 #include <array>
 #include <bit>
 #include <cstddef>
@@ -157,41 +157,6 @@ void test_from_ne_bytes_dynamic_size_match()
     BOOST_TEST(result == val);
 }
 
-// =============================================================================
-// Verified overloads
-// =============================================================================
-
-void test_verified_to_ne_bytes()
-{
-    // Verify consteval works and produces correct bytes via round-trip
-    {
-        constexpr auto original = verified_u32{u32{0x01020304U}};
-        constexpr auto bytes = to_ne_bytes(original);
-        static_assert(bytes.size() == 4);
-    }
-    {
-        constexpr auto original = verified_u64{u64{0x0102030405060708ULL}};
-        constexpr auto bytes = to_ne_bytes(original);
-        static_assert(bytes.size() == 8);
-    }
-}
-
-void test_verified_from_ne_bytes()
-{
-    {
-        constexpr auto original = verified_u32{u32{0xDEADBEEFU}};
-        constexpr auto bytes = to_ne_bytes(original);
-        constexpr auto reconstructed = from_ne_bytes<verified_u32>(std::span<const std::byte, 4>{bytes});
-        static_assert(reconstructed == original);
-    }
-    {
-        constexpr auto original = verified_u64{u64{0x0123456789ABCDEFULL}};
-        constexpr auto bytes = to_ne_bytes(original);
-        constexpr auto reconstructed = from_ne_bytes<verified_u64>(std::span<const std::byte, 8>{bytes});
-        static_assert(reconstructed == original);
-    }
-}
-
 int main()
 {
     test_to_ne_bytes_matches_platform();
@@ -203,9 +168,6 @@ int main()
 
     test_from_ne_bytes_dynamic_size_mismatch();
     test_from_ne_bytes_dynamic_size_match();
-
-    test_verified_to_ne_bytes();
-    test_verified_from_ne_bytes();
 
     return boost::report_errors();
 }

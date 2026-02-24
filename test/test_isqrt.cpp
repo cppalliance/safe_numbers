@@ -139,46 +139,6 @@ void test_isqrt_constexpr()
 }
 
 // =============================================================================
-// Verified type isqrt tests (consteval)
-// =============================================================================
-
-void test_isqrt_verified()
-{
-    constexpr auto r0 = isqrt(verified_u8{u8{0}});
-    constexpr auto r1 = isqrt(verified_u8{u8{1}});
-    constexpr auto r4 = isqrt(verified_u8{u8{4}});
-    constexpr auto r9 = isqrt(verified_u8{u8{9}});
-
-    BOOST_TEST_EQ(r0, verified_u8{u8{0}});
-    BOOST_TEST_EQ(r1, verified_u8{u8{1}});
-    BOOST_TEST_EQ(r4, verified_u8{u8{2}});
-    BOOST_TEST_EQ(r9, verified_u8{u8{3}});
-
-    constexpr auto r16 = isqrt(verified_u16{u16{16}});
-    constexpr auto r25 = isqrt(verified_u16{u16{25}});
-    constexpr auto r10 = isqrt(verified_u16{u16{10}});
-
-    BOOST_TEST_EQ(r16, verified_u16{u16{4}});
-    BOOST_TEST_EQ(r25, verified_u16{u16{5}});
-    BOOST_TEST_EQ(r10, verified_u16{u16{3}});
-
-    constexpr auto r100 = isqrt(verified_u32{u32{100}});
-    constexpr auto r144 = isqrt(verified_u32{u32{144}});
-    constexpr auto r200 = isqrt(verified_u32{u32{200}});
-
-    BOOST_TEST_EQ(r100, verified_u32{u32{10}});
-    BOOST_TEST_EQ(r144, verified_u32{u32{12}});
-    BOOST_TEST_EQ(r200, verified_u32{u32{14}});
-
-    constexpr auto r64_val = isqrt(verified_u64{u64{1000000}});
-    BOOST_TEST_EQ(r64_val, verified_u64{u64{1000}});
-
-    using boost::int128::uint128_t;
-    constexpr auto r128_val = isqrt(verified_u128{u128{uint128_t{10000}}});
-    BOOST_TEST_EQ(r128_val, verified_u128{u128{uint128_t{100}}});
-}
-
-// =============================================================================
 // Verify isqrt result property: result^2 <= n < (result+1)^2
 // =============================================================================
 
@@ -230,9 +190,6 @@ int main()
 
     // Constexpr evaluation
     test_isqrt_constexpr();
-
-    // Verified types (consteval)
-    test_isqrt_verified();
 
     // Property: r^2 <= n < (r+1)^2 for all values 0..255
     test_isqrt_property<u16>();

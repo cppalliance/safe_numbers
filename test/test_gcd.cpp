@@ -220,40 +220,6 @@ void test_gcd_constexpr()
     static_assert(gcd(u64{UINT64_C(1346269)}, u64{UINT64_C(832040)}) == u64{UINT64_C(1)});
 }
 
-// =============================================================================
-// Verified type tests (consteval)
-// =============================================================================
-
-void test_gcd_verified()
-{
-    // verified_u8
-    static_assert(gcd(verified_u8{u8{static_cast<std::uint8_t>(12)}},
-                      verified_u8{u8{static_cast<std::uint8_t>(8)}}) == verified_u8{u8{static_cast<std::uint8_t>(4)}});
-    static_assert(gcd(verified_u8{u8{static_cast<std::uint8_t>(0)}},
-                      verified_u8{u8{static_cast<std::uint8_t>(5)}}) == verified_u8{u8{static_cast<std::uint8_t>(5)}});
-    static_assert(gcd(verified_u8{u8{static_cast<std::uint8_t>(7)}},
-                      verified_u8{u8{static_cast<std::uint8_t>(11)}}) == verified_u8{u8{static_cast<std::uint8_t>(1)}});
-
-    // verified_u16
-    static_assert(gcd(verified_u16{u16{static_cast<std::uint16_t>(1000)}},
-                      verified_u16{u16{static_cast<std::uint16_t>(750)}}) == verified_u16{u16{static_cast<std::uint16_t>(250)}});
-
-    // verified_u32
-    static_assert(gcd(verified_u32{u32{UINT32_C(1234567890)}},
-                      verified_u32{u32{UINT32_C(987654321)}}) == verified_u32{u32{UINT32_C(9)}});
-
-    // verified_u64
-    static_assert(gcd(verified_u64{u64{UINT64_C(1000000000000)}},
-                      verified_u64{u64{UINT64_C(750000000000)}}) == verified_u64{u64{UINT64_C(250000000000)}});
-
-    // verified_u128
-    using boost::int128::uint128_t;
-    static_assert(gcd(verified_u128{u128{uint128_t{12}}},
-                      verified_u128{u128{uint128_t{8}}}) == verified_u128{u128{uint128_t{4}}});
-    static_assert(gcd(verified_u128{u128{uint128_t{100}}},
-                      verified_u128{u128{uint128_t{75}}}) == verified_u128{u128{uint128_t{25}}});
-}
-
 int main()
 {
     // Zero cases - all types
@@ -295,9 +261,6 @@ int main()
 
     // Constexpr evaluation
     test_gcd_constexpr();
-
-    // Verified types (consteval)
-    test_gcd_verified();
 
     return boost::report_errors();
 }

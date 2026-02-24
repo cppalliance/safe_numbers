@@ -212,40 +212,6 @@ void test_div_ceil_constexpr()
     static_assert(div_ceil(u64{UINT64_C(1000)}, u64{UINT64_C(3)}) == u64{UINT64_C(334)});
 }
 
-// =============================================================================
-// Verified type tests (consteval)
-// =============================================================================
-
-void test_div_ceil_verified()
-{
-    // verified_u8
-    static_assert(div_ceil(verified_u8{u8{static_cast<std::uint8_t>(10)}},
-                           verified_u8{u8{static_cast<std::uint8_t>(3)}}) == verified_u8{u8{static_cast<std::uint8_t>(4)}});
-    static_assert(div_ceil(verified_u8{u8{static_cast<std::uint8_t>(9)}},
-                           verified_u8{u8{static_cast<std::uint8_t>(3)}}) == verified_u8{u8{static_cast<std::uint8_t>(3)}});
-    static_assert(div_ceil(verified_u8{u8{static_cast<std::uint8_t>(0)}},
-                           verified_u8{u8{static_cast<std::uint8_t>(1)}}) == verified_u8{u8{static_cast<std::uint8_t>(0)}});
-
-    // verified_u16
-    static_assert(div_ceil(verified_u16{u16{static_cast<std::uint16_t>(1000)}},
-                           verified_u16{u16{static_cast<std::uint16_t>(3)}}) == verified_u16{u16{static_cast<std::uint16_t>(334)}});
-
-    // verified_u32
-    static_assert(div_ceil(verified_u32{u32{UINT32_C(100)}},
-                           verified_u32{u32{UINT32_C(7)}}) == verified_u32{u32{UINT32_C(15)}});
-
-    // verified_u64
-    static_assert(div_ceil(verified_u64{u64{UINT64_C(1000)}},
-                           verified_u64{u64{UINT64_C(3)}}) == verified_u64{u64{UINT64_C(334)}});
-
-    // verified_u128
-    using boost::int128::uint128_t;
-    static_assert(div_ceil(verified_u128{u128{uint128_t{10}}},
-                           verified_u128{u128{uint128_t{3}}}) == verified_u128{u128{uint128_t{4}}});
-    static_assert(div_ceil(verified_u128{u128{uint128_t{9}}},
-                           verified_u128{u128{uint128_t{3}}}) == verified_u128{u128{uint128_t{3}}});
-}
-
 int main()
 {
     // Division by one - all types
@@ -290,9 +256,6 @@ int main()
 
     // Constexpr evaluation
     test_div_ceil_constexpr();
-
-    // Verified types (consteval)
-    test_div_ceil_verified();
 
     return boost::report_errors();
 }

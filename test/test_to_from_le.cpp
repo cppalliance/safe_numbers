@@ -11,7 +11,7 @@ import boost.safe_numbers;
 #else
 
 #include <boost/safe_numbers/byte_conversions.hpp>
-#include <boost/safe_numbers/verified_integers.hpp>
+#include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/iostream.hpp>
 #include <bit>
 #include <cstdint>
@@ -260,50 +260,6 @@ void test_le_be_relationship()
     }
 }
 
-// Verified types: to_le and from_le should work at consteval
-void test_verified_consteval()
-{
-    // verified_u8 round-trip
-    {
-        constexpr auto val = verified_u8{u8{0x42}};
-        constexpr auto le_val = to_le(val);
-        constexpr auto rt_val = from_le(le_val);
-        BOOST_TEST(rt_val == val);
-    }
-
-    // verified_u16 round-trip
-    {
-        constexpr auto val = verified_u16{u16{static_cast<std::uint16_t>(0xABCD)}};
-        constexpr auto le_val = to_le(val);
-        constexpr auto rt_val = from_le(le_val);
-        BOOST_TEST(rt_val == val);
-    }
-
-    // verified_u32 round-trip
-    {
-        constexpr auto val = verified_u32{u32{0xDEADBEEFU}};
-        constexpr auto le_val = to_le(val);
-        constexpr auto rt_val = from_le(le_val);
-        BOOST_TEST(rt_val == val);
-    }
-
-    // verified_u64 round-trip
-    {
-        constexpr auto val = verified_u64{u64{0x0123456789ABCDEFULL}};
-        constexpr auto le_val = to_le(val);
-        constexpr auto rt_val = from_le(le_val);
-        BOOST_TEST(rt_val == val);
-    }
-
-    // On little-endian, to_le for verified types should be identity
-    if constexpr (std::endian::native == std::endian::little)
-    {
-        constexpr auto val = verified_u32{u32{0x01020304U}};
-        constexpr auto le_val = to_le(val);
-        BOOST_TEST(le_val == val);
-    }
-}
-
 int main()
 {
     // Round-trip tests for all unsigned types
@@ -340,9 +296,6 @@ int main()
     test_le_be_relationship<u16>();
     test_le_be_relationship<u32>();
     test_le_be_relationship<u64>();
-
-    // Verified types (consteval)
-    test_verified_consteval();
 
     return boost::report_errors();
 }
