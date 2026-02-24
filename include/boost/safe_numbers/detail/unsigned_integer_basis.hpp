@@ -27,7 +27,7 @@
 
 namespace boost::safe_numbers::detail {
 
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 class unsigned_integer_basis
 {
 public:
@@ -52,7 +52,7 @@ public:
         static_assert(dependent_false<T>, "Construction from bool is not allowed");
     }
 
-    template <unsigned_integral OtherBasis>
+    template <fundamental_unsigned_integral OtherBasis>
     [[nodiscard]] explicit constexpr operator OtherBasis() const;
 
     explicit constexpr operator BasisType() const noexcept { return basis_;}
@@ -60,19 +60,19 @@ public:
     [[nodiscard]] friend constexpr auto operator<=>(unsigned_integer_basis lhs, unsigned_integer_basis rhs) noexcept
         -> std::strong_ordering = default;
 
-    template <unsigned_integral OtherBasis>
+    template <fundamental_unsigned_integral OtherBasis>
     constexpr auto operator+=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
-    template <unsigned_integral OtherBasis>
+    template <fundamental_unsigned_integral OtherBasis>
     constexpr auto operator-=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
-    template <unsigned_integral OtherBasis>
+    template <fundamental_unsigned_integral OtherBasis>
     constexpr auto operator*=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
-    template <unsigned_integral OtherBasis>
+    template <fundamental_unsigned_integral OtherBasis>
     constexpr auto operator/=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
-    template <unsigned_integral OtherBasis>
+    template <fundamental_unsigned_integral OtherBasis>
     constexpr auto operator%=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
     constexpr auto operator&=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
@@ -102,8 +102,8 @@ public:
     }
 };
 
-template <unsigned_integral BasisType>
-template <unsigned_integral OtherBasis>
+template <fundamental_unsigned_integral BasisType>
+template <fundamental_unsigned_integral OtherBasis>
 constexpr unsigned_integer_basis<BasisType>::operator OtherBasis() const
 {
     if constexpr (sizeof(OtherBasis) < sizeof(BasisType))
@@ -269,7 +269,7 @@ struct add_helper
 };
 
 // Partial specialization for overflow_tuple policy
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 struct add_helper<overflow_policy::overflow_tuple, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
@@ -301,7 +301,7 @@ struct add_helper<overflow_policy::overflow_tuple, BasisType>
 };
 
 // Partial specialization for overflow_tuple policy
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 struct add_helper<overflow_policy::checked, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
@@ -333,7 +333,7 @@ struct add_helper<overflow_policy::checked, BasisType>
 };
 
 // Partial specialization for widening policy
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 struct add_helper<overflow_policy::widen, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
@@ -355,7 +355,7 @@ template <overflow_policy Policy, unsigned_integral BasisType>
     return add_helper<Policy, BasisType>::apply(lhs, rhs);
 }
 
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator+(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
@@ -462,8 +462,8 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("equality", operator==)
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("addition", operator+)
 
-template <unsigned_integral BasisType>
-template <unsigned_integral OtherBasisType>
+template <fundamental_unsigned_integral BasisType>
+template <fundamental_unsigned_integral OtherBasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator+=(const unsigned_integer_basis<OtherBasisType> rhs)
     -> unsigned_integer_basis&
 {
@@ -623,7 +623,7 @@ struct sub_helper
 };
 
 // Partial specialization for overflow_tuple policy
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 struct sub_helper<overflow_policy::overflow_tuple, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
@@ -655,7 +655,7 @@ struct sub_helper<overflow_policy::overflow_tuple, BasisType>
 };
 
 // Partial specialization for checked policy
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 struct sub_helper<overflow_policy::checked, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
@@ -694,7 +694,7 @@ template <overflow_policy Policy, unsigned_integral BasisType>
     return sub_helper<Policy, BasisType>::apply(lhs, rhs);
 }
 
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator-(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
@@ -703,8 +703,8 @@ template <unsigned_integral BasisType>
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("subtraction", operator-)
 
-template <unsigned_integral BasisType>
-template <unsigned_integral OtherBasisType>
+template <fundamental_unsigned_integral BasisType>
+template <fundamental_unsigned_integral OtherBasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator-=(const unsigned_integer_basis<OtherBasisType> rhs)
     -> unsigned_integer_basis&
 {
@@ -860,7 +860,7 @@ struct mul_helper
 };
 
 // Partial specialization for overflow_tuple policy
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 struct mul_helper<overflow_policy::overflow_tuple, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
@@ -892,7 +892,7 @@ struct mul_helper<overflow_policy::overflow_tuple, BasisType>
 };
 
 // Partial specialization for checked policy
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 struct mul_helper<overflow_policy::checked, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
@@ -924,7 +924,7 @@ struct mul_helper<overflow_policy::checked, BasisType>
 };
 
 // Partial specialization for widening policy
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 struct mul_helper<overflow_policy::widen, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
@@ -946,7 +946,7 @@ template <overflow_policy Policy, unsigned_integral BasisType>
     return mul_helper<Policy, BasisType>::apply(lhs, rhs);
 }
 
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator*(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
@@ -955,8 +955,8 @@ template <unsigned_integral BasisType>
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("multiplication", operator*)
 
-template <unsigned_integral BasisType>
-template <unsigned_integral OtherBasisType>
+template <fundamental_unsigned_integral BasisType>
+template <fundamental_unsigned_integral OtherBasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator*=(const unsigned_integer_basis<OtherBasisType> rhs)
     -> unsigned_integer_basis&
 {
@@ -1011,7 +1011,7 @@ struct div_helper
 };
 
 // Partial specialization for overflow_tuple policy
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 struct div_helper<overflow_policy::overflow_tuple, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
@@ -1038,7 +1038,7 @@ struct div_helper<overflow_policy::overflow_tuple, BasisType>
 };
 
 // Partial specialization for checked policy
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 struct div_helper<overflow_policy::checked, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
@@ -1072,7 +1072,7 @@ template <overflow_policy Policy, unsigned_integral BasisType>
     return div_helper<Policy, BasisType>::apply(lhs, rhs);
 }
 
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator/(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
@@ -1081,8 +1081,8 @@ template <unsigned_integral BasisType>
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("division", operator/)
 
-template <unsigned_integral BasisType>
-template <unsigned_integral OtherBasisType>
+template <fundamental_unsigned_integral BasisType>
+template <fundamental_unsigned_integral OtherBasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator/=(const unsigned_integer_basis<OtherBasisType> rhs)
     -> unsigned_integer_basis&
 {
@@ -1137,7 +1137,7 @@ struct mod_helper
 };
 
 // Partial specialization for overflow_tuple policy
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 struct mod_helper<overflow_policy::overflow_tuple, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
@@ -1164,7 +1164,7 @@ struct mod_helper<overflow_policy::overflow_tuple, BasisType>
 };
 
 // Partial specialization for checked policy
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 struct mod_helper<overflow_policy::checked, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
@@ -1198,7 +1198,7 @@ template <overflow_policy Policy, unsigned_integral BasisType>
     return mod_helper<Policy, BasisType>::apply(lhs, rhs);
 }
 
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator%(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
@@ -1207,8 +1207,8 @@ template <unsigned_integral BasisType>
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("modulo", operator%)
 
-template <unsigned_integral BasisType>
-template <unsigned_integral OtherBasisType>
+template <fundamental_unsigned_integral BasisType>
+template <fundamental_unsigned_integral OtherBasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator%=(const unsigned_integer_basis<OtherBasisType> rhs)
     -> unsigned_integer_basis&
 {
@@ -1220,7 +1220,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator%=(const unsigned_inte
 // Pre and post increment
 // ------------------------------
 
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator++()
     -> unsigned_integer_basis&
 {
@@ -1233,7 +1233,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator++()
     return *this;
 }
 
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator++(int)
     -> unsigned_integer_basis
 {
@@ -1251,7 +1251,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator++(int)
 // Pre and post decrement
 // ------------------------------
 
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator--()
     -> unsigned_integer_basis&
 {
@@ -1264,7 +1264,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator--()
     return *this;
 }
 
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 constexpr auto unsigned_integer_basis<BasisType>::operator--(int)
     -> unsigned_integer_basis
 {
@@ -1324,7 +1324,7 @@ struct shl_helper
 };
 
 // Partial specialization for overflow_tuple policy
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 struct shl_helper<overflow_policy::overflow_tuple, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
@@ -1350,7 +1350,7 @@ struct shl_helper<overflow_policy::overflow_tuple, BasisType>
 };
 
 // Partial specialization for checked policy
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 struct shl_helper<overflow_policy::checked, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
@@ -1421,7 +1421,7 @@ struct shr_helper
 };
 
 // Partial specialization for overflow_tuple policy
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 struct shr_helper<overflow_policy::overflow_tuple, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
@@ -1444,7 +1444,7 @@ struct shr_helper<overflow_policy::overflow_tuple, BasisType>
 };
 
 // Partial specialization for checked policy
-template <unsigned_integral BasisType>
+template <fundamental_unsigned_integral BasisType>
 struct shr_helper<overflow_policy::checked, BasisType>
 {
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
