@@ -11,6 +11,13 @@
 #include <boost/safe_numbers/detail/num_digits.hpp>
 #include <boost/safe_numbers/bit.hpp>
 
+#ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
+
+#include <boost/throw_exception.hpp>
+#include <stdexcept>
+
+#endif
+
 namespace boost::safe_numbers {
 
 // Newton's method as it can't possibly overflow, and converges rapidly
@@ -71,18 +78,61 @@ template <detail::non_bounded_unsigned_library_type T>
 
 // Integer log base 2: floor(log2(n)) == bit_width(n) - 1
 template <detail::non_bounded_unsigned_library_type T>
-[[nodiscard]] constexpr auto log2(const T n) noexcept -> int
+[[nodiscard]] constexpr auto ilog2(const T n) -> int
 {
+    using underlying_type = detail::underlying_type_t<T>;
+
+    if (static_cast<underlying_type>(n) == underlying_type{0})
+    {
+        BOOST_THROW_EXCEPTION(std::domain_error("ilog2(0) is undefined"));
+    }
+
     return bit_width(n) - 1;
 }
 
-// Integer log base 10: floor(log10(n)) == num_digits(n) - 1
+// Integer log base 10: floor(ilog10(n)) == num_digits(n) - 1
 // Uses MSB-based approximation with power-of-10 table lookup (O(1))
 template <detail::non_bounded_unsigned_library_type T>
-[[nodiscard]] constexpr auto log10(const T n) noexcept -> int
+[[nodiscard]] constexpr auto ilog10(const T n) -> int
 {
     using underlying_type = detail::underlying_type_t<T>;
+
+    if (static_cast<underlying_type>(n) == underlying_type{0})
+    {
+        BOOST_THROW_EXCEPTION(std::domain_error("ilog10(0) is undefined"));
+    }
+
     return detail::num_digits(static_cast<underlying_type>(n)) - 1;
+}
+
+// Integer log arbitrary base: floor(log_base(n))
+// Repeated division: O(log_base(n)) divisions
+template <detail::non_bounded_unsigned_library_type T>
+[[nodiscard]] constexpr auto ilog(const T n, const T base) -> int
+{
+    using underlying_type = detail::underlying_type_t<T>;
+
+    if (static_cast<underlying_type>(n) == underlying_type{0})
+    {
+        BOOST_THROW_EXCEPTION(std::domain_error("ilog(0, base) is undefined"));
+    }
+
+    if (static_cast<underlying_type>(base) < underlying_type{2})
+    {
+        BOOST_THROW_EXCEPTION(std::domain_error("ilog(n, base) requires base >= 2"));
+    }
+
+    auto result {0};
+    auto val {static_cast<underlying_type>(n)};
+    const auto b {static_cast<underlying_type>(base)};
+
+    while (val >= b)
+    {
+        val /= b;
+        ++result;
+    }
+
+    return result;
 }
 
 namespace detail {

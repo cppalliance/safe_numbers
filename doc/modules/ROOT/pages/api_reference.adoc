@@ -182,11 +182,14 @@ https://www.boost.org/LICENSE_1_0.txt
 | xref:integer_utilities.adoc[`ipow`]
 | Integer exponentiation by squaring
 
-| xref:integer_utilities.adoc[`log2`]
+| xref:integer_utilities.adoc[`ilog2`]
 | Returns the floor of the base-2 logarithm
 
-| xref:integer_utilities.adoc[`log10`]
+| xref:integer_utilities.adoc[`ilog10`]
 | Returns the floor of the base-10 logarithm
+
+| xref:integer_utilities.adoc[`ilog`]
+| Returns the floor of an arbitrary-base logarithm
 
 | xref:integer_utilities.adoc[`abs_diff`]
 | Computes the absolute difference between two safe integers
@@ -299,7 +302,7 @@ This header is not included in the convenience header since it requires external
 | Contains specializations of `<format>` for library types
 
 | `<boost/safe_numbers/integer_utilities.hpp>`
-| Integer utility functions (`isqrt`, `remove_trailing_zeros`, `is_power_10`, `is_power_2`, `ipow`, `log2`, `log10`, `abs_diff`, `div_ceil`, `next_multiple_of`)
+| Integer utility functions (`isqrt`, `remove_trailing_zeros`, `is_power_10`, `is_power_2`, `ipow`, `ilog2`, `ilog10`, `ilog`, `abs_diff`, `div_ceil`, `next_multiple_of`)
 
 | `<boost/safe_numbers/numeric.hpp>`
 | Standard numeric algorithms (`gcd`, `lcm`, `midpoint`)
