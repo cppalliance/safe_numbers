@@ -171,7 +171,7 @@ Returns the integer base-2 logarithm (floor of log~2~) of a value.
 [source,c++]
 ----
 template <non_bounded_unsigned_library_type T>
-[[nodiscard]] constexpr auto log2(const T n) noexcept -> int;
+[[nodiscard]] constexpr auto log2(const T n) -> int;
 ----
 
 Computes `floor(log~2~(n))` using `bit_width(n) - 1`.
@@ -180,10 +180,13 @@ Computes `floor(log~2~(n))` using `bit_width(n) - 1`.
 
 * `n` -- The value to compute the logarithm of. Must be non-zero.
 
+==== Throws
+
+`std::domain_error` if `n == 0`.
+
 ==== Return Value
 
 The floor of the base-2 logarithm of `n`.
-For `n == 0`, returns `-1` (since `bit_width(0) == 0`).
 
 ==== Complexity
 
@@ -210,7 +213,7 @@ Uses an O(1) algorithm based on the most significant bit position to approximate
 [source,c++]
 ----
 template <non_bounded_unsigned_library_type T>
-[[nodiscard]] constexpr auto log10(const T n) noexcept -> int;
+[[nodiscard]] constexpr auto log10(const T n) -> int;
 ----
 
 Computes `floor(log~10~(n))` using `num_digits(n) - 1`, where `num_digits` approximates the digit count via `log~10~(x) ~= log~2~(x) / log~2~(10)` and refines with at most two comparisons against a power-of-10 lookup table.
@@ -218,6 +221,10 @@ Computes `floor(log~10~(n))` using `num_digits(n) - 1`, where `num_digits` appro
 ==== Parameters
 
 * `n` -- The value to compute the logarithm of. Must be non-zero.
+
+==== Throws
+
+`std::domain_error` if `n == 0`.
 
 ==== Return Value
 
@@ -233,6 +240,50 @@ auto r1 = log10(u32{1000});        // r1 == 3
 auto r2 = log10(u32{999});         // r2 == 2   (floor of log10(999))
 auto r3 = log10(u32{1});           // r3 == 0
 auto r4 = log10(u64{10000000000000000000ULL});  // r4 == 19
+----
+
+== ilog
+
+Returns the integer logarithm in an arbitrary base (floor of log~base~) of a value.
+
+[source,c++]
+----
+template <non_bounded_unsigned_library_type T>
+[[nodiscard]] constexpr auto ilog(const T n, const T base) -> int;
+----
+
+Computes `floor(log~base~(n))` by repeated division.
+For the common cases of base 2 and base 10, prefer the specialized `log2` and `log10` functions which run in O(1).
+
+==== Parameters
+
+* `n` -- The value to compute the logarithm of. Must be non-zero.
+* `base` -- The base of the logarithm. Must be >= 2.
+
+==== Throws
+
+`std::domain_error` if `n == 0`.
+
+==== Return Value
+
+The floor of the base-`base` logarithm of `n`.
+For `n < base`, returns `0`.
+
+==== Complexity
+
+O(log~base~(n)) divisions.
+
+==== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+auto r1 = ilog(u32{1000}, u32{10});    // r1 == 3   (floor of log10(1000))
+auto r2 = ilog(u32{1024}, u32{2});     // r2 == 10  (floor of log2(1024))
+auto r3 = ilog(u32{80}, u32{3});       // r3 == 3   (floor of log3(80))
+auto r4 = ilog(u32{3125}, u32{5});     // r4 == 5   (5^5 = 3125)
+auto r5 = ilog(u32{1}, u32{7});        // r5 == 0   (any base, log(1) = 0)
 ----
 
 == ipow
