@@ -29,7 +29,7 @@ Converts a value from the native byte order to big-endian byte order.
 [source,c++]
 ----
 template <non_bounded_integral_library_type T>
-constexpr auto to_be(const T value) noexcept -> T;
+[[nodiscard]] constexpr auto to_be(const T value) noexcept -> T;
 ----
 
 ==== Parameters
@@ -66,7 +66,7 @@ Since byte swapping is its own inverse, `from_be` delegates directly to `to_be`.
 [source,c++]
 ----
 template <non_bounded_integral_library_type T>
-constexpr auto from_be(const T value) noexcept -> T;
+[[nodiscard]] constexpr auto from_be(const T value) noexcept -> T;
 ----
 
 ==== Parameters
@@ -99,7 +99,7 @@ Converts a value from the native byte order to little-endian byte order.
 [source,c++]
 ----
 template <non_bounded_integral_library_type T>
-constexpr auto to_le(const T value) noexcept -> T;
+[[nodiscard]] constexpr auto to_le(const T value) noexcept -> T;
 ----
 
 ==== Parameters
@@ -136,7 +136,7 @@ Since byte swapping is its own inverse, `from_le` delegates directly to `to_le`.
 [source,c++]
 ----
 template <non_bounded_integral_library_type T>
-constexpr auto from_le(const T value) noexcept -> T;
+[[nodiscard]] constexpr auto from_le(const T value) noexcept -> T;
 ----
 
 ==== Parameters
@@ -170,7 +170,7 @@ The value is first converted to big-endian byte order using `to_be`, then reinte
 [source,c++]
 ----
 template <non_bounded_integral_library_type T>
-constexpr auto to_be_bytes(const T value) noexcept -> std::array<std::byte, sizeof(T)>;
+[[nodiscard]] constexpr auto to_be_bytes(const T value) noexcept -> std::array<std::byte, sizeof(T)>;
 ----
 
 ==== Parameters
@@ -203,7 +203,7 @@ The bytes are reinterpreted as the underlying type and then converted from big-e
 [source,c++]
 ----
 template <non_bounded_integral_library_type T, std::size_t N>
-constexpr auto from_be_bytes(const std::span<const std::byte, N> bytes) -> T;
+[[nodiscard]] constexpr auto from_be_bytes(const std::span<const std::byte, N> bytes) -> T;
 ----
 
 ==== Parameters
@@ -251,7 +251,7 @@ The value is first converted to little-endian byte order using `to_le`, then rei
 [source,c++]
 ----
 template <non_bounded_integral_library_type T>
-constexpr auto to_le_bytes(const T value) noexcept -> std::array<std::byte, sizeof(T)>;
+[[nodiscard]] constexpr auto to_le_bytes(const T value) noexcept -> std::array<std::byte, sizeof(T)>;
 ----
 
 ==== Parameters
@@ -284,7 +284,7 @@ The bytes are reinterpreted as the underlying type and then converted from littl
 [source,c++]
 ----
 template <non_bounded_integral_library_type T, std::size_t N>
-constexpr auto from_le_bytes(const std::span<const std::byte, N> bytes) -> T;
+[[nodiscard]] constexpr auto from_le_bytes(const std::span<const std::byte, N> bytes) -> T;
 ----
 
 ==== Parameters
@@ -334,7 +334,7 @@ The result is equivalent to `std::bit_cast<std::array<std::byte, sizeof(T)>>(val
 [source,c++]
 ----
 template <non_bounded_integral_library_type T>
-constexpr auto to_ne_bytes(const T value) noexcept -> std::array<std::byte, sizeof(T)>;
+[[nodiscard]] constexpr auto to_ne_bytes(const T value) noexcept -> std::array<std::byte, sizeof(T)>;
 ----
 
 ==== Parameters
@@ -368,7 +368,7 @@ Delegates to `from_le_bytes` on little-endian platforms and `from_be_bytes` on b
 [source,c++]
 ----
 template <non_bounded_integral_library_type T, std::size_t N>
-constexpr auto from_ne_bytes(const std::span<const std::byte, N> bytes) -> T;
+[[nodiscard]] constexpr auto from_ne_bytes(const std::span<const std::byte, N> bytes) -> T;
 ----
 
 ==== Parameters

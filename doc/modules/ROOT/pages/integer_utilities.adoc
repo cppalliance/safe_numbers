@@ -23,7 +23,7 @@ These operate on the non-bounded unsigned types (`u8`, `u16`, `u32`, `u64`, `u12
 [source,c++]
 ----
 template <non_bounded_unsigned_library_type T>
-constexpr auto isqrt(const T val) -> T;
+[[nodiscard]] constexpr auto isqrt(const T val) -> T;
 ----
 
 Returns the integer square root of `val`, i.e., the largest integer `r` such that `r * r \<= val`.
@@ -74,14 +74,11 @@ struct remove_trailing_zeros_return
 [source,c++]
 ----
 template <non_bounded_unsigned_library_type T>
-constexpr auto remove_trailing_zeros(const T n);
+[[nodiscard]] constexpr auto remove_trailing_zeros(const T n);
 ----
 
 Removes all trailing decimal zeros from `n`.
 Returns a `remove_trailing_zeros_return` containing the trimmed value and the count of removed zeros, such that `trimmed_number * 10^number_of_removed_zeros == n`.
-
-The algorithm is entirely branchless (no data-dependent branches), operating via modular inverse multiplication and bit rotation.
-It processes the exponent in O(log(max_digits)) steps, where `max_digits` is the maximum number of decimal digits for the type.
 
 ==== Parameters
 
@@ -144,7 +141,7 @@ Tests whether an unsigned integer value is an exact power of 10 (i.e., one of 1,
 [source,c++]
 ----
 template <non_bounded_unsigned_library_type T>
-constexpr auto is_power_10(const T n) -> bool;
+[[nodiscard]] constexpr auto is_power_10(const T n) -> bool;
 ----
 
 ==== Parameters
@@ -174,7 +171,7 @@ Returns the integer base-2 logarithm (floor of log~2~) of a value.
 [source,c++]
 ----
 template <non_bounded_unsigned_library_type T>
-constexpr auto log2(const T n) noexcept -> int;
+[[nodiscard]] constexpr auto log2(const T n) noexcept -> int;
 ----
 
 Computes `floor(log~2~(n))` using `bit_width(n) - 1`.
@@ -213,7 +210,7 @@ Uses an O(1) algorithm based on the most significant bit position to approximate
 [source,c++]
 ----
 template <non_bounded_unsigned_library_type T>
-constexpr auto log10(const T n) noexcept -> int;
+[[nodiscard]] constexpr auto log10(const T n) noexcept -> int;
 ----
 
 Computes `floor(log~10~(n))` using `num_digits(n) - 1`, where `num_digits` approximates the digit count via `log~10~(x) ~= log~2~(x) / log~2~(10)` and refines with at most two comparisons against a power-of-10 lookup table.
@@ -245,7 +242,7 @@ Integer exponentiation using the exponentiation-by-squaring algorithm.
 [source,c++]
 ----
 template <non_bounded_unsigned_library_type T>
-constexpr auto ipow(const T a, const T b) noexcept -> T;
+[[nodiscard]] constexpr auto ipow(const T a, const T b) noexcept -> T;
 ----
 
 Computes `a` raised to the power `b` using exponentiation by squaring.
@@ -290,7 +287,7 @@ Tests whether an unsigned integer value is an exact power of 2 (i.e., has exactl
 [source,c++]
 ----
 template <non_bounded_unsigned_library_type T>
-constexpr auto is_power_2(const T n) noexcept -> bool;
+[[nodiscard]] constexpr auto is_power_2(const T n) noexcept -> bool;
 ----
 
 ==== Parameters
@@ -321,7 +318,7 @@ For unsigned types, naive subtraction `a - b` when `b > a` would underflow; `abs
 [source,c++]
 ----
 template <integral_library_type T>
-constexpr auto abs_diff(const T a, const T b) noexcept -> T;
+[[nodiscard]] constexpr auto abs_diff(const T a, const T b) noexcept -> T;
 ----
 
 Returns `|a - b|`, computed as `a - b` if `a >= b`, or `b - a` otherwise.
@@ -362,7 +359,7 @@ For unsigned types, this is equivalent to `(a + b - 1) / b` but computed without
 [source,c++]
 ----
 template <integral_library_type T>
-constexpr auto div_ceil(const T a, const T b) noexcept -> T;
+[[nodiscard]] constexpr auto div_ceil(const T a, const T b) noexcept -> T;
 ----
 
 Returns the ceiling of `a / b`.
