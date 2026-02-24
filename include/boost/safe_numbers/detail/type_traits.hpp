@@ -5,6 +5,8 @@
 #ifndef BOOST_SAFE_NUMBERS_DETAIL_TYPE_TRAITS_HPP
 #define BOOST_SAFE_NUMBERS_DETAIL_TYPE_TRAITS_HPP
 
+#include <boost/safe_numbers/detail/int128/int128.hpp>
+
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 #include <concepts>
