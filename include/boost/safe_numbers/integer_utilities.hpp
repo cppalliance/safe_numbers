@@ -15,7 +15,7 @@ namespace boost::safe_numbers {
 
 // Newton's method as it can't possibly overflow, and converges rapidly
 template <detail::non_bounded_unsigned_library_type T>
-constexpr auto isqrt(const T val) -> T
+[[nodiscard]] constexpr auto isqrt(const T val) -> T
 {
     using underlying = typename detail::underlying_type_t<T>;
 
@@ -42,7 +42,7 @@ constexpr auto isqrt(const T val) -> T
 }
 
 template <detail::non_bounded_unsigned_library_type T>
-constexpr auto remove_trailing_zeros(const T n)
+[[nodiscard]] constexpr auto remove_trailing_zeros(const T n)
 {
     using underlying = typename detail::underlying_type_t<T>;
 
@@ -55,7 +55,7 @@ constexpr auto remove_trailing_zeros(const T n)
 }
 
 template <detail::non_bounded_unsigned_library_type T>
-constexpr auto is_power_10(const T n) -> bool
+[[nodiscard]] constexpr auto is_power_10(const T n) -> bool
 {
     using underlying = typename detail::underlying_type_t<T>;
 
@@ -64,14 +64,14 @@ constexpr auto is_power_10(const T n) -> bool
 }
 
 template <detail::non_bounded_unsigned_library_type T>
-constexpr auto is_power_2(const T n) noexcept -> bool
+[[nodiscard]] constexpr auto is_power_2(const T n) noexcept -> bool
 {
     return has_single_bit(n);
 }
 
 // Integer log base 2: floor(log2(n)) == bit_width(n) - 1
 template <detail::non_bounded_unsigned_library_type T>
-constexpr auto log2(const T n) noexcept -> int
+[[nodiscard]] constexpr auto log2(const T n) noexcept -> int
 {
     return bit_width(n) - 1;
 }
@@ -79,7 +79,7 @@ constexpr auto log2(const T n) noexcept -> int
 // Integer log base 10: floor(log10(n)) == num_digits(n) - 1
 // Uses MSB-based approximation with power-of-10 table lookup (O(1))
 template <detail::non_bounded_unsigned_library_type T>
-constexpr auto log10(const T n) noexcept -> int
+[[nodiscard]] constexpr auto log10(const T n) noexcept -> int
 {
     using underlying = detail::underlying_type_t<T>;
     return detail::num_digits(static_cast<underlying>(n)) - 1;
@@ -89,7 +89,7 @@ namespace detail {
 
 // Iterative exponentiation by squaring: O(log b) multiplications
 template <non_bounded_unsigned_library_type T>
-constexpr auto ipow_impl(T base, T exp) -> T
+[[nodiscard]] constexpr auto ipow_impl(T base, T exp) -> T
 {
     using underlying = underlying_type_t<T>;
 
@@ -114,7 +114,7 @@ constexpr auto ipow_impl(T base, T exp) -> T
 } // namespace detail
 
 template <detail::non_bounded_unsigned_library_type T>
-constexpr auto ipow(const T a, const T b) -> T
+[[nodiscard]] constexpr auto ipow(const T a, const T b) -> T
 {
     return detail::ipow_impl(a, b);
 }
