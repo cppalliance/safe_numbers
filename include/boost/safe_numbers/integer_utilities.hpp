@@ -15,7 +15,6 @@ namespace boost::safe_numbers {
 
 // Newton's method as it can't possibly overflow, and converges rapidly
 template <detail::non_bounded_unsigned_library_type T>
-    requires (!detail::is_verified_type_v<T>)
 constexpr auto isqrt(const T val) -> T
 {
     using underlying = typename detail::underlying_type_t<T>;
@@ -43,13 +42,6 @@ constexpr auto isqrt(const T val) -> T
 }
 
 template <detail::non_bounded_unsigned_library_type T>
-consteval auto isqrt(const detail::verified_type_basis<T> val) -> detail::verified_type_basis<T>
-{
-    return detail::verified_type_basis<T>{isqrt(static_cast<T>(val))};
-}
-
-template <detail::non_bounded_unsigned_library_type T>
-    requires (!detail::is_verified_type_v<T>)
 constexpr auto remove_trailing_zeros(const T n)
 {
     using underlying = typename detail::underlying_type_t<T>;
@@ -63,20 +55,6 @@ constexpr auto remove_trailing_zeros(const T n)
 }
 
 template <detail::non_bounded_unsigned_library_type T>
-consteval auto remove_trailing_zeros(const detail::verified_type_basis<T> val)
-{
-    using underlying = typename detail::underlying_type_t<T>;
-
-    if (static_cast<underlying>(val) == static_cast<underlying>(0))
-    {
-        return detail::remove_trailing_zeros_return<underlying>{static_cast<underlying>(0), static_cast<std::size_t>(0)};
-    }
-
-    return detail::remove_trailing_zeros(static_cast<underlying>(val));
-}
-
-template <detail::non_bounded_unsigned_library_type T>
-    requires (!detail::is_verified_type_v<T>)
 constexpr auto is_power_10(const T n) -> bool
 {
     using underlying = typename detail::underlying_type_t<T>;
@@ -86,37 +64,14 @@ constexpr auto is_power_10(const T n) -> bool
 }
 
 template <detail::non_bounded_unsigned_library_type T>
-consteval auto is_power_10(const detail::verified_type_basis<T> n) -> bool
-{
-    using underlying = typename detail::underlying_type_t<T>;
-
-    const auto [trimmed_number, _] = detail::remove_trailing_zeros(static_cast<underlying>(n));
-    return trimmed_number == static_cast<underlying>(1);
-}
-
-template <detail::non_bounded_unsigned_library_type T>
-    requires (!detail::is_verified_type_v<T>)
 constexpr auto is_power_2(const T n) noexcept -> bool
-{
-    return has_single_bit(n);
-}
-
-template <detail::non_bounded_unsigned_library_type T>
-consteval auto is_power_2(const detail::verified_type_basis<T> n) noexcept -> bool
 {
     return has_single_bit(n);
 }
 
 // Integer log base 2: floor(log2(n)) == bit_width(n) - 1
 template <detail::non_bounded_unsigned_library_type T>
-    requires (!detail::is_verified_type_v<T>)
 constexpr auto log2(const T n) noexcept -> int
-{
-    return bit_width(n) - 1;
-}
-
-template <detail::non_bounded_unsigned_library_type T>
-consteval auto log2(const detail::verified_type_basis<T> n) noexcept -> int
 {
     return bit_width(n) - 1;
 }
@@ -124,15 +79,7 @@ consteval auto log2(const detail::verified_type_basis<T> n) noexcept -> int
 // Integer log base 10: floor(log10(n)) == num_digits(n) - 1
 // Uses MSB-based approximation with power-of-10 table lookup (O(1))
 template <detail::non_bounded_unsigned_library_type T>
-    requires (!detail::is_verified_type_v<T>)
 constexpr auto log10(const T n) noexcept -> int
-{
-    using underlying = detail::underlying_type_t<T>;
-    return detail::num_digits(static_cast<underlying>(n)) - 1;
-}
-
-template <detail::non_bounded_unsigned_library_type T>
-consteval auto log10(const detail::verified_type_basis<T> n) noexcept -> int
 {
     using underlying = detail::underlying_type_t<T>;
     return detail::num_digits(static_cast<underlying>(n)) - 1;
@@ -167,37 +114,18 @@ constexpr auto ipow_impl(T base, T exp) -> T
 } // namespace detail
 
 template <detail::non_bounded_unsigned_library_type T>
-    requires (!detail::is_verified_type_v<T>)
 constexpr auto ipow(const T a, const T b) -> T
 {
     return detail::ipow_impl(a, b);
 }
 
-template <detail::non_bounded_unsigned_library_type T>
-consteval auto ipow(const detail::verified_type_basis<T> a,
-                    const detail::verified_type_basis<T> b) -> detail::verified_type_basis<T>
-{
-    // This is a workaround for P2564R3 "Consteval should propagate up"
-    // Operate on the underlying type rather than on the verfied type directly
-    return detail::verified_type_basis<T>{detail::ipow_impl(static_cast<T>(a), static_cast<T>(b))};
-}
-
 template <detail::integral_library_type T>
-    requires (!detail::is_verified_type_v<T>)
 [[nodiscard]] constexpr auto abs_diff(const T a, const T b) noexcept -> T
 {
     return a > b ? a - b : b - a;
 }
 
 template <detail::integral_library_type T>
-[[nodiscard]] consteval auto abs_diff(const detail::verified_type_basis<T> a,
-                                      const detail::verified_type_basis<T> b) noexcept -> detail::verified_type_basis<T>
-{
-    return detail::verified_type_basis<T>{abs_diff(static_cast<T>(a), static_cast<T>(b))};
-}
-
-template <detail::integral_library_type T>
-    requires (!detail::is_verified_type_v<T>)
 [[nodiscard]] constexpr auto div_ceil(const T a, const T b) noexcept -> T
 {
     using underlying = detail::underlying_type_t<T>;
@@ -213,13 +141,6 @@ template <detail::integral_library_type T>
     {
         return d + T{static_cast<underlying>(r != static_cast<T>(0) ? 1 : 0)};
     }
-}
-
-template <detail::integral_library_type T>
-[[nodiscard]] consteval auto div_ceil(const detail::verified_type_basis<T> a,
-                                      const detail::verified_type_basis<T> b) noexcept -> detail::verified_type_basis<T>
-{
-    return detail::verified_type_basis<T>{div_ceil(static_cast<T>(a), static_cast<T>(b))};
 }
 
 } // namespace boost::safe_numbers

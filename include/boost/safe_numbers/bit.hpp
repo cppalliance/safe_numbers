@@ -28,7 +28,6 @@ BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-    requires (!detail::is_verified_type_v<UnsignedInt>)
 [[nodiscard]] constexpr auto bit_ceil(const UnsignedInt x) noexcept -> UnsignedInt
 {
     using boost::core::bit_ceil;
@@ -38,28 +37,7 @@ BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-    requires detail::is_verified_type_v<UnsignedInt>
-[[nodiscard]] consteval auto bit_ceil(const UnsignedInt x) noexcept -> UnsignedInt
-{
-    using boost::core::bit_ceil;
-    using underlying_type = detail::underlying_type_t<UnsignedInt>;
-
-    return UnsignedInt{bit_ceil(static_cast<underlying_type>(x))};
-}
-
-BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-    requires (!detail::is_verified_type_v<UnsignedInt>)
 [[nodiscard]] constexpr auto bit_floor(const UnsignedInt x) noexcept -> UnsignedInt
-{
-    using boost::core::bit_floor;
-    using underlying_type = detail::underlying_type_t<UnsignedInt>;
-
-    return UnsignedInt{bit_floor(static_cast<underlying_type>(x))};
-}
-
-BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-    requires detail::is_verified_type_v<UnsignedInt>
-[[nodiscard]] consteval auto bit_floor(const UnsignedInt x) noexcept -> UnsignedInt
 {
     using boost::core::bit_floor;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -77,7 +55,6 @@ BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type UnsignedInt>
-    requires (!detail::is_verified_type_v<UnsignedInt>)
 [[nodiscard]] constexpr auto rotl(const UnsignedInt x, const int s) noexcept -> UnsignedInt
 {
     using boost::core::rotl;
@@ -87,28 +64,7 @@ BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type Un
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type UnsignedInt>
-    requires detail::is_verified_type_v<UnsignedInt>
-[[nodiscard]] consteval auto rotl(const UnsignedInt x, const int s) noexcept -> UnsignedInt
-{
-    using boost::core::rotl;
-    using underlying_type = detail::underlying_type_t<UnsignedInt>;
-
-    return UnsignedInt{rotl(static_cast<underlying_type>(x), s)};
-}
-
-BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type UnsignedInt>
-    requires (!detail::is_verified_type_v<UnsignedInt>)
 [[nodiscard]] constexpr auto rotr(const UnsignedInt x, const int s) noexcept -> UnsignedInt
-{
-    using boost::core::rotr;
-    using underlying_type = detail::underlying_type_t<UnsignedInt>;
-
-    return UnsignedInt{rotr(static_cast<underlying_type>(x), s)};
-}
-
-BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type UnsignedInt>
-    requires detail::is_verified_type_v<UnsignedInt>
-[[nodiscard]] consteval auto rotr(const UnsignedInt x, const int s) noexcept -> UnsignedInt
 {
     using boost::core::rotr;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -162,18 +118,7 @@ BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_integral_library_type Int>
-    requires (!detail::is_verified_type_v<Int>)
 [[nodiscard]] constexpr auto byteswap(const Int x) noexcept -> Int
-{
-    using boost::core::byteswap;
-    using underlying_type = detail::underlying_type_t<Int>;
-
-    return Int{byteswap(static_cast<underlying_type>(x))};
-}
-
-BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_integral_library_type Int>
-    requires detail::is_verified_type_v<Int>
-[[nodiscard]] consteval auto byteswap(const Int x) noexcept -> Int
 {
     using boost::core::byteswap;
     using underlying_type = detail::underlying_type_t<Int>;
@@ -232,16 +177,7 @@ template <fundamental_unsigned_integral UnsignedInt>
 } // namespace detail
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_integral_library_type Int>
-    requires (!detail::is_verified_type_v<Int>)
 [[nodiscard]] constexpr auto bitswap(Int x) noexcept -> Int
-{
-    using underlying_type = detail::underlying_type_t<Int>;
-    return static_cast<Int>(detail::bitswap_impl(static_cast<underlying_type>(x)));
-}
-
-BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_integral_library_type Int>
-    requires detail::is_verified_type_v<Int>
-[[nodiscard]] consteval auto bitswap(const Int x) noexcept -> Int
 {
     using underlying_type = detail::underlying_type_t<Int>;
     return static_cast<Int>(detail::bitswap_impl(static_cast<underlying_type>(x)));
