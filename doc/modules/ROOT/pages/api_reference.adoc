@@ -193,6 +193,9 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:integer_utilities.adoc[`div_ceil`]
 | Computes the ceiling of integer division
+
+| xref:integer_utilities.adoc[`next_multiple_of`]
+| Returns the smallest multiple of `b` that is >= `a`
 |===
 
 === Byte Conversions
@@ -296,7 +299,7 @@ This header is not included in the convenience header since it requires external
 | Contains specializations of `<format>` for library types
 
 | `<boost/safe_numbers/integer_utilities.hpp>`
-| Integer utility functions (`isqrt`, `remove_trailing_zeros`, `is_power_10`, `is_power_2`, `ipow`, `log2`, `log10`, `abs_diff`, `div_ceil`)
+| Integer utility functions (`isqrt`, `remove_trailing_zeros`, `is_power_10`, `is_power_2`, `ipow`, `log2`, `log10`, `abs_diff`, `div_ceil`, `next_multiple_of`)
 
 | `<boost/safe_numbers/numeric.hpp>`
 | Standard numeric algorithms (`gcd`, `lcm`, `midpoint`)

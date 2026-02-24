@@ -143,6 +143,12 @@ template <detail::integral_library_type T>
     }
 }
 
+template <detail::integral_library_type T>
+[[nodiscard]] constexpr auto next_multiple_of(const T a, const T b) noexcept -> T
+{
+    return div_ceil(a, b) * b;
+}
+
 } // namespace boost::safe_numbers
 
 #endif // BOOST_SAFE_NUMBERS_INTEGER_UTILITIES_HPP
