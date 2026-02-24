@@ -11,7 +11,7 @@ import boost.safe_numbers;
 #else
 
 #include <boost/safe_numbers/byte_conversions.hpp>
-#include <boost/safe_numbers/verified_integers.hpp>
+#include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/iostream.hpp>
 #include <bit>
 #include <cstdint>
@@ -213,51 +213,6 @@ void test_known_byte_patterns()
     }
 }
 
-// Verified types: to_be and from_be should work at consteval
-void test_verified_consteval()
-{
-    // verified_u8 round-trip
-    {
-        constexpr auto val = verified_u8{u8{0x42}};
-        constexpr auto be_val = to_be(val);
-        constexpr auto rt_val = from_be(be_val);
-        BOOST_TEST(rt_val == val);
-    }
-
-    // verified_u16 round-trip
-    {
-        constexpr auto val = verified_u16{u16{static_cast<std::uint16_t>(0xABCD)}};
-        constexpr auto be_val = to_be(val);
-        constexpr auto rt_val = from_be(be_val);
-        BOOST_TEST(rt_val == val);
-    }
-
-    // verified_u32 round-trip
-    {
-        constexpr auto val = verified_u32{u32{0xDEADBEEFU}};
-        constexpr auto be_val = to_be(val);
-        constexpr auto rt_val = from_be(be_val);
-        BOOST_TEST(rt_val == val);
-    }
-
-    // verified_u64 round-trip
-    {
-        constexpr auto val = verified_u64{u64{0x0123456789ABCDEFULL}};
-        constexpr auto be_val = to_be(val);
-        constexpr auto rt_val = from_be(be_val);
-        BOOST_TEST(rt_val == val);
-    }
-
-    // Verify known pattern for verified_u32 on little-endian
-    if constexpr (std::endian::native == std::endian::little)
-    {
-        constexpr auto val = verified_u32{u32{0x01020304U}};
-        constexpr auto expected = verified_u32{u32{0x04030201U}};
-        constexpr auto be_val = to_be(val);
-        BOOST_TEST(be_val == expected);
-    }
-}
-
 int main()
 {
     // Round-trip tests for all unsigned types
@@ -288,9 +243,6 @@ int main()
 
     // Known byte patterns on little-endian
     test_known_byte_patterns();
-
-    // Verified types (consteval)
-    test_verified_consteval();
 
     return boost::report_errors();
 }

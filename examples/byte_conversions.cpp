@@ -3,7 +3,7 @@
 // https://www.boost.org/LICENSE_1_0.txt
 
 #include <boost/safe_numbers/byte_conversions.hpp>
-#include <boost/safe_numbers/verified_integers.hpp>
+#include <boost/safe_numbers/unsigned_integers.hpp>
 #include <iostream>
 #include <iomanip>
 #include <cstddef>
@@ -110,45 +110,6 @@ int main()
                   << static_cast<unsigned>(be[0]) << '\n';
         std::cout << "u8(0x42) -> LE: " << std::hex << std::setfill('0') << std::setw(2)
                   << static_cast<unsigned>(le[0]) << '\n';
-    }
-
-    // ---- Verified types (compile-time) ----
-    std::cout << "\n=== Verified types (compile-time) ===\n";
-    {
-        constexpr auto bytes = to_be_bytes(verified_u32{u32{0x01020304U}});
-        static_assert(bytes[0] == std::byte{0x01});
-        static_assert(bytes[3] == std::byte{0x04});
-        std::cout << "verified_u32 to_be_bytes: ";
-        for (const auto& b : bytes)
-        {
-            std::cout << std::hex << std::setfill('0') << std::setw(2)
-                      << static_cast<unsigned>(b) << ' ';
-        }
-        std::cout << '\n';
-    }
-    {
-        constexpr auto original = verified_u32{u32{0xDEADBEEFU}};
-        constexpr auto bytes = to_be_bytes(original);
-        constexpr auto reconstructed = from_be_bytes<verified_u32>(std::span<const std::byte, 4>{bytes});
-        static_assert(reconstructed == original);
-        std::cout << "verified_u32 BE round-trip: 0x" << std::hex
-                  << static_cast<std::uint32_t>(static_cast<u32>(reconstructed)) << '\n';
-    }
-    {
-        constexpr auto original = verified_u64{u64{0x0123456789ABCDEFULL}};
-        constexpr auto bytes = to_le_bytes(original);
-        constexpr auto reconstructed = from_le_bytes<verified_u64>(std::span<const std::byte, 8>{bytes});
-        static_assert(reconstructed == original);
-        std::cout << "verified_u64 LE round-trip: 0x" << std::hex
-                  << static_cast<std::uint64_t>(static_cast<u64>(reconstructed)) << '\n';
-    }
-    {
-        constexpr auto original = verified_u32{u32{0xCAFEBABEU}};
-        constexpr auto bytes = to_ne_bytes(original);
-        constexpr auto reconstructed = from_ne_bytes<verified_u32>(std::span<const std::byte, 4>{bytes});
-        static_assert(reconstructed == original);
-        std::cout << "verified_u32 NE round-trip: 0x" << std::hex
-                  << static_cast<std::uint32_t>(static_cast<u32>(reconstructed)) << '\n';
     }
 
     return 0;

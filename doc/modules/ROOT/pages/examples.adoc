@@ -386,7 +386,6 @@ shr<checked>(u32(8), 1)     = 4
 == Byte Conversions
 
 The library provides functions for converting safe integers to and from byte arrays in big-endian, little-endian, or native byte order.
-Verified types support the same conversions at compile time via `consteval` overloads.
 
 .This https://github.com/boostorg/safe_numbers/blob/develop/examples/byte_conversions.cpp[example] demonstrates byte conversion functions with all safe integer types.
 ====
@@ -418,12 +417,6 @@ Round-trip:      -> u32: 0xdeadbeef
 === u8 round-trip ===
 u8(0x42) -> BE: 42
 u8(0x42) -> LE: 42
-
-=== Verified types (compile-time) ===
-verified_u32 to_be_bytes: 01 02 03 04
-verified_u32 BE round-trip: 0xdeadbeef
-verified_u64 LE round-trip: 0x123456789abcdef
-verified_u32 NE round-trip: 0xcafebabe
 ----
 ====
 
@@ -465,149 +458,5 @@ max element = 50
 std::min(u8(10), u8(20))     = 10
 std::max(u16(100), u16(200)) = 200
 std::clamp(u64(500), u64(0), u64(100)) = 100
-----
-====
-
-[#examples_verified_construction]
-== Verified Types: Construction and Runtime Usage
-
-Verified types use `consteval` constructors and arithmetic, guaranteeing that all values are validated at compile time.
-At runtime, verified types are read-only constants that support output streaming, explicit conversions, and comparisons.
-
-.This https://github.com/boostorg/safe_numbers/blob/develop/examples/verified_construction.cpp[example] demonstrates construction and runtime use of verified types.
-====
-[source, c++]
-----
-include::example$verified_construction.cpp[]
-----
-
-Output:
-----
-verified_u8:  42
-verified_u16: 1000
-verified_u32: 100000
-verified_u64: 9999999999
-verified_u32: 42
-
-Converted to uint32_t: 100000
-42 < 50000: true
-42 == 42: true
-
-percent: 50
-----
-====
-
-[#examples_verified_arithmetic]
-== Verified Types: Compile-Time Arithmetic
-
-All arithmetic on verified types (`+`, `-`, `*`, `/`, `%`, `+=`, `++`, etc.) is `consteval` -- evaluated entirely by the compiler.
-If an operation overflows, it produces a compile error instead of a runtime exception.
-
-.This https://github.com/boostorg/safe_numbers/blob/develop/examples/verified_arithmetic.cpp[example] demonstrates compile-time arithmetic with verified types.
-====
-[source, c++]
-----
-include::example$verified_arithmetic.cpp[]
-----
-
-Output:
-----
-100 + 200 = 300
-200 - 100 = 100
-15  * 20  = 300
-300 / 10  = 30
-17  % 5   = 2
-
-10 after ++: 11
-0 + 100 + 200 + 300 = 600
-
-bounded 500 + 400 = 900
-----
-====
-
-[#examples_verified_runtime]
-== Verified Types: Runtime Capabilities
-
-While construction and arithmetic are compile-time only, verified types support a wide range of runtime operations:
-output streaming, explicit conversions, comparisons, `to_chars`, bit queries, and `std::numeric_limits`.
-
-.This https://github.com/boostorg/safe_numbers/blob/develop/examples/verified_runtime_usage.cpp[example] shows what verified types can do at runtime.
-====
-[source, c++]
-----
-include::example$verified_runtime_usage.cpp[]
-----
-
-Output:
-----
-Value: 1024
-As uint32_t: 1024
-As u32: 1024
-
-10 == 10:    true
-10 != 50000: true
-10 <  50000: true
-10 >= 50000: false
-
-to_chars (base 10): 1024
-to_chars (base 16): 400
-
-has_single_bit(1024) = true
-bit_width(1024)      = 11
-countl_zero(1024)    = 21
-popcount(1024)       = 1
-bit_ceil(48)         = 64
-bit_floor(48)        = 32
-
-numeric_limits<verified_u8>::min()  = 0
-numeric_limits<verified_u8>::max()  = 255
-numeric_limits<verified_u32>::digits = 32
-----
-====
-
-[#examples_verified_mixed_ops]
-== Verified Types: Mixed-Type Operations
-
-Verified types are compile-time constants, but they can participate in runtime expressions when mixed with their basis types.
-The result is always the runtime (basis) type, treating the verified value as a read-only constant operand.
-Arithmetic, comparisons, and bitwise operations are all supported.
-
-.This https://github.com/boostorg/safe_numbers/blob/develop/examples/verified_mixed_ops.cpp[example] demonstrates mixed-type operations between verified constants and runtime values.
-====
-[source, c++]
-----
-include::example$verified_mixed_ops.cpp[]
-----
-
-Output:
-----
-Tax on 500 at 20%: 100
-500 - 50 discount = 450
-
-500 < 1000: true
-1000 > 500: true
-500 == 1000: false
-
-0xABCD & 0xFF = 205
-0xFF | 0xABCD = 44031
-0xABCD << 4 = 703696
-
-bounded 50 + 10 = 60
-bounded 50 - 10 = 40
-bounded 50 > 10: true
-----
-====
-
-[#examples_verified_compile_fail]
-== Verified Types: Compile-Time Overflow Detection
-
-Verified types catch overflow at compile time.
-Attempting to overflow a verified type produces a compiler error rather than a runtime exception.
-
-.This https://github.com/boostorg/safe_numbers/blob/develop/examples/compile_fail_verified_overflow.cpp[example] fails to compile because `u8(255) + u8(1)` overflows.
-====
-[source, c++]
-----
-include::example$compile_fail_verified_overflow.cpp[]
 ----
 ====
