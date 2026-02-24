@@ -129,6 +129,7 @@ run test_is_power_2.cpp ;
 run test_ipow.cpp ;
 run test_log2.cpp ;
 run test_log10.cpp ;
+run test_ilog.cpp ;
 run test_gcd.cpp ;
 run test_lcm.cpp ;
 run test_midpoint.cpp ;

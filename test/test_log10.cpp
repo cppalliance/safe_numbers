@@ -14,6 +14,7 @@ import boost.safe_numbers;
 #endif
 
 #include <boost/core/lightweight_test.hpp>
+#include <stdexcept>
 
 using namespace boost::safe_numbers;
 
@@ -197,6 +198,18 @@ void test_log10_exhaustive_u16()
 }
 
 // =============================================================================
+// Domain error: log10(0) throws
+// =============================================================================
+
+template <typename T>
+void test_log10_zero_throws()
+{
+    using underlying = typename detail::underlying_type_t<T>;
+
+    BOOST_TEST_THROWS(static_cast<void>(log10(T{static_cast<underlying>(0)})), std::domain_error);
+}
+
+// =============================================================================
 // Constexpr tests
 // =============================================================================
 
@@ -252,6 +265,13 @@ int main()
     // Exhaustive u8 and u16
     test_log10_exhaustive_u8();
     test_log10_exhaustive_u16();
+
+    // Domain error: log10(0)
+    test_log10_zero_throws<u8>();
+    test_log10_zero_throws<u16>();
+    test_log10_zero_throws<u32>();
+    test_log10_zero_throws<u64>();
+    test_log10_zero_throws<u128>();
 
     // Constexpr evaluation
     test_log10_constexpr();
