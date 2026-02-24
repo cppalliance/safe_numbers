@@ -5,8 +5,6 @@
 #ifndef BOOST_SAFE_NUMBERS_DETAIL_TYPE_TRAITS_HPP
 #define BOOST_SAFE_NUMBERS_DETAIL_TYPE_TRAITS_HPP
 
-#include <boost/safe_numbers/detail/fwd.hpp>
-
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 #include <concepts>
@@ -23,6 +21,9 @@ namespace impl {
 template <typename T>
 struct is_fundamental_unsigned_integral : std::bool_constant<std::is_unsigned_v<T> || std::is_same_v<std::remove_cv_t<T>, int128::uint128_t>> {};
 
+template <typename T>
+struct is_fundamental_signed_integral : std::bool_constant<std::is_signed_v<T> || std::is_same_v<std::remove_cv_t<T>, int128::int128_t>> {};
+
 } // namespace impl
 
 template <typename T>
@@ -30,6 +31,9 @@ inline constexpr bool is_fundamental_unsigned_integral_v = impl::is_fundamental_
 
 template <typename T>
 concept fundamental_unsigned_integral = is_fundamental_unsigned_integral_v<T>;
+
+template <fundamental_unsigned_integral BasisType>
+class unsigned_integer_basis;
 
 // is_unsigned_library_type (base + unsigned_integer_basis specialization)
 
@@ -184,7 +188,7 @@ struct underlying<bounded_uint<Min, Max>>
 
 // Promotes an unsigned integer to the next higher type
 // uint128_t becomes bool so that we can static_assert on bool check that we can't widen uint128_t
-template <unsigned_integral T>
+template <fundamental_unsigned_integral T>
 using promoted_type = std::conditional_t<std::is_same_v<T, std::uint8_t>, std::uint16_t,
                           std::conditional_t<std::is_same_v<T, std::uint16_t>, std::uint32_t,
                               std::conditional_t<std::is_same_v<T, std::uint32_t>, std::uint64_t,
