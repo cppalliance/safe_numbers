@@ -78,28 +78,28 @@ template <detail::non_bounded_unsigned_library_type T>
 
 // Integer log base 2: floor(log2(n)) == bit_width(n) - 1
 template <detail::non_bounded_unsigned_library_type T>
-[[nodiscard]] constexpr auto log2(const T n) -> int
+[[nodiscard]] constexpr auto ilog2(const T n) -> int
 {
     using underlying_type = detail::underlying_type_t<T>;
 
     if (static_cast<underlying_type>(n) == underlying_type{0})
     {
-        BOOST_THROW_EXCEPTION(std::domain_error("log2(0) is undefined"));
+        BOOST_THROW_EXCEPTION(std::domain_error("ilog2(0) is undefined"));
     }
 
     return bit_width(n) - 1;
 }
 
-// Integer log base 10: floor(log10(n)) == num_digits(n) - 1
+// Integer log base 10: floor(ilog10(n)) == num_digits(n) - 1
 // Uses MSB-based approximation with power-of-10 table lookup (O(1))
 template <detail::non_bounded_unsigned_library_type T>
-[[nodiscard]] constexpr auto log10(const T n) -> int
+[[nodiscard]] constexpr auto ilog10(const T n) -> int
 {
     using underlying_type = detail::underlying_type_t<T>;
 
     if (static_cast<underlying_type>(n) == underlying_type{0})
     {
-        BOOST_THROW_EXCEPTION(std::domain_error("log10(0) is undefined"));
+        BOOST_THROW_EXCEPTION(std::domain_error("ilog10(0) is undefined"));
     }
 
     return detail::num_digits(static_cast<underlying_type>(n)) - 1;

@@ -92,7 +92,7 @@ void test_ilog_floor()
 }
 
 // =============================================================================
-// Consistency: ilog(n, 2) == log2(n) and ilog(n, 10) == log10(n)
+// Consistency: ilog(n, 2) == ilog2(n) and ilog(n, 10) == ilog10(n)
 // =============================================================================
 
 template <typename T>
@@ -100,19 +100,19 @@ void test_ilog_consistency()
 {
     using underlying = typename detail::underlying_type_t<T>;
 
-    // Check against specialized log2
-    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(1)}, T{static_cast<underlying>(2)}), log2(T{static_cast<underlying>(1)}));
-    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(2)}, T{static_cast<underlying>(2)}), log2(T{static_cast<underlying>(2)}));
-    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(7)}, T{static_cast<underlying>(2)}), log2(T{static_cast<underlying>(7)}));
-    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(128)}, T{static_cast<underlying>(2)}), log2(T{static_cast<underlying>(128)}));
-    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(255)}, T{static_cast<underlying>(2)}), log2(T{static_cast<underlying>(255)}));
+    // Check against specialized ilog2
+    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(1)}, T{static_cast<underlying>(2)}), ilog2(T{static_cast<underlying>(1)}));
+    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(2)}, T{static_cast<underlying>(2)}), ilog2(T{static_cast<underlying>(2)}));
+    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(7)}, T{static_cast<underlying>(2)}), ilog2(T{static_cast<underlying>(7)}));
+    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(128)}, T{static_cast<underlying>(2)}), ilog2(T{static_cast<underlying>(128)}));
+    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(255)}, T{static_cast<underlying>(2)}), ilog2(T{static_cast<underlying>(255)}));
 
-    // Check against specialized log10
-    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(1)}, T{static_cast<underlying>(10)}), log10(T{static_cast<underlying>(1)}));
-    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(10)}, T{static_cast<underlying>(10)}), log10(T{static_cast<underlying>(10)}));
-    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(99)}, T{static_cast<underlying>(10)}), log10(T{static_cast<underlying>(99)}));
-    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(100)}, T{static_cast<underlying>(10)}), log10(T{static_cast<underlying>(100)}));
-    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(255)}, T{static_cast<underlying>(10)}), log10(T{static_cast<underlying>(255)}));
+    // Check against specialized ilog10
+    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(1)}, T{static_cast<underlying>(10)}), ilog10(T{static_cast<underlying>(1)}));
+    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(10)}, T{static_cast<underlying>(10)}), ilog10(T{static_cast<underlying>(10)}));
+    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(99)}, T{static_cast<underlying>(10)}), ilog10(T{static_cast<underlying>(99)}));
+    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(100)}, T{static_cast<underlying>(10)}), ilog10(T{static_cast<underlying>(100)}));
+    BOOST_TEST_EQ(ilog(T{static_cast<underlying>(255)}, T{static_cast<underlying>(10)}), ilog10(T{static_cast<underlying>(255)}));
 }
 
 // =============================================================================
@@ -304,7 +304,7 @@ int main()
     test_ilog_floor<u64>();
     test_ilog_floor<u128>();
 
-    // Consistency with log2/log10 - all types
+    // Consistency with ilog2/ilog10 - all types
     test_ilog_consistency<u8>();
     test_ilog_consistency<u16>();
     test_ilog_consistency<u32>();

@@ -164,14 +164,14 @@ is_power_10(u32{1234});      // false
 is_power_10(u64{10000000000000000000ULL});  // true
 ----
 
-== log2
+== ilog2
 
 Returns the integer base-2 logarithm (floor of log~2~) of a value.
 
 [source,c++]
 ----
 template <non_bounded_unsigned_library_type T>
-[[nodiscard]] constexpr auto log2(const T n) -> int;
+[[nodiscard]] constexpr auto ilog2(const T n) -> int;
 ----
 
 Computes `floor(log~2~(n))` using `bit_width(n) - 1`.
@@ -198,13 +198,13 @@ O(1).
 ----
 using namespace boost::safe_numbers;
 
-auto r1 = log2(u32{1024});   // r1 == 10  (2^10 = 1024)
-auto r2 = log2(u32{1000});   // r2 == 9   (floor of log2(1000))
-auto r3 = log2(u32{1});      // r3 == 0
-auto r4 = log2(u64{9223372036854775808ULL});  // r4 == 63  (2^63)
+auto r1 = ilog2(u32{1024});   // r1 == 10  (2^10 = 1024)
+auto r2 = ilog2(u32{1000});   // r2 == 9   (floor of log2(1000))
+auto r3 = ilog2(u32{1});      // r3 == 0
+auto r4 = ilog2(u64{9223372036854775808ULL});  // r4 == 63  (2^63)
 ----
 
-== log10
+== ilog10
 
 Returns the integer base-10 logarithm (floor of log~10~) of a value.
 
@@ -213,7 +213,7 @@ Uses an O(1) algorithm based on the most significant bit position to approximate
 [source,c++]
 ----
 template <non_bounded_unsigned_library_type T>
-[[nodiscard]] constexpr auto log10(const T n) -> int;
+[[nodiscard]] constexpr auto ilog10(const T n) -> int;
 ----
 
 Computes `floor(log~10~(n))` using `num_digits(n) - 1`, where `num_digits` approximates the digit count via `log~10~(x) ~= log~2~(x) / log~2~(10)` and refines with at most two comparisons against a power-of-10 lookup table.
@@ -236,10 +236,10 @@ The floor of the base-10 logarithm of `n`.
 ----
 using namespace boost::safe_numbers;
 
-auto r1 = log10(u32{1000});        // r1 == 3
-auto r2 = log10(u32{999});         // r2 == 2   (floor of log10(999))
-auto r3 = log10(u32{1});           // r3 == 0
-auto r4 = log10(u64{10000000000000000000ULL});  // r4 == 19
+auto r1 = ilog10(u32{1000});        // r1 == 3
+auto r2 = ilog10(u32{999});         // r2 == 2   (floor of log10(999))
+auto r3 = ilog10(u32{1});           // r3 == 0
+auto r4 = ilog10(u64{10000000000000000000ULL});  // r4 == 19
 ----
 
 == ilog
@@ -253,7 +253,7 @@ template <non_bounded_unsigned_library_type T>
 ----
 
 Computes `floor(log~base~(n))` by repeated division.
-For the common cases of base 2 and base 10, prefer the specialized `log2` and `log10` functions which run in O(1).
+For the common cases of base 2 and base 10, prefer the specialized `ilog2` and `ilog10` functions which run in O(1).
 
 ==== Parameters
 
