@@ -4,6 +4,18 @@
 
 #include <boost/core/lightweight_test.hpp>
 
+// Ignore [[nodiscard]] on the test that we know are going to throw
+#ifdef __clang__
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wunused-result"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunused-result"
+#elif defined(_MSC_VER)
+#  pragma warning (push)
+#  pragma warning (disable: 4834)
+#endif
+
 #ifdef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 import boost.safe_numbers;
