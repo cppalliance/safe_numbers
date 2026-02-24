@@ -26,7 +26,7 @@ For `u128`, the functions delegate to the `boost::int128` implementations.
 [source,c++]
 ----
 template <unsigned_library_type UnsignedInt>
-constexpr auto has_single_bit(UnsignedInt x) noexcept -> bool;
+[[nodiscard]] constexpr auto has_single_bit(UnsignedInt x) noexcept -> bool;
 ----
 
 Returns `true` if `x` is a power of two.
@@ -37,7 +37,7 @@ See https://en.cppreference.com/w/cpp/numeric/has_single_bit.html[`std::has_sing
 [source,c++]
 ----
 template <unsigned_library_type UnsignedInt>
-constexpr auto bit_ceil(UnsignedInt x) noexcept -> UnsignedInt;
+[[nodiscard]] constexpr auto bit_ceil(UnsignedInt x) noexcept -> UnsignedInt;
 ----
 
 Returns the smallest power of two not less than `x`.
@@ -49,7 +49,7 @@ See https://en.cppreference.com/w/cpp/numeric/bit_ceil.html[`std::bit_ceil`].
 [source,c++]
 ----
 template <unsigned_library_type UnsignedInt>
-constexpr auto bit_floor(UnsignedInt x) noexcept -> UnsignedInt;
+[[nodiscard]] constexpr auto bit_floor(UnsignedInt x) noexcept -> UnsignedInt;
 ----
 
 Returns the largest power of two not greater than `x`.
@@ -61,7 +61,7 @@ See https://en.cppreference.com/w/cpp/numeric/bit_floor.html[`std::bit_floor`].
 [source,c++]
 ----
 template <unsigned_library_type UnsignedInt>
-constexpr auto bit_width(UnsignedInt x) noexcept -> int;
+[[nodiscard]] constexpr auto bit_width(UnsignedInt x) noexcept -> int;
 ----
 
 Returns the number of bits needed to represent `x` (i.e., 1 + floor(log2(x)) for x > 0, or 0 for x == 0).
@@ -74,7 +74,7 @@ See https://en.cppreference.com/w/cpp/numeric/bit_width.html[`std::bit_width`].
 [source,c++]
 ----
 template <non_bounded_unsigned_library_type UnsignedInt>
-constexpr auto rotl(UnsignedInt x, int s) noexcept -> UnsignedInt;
+[[nodiscard]] constexpr auto rotl(UnsignedInt x, int s) noexcept -> UnsignedInt;
 ----
 
 Computes the result of bitwise left-rotating `x` by `s` positions.
@@ -87,7 +87,7 @@ NOTE: `rotl` is not available for `bounded_uint` types. Bit rotation can produce
 [source,c++]
 ----
 template <non_bounded_unsigned_library_type UnsignedInt>
-constexpr auto rotr(UnsignedInt x, int s) noexcept -> UnsignedInt;
+[[nodiscard]] constexpr auto rotr(UnsignedInt x, int s) noexcept -> UnsignedInt;
 ----
 
 Computes the result of bitwise right-rotating `x` by `s` positions.
@@ -102,7 +102,7 @@ NOTE: `rotr` is not available for `bounded_uint` types. Bit rotation can produce
 [source,c++]
 ----
 template <unsigned_library_type UnsignedInt>
-constexpr auto countl_zero(UnsignedInt x) noexcept -> int;
+[[nodiscard]] constexpr auto countl_zero(UnsignedInt x) noexcept -> int;
 ----
 
 Returns the number of consecutive 0-bits starting from the most significant bit.
@@ -113,7 +113,7 @@ See https://en.cppreference.com/w/cpp/numeric/countl_zero.html[`std::countl_zero
 [source,c++]
 ----
 template <unsigned_library_type UnsignedInt>
-constexpr auto countl_one(UnsignedInt x) noexcept -> int;
+[[nodiscard]] constexpr auto countl_one(UnsignedInt x) noexcept -> int;
 ----
 
 Returns the number of consecutive 1-bits starting from the most significant bit.
@@ -124,7 +124,7 @@ See https://en.cppreference.com/w/cpp/numeric/countl_one.html[`std::countl_one`]
 [source,c++]
 ----
 template <unsigned_library_type UnsignedInt>
-constexpr auto countr_zero(UnsignedInt x) noexcept -> int;
+[[nodiscard]] constexpr auto countr_zero(UnsignedInt x) noexcept -> int;
 ----
 
 Returns the number of consecutive 0-bits starting from the least significant bit.
@@ -135,7 +135,7 @@ See https://en.cppreference.com/w/cpp/numeric/countr_zero.html[`std::countr_zero
 [source,c++]
 ----
 template <unsigned_library_type UnsignedInt>
-constexpr auto countr_one(UnsignedInt x) noexcept -> int;
+[[nodiscard]] constexpr auto countr_one(UnsignedInt x) noexcept -> int;
 ----
 
 Returns the number of consecutive 1-bits starting from the least significant bit.
@@ -146,7 +146,7 @@ See https://en.cppreference.com/w/cpp/numeric/countr_one.html[`std::countr_one`]
 [source,c++]
 ----
 template <unsigned_library_type UnsignedInt>
-constexpr auto popcount(UnsignedInt x) noexcept -> int;
+[[nodiscard]] constexpr auto popcount(UnsignedInt x) noexcept -> int;
 ----
 
 Returns the number of 1-bits in `x`.
@@ -159,12 +159,10 @@ See https://en.cppreference.com/w/cpp/numeric/popcount.html[`std::popcount`].
 [source,c++]
 ----
 template <non_bounded_integral_library_type Int>
-constexpr auto byteswap(Int x) noexcept -> Int;
+[[nodiscard]] constexpr auto byteswap(Int x) noexcept -> Int;
 ----
 
 Reverses the bytes of `x`.
-For standard unsigned types this delegates to `std::byteswap` (C++23).
-For `u128` this delegates to the `boost::int128::byteswap` implementation.
 See https://en.cppreference.com/w/cpp/numeric/byteswap.html[`std::byteswap`].
 
 NOTE: `byteswap` is not available for `bounded_uint` types. Byte reversal can produce values outside the valid bounded range, making the operation semantically meaningless for bounded integers.
@@ -174,7 +172,7 @@ NOTE: `byteswap` is not available for `bounded_uint` types. Byte reversal can pr
 [source,c++]
 ----
 template <non_bounded_integral_library_type Int>
-constexpr auto bitswap(Int x) noexcept -> Int;
+[[nodiscard]] constexpr auto bitswap(Int x) noexcept -> Int;
 ----
 
 Reverses all bits of `x`.

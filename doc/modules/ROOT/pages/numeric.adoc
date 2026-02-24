@@ -25,7 +25,7 @@ Computes the greatest common divisor of two integers using the Euclidean algorit
 [source,c++]
 ----
 template <non_bounded_integral_library_type T>
-constexpr auto gcd(const T m, const T n) noexcept -> T;
+[[nodiscard]] constexpr auto gcd(const T m, const T n) noexcept -> T;
 ----
 
 Returns the greatest common divisor of `m` and `n`.
@@ -65,7 +65,7 @@ Computes the least common multiple of two integers.
 [source,c++]
 ----
 template <non_bounded_integral_library_type T>
-constexpr auto lcm(const T m, const T n) noexcept -> T;
+[[nodiscard]] constexpr auto lcm(const T m, const T n) noexcept -> T;
 ----
 
 Returns the least common multiple of `m` and `n`.
@@ -106,7 +106,7 @@ The result is rounded towards the first argument `a`.
 [source,c++]
 ----
 template <non_bounded_integral_library_type T>
-constexpr auto midpoint(const T a, const T b) noexcept -> T;
+[[nodiscard]] constexpr auto midpoint(const T a, const T b) noexcept -> T;
 ----
 
 Returns the midpoint of `a` and `b`, computed without overflow.
