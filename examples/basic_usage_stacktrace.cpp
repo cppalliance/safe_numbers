@@ -8,7 +8,10 @@
 
 #if (defined(__x86_64__) || defined(_M_X64)) && !defined(__MINGW32__) && !defined(__CYGWIN__)
 
-#ifdef __GNUC__
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#elif defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #endif
