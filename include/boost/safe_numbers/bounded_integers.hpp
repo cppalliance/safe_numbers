@@ -7,6 +7,7 @@
 
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
+#include <boost/safe_numbers/detail/int128/string.hpp>
 #include <boost/safe_numbers/overflow_policy.hpp>
 #include <boost/safe_numbers/unsigned_integers.hpp>
 
@@ -21,6 +22,7 @@
 #include <cstdlib>
 #include <utility>
 #include <optional>
+#include <string>
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -168,9 +170,11 @@ template <auto Min, auto Max>
         }
         else
         {
+            using std::to_string;
+
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("bounded_uint<") + std::to_string(detail::raw_value(Min)) + ", " +
-                std::to_string(detail::raw_value(Max)) + "> addition result out of range"));
+                std::string("bounded_uint<") + to_string(detail::raw_value(Min)) + ", " +
+                to_string(detail::raw_value(Max)) + "> addition result out of range"));
         }
     }
 
