@@ -32,20 +32,20 @@ template <non_bounded_integral_library_type T>
 [[nodiscard]] constexpr auto to_be(const T value) noexcept -> T;
 ----
 
-==== Parameters
+=== Parameters
 
 * `value` -- The value to convert.
 
-==== Return Value
+=== Return Value
 
 If `std::endian::native == std::endian::big`, returns `value` unchanged.
 Otherwise, returns `byteswap(value)`.
 
-==== Complexity
+=== Complexity
 
 O(1).
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -69,20 +69,20 @@ template <non_bounded_integral_library_type T>
 [[nodiscard]] constexpr auto from_be(const T value) noexcept -> T;
 ----
 
-==== Parameters
+=== Parameters
 
 * `value` -- The big-endian value to convert to native byte order.
 
-==== Return Value
+=== Return Value
 
 The value in native byte order.
 Equivalent to `to_be(value)`.
 
-==== Complexity
+=== Complexity
 
 O(1).
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -102,20 +102,20 @@ template <non_bounded_integral_library_type T>
 [[nodiscard]] constexpr auto to_le(const T value) noexcept -> T;
 ----
 
-==== Parameters
+=== Parameters
 
 * `value` -- The value to convert.
 
-==== Return Value
+=== Return Value
 
 If `std::endian::native == std::endian::little`, returns `value` unchanged.
 Otherwise, returns `byteswap(value)`.
 
-==== Complexity
+=== Complexity
 
 O(1).
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -139,20 +139,20 @@ template <non_bounded_integral_library_type T>
 [[nodiscard]] constexpr auto from_le(const T value) noexcept -> T;
 ----
 
-==== Parameters
+=== Parameters
 
 * `value` -- The little-endian value to convert to native byte order.
 
-==== Return Value
+=== Return Value
 
 The value in native byte order.
 Equivalent to `to_le(value)`.
 
-==== Complexity
+=== Complexity
 
 O(1).
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -173,19 +173,19 @@ template <non_bounded_integral_library_type T>
 [[nodiscard]] constexpr auto to_be_bytes(const T value) noexcept -> std::array<std::byte, sizeof(T)>;
 ----
 
-==== Parameters
+=== Parameters
 
 * `value` -- The value to convert.
 
-==== Return Value
+=== Return Value
 
 A `std::array<std::byte, sizeof(T)>` containing the value's bytes in big-endian order (most significant byte first).
 
-==== Complexity
+=== Complexity
 
 O(1).
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -206,15 +206,15 @@ template <non_bounded_integral_library_type T, std::size_t N>
 [[nodiscard]] constexpr auto from_be_bytes(const std::span<const std::byte, N> bytes) -> T;
 ----
 
-==== Parameters
+=== Parameters
 
 * `bytes` -- A span of bytes in big-endian order. May have a fixed extent or `std::dynamic_extent`.
 
-==== Return Value
+=== Return Value
 
 The reconstructed safe integer value in native byte order.
 
-==== Extent Matching
+=== Extent Matching
 
 The function validates that the number of input bytes matches `sizeof(T)`:
 
@@ -222,11 +222,11 @@ The function validates that the number of input bytes matches `sizeof(T)`:
 * **Fixed extent does not match `sizeof(T)`**: Produces a `static_assert` failure at compile time.
 * **Dynamic extent**: Checks at runtime and throws `std::domain_error` if the sizes do not match.
 
-==== Complexity
+=== Complexity
 
 O(1).
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -254,19 +254,19 @@ template <non_bounded_integral_library_type T>
 [[nodiscard]] constexpr auto to_le_bytes(const T value) noexcept -> std::array<std::byte, sizeof(T)>;
 ----
 
-==== Parameters
+=== Parameters
 
 * `value` -- The value to convert.
 
-==== Return Value
+=== Return Value
 
 A `std::array<std::byte, sizeof(T)>` containing the value's bytes in little-endian order (least significant byte first).
 
-==== Complexity
+=== Complexity
 
 O(1).
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -287,15 +287,15 @@ template <non_bounded_integral_library_type T, std::size_t N>
 [[nodiscard]] constexpr auto from_le_bytes(const std::span<const std::byte, N> bytes) -> T;
 ----
 
-==== Parameters
+=== Parameters
 
 * `bytes` -- A span of bytes in little-endian order. May have a fixed extent or `std::dynamic_extent`.
 
-==== Return Value
+=== Return Value
 
 The reconstructed safe integer value in native byte order.
 
-==== Extent Matching
+=== Extent Matching
 
 The function validates that the number of input bytes matches `sizeof(T)`:
 
@@ -303,11 +303,11 @@ The function validates that the number of input bytes matches `sizeof(T)`:
 * **Fixed extent does not match `sizeof(T)`**: Produces a `static_assert` failure at compile time.
 * **Dynamic extent**: Checks at runtime and throws `std::domain_error` if the sizes do not match.
 
-==== Complexity
+=== Complexity
 
 O(1).
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -337,19 +337,19 @@ template <non_bounded_integral_library_type T>
 [[nodiscard]] constexpr auto to_ne_bytes(const T value) noexcept -> std::array<std::byte, sizeof(T)>;
 ----
 
-==== Parameters
+=== Parameters
 
 * `value` -- The value to convert.
 
-==== Return Value
+=== Return Value
 
 A `std::array<std::byte, sizeof(T)>` containing the value's bytes in native byte order.
 
-==== Complexity
+=== Complexity
 
 O(1).
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -371,15 +371,15 @@ template <non_bounded_integral_library_type T, std::size_t N>
 [[nodiscard]] constexpr auto from_ne_bytes(const std::span<const std::byte, N> bytes) -> T;
 ----
 
-==== Parameters
+=== Parameters
 
 * `bytes` -- A span of bytes in native byte order. May have a fixed extent or `std::dynamic_extent`.
 
-==== Return Value
+=== Return Value
 
 The reconstructed safe integer value.
 
-==== Extent Matching
+=== Extent Matching
 
 The function validates that the number of input bytes matches `sizeof(T)`:
 
@@ -387,11 +387,11 @@ The function validates that the number of input bytes matches `sizeof(T)`:
 * **Fixed extent does not match `sizeof(T)`**: Produces a `static_assert` failure at compile time.
 * **Dynamic extent**: Checks at runtime and throws `std::domain_error` if the sizes do not match.
 
-==== Complexity
+=== Complexity
 
 O(1).
 
-==== Example
+=== Example
 
 [source,c++]
 ----

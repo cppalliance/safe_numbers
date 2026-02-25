@@ -31,19 +31,19 @@ Returns the integer square root of `val`, i.e., the largest integer `r` such tha
 Uses Newton's method on the underlying hardware type.
 The computation cannot overflow and converges rapidly.
 
-==== Parameters
+=== Parameters
 
 * `val` -- The value to compute the integer square root of.
 
-==== Return Value
+=== Return Value
 
 The floor of the square root of `val`, as the same safe integer type `T`.
 
-==== Complexity
+=== Complexity
 
 O(log(val)) iterations of Newton's method.
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -80,18 +80,18 @@ template <non_bounded_unsigned_library_type T>
 Removes all trailing decimal zeros from `n`.
 Returns a `remove_trailing_zeros_return` containing the trimmed value and the count of removed zeros, such that `trimmed_number * 10^number_of_removed_zeros == n`.
 
-==== Parameters
+=== Parameters
 
 * `n` -- The value to remove trailing zeros from. If `n` is zero, returns `{0, 0}`.
 
-==== Return Value
+=== Return Value
 
 A `remove_trailing_zeros_return` where:
 
 * `trimmed_number` is `n` with all trailing decimal zeros removed.
 * `number_of_removed_zeros` is the count of removed zeros.
 
-==== Supported Types and Ranges
+=== Supported Types and Ranges
 
 [cols="1,1,1", options="header"]
 |===
@@ -118,7 +118,7 @@ A `remove_trailing_zeros_return` where:
 | 6
 |===
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -144,15 +144,15 @@ template <non_bounded_unsigned_library_type T>
 [[nodiscard]] constexpr auto is_power_10(const T n) -> bool;
 ----
 
-==== Parameters
+=== Parameters
 
 * `n` -- The value to test.
 
-==== Return Value
+=== Return Value
 
 `true` if `n` is a power of 10, `false` otherwise.
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -176,23 +176,23 @@ template <non_bounded_unsigned_library_type T>
 
 Computes `floor(log~2~(n))` using `bit_width(n) - 1`.
 
-==== Parameters
+=== Parameters
 
 * `n` -- The value to compute the logarithm of. Must be non-zero.
 
-==== Throws
+=== Throws
 
 `std::domain_error` if `n == 0`.
 
-==== Return Value
+=== Return Value
 
 The floor of the base-2 logarithm of `n`.
 
-==== Complexity
+=== Complexity
 
 O(1).
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -218,19 +218,19 @@ template <non_bounded_unsigned_library_type T>
 
 Computes `floor(log~10~(n))` using `num_digits(n) - 1`, where `num_digits` approximates the digit count via `log~10~(x) ~= log~2~(x) / log~2~(10)` and refines with at most two comparisons against a power-of-10 lookup table.
 
-==== Parameters
+=== Parameters
 
 * `n` -- The value to compute the logarithm of. Must be non-zero.
 
-==== Throws
+=== Throws
 
 `std::domain_error` if `n == 0`.
 
-==== Return Value
+=== Return Value
 
 The floor of the base-10 logarithm of `n`.
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -255,26 +255,26 @@ template <non_bounded_unsigned_library_type T>
 Computes `floor(log~base~(n))` by repeated division.
 For the common cases of base 2 and base 10, prefer the specialized `ilog2` and `ilog10` functions which run in O(1).
 
-==== Parameters
+=== Parameters
 
 * `n` -- The value to compute the logarithm of. Must be non-zero.
 * `base` -- The base of the logarithm. Must be >= 2.
 
-==== Throws
+=== Throws
 
 * `std::domain_error` if `n == 0`.
 * `std::domain_error` if `base < 2` (base 0 would cause division by zero; base 1 would cause an infinite loop).
 
-==== Return Value
+=== Return Value
 
 The floor of the base-`base` logarithm of `n`.
 For `n < base`, returns `0`.
 
-==== Complexity
+=== Complexity
 
 O(log~base~(n)) divisions.
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -307,20 +307,20 @@ The algorithm runs in O(log(b)) multiplications:
 
 If the result overflows the type, the behavior follows the overflow policy of the safe integer type (by default, throwing `std::overflow_error`).
 
-==== Parameters
+=== Parameters
 
 * `a` -- The base value.
 * `b` -- The exponent value.
 
-==== Return Value
+=== Return Value
 
 `a` raised to the power `b`, as the same safe integer type `T`.
 
-==== Complexity
+=== Complexity
 
 O(log(b)) multiplications.
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -342,15 +342,15 @@ template <non_bounded_unsigned_library_type T>
 [[nodiscard]] constexpr auto is_power_2(const T n) noexcept -> bool;
 ----
 
-==== Parameters
+=== Parameters
 
 * `n` -- The value to test.
 
-==== Return Value
+=== Return Value
 
 `true` if `n` is a power of 2, `false` otherwise.
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -377,21 +377,21 @@ Returns `|a - b|`, computed as `a - b` if `a >= b`, or `b - a` otherwise.
 
 Works with all safe integer types: `u8`, `u16`, `u32`, `u64`, `u128`, and `bounded_uint<Min, Max>`.
 
-==== Parameters
+=== Parameters
 
 * `a` -- The first value.
 * `b` -- The second value.
 
-==== Return Value
+=== Return Value
 
 The absolute difference between `a` and `b`, as the same safe integer type `T`.
 The result is always commutative: `abs_diff(a, b) == abs_diff(b, a)`.
 
-==== Complexity
+=== Complexity
 
 O(1).
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -420,20 +420,20 @@ Otherwise, returns `a / b + 1`.
 
 Works with all safe integer types: `u8`, `u16`, `u32`, `u64`, `u128`, and `bounded_uint<Min, Max>`.
 
-==== Parameters
+=== Parameters
 
 * `a` -- The dividend.
 * `b` -- The divisor. Must not be zero.
 
-==== Return Value
+=== Return Value
 
 The smallest integer greater than or equal to the exact quotient `a / b`, as the same safe integer type `T`.
 
-==== Complexity
+=== Complexity
 
 O(1).
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -462,22 +462,22 @@ Equivalent to `div_ceil(a, b) * b`.
 
 Works with all safe integer types: `u8`, `u16`, `u32`, `u64`, `u128`, and `bounded_uint<Min, Max>`.
 
-==== Parameters
+=== Parameters
 
 * `a` -- The value to round up.
 * `b` -- The alignment / divisor. Must not be zero.
 
-==== Return Value
+=== Return Value
 
 The smallest multiple of `b` that is greater than or equal to `a`, as the same safe integer type `T`.
 When `a` is already a multiple of `b`, returns `a`.
 When `a == 0`, returns `0`.
 
-==== Complexity
+=== Complexity
 
 O(1).
 
-==== Example
+=== Example
 
 [source,c++]
 ----

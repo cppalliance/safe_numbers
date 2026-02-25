@@ -31,21 +31,21 @@ template <non_bounded_integral_library_type T>
 Returns the greatest common divisor of `m` and `n`.
 Delegates to `std::gcd` on the underlying hardware type, or to `int128::gcd` for 128-bit types.
 
-==== Parameters
+=== Parameters
 
 * `m` -- The first value.
 * `n` -- The second value.
 
-==== Return Value
+=== Return Value
 
 The greatest common divisor of `m` and `n`, as the same safe integer type `T`.
 If both `m` and `n` are zero, returns zero.
 
-==== Complexity
+=== Complexity
 
 O(log(min(m, n))) divisions (Euclidean algorithm).
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -71,21 +71,21 @@ template <non_bounded_integral_library_type T>
 Returns the least common multiple of `m` and `n`.
 Delegates to `std::lcm` on the underlying hardware type, or to `int128::lcm` for 128-bit types.
 
-==== Parameters
+=== Parameters
 
 * `m` -- The first value.
 * `n` -- The second value.
 
-==== Return Value
+=== Return Value
 
 The least common multiple of `m` and `n`, as the same safe integer type `T`.
 If either `m` or `n` is zero, returns zero.
 
-==== Complexity
+=== Complexity
 
 O(log(min(m, n))) divisions (via `gcd`).
 
-==== Example
+=== Example
 
 [source,c++]
 ----
@@ -112,21 +112,21 @@ template <non_bounded_integral_library_type T>
 Returns the midpoint of `a` and `b`, computed without overflow.
 Delegates to `std::midpoint` on the underlying hardware type, or to `int128::midpoint` for 128-bit types.
 
-==== Parameters
+=== Parameters
 
 * `a` -- The first value. The result rounds towards this value.
 * `b` -- The second value.
 
-==== Return Value
+=== Return Value
 
 The integer midpoint of `a` and `b`, as the same safe integer type `T`.
 When the mathematical midpoint is not an integer, the result is rounded towards `a`.
 
-==== Complexity
+=== Complexity
 
 O(1).
 
-==== Example
+=== Example
 
 [source,c++]
 ----
