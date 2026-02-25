@@ -7,6 +7,10 @@ include(BoostTestJamfile OPTIONAL RESULT_VARIABLE HAVE_BOOST_TEST)
 
 if(HAVE_BOOST_TEST)
 
-    boost_test_jamfile(FILE Jamfile LINK_LIBRARIES Boost::safe_numbers Boost::charconv Boost::core Boost::random Boost::safe_numerics Boost::multiprecision)
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64|i386|i686|x86")
+        boost_test_jamfile(FILE Jamfile LINK_LIBRARIES Boost::safe_numbers Boost::charconv Boost::core Boost::random Boost::safe_numerics Boost::multiprecision Boost::exception Boost::stacktrace_from_exception)
+    else()
+        boost_test_jamfile(FILE Jamfile LINK_LIBRARIES Boost::safe_numbers Boost::charconv Boost::core Boost::random Boost::safe_numerics Boost::multiprecision Boost::exception)
+    endif()
 
 endif()
