@@ -122,7 +122,7 @@ First, without any additional dependencies, the thrown messages will contain bot
 Error Detected: Overflow detected in u8 addition
 ----
 
-Second, we internally use Boost.throw_exception which allows extensible exceptions.
+Second, we internally use Boost.throw_exception, which allows extensible exceptions.
 If you add in your catch block `boost::diagnostic_information()` you can get additional information:
 
 ----
