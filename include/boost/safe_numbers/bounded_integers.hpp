@@ -28,6 +28,18 @@
 
 namespace boost::safe_numbers {
 
+namespace detail {
+
+template <fundamental_unsigned_integral T>
+auto to_string_val(T val) -> std::string
+{
+    using std::to_string;
+    using boost::int128::to_string;
+    return to_string(val);
+}
+
+} // namespace detail
+
 template <auto Min, auto Max>
     requires (detail::valid_bound<decltype(Min)> &&
               detail::valid_bound<decltype(Max)> &&
@@ -62,8 +74,8 @@ public:
             else
             {
                 BOOST_THROW_EXCEPTION(std::domain_error(
-                    std::string("bounded_uint<") + std::to_string(detail::raw_value(Min)) + ", " +
-                    std::to_string(detail::raw_value(Max)) + "> value out of range"));
+                    std::string("bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
+                    detail::to_string_val(detail::raw_value(Max)) + "> value out of range"));
             }
         }
 
@@ -90,8 +102,8 @@ public:
                 else
                 {
                     BOOST_THROW_EXCEPTION(std::domain_error(
-                        std::string("Overflow in bounded_uint<") + std::to_string(detail::raw_value(Min)) + ", " +
-                        std::to_string(detail::raw_value(Max)) + "> conversion to smaller type"));
+                        std::string("Overflow in bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
+                        detail::to_string_val(detail::raw_value(Max)) + "> conversion to smaller type"));
                 }
             }
 
@@ -155,8 +167,8 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::overflow_error(
-                std::string("Overflow in bounded_uint<") + std::to_string(detail::raw_value(Min)) + ", " +
-                std::to_string(detail::raw_value(Max)) + "> addition"));
+                std::string("Overflow in bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
+                detail::to_string_val(detail::raw_value(Max)) + "> addition"));
         }
     }
 
@@ -170,11 +182,9 @@ template <auto Min, auto Max>
         }
         else
         {
-            using std::to_string;
-
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("bounded_uint<") + to_string(detail::raw_value(Min)) + ", " +
-                to_string(detail::raw_value(Max)) + "> addition result out of range"));
+                std::string("bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
+                detail::to_string_val(detail::raw_value(Max)) + "> addition result out of range"));
         }
     }
 
@@ -200,8 +210,8 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::underflow_error(
-                std::string("Underflow in bounded_uint<") + std::to_string(detail::raw_value(Min)) + ", " +
-                std::to_string(detail::raw_value(Max)) + "> subtraction"));
+                std::string("Underflow in bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
+                detail::to_string_val(detail::raw_value(Max)) + "> subtraction"));
         }
     }
 
@@ -216,8 +226,8 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("bounded_uint<") + std::to_string(detail::raw_value(Min)) + ", " +
-                std::to_string(detail::raw_value(Max)) + "> subtraction result out of range"));
+                std::string("bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
+                detail::to_string_val(detail::raw_value(Max)) + "> subtraction result out of range"));
         }
     }
 
@@ -243,8 +253,8 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::overflow_error(
-                std::string("Overflow in bounded_uint<") + std::to_string(detail::raw_value(Min)) + ", " +
-                std::to_string(detail::raw_value(Max)) + "> multiplication"));
+                std::string("Overflow in bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
+                detail::to_string_val(detail::raw_value(Max)) + "> multiplication"));
         }
     }
 
@@ -259,8 +269,8 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("bounded_uint<") + std::to_string(detail::raw_value(Min)) + ", " +
-                std::to_string(detail::raw_value(Max)) + "> multiplication result out of range"));
+                std::string("bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
+                detail::to_string_val(detail::raw_value(Max)) + "> multiplication result out of range"));
         }
     }
 
@@ -285,8 +295,8 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("Division by zero in bounded_uint<") + std::to_string(detail::raw_value(Min)) + ", " +
-                std::to_string(detail::raw_value(Max)) + "> division"));
+                std::string("Division by zero in bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
+                detail::to_string_val(detail::raw_value(Max)) + "> division"));
         }
     }
 
@@ -311,8 +321,8 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("bounded_uint<") + std::to_string(detail::raw_value(Min)) + ", " +
-                std::to_string(detail::raw_value(Max)) + "> division result out of range"));
+                std::string("bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
+                detail::to_string_val(detail::raw_value(Max)) + "> division result out of range"));
         }
     }
 
@@ -337,8 +347,8 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("Division by zero in bounded_uint<") + std::to_string(detail::raw_value(Min)) + ", " +
-                std::to_string(detail::raw_value(Max)) + "> modulo"));
+                std::string("Division by zero in bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
+                detail::to_string_val(detail::raw_value(Max)) + "> modulo"));
         }
     }
 
@@ -363,8 +373,8 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("bounded_uint<") + std::to_string(detail::raw_value(Min)) + ", " +
-                std::to_string(detail::raw_value(Max)) + "> modulo result out of range"));
+                std::string("bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
+                detail::to_string_val(detail::raw_value(Max)) + "> modulo result out of range"));
         }
     }
 
@@ -430,8 +440,8 @@ constexpr auto bounded_uint<Min, Max>::operator++() -> bounded_uint&
         else
         {
             BOOST_THROW_EXCEPTION(std::overflow_error(
-                std::string("Overflow in bounded_uint<") + std::to_string(detail::raw_value(Min)) + ", " +
-                std::to_string(detail::raw_value(Max)) + "> increment"));
+                std::string("Overflow in bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
+                detail::to_string_val(detail::raw_value(Max)) + "> increment"));
         }
     }
 
@@ -445,8 +455,8 @@ constexpr auto bounded_uint<Min, Max>::operator++() -> bounded_uint&
         else
         {
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("bounded_uint<") + std::to_string(detail::raw_value(Min)) + ", " +
-                std::to_string(detail::raw_value(Max)) + "> increment result out of range"));
+                std::string("bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
+                detail::to_string_val(detail::raw_value(Max)) + "> increment result out of range"));
         }
     }
 
@@ -484,8 +494,8 @@ constexpr auto bounded_uint<Min, Max>::operator--() -> bounded_uint&
         else
         {
             BOOST_THROW_EXCEPTION(std::underflow_error(
-                std::string("Underflow in bounded_uint<") + std::to_string(detail::raw_value(Min)) + ", " +
-                std::to_string(detail::raw_value(Max)) + "> decrement"));
+                std::string("Underflow in bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
+                detail::to_string_val(detail::raw_value(Max)) + "> decrement"));
         }
     }
 
@@ -499,8 +509,8 @@ constexpr auto bounded_uint<Min, Max>::operator--() -> bounded_uint&
         else
         {
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("bounded_uint<") + std::to_string(detail::raw_value(Min)) + ", " +
-                std::to_string(detail::raw_value(Max)) + "> decrement result out of range"));
+                std::string("bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
+                detail::to_string_val(detail::raw_value(Max)) + "> decrement result out of range"));
         }
     }
 
