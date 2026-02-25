@@ -62,8 +62,10 @@ public:
 
     explicit constexpr bounded_uint(const basis_type val)
     {
-        constexpr auto min_val {basis_type{static_cast<underlying_type>(detail::raw_value(Min))}};
-        constexpr auto max_val {basis_type{static_cast<underlying_type>(detail::raw_value(Max))}};
+        constexpr auto min_raw {static_cast<underlying_type>(detail::raw_value(Min))};
+        constexpr auto max_raw {static_cast<underlying_type>(detail::raw_value(Max))};
+        constexpr auto min_val {basis_type{min_raw}};
+        constexpr auto max_val {basis_type{max_raw}};
 
         if (val < min_val || val > max_val)
         {
@@ -74,8 +76,8 @@ public:
             else
             {
                 BOOST_THROW_EXCEPTION(std::domain_error(
-                    std::string("bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
-                    detail::to_string_val(detail::raw_value(Max)) + "> value out of range"));
+                    std::string("bounded_uint<") + detail::to_string_val(min_raw) + ", " +
+                    detail::to_string_val(max_raw) + "> value out of range"));
             }
         }
 
@@ -88,6 +90,8 @@ public:
         requires (detail::is_unsigned_library_type_v<OtherBasis> || detail::is_fundamental_unsigned_integral_v<OtherBasis>)
     [[nodiscard]] explicit constexpr operator OtherBasis() const
     {
+        constexpr auto min_raw {static_cast<underlying_type>(detail::raw_value(Min))};
+        constexpr auto max_raw {static_cast<underlying_type>(detail::raw_value(Max))};
         const auto raw {static_cast<detail::underlying_type_t<basis_type>>(basis_)};
 
         if constexpr (sizeof(OtherBasis) < sizeof(basis_type))
@@ -102,8 +106,8 @@ public:
                 else
                 {
                     BOOST_THROW_EXCEPTION(std::domain_error(
-                        std::string("Overflow in bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
-                        detail::to_string_val(detail::raw_value(Max)) + "> conversion to smaller type"));
+                        std::string("Overflow in bounded_uint<") + detail::to_string_val(min_raw) + ", " +
+                        detail::to_string_val(max_raw) + "> conversion to smaller type"));
                 }
             }
 
@@ -154,6 +158,8 @@ template <auto Min, auto Max>
 {
     using basis = typename bounded_uint<Min, Max>::basis_type;
     using underlying = detail::underlying_type_t<basis>;
+    constexpr auto min_raw {static_cast<underlying>(detail::raw_value(Min))};
+    constexpr auto max_raw {static_cast<underlying>(detail::raw_value(Max))};
     const auto lhs_raw {static_cast<underlying>(static_cast<basis>(lhs))};
     const auto rhs_raw {static_cast<underlying>(static_cast<basis>(rhs))};
 
@@ -167,13 +173,11 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::overflow_error(
-                std::string("Overflow in bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
-                detail::to_string_val(detail::raw_value(Max)) + "> addition"));
+                std::string("Overflow in bounded_uint<") + detail::to_string_val(min_raw) + ", " +
+                detail::to_string_val(max_raw) + "> addition"));
         }
     }
 
-    constexpr auto min_raw {static_cast<underlying>(detail::raw_value(Min))};
-    constexpr auto max_raw {static_cast<underlying>(detail::raw_value(Max))};
     if (res < min_raw || res > max_raw)
     {
         if (std::is_constant_evaluated())
@@ -183,8 +187,8 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
-                detail::to_string_val(detail::raw_value(Max)) + "> addition result out of range"));
+                std::string("bounded_uint<") + detail::to_string_val(min_raw) + ", " +
+                detail::to_string_val(max_raw) + "> addition result out of range"));
         }
     }
 
@@ -197,6 +201,8 @@ template <auto Min, auto Max>
 {
     using basis = typename bounded_uint<Min, Max>::basis_type;
     using underlying = detail::underlying_type_t<basis>;
+    constexpr auto min_raw {static_cast<underlying>(detail::raw_value(Min))};
+    constexpr auto max_raw {static_cast<underlying>(detail::raw_value(Max))};
     const auto lhs_raw {static_cast<underlying>(static_cast<basis>(lhs))};
     const auto rhs_raw {static_cast<underlying>(static_cast<basis>(rhs))};
 
@@ -210,13 +216,11 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::underflow_error(
-                std::string("Underflow in bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
-                detail::to_string_val(detail::raw_value(Max)) + "> subtraction"));
+                std::string("Underflow in bounded_uint<") + detail::to_string_val(min_raw) + ", " +
+                detail::to_string_val(max_raw) + "> subtraction"));
         }
     }
 
-    constexpr auto min_raw {static_cast<underlying>(detail::raw_value(Min))};
-    constexpr auto max_raw {static_cast<underlying>(detail::raw_value(Max))};
     if (res < min_raw || res > max_raw)
     {
         if (std::is_constant_evaluated())
@@ -226,8 +230,8 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
-                detail::to_string_val(detail::raw_value(Max)) + "> subtraction result out of range"));
+                std::string("bounded_uint<") + detail::to_string_val(min_raw) + ", " +
+                detail::to_string_val(max_raw) + "> subtraction result out of range"));
         }
     }
 
@@ -240,6 +244,8 @@ template <auto Min, auto Max>
 {
     using basis = typename bounded_uint<Min, Max>::basis_type;
     using underlying = detail::underlying_type_t<basis>;
+    constexpr auto min_raw {static_cast<underlying>(detail::raw_value(Min))};
+    constexpr auto max_raw {static_cast<underlying>(detail::raw_value(Max))};
     const auto lhs_raw {static_cast<underlying>(static_cast<basis>(lhs))};
     const auto rhs_raw {static_cast<underlying>(static_cast<basis>(rhs))};
 
@@ -253,13 +259,11 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::overflow_error(
-                std::string("Overflow in bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
-                detail::to_string_val(detail::raw_value(Max)) + "> multiplication"));
+                std::string("Overflow in bounded_uint<") + detail::to_string_val(min_raw) + ", " +
+                detail::to_string_val(max_raw) + "> multiplication"));
         }
     }
 
-    constexpr auto min_raw {static_cast<underlying>(detail::raw_value(Min))};
-    constexpr auto max_raw {static_cast<underlying>(detail::raw_value(Max))};
     if (res < min_raw || res > max_raw)
     {
         if (std::is_constant_evaluated())
@@ -269,8 +273,8 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
-                detail::to_string_val(detail::raw_value(Max)) + "> multiplication result out of range"));
+                std::string("bounded_uint<") + detail::to_string_val(min_raw) + ", " +
+                detail::to_string_val(max_raw) + "> multiplication result out of range"));
         }
     }
 
@@ -283,6 +287,8 @@ template <auto Min, auto Max>
 {
     using basis = typename bounded_uint<Min, Max>::basis_type;
     using underlying = detail::underlying_type_t<basis>;
+    constexpr auto min_raw {static_cast<underlying>(detail::raw_value(Min))};
+    constexpr auto max_raw {static_cast<underlying>(detail::raw_value(Max))};
     const auto lhs_raw {static_cast<underlying>(static_cast<basis>(lhs))};
     const auto rhs_raw {static_cast<underlying>(static_cast<basis>(rhs))};
 
@@ -295,8 +301,8 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("Division by zero in bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
-                detail::to_string_val(detail::raw_value(Max)) + "> division"));
+                std::string("Division by zero in bounded_uint<") + detail::to_string_val(min_raw) + ", " +
+                detail::to_string_val(max_raw) + "> division"));
         }
     }
 
@@ -310,8 +316,6 @@ template <auto Min, auto Max>
         res = lhs_raw / rhs_raw;
     }
 
-    constexpr auto min_raw {static_cast<underlying>(detail::raw_value(Min))};
-    constexpr auto max_raw {static_cast<underlying>(detail::raw_value(Max))};
     if (res < min_raw || res > max_raw)
     {
         if (std::is_constant_evaluated())
@@ -321,8 +325,8 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
-                detail::to_string_val(detail::raw_value(Max)) + "> division result out of range"));
+                std::string("bounded_uint<") + detail::to_string_val(min_raw) + ", " +
+                detail::to_string_val(max_raw) + "> division result out of range"));
         }
     }
 
@@ -335,6 +339,8 @@ template <auto Min, auto Max>
 {
     using basis = typename bounded_uint<Min, Max>::basis_type;
     using underlying = detail::underlying_type_t<basis>;
+    constexpr auto min_raw {static_cast<underlying>(detail::raw_value(Min))};
+    constexpr auto max_raw {static_cast<underlying>(detail::raw_value(Max))};
     const auto lhs_raw {static_cast<underlying>(static_cast<basis>(lhs))};
     const auto rhs_raw {static_cast<underlying>(static_cast<basis>(rhs))};
 
@@ -347,8 +353,8 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("Division by zero in bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
-                detail::to_string_val(detail::raw_value(Max)) + "> modulo"));
+                std::string("Division by zero in bounded_uint<") + detail::to_string_val(min_raw) + ", " +
+                detail::to_string_val(max_raw) + "> modulo"));
         }
     }
 
@@ -362,8 +368,6 @@ template <auto Min, auto Max>
         res = lhs_raw % rhs_raw;
     }
 
-    constexpr auto min_raw {static_cast<underlying>(detail::raw_value(Min))};
-    constexpr auto max_raw {static_cast<underlying>(detail::raw_value(Max))};
     if (res < min_raw || res > max_raw)
     {
         if (std::is_constant_evaluated())
@@ -373,8 +377,8 @@ template <auto Min, auto Max>
         else
         {
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
-                detail::to_string_val(detail::raw_value(Max)) + "> modulo result out of range"));
+                std::string("bounded_uint<") + detail::to_string_val(min_raw) + ", " +
+                detail::to_string_val(max_raw) + "> modulo result out of range"));
         }
     }
 
@@ -428,6 +432,8 @@ template <auto Min, auto Max>
 constexpr auto bounded_uint<Min, Max>::operator++() -> bounded_uint&
 {
     using underlying = detail::underlying_type_t<basis_type>;
+    constexpr auto min_raw {static_cast<underlying>(detail::raw_value(Min))};
+    constexpr auto max_raw {static_cast<underlying>(detail::raw_value(Max))};
     const auto raw {static_cast<underlying>(static_cast<basis_type>(*this))};
 
     underlying res {};
@@ -440,12 +446,11 @@ constexpr auto bounded_uint<Min, Max>::operator++() -> bounded_uint&
         else
         {
             BOOST_THROW_EXCEPTION(std::overflow_error(
-                std::string("Overflow in bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
-                detail::to_string_val(detail::raw_value(Max)) + "> increment"));
+                std::string("Overflow in bounded_uint<") + detail::to_string_val(min_raw) + ", " +
+                detail::to_string_val(max_raw) + "> increment"));
         }
     }
 
-    constexpr auto max_raw {static_cast<underlying>(detail::raw_value(Max))};
     if (res > max_raw)
     {
         if (std::is_constant_evaluated())
@@ -455,8 +460,8 @@ constexpr auto bounded_uint<Min, Max>::operator++() -> bounded_uint&
         else
         {
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
-                detail::to_string_val(detail::raw_value(Max)) + "> increment result out of range"));
+                std::string("bounded_uint<") + detail::to_string_val(min_raw) + ", " +
+                detail::to_string_val(max_raw) + "> increment result out of range"));
         }
     }
 
@@ -482,6 +487,8 @@ template <auto Min, auto Max>
 constexpr auto bounded_uint<Min, Max>::operator--() -> bounded_uint&
 {
     using underlying = detail::underlying_type_t<basis_type>;
+    constexpr auto min_raw {static_cast<underlying>(detail::raw_value(Min))};
+    constexpr auto max_raw {static_cast<underlying>(detail::raw_value(Max))};
     const auto raw {static_cast<underlying>(static_cast<basis_type>(*this))};
 
     underlying res {};
@@ -494,12 +501,11 @@ constexpr auto bounded_uint<Min, Max>::operator--() -> bounded_uint&
         else
         {
             BOOST_THROW_EXCEPTION(std::underflow_error(
-                std::string("Underflow in bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
-                detail::to_string_val(detail::raw_value(Max)) + "> decrement"));
+                std::string("Underflow in bounded_uint<") + detail::to_string_val(min_raw) + ", " +
+                detail::to_string_val(max_raw) + "> decrement"));
         }
     }
 
-    constexpr auto min_raw {static_cast<underlying>(detail::raw_value(Min))};
     if (res < min_raw)
     {
         if (std::is_constant_evaluated())
@@ -509,8 +515,8 @@ constexpr auto bounded_uint<Min, Max>::operator--() -> bounded_uint&
         else
         {
             BOOST_THROW_EXCEPTION(std::domain_error(
-                std::string("bounded_uint<") + detail::to_string_val(detail::raw_value(Min)) + ", " +
-                detail::to_string_val(detail::raw_value(Max)) + "> decrement result out of range"));
+                std::string("bounded_uint<") + detail::to_string_val(min_raw) + ", " +
+                detail::to_string_val(max_raw) + "> decrement result out of range"));
         }
     }
 
