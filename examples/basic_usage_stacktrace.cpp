@@ -7,7 +7,14 @@
 #include <boost/exception/diagnostic_information.hpp>   // For boost::diagnostic_information
 
 #if defined(__x86_64__) || defined(_M_X64)
+
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+
 #include <boost/stacktrace.hpp>                         // For boost::stacktrace::from_current_exception
+
 #endif
 
 #include <iostream>
