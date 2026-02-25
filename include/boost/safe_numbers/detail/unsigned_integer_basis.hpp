@@ -387,7 +387,7 @@ template <fundamental_unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator+(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
-    return add_impl<overflow_policy::throw_exception>(lhs, rhs);
+    return add_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
 }
 
 } // namespace boost::safe_numbers::detail
@@ -752,7 +752,7 @@ template <fundamental_unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator-(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
-    return sub_impl<overflow_policy::throw_exception>(lhs, rhs);
+    return sub_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
 }
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("subtraction", operator-)
@@ -1030,7 +1030,7 @@ template <fundamental_unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator*(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
-    return mul_impl<overflow_policy::throw_exception>(lhs, rhs);
+    return mul_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
 }
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("multiplication", operator*)
@@ -1156,7 +1156,7 @@ template <fundamental_unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator/(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
-    return div_impl<overflow_policy::throw_exception>(lhs, rhs);
+    return div_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
 }
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("division", operator/)
@@ -1282,7 +1282,7 @@ template <fundamental_unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator%(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
-    return mod_impl<overflow_policy::throw_exception>(lhs, rhs);
+    return mod_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
 }
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("modulo", operator%)
