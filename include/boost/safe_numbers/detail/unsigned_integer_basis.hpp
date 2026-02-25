@@ -387,6 +387,76 @@ template <fundamental_unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator+(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
+    // Here we do repeat some logic in the above add_impls
+    // The reason for this is to significantly improve constexpr error messages.
+    // We go from this:
+    /*
+    clang-darwin.compile.c++ ../../../bin.v2/libs/safe_numbers/test/compile_fail_basic_usage_constexpr.test/clang-darwin-21/debug/arm_64/cxxstd-20-iso/threading-multi/visibility-hidden/compile_fail_basic_usage_constexpr.o
+    ../examples/compile_fail_basic_usage_constexpr.cpp:18:22: error: constexpr variable 'z' must be initialized by a constant expression
+    18 |         constexpr u8 z {x + y};
+    |                      ^ ~~~~~~~
+    ../../../boost/safe_numbers/detail/unsigned_integer_basis.hpp:228:21: note: subexpression not valid in a constant expression
+    228 |                     throw std::overflow_error("Overflow detected in u8 addition");
+    |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ../../../boost/safe_numbers/detail/unsigned_integer_basis.hpp:292:13: note: in call to 'handle_overflow.operator()()'
+    292 |             handle_overflow();
+    |             ^~~~~~~~~~~~~~~~~
+    ../../../boost/safe_numbers/detail/unsigned_integer_basis.hpp:383:12: note: in call to 'apply({255}, {2})'
+    383 |     return add_helper<Policy, BasisType>::apply(lhs, rhs);
+    |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ../../../boost/safe_numbers/detail/unsigned_integer_basis.hpp:390:12: note: in call to 'add_impl<boost::safe_numbers::overflow_policy::throw_exception, unsigned char>({255}, {2})'
+    390 |     return add_impl<overflow_policy::throw_exception>(lhs, rhs);
+    |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ../examples/compile_fail_basic_usage_constexpr.cpp:18:25: note: in call to 'operator+<unsigned char>({255}, {2})'
+    18 |         constexpr u8 z {x + y};
+    |                         ^~~~~
+    1 error generated.
+
+    to this:
+
+    clang-darwin.compile.c++ ../../../bin.v2/libs/safe_numbers/test/compile_fail_basic_usage_constexpr.test/clang-darwin-21/debug/arm_64/cxxstd-20-iso/threading-multi/visibility-hidden/compile_fail_basic_usage_constexpr.o
+    ../examples/compile_fail_basic_usage_constexpr.cpp:18:22: error: constexpr variable 'z' must be initialized by a constant expression
+    18 |         constexpr u8 z {x + y};
+    |                      ^ ~~~~~~~
+    ../../../boost/safe_numbers/detail/unsigned_integer_basis.hpp:397:17: note: subexpression not valid in a constant expression
+    397 |                 throw std::overflow_error("Overflow detected in u8 addition");
+    |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ../examples/compile_fail_basic_usage_constexpr.cpp:18:25: note: in call to 'operator+<unsigned char>({255}, {2})'
+    18 |         constexpr u8 z {x + y};
+    |                         ^~~~~
+    1 error generated.
+    */
+
+    if (std::is_constant_evaluated())
+    {
+        BasisType res {};
+        if (impl::unsigned_no_intrin_add(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
+        {
+            if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+            {
+                throw std::overflow_error("Overflow detected in u8 addition");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
+            {
+                throw std::overflow_error("Overflow detected in u16 addition");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
+            {
+                throw std::overflow_error("Overflow detected in u32 addition");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
+            {
+                throw std::overflow_error("Overflow detected in u64 addition");
+            }
+            else
+            {
+                throw std::overflow_error("Overflow detected in u128 addition");
+            }
+        }
+
+        return unsigned_integer_basis<BasisType>{res};
+    }
+
     return add_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
 }
 
@@ -752,6 +822,36 @@ template <fundamental_unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator-(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
+    if (std::is_constant_evaluated())
+    {
+        BasisType res {};
+        if (impl::unsigned_no_intrin_sub(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
+        {
+            if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+            {
+                throw std::underflow_error("Underflow detected in u8 subtraction");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
+            {
+                throw std::underflow_error("Underflow detected in u16 subtraction");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
+            {
+                throw std::underflow_error("Underflow detected in u32 subtraction");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
+            {
+                throw std::underflow_error("Underflow detected in u64 subtraction");
+            }
+            else
+            {
+                throw std::underflow_error("Underflow detected in u128 subtraction");
+            }
+        }
+
+        return unsigned_integer_basis<BasisType>{res};
+    }
+
     return sub_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
 }
 
@@ -1030,6 +1130,36 @@ template <fundamental_unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator*(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
+    if (std::is_constant_evaluated())
+    {
+        BasisType res {};
+        if (impl::no_intrin_mul(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
+        {
+            if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+            {
+                throw std::overflow_error("Overflow detected in u8 multiplication");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
+            {
+                throw std::overflow_error("Overflow detected in u16 multiplication");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
+            {
+                throw std::overflow_error("Overflow detected in u32 multiplication");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
+            {
+                throw std::overflow_error("Overflow detected in u64 multiplication");
+            }
+            else
+            {
+                throw std::overflow_error("Overflow detected in u128 multiplication");
+            }
+        }
+
+        return unsigned_integer_basis<BasisType>{res};
+    }
+
     return mul_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
 }
 
@@ -1156,6 +1286,24 @@ template <fundamental_unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator/(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
+    if (std::is_constant_evaluated())
+    {
+        const auto divisor {static_cast<BasisType>(rhs)};
+        if (divisor == 0U) [[unlikely]]
+        {
+            throw std::domain_error("Unsigned division by zero");
+        }
+
+        if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
+        {
+            return unsigned_integer_basis<BasisType>{static_cast<BasisType>(static_cast<BasisType>(lhs) / divisor)};
+        }
+        else
+        {
+            return unsigned_integer_basis<BasisType>{static_cast<BasisType>(lhs) / divisor};
+        }
+    }
+
     return div_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
 }
 
@@ -1282,6 +1430,24 @@ template <fundamental_unsigned_integral BasisType>
 [[nodiscard]] constexpr auto operator%(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
+    if (std::is_constant_evaluated())
+    {
+        const auto divisor {static_cast<BasisType>(rhs)};
+        if (divisor == 0U) [[unlikely]]
+        {
+            throw std::domain_error("Unsigned modulo by zero");
+        }
+
+        if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
+        {
+            return unsigned_integer_basis<BasisType>{static_cast<BasisType>(static_cast<BasisType>(lhs) % divisor)};
+        }
+        else
+        {
+            return unsigned_integer_basis<BasisType>{static_cast<BasisType>(lhs) % divisor};
+        }
+    }
+
     return mod_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
 }
 
