@@ -221,21 +221,46 @@ struct add_helper
 
         auto handle_overflow = [&res]
         {
-            if constexpr (Policy == overflow_policy::throw_exception)
+            if (std::is_constant_evaluated())
             {
-                static_cast<void>(res);
-                BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
-            }
-            else if constexpr (Policy == overflow_policy::saturate)
-            {
-                res = std::numeric_limits<BasisType>::max();
-            }
-            else if constexpr (Policy == overflow_policy::strict)
-            {
-                static_cast<void>(res);
-                std::exit(EXIT_FAILURE);
+                if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+                {
+                    throw std::overflow_error("Overflow detected in u8 addition");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
+                {
+                    throw std::overflow_error("Overflow detected in u16 addition");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
+                {
+                    throw std::overflow_error("Overflow detected in u32 addition");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
+                {
+                    throw std::overflow_error("Overflow detected in u64 addition");
+                }
+                else
+                {
+                    throw std::overflow_error("Overflow detected in u128 addition");
+                }
             }
             else
+            {
+                if constexpr (Policy == overflow_policy::throw_exception)
+                {
+                    static_cast<void>(res);
+                    BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned addition"));
+                }
+                else if constexpr (Policy == overflow_policy::saturate)
+                {
+                    res = std::numeric_limits<BasisType>::max();
+                }
+                else if constexpr (Policy == overflow_policy::strict)
+                {
+                    static_cast<void>(res);
+                    std::exit(EXIT_FAILURE);
+                }
+                else
                 {
                     static_cast<void>(res);
                     BOOST_SAFE_NUMBERS_UNREACHABLE;
@@ -578,24 +603,50 @@ struct sub_helper
 
         auto handle_underflow = [&res]
         {
-            if constexpr (Policy == overflow_policy::throw_exception)
+            if (std::is_constant_evaluated())
             {
-                static_cast<void>(res);
-                BOOST_THROW_EXCEPTION(std::underflow_error("Underflow detected in unsigned subtraction"));
-            }
-            else if constexpr (Policy == overflow_policy::saturate)
-            {
-                res = std::numeric_limits<BasisType>::min();
-            }
-            else if constexpr (Policy == overflow_policy::strict)
-            {
-                static_cast<void>(res);
-                std::exit(EXIT_FAILURE);
+                if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+                {
+                    throw std::underflow_error("Underflow detected in u8 subtraction");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
+                {
+                    throw std::underflow_error("Underflow detected in u16 subtraction");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
+                {
+                    throw std::underflow_error("Underflow detected in u32 subtraction");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
+                {
+                    throw std::underflow_error("Underflow detected in u64 subtraction");
+                }
+                else
+                {
+                    throw std::underflow_error("Underflow detected in u128 subtraction");
+                }
             }
             else
             {
-                static_cast<void>(res);
-                BOOST_SAFE_NUMBERS_UNREACHABLE;
+                if constexpr (Policy == overflow_policy::throw_exception)
+                {
+                    static_cast<void>(res);
+                    BOOST_THROW_EXCEPTION(std::underflow_error("Underflow detected in unsigned subtraction"));
+                }
+                else if constexpr (Policy == overflow_policy::saturate)
+                {
+                    res = std::numeric_limits<BasisType>::min();
+                }
+                else if constexpr (Policy == overflow_policy::strict)
+                {
+                    static_cast<void>(res);
+                    std::exit(EXIT_FAILURE);
+                }
+                else
+                {
+                    static_cast<void>(res);
+                    BOOST_SAFE_NUMBERS_UNREACHABLE;
+                }
             }
         };
 
@@ -815,24 +866,50 @@ struct mul_helper
 
         auto handle_overflow = [&res]
         {
-            if constexpr (Policy == overflow_policy::throw_exception)
+            if (std::is_constant_evaluated())
             {
-                static_cast<void>(res);
-                BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned multiplication"));
-            }
-            else if constexpr (Policy == overflow_policy::saturate)
-            {
-                res = std::numeric_limits<BasisType>::max();
-            }
-            else if constexpr (Policy == overflow_policy::strict)
-            {
-                static_cast<void>(res);
-                std::exit(EXIT_FAILURE);
+                if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+                {
+                    throw std::overflow_error("Overflow detected in u8 multiplication");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
+                {
+                    throw std::overflow_error("Overflow detected in u16 multiplication");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
+                {
+                    throw std::overflow_error("Overflow detected in u32 multiplication");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
+                {
+                    throw std::overflow_error("Overflow detected in u64 multiplication");
+                }
+                else
+                {
+                    throw std::overflow_error("Overflow detected in u128 multiplication");
+                }
             }
             else
             {
-                static_cast<void>(res);
-                BOOST_SAFE_NUMBERS_UNREACHABLE;
+                if constexpr (Policy == overflow_policy::throw_exception)
+                {
+                    static_cast<void>(res);
+                    BOOST_THROW_EXCEPTION(std::overflow_error("Overflow detected in unsigned multiplication"));
+                }
+                else if constexpr (Policy == overflow_policy::saturate)
+                {
+                    res = std::numeric_limits<BasisType>::max();
+                }
+                else if constexpr (Policy == overflow_policy::strict)
+                {
+                    static_cast<void>(res);
+                    std::exit(EXIT_FAILURE);
+                }
+                else
+                {
+                    static_cast<void>(res);
+                    BOOST_SAFE_NUMBERS_UNREACHABLE;
+                }
             }
         };
 
