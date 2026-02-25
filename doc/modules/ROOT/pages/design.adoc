@@ -79,7 +79,7 @@ using boost::safe_numbers::u8;
 auto b = u8{255} + u8{1}; // throws
 ----
 
-=== Human Readable Error Messages
+=== Useful and Readable Error Messages
 
 pass:[C++] libraries that make heavy use of templates (like this one) have an earned reputation for hard to discern error messages in compilation.
 We strive to make both compile time and runtime messages as useful as possible.
