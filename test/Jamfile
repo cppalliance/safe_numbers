@@ -167,3 +167,4 @@ run ../examples/safe_numerics_comparison.cpp ;
 run ../examples/byte_conversions.cpp ;
 run ../examples/std_numeric_usage.cpp ;
 run ../examples/basic_bounded_usage.cpp ;
+compile-fail ../examples/compile_fail_basic_bounded_usage_constexpr.cpp ;
