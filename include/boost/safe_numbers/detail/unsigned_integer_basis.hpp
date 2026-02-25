@@ -236,15 +236,17 @@ struct add_helper
                 std::exit(EXIT_FAILURE);
             }
             else
-            {
-                static_cast<void>(res);
-                BOOST_SAFE_NUMBERS_UNREACHABLE;
+                {
+                    static_cast<void>(res);
+                    BOOST_SAFE_NUMBERS_UNREACHABLE;
+                }
             }
         };
 
+        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         {
-            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
             if (!std::is_constant_evaluated())
             {
@@ -256,8 +258,9 @@ struct add_helper
                 return result_type{res};
             }
 
-            #endif
         }
+
+        #endif // BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
         if (impl::unsigned_no_intrin_add(lhs_basis, rhs_basis, res))
         {
