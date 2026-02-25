@@ -6,7 +6,7 @@
 #include <boost/safe_numbers/iostream.hpp>              // For safe_numbers <iostream> support
 #include <boost/exception/diagnostic_information.hpp>   // For boost::diagnostic_information
 
-#if (defined(__x86_64__) || defined(_M_X64)) && !defined(__MINGW32__)
+#if (defined(__x86_64__) || defined(_M_X64)) && !defined(__MINGW32__) && !defined(__CYGWIN__)
 
 #ifdef __GNUC__
 #pragma GCC diagnostic push
@@ -38,7 +38,7 @@ int main()
         // at the throw site. boost::diagnostic_information extracts all of it.
         std::cerr << boost::diagnostic_information(e) << std::endl;
 
-        #if (defined(__x86_64__) || defined(_M_X64)) && !defined(__MINGW32__)
+        #if (defined(__x86_64__) || defined(_M_X64)) && !defined(__MINGW32__) && !defined(__CYGWIN__)
         // On x86_64, boost::stacktrace can capture the throw-site stacktrace
         // from the current exception via from_current_exception().
         // This requires linking with boost_stacktrace_from_exception.
