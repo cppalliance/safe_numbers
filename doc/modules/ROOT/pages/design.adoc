@@ -79,6 +79,44 @@ using boost::safe_numbers::u8;
 auto b = u8{255} + u8{1}; // throws
 ----
 
+=== Human Readable Error Messages
+
+pass:[C++] libraries that make heavy use of templates (like this one) have an earned reputation for hard to discern error messages in compilation.
+We strive to make both compile time and runtime messages as useful as possible.
+Below is an example of what you will see with a compile time example if your addition were to overflow:
+
+==== Compile-Time Errors
+
+----
+clang-darwin.compile.c++ ../../../bin.v2/libs/safe_numbers/test/compile_fail_basic_usage_constexpr.test/clang-darwin-21/debug/arm_64/cxxstd-20-iso/threading-multi/visibility-hidden/compile_fail_basic_usage_constexpr.o
+../examples/compile_fail_basic_usage_constexpr.cpp:18:22: error: constexpr variable 'z' must be initialized by a constant expression
+   18 |         constexpr u8 z {x + y};
+      |                      ^ ~~~~~~~
+../../../boost/safe_numbers/detail/unsigned_integer_basis.hpp:397:17: note: subexpression not valid in a constant expression
+  397 |                 throw std::overflow_error("Overflow detected in u8 addition");
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../examples/compile_fail_basic_usage_constexpr.cpp:18:25: note: in call to 'operator+<unsigned char>({255}, {2})'
+   18 |         constexpr u8 z {x + y};
+      |                         ^~~~~
+1 error generated.
+----
+
+In total, we have three lines of error messages.
+In the first line, knowing that `z` must be initialized by a constant expression is not terribly helpful.
+In the second line, we have added error paths that will tell you the type and operation that caused the problem.
+Here it is overflow with `u8`.
+This can be useful if you are using `auto` instead of `u8` directly.
+Then in the last line, the compiler re-iterates that the issue here is with `operator+`.
+
+Disallowed operations, such as mixed type addition, will also show up at compile time.
+These messages can be as short as a single line and are readable with your IDE.
+
+image::assert_msg.png[]
+
+==== Runtime Errors
+
+
+
 == Runtime Overflow Policies
 
 Different domains require different responses to overflow:
