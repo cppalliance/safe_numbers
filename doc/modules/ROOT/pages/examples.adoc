@@ -85,6 +85,22 @@ std::exception::what: Overflow detected in u8 addition
 ----
 ====
 
+[#examples_basic_bounded_usage]
+== Basic Bounded Usage
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/basic_bounded_usage.cpp[example] demonstrates the default behavior where bounded arithmetic that exceeds the declared range throws an exception.
+====
+[source, c++]
+----
+include::example$basic_bounded_usage.cpp[]
+----
+
+Output:
+----
+Error Detected: bounded_uint<0, 100> addition result out of range
+----
+====
+
 [#examples_construction]
 == Construction and Conversion
 
