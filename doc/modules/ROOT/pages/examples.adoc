@@ -26,6 +26,24 @@ Error Detected: Overflow detected in unsigned addition
 ----
 ====
 
+[#examples_basic_usage_stacktrace]
+== Basic Usage with Diagnostic Information
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/basic_usage_stacktrace.cpp[example] demonstrates using `boost::diagnostic_information` to extract the throw-site source location captured by `BOOST_THROW_EXCEPTION`. On x86_64, it additionally uses `boost::stacktrace::from_current_exception()` to print a full stacktrace.
+====
+[source, c++]
+----
+include::example$basic_usage_stacktrace.cpp[]
+----
+
+Output:
+----
+./boost/safe_numbers/detail/unsigned_integer_basis.hpp(278): Throw in function ...
+Dynamic exception type: boost::wrapexcept<std::overflow_error>
+std::exception::what: Overflow detected in u8 addition
+----
+====
+
 [#examples_construction]
 == Construction and Conversion
 
