@@ -176,6 +176,8 @@ Stacktrace:
  7# 0x0000000000003925 in bin.v2/libs/safe_numbers/test/basic_usage_stacktrace.test/gcc-11/debug/x86_64/cxxstd-20-iso/threading-multi/visibility-hidden/basic_usage_stacktrace
 ----
 
+To see these yourself see the xref:examples.adoc#examples_basic_usage_stacktrace[Basic Usage with Diagnostic Information Example].
+
 == Runtime Overflow Policies
 
 Different domains require different responses to overflow:
