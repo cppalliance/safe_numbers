@@ -55,7 +55,7 @@ public:
     template <fundamental_unsigned_integral OtherBasis>
     [[nodiscard]] explicit constexpr operator OtherBasis() const;
 
-    explicit constexpr operator BasisType() const noexcept { return basis_;}
+    [[nodiscard]] explicit constexpr operator BasisType() const noexcept { return basis_;}
 
     [[nodiscard]] friend constexpr auto operator<=>(unsigned_integer_basis lhs, unsigned_integer_basis rhs) noexcept
         -> std::strong_ordering = default;
