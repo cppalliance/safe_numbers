@@ -14,6 +14,7 @@
 #elif defined(_MSC_VER)
 #  pragma warning (push)
 #  pragma warning (disable: 4834)
+#  pragma warning (disable: 4702)
 #endif
 
 #include <boost/safe_numbers.hpp>
