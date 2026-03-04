@@ -54,6 +54,7 @@ run test_signed_construction.cpp ;
 compile compile_integer_type_properties.cpp ;
 run test_unsigned_narrowing_conversions.cpp ;
 run test_signed_conversions.cpp ;
+run test_signed_comparisons.cpp ;
 
 run test_unsigned_addition.cpp ;
 compile-fail compile_fail_unsigned_addition.cpp ;

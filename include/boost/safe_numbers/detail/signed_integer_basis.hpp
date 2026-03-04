@@ -56,6 +56,9 @@ public:
     [[nodiscard]] explicit constexpr operator OtherBasis() const;
 
     [[nodiscard]] explicit constexpr operator BasisType() const noexcept { return basis_; }
+
+    [[nodiscard]] friend constexpr auto operator<=>(signed_integer_basis lhs, signed_integer_basis rhs) noexcept
+        -> std::strong_ordering = default;
 };
 
 // Helper for diagnostic messages
@@ -84,8 +87,8 @@ constexpr auto signed_type_name() noexcept -> const char*
     }
 }
 
-template<fundamental_signed_integral BasisType>
-template<fundamental_signed_integral OtherBasis>
+template <fundamental_signed_integral BasisType>
+template <fundamental_signed_integral OtherBasis>
 constexpr signed_integer_basis<BasisType>::operator OtherBasis() const
 {
     if constexpr (sizeof(OtherBasis) < sizeof(BasisType))
