@@ -53,13 +53,22 @@ namespace impl {
 template <typename>
 struct is_unsigned_library_type : std::false_type {};
 
+template <typename>
+struct is_signed_library_type : std::false_type {};
+
 template <typename T>
 struct is_unsigned_library_type<unsigned_integer_basis<T>> : std::true_type {};
+
+template <typename T>
+struct is_signed_library_type<signed_integer_basis<T>> : std::true_type {};
 
 } // namespace impl
 
 template <typename T>
 inline constexpr bool is_unsigned_library_type_v = impl::is_unsigned_library_type<T>::value;
+
+template <typename T>
+inline constexpr bool is_signed_library_type_v = impl::is_signed_library_type<T>::value;
 
 // underlying type trait (base + unsigned_integer_basis specialization)
 
@@ -77,10 +86,16 @@ struct underlying<unsigned_integer_basis<T>>
     using type = T;
 };
 
+template <typename T>
+struct underlying<signed_integer_basis<T>>
+{
+    using type = T;
+};
+
 } // namespace impl
 
 template <typename T>
-using underlying_type_t = typename impl::underlying<T>::type;
+using underlying_type_t = impl::underlying<T>::type;
 
 // valid_bound concept
 
