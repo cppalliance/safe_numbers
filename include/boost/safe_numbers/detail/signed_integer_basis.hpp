@@ -51,7 +51,53 @@ public:
     {
         static_assert(dependent_false<T>, "Construction from bool is not allowed");
     }
+
+    template <fundamental_signed_integral OtherBasis>
+    [[nodiscard]] explicit constexpr operator OtherBasis() const;
+
+    [[nodiscard]] explicit constexpr operator BasisType() const noexcept { return basis_; }
 };
+
+// Helper for diagnostic messages
+template <typename BasisType>
+constexpr auto signed_type_name() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::int8_t>)
+    {
+        return "i8";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+    {
+        return "i16";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+    {
+        return "i32";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+    {
+        return "i64";
+    }
+    else
+    {
+        return "i128";
+    }
+}
+
+template<fundamental_signed_integral BasisType>
+template<fundamental_signed_integral OtherBasis>
+constexpr signed_integer_basis<BasisType>::operator OtherBasis() const
+{
+    if constexpr (sizeof(OtherBasis) < sizeof(BasisType))
+    {
+        if (basis_ > static_cast<BasisType>(std::numeric_limits<OtherBasis>::max()))
+        {
+            BOOST_THROW_EXCEPTION(std::domain_error(std::string("Overflow in ") + signed_type_name<BasisType>() + " to " + signed_type_name<OtherBasis>() + " conversion"));
+        }
+    }
+
+    return static_cast<OtherBasis>(basis_);
+}
 
 } // namespace boost::safe_numbers::detail
 
