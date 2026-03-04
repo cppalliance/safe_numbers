@@ -20,7 +20,7 @@ cd boost-root
 git submodule update --init tools/boostdep
 mkdir -p libs/$LIBRARY
 cp -r $DRONE_BUILD_DIR/* libs/$LIBRARY
-python tools/boostdep/depinst/depinst.py -I example $LIBRARY
+python tools/boostdep/depinst/depinst.py -I examples $LIBRARY
 ./bootstrap.sh
 ./b2 -d0 headers
 
