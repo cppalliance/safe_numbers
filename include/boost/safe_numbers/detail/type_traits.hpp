@@ -34,8 +34,17 @@ inline constexpr bool is_fundamental_unsigned_integral_v = impl::is_fundamental_
 template <typename T>
 concept fundamental_unsigned_integral = is_fundamental_unsigned_integral_v<T>;
 
+template <typename T>
+inline constexpr bool is_fundamental_signed_integral_v = impl::is_fundamental_signed_integral<T>::value;
+
+template <typename T>
+concept fundamental_signed_integral = is_fundamental_signed_integral_v<T>;
+
 template <fundamental_unsigned_integral BasisType>
 class unsigned_integer_basis;
+
+template <fundamental_signed_integral BasisType>
+class signed_integer_basis;
 
 // is_unsigned_library_type (base + unsigned_integer_basis specialization)
 
