@@ -59,6 +59,10 @@ public:
 
     [[nodiscard]] friend constexpr auto operator<=>(signed_integer_basis lhs, signed_integer_basis rhs) noexcept
         -> std::strong_ordering = default;
+
+    [[nodiscard]] constexpr auto operator+() const noexcept -> signed_integer_basis;
+
+    [[nodiscard]] constexpr auto operator-() const -> signed_integer_basis;
 };
 
 // Helper for diagnostic messages
@@ -104,6 +108,23 @@ constexpr signed_integer_basis<BasisType>::operator OtherBasis() const
     }
 
     return static_cast<OtherBasis>(basis_);
+}
+
+template <fundamental_signed_integral BasisType>
+constexpr auto signed_integer_basis<BasisType>::operator+() const noexcept -> signed_integer_basis
+{
+    return signed_integer_basis{basis_};
+}
+
+template <fundamental_signed_integral BasisType>
+constexpr auto signed_integer_basis<BasisType>::operator-() const -> signed_integer_basis
+{
+    if (basis_ == std::numeric_limits<BasisType>::min()) [[unlikely]]
+    {
+        BOOST_THROW_EXCEPTION(std::domain_error(std::string("Overflow in ") + signed_type_name<BasisType>() + " unary minus operator"));
+    }
+
+    return signed_integer_basis{static_cast<BasisType>(-basis_)};
 }
 
 } // namespace boost::safe_numbers::detail
