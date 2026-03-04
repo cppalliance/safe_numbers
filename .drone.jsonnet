@@ -1,0 +1,290 @@
+# Copyright 2022, 2023 Peter Dimov
+# Copyright 2025, 2026 Matt Borland
+# Distributed under the Boost Software License, Version 1.0.
+# https://www.boost.org/LICENSE_1_0.txt
+
+local library = "safe_numbers";
+
+local triggers =
+{
+    branch: [ "master", "develop", "feature/*" ]
+};
+
+local ubsan = { UBSAN: '1', UBSAN_OPTIONS: 'print_stacktrace=1' };
+local asan = { ASAN: '1' };
+
+local linux_pipeline(name, image, environment, packages = "", sources = [], arch = "amd64") =
+{
+    name: name,
+    kind: "pipeline",
+    type: "docker",
+    trigger: triggers,
+    platform:
+    {
+        os: "linux",
+        arch: arch
+    },
+    clone:
+    {
+        retries: 5,
+    },
+    steps:
+    [
+        {
+            name: "everything",
+            image: image,
+            privileged: true,
+            environment: environment,
+            commands:
+            [
+                'set -e',
+                'wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -',
+            ] +
+            (if sources != [] then [ ('apt-add-repository "' + source + '"') for source in sources ] else []) +
+            (if packages != "" then [ 'apt-get update', 'apt-get -y install ' + packages ] else []) +
+            [
+                'export LIBRARY=' + library,
+                './.drone/drone.sh',
+            ]
+        }
+    ]
+};
+
+local macos_pipeline(name, environment, xcode_version = "12.2", osx_version = "catalina", arch = "amd64") =
+{
+    name: name,
+    kind: "pipeline",
+    type: "exec",
+    trigger: triggers,
+    platform: {
+        "os": "darwin",
+        "arch": arch
+    },
+    node: {
+        "os": osx_version
+    },
+    steps: [
+        {
+            name: "everything",
+            environment: environment + { "DEVELOPER_DIR": "/Applications/Xcode-" + xcode_version + ".app/Contents/Developer" },
+            commands:
+            [
+                'export LIBRARY=' + library,
+                './.drone/drone.sh',
+            ]
+        }
+    ]
+};
+
+local windows_pipeline(name, image, environment, arch = "amd64") =
+{
+    name: name,
+    kind: "pipeline",
+    type: "docker",
+    trigger: triggers,
+    platform:
+    {
+        os: "windows",
+        arch: arch
+    },
+    "steps":
+    [
+        {
+            name: "everything",
+            image: image,
+            environment: environment,
+            commands:
+            [
+                'cmd /C .drone\\\\drone.bat ' + library,
+            ]
+        }
+    ]
+};
+
+[
+    linux_pipeline(
+        "Linux 22.04 GCC 11 ARM64",
+        "cppalliance/droneubuntu2204:multiarch",
+        { TOOLSET: 'gcc', COMPILER: 'g++', CXXSTD: '03,11,14,17,2a' },
+        arch="arm64",
+    ),
+
+    linux_pipeline(
+        "Linux 24.04 GCC 13 ARM64",
+        "cppalliance/droneubuntu2404:multiarch",
+        { TOOLSET: 'gcc', COMPILER: 'g++', CXXSTD: '03,11,14,17,2a' },
+        "libabsl-dev", arch="arm64",
+    ),
+
+    linux_pipeline(
+        "Linux 22.04 GCC 11 S390x",
+        "cppalliance/droneubuntu2204:multiarch",
+        { TOOLSET: 'gcc', COMPILER: 'g++', CXXSTD: '03,11,14,17,2a' },
+        arch="s390x",
+    ),
+
+    linux_pipeline(
+        "Linux 24.04 GCC 13 S390x",
+        "cppalliance/droneubuntu2404:multiarch",
+        { TOOLSET: 'gcc', COMPILER: 'g++', CXXSTD: '03,11,14,17,2a' },
+        "libabsl-dev", arch="s390x",
+    ),
+
+    linux_pipeline(
+        "Linux 22.04 GCC 11* 32/64",
+        "cppalliance/droneubuntu2204:1",
+        { TOOLSET: 'gcc', COMPILER: 'g++', CXXSTD: '03,11,14,17,2a', ADDRMD: '32,64' },
+    ),
+    
+    linux_pipeline(
+        "Linux 24.04 GCC 13 32",
+        "cppalliance/droneubuntu2404:1",
+        { TOOLSET: 'gcc', COMPILER: 'g++-13', CXXSTD: '03,11,14,17,20,23', ADDRMD: '32', CXXFLAGS: "-fexcess-precision=fast" },
+        "g++-13-multilib",
+    ),
+
+    linux_pipeline(
+        "Linux 24.04 GCC 13 64",
+        "cppalliance/droneubuntu2404:1",
+        { TOOLSET: 'gcc', COMPILER: 'g++-13', CXXSTD: '03,11,14,17,20,23', ADDRMD: '64', CXXFLAGS: "-fexcess-precision=fast" },
+        "g++-13-multilib",
+    ),
+
+    linux_pipeline(
+        "Linux 24.04 GCC 13 GNU 32",
+        "cppalliance/droneubuntu2404:1",
+        { TOOLSET: 'gcc', COMPILER: 'g++-13', CXXSTD: '03,11,14,17,20,23', ADDRMD: '32', CXXFLAGS: "-fexcess-precision=fast", CXXSTDDIALECT: "gnu" },
+        "g++-13-multilib",
+    ),
+
+    linux_pipeline(
+        "Linux 24.04 GCC 13 GNU 64",
+        "cppalliance/droneubuntu2404:1",
+        { TOOLSET: 'gcc', COMPILER: 'g++-13', CXXSTD: '03,11,14,17,20,23', ADDRMD: '64', CXXFLAGS: "-fexcess-precision=fast", CXXSTDDIALECT: "gnu" },
+        "g++-13-multilib",
+    ),
+
+    linux_pipeline(
+        "Linux 24.04 GCC 14 32",
+        "cppalliance/droneubuntu2404:1",
+        { TOOLSET: 'gcc', COMPILER: 'g++-14', CXXSTD: '03,11,14,17,20,23', ADDRMD: '32', CXXFLAGS: "-fexcess-precision=fast" },
+        "g++-14-multilib",
+    ),
+
+    linux_pipeline(
+        "Linux 24.04 GCC 14 64",
+        "cppalliance/droneubuntu2404:1",
+        { TOOLSET: 'gcc', COMPILER: 'g++-14', CXXSTD: '03,11,14,17,20,23', ADDRMD: '64', CXXFLAGS: "-fexcess-precision=fast" },
+        "g++-14-multilib",
+    ),
+
+    linux_pipeline(
+        "Linux 24.04 GCC 14 GNU 32",
+        "cppalliance/droneubuntu2404:1",
+        { TOOLSET: 'gcc', COMPILER: 'g++-14', CXXSTD: '03,11,14,17,20,23', ADDRMD: '32', CXXFLAGS: "-fexcess-precision=fast", CXXSTDDIALECT: "gnu" },
+        "g++-14-multilib",
+    ),
+
+    linux_pipeline(
+        "Linux 24.04 GCC 14 GNU 64",
+        "cppalliance/droneubuntu2404:1",
+        { TOOLSET: 'gcc', COMPILER: 'g++-14', CXXSTD: '03,11,14,17,20,23', ADDRMD: '64', CXXFLAGS: "-fexcess-precision=fast", CXXSTDDIALECT: "gnu" },
+        "g++-14-multilib",
+    ),
+
+    linux_pipeline(
+        "Linux 24.04 GCC 14 32 ASAN",
+        "cppalliance/droneubuntu2404:1",
+        { TOOLSET: 'gcc', COMPILER: 'g++-14', CXXSTD: '03,11,14,17,20,23', ADDRMD: '32', CXXFLAGS: "-fexcess-precision=fast" } + asan,
+        "g++-14-multilib",
+    ),
+
+    linux_pipeline(
+        "Linux 24.04 GCC 14 64 ASAN",
+        "cppalliance/droneubuntu2404:1",
+        { TOOLSET: 'gcc', COMPILER: 'g++-14', CXXSTD: '03,11,14,17,20,23', ADDRMD: '64', CXXFLAGS: "-fexcess-precision=fast" } + asan,
+        "g++-14-multilib",
+    ),
+
+    linux_pipeline(
+        "Linux 22.04 Clang 13",
+        "cppalliance/droneubuntu2204:1",
+        { TOOLSET: 'clang', COMPILER: 'clang++-13', CXXSTD: '03,11,14,17,20' },
+        "clang-13",
+    ),
+
+    linux_pipeline(
+        "Linux 22.04 Clang 14",
+        "cppalliance/droneubuntu2204:1",
+        { TOOLSET: 'clang', COMPILER: 'clang++-14', CXXSTD: '03,11,14,17,20,2b' },
+        "clang-14",
+    ),
+
+    linux_pipeline(
+        "Linux 22.04 Clang 15",
+        "cppalliance/droneubuntu2204:1",
+        { TOOLSET: 'clang', COMPILER: 'clang++-15', CXXSTD: '03,11,14,17,20,2b' },
+        "clang-15",
+        ["deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-15 main"],
+    ),
+
+    linux_pipeline(
+        "Linux 22.04 Clang 16",
+        "cppalliance/droneubuntu2204:1",
+        { TOOLSET: 'clang', COMPILER: 'clang++-16', CXXSTD: '03,11,14,17,20,2b' },
+        "clang-16",
+        ["deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main"],
+    ),
+
+    linux_pipeline(
+        "Linux 24.04 Clang 17",
+        "cppalliance/droneubuntu2404:1",
+        { TOOLSET: 'clang', COMPILER: 'clang++-17', CXXSTD: '03,11,14,17,20,2b' },
+        "clang-17",
+        ["deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main"],
+    ),
+
+    linux_pipeline(
+        "Linux 24.04 Clang 18",
+        "cppalliance/droneubuntu2404:1",
+        { TOOLSET: 'clang', COMPILER: 'clang++-18', CXXSTD: '03,11,14,17,20,2b' },
+        "clang-18",
+        ["deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-18 main"],
+    ),
+
+    linux_pipeline(
+        "Linux 24.04 Clang 19",
+        "cppalliance/droneubuntu2404:1",
+        { TOOLSET: 'clang', COMPILER: 'clang++-19', CXXSTD: '03,11,14,17,20,23,2c' },
+        "clang-19",
+        ["deb http://apt.llvm.org/noble/ llvm-toolchain-noble-19 main"],
+    ),
+
+    linux_pipeline(
+        "Linux 24.04 Clang 20",
+        "cppalliance/droneubuntu2404:1",
+        { TOOLSET: 'clang', COMPILER: 'clang++-20', CXXSTD: '03,11,14,17,20,23,2c' },
+        "clang-20",
+        ["deb http://apt.llvm.org/noble/ llvm-toolchain-noble-20 main"],
+    ),
+
+    linux_pipeline(
+        "Linux 24.04 Clang 20 ASAN",
+        "cppalliance/droneubuntu2404:1",
+        { TOOLSET: 'clang', COMPILER: 'clang++-20', CXXSTD: '03,11,14,17,20,23,2c' } + asan,
+        "clang-20",
+        ["deb http://apt.llvm.org/noble/ llvm-toolchain-noble-20 main"],
+    ),
+
+    windows_pipeline(
+        "Windows VS2022 msvc-14.3",
+        "cppalliance/dronevs2022:1",
+        { TOOLSET: 'msvc-14.3', CXXSTD: '14,17,20,latest', ADDRMD: '32,64' },
+    ),
+
+    windows_pipeline(
+        "Windows VS2026 msvc-14.5",
+        "cppalliance/dronevs2026:1",
+        { TOOLSET: 'msvc-14.5', CXXSTD: '14,17,20,latest', ADDRMD: '32,64' },
+    ),
+]
