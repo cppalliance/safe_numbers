@@ -94,6 +94,10 @@ constexpr signed_integer_basis<BasisType>::operator OtherBasis() const
         {
             BOOST_THROW_EXCEPTION(std::domain_error(std::string("Overflow in ") + signed_type_name<BasisType>() + " to " + signed_type_name<OtherBasis>() + " conversion"));
         }
+        else if (basis_ < static_cast<BasisType>(std::numeric_limits<OtherBasis>::min()))
+        {
+            BOOST_THROW_EXCEPTION(std::domain_error(std::string("Underflow in ") + signed_type_name<BasisType>() + " to " + signed_type_name<OtherBasis>() + " conversion"));
+        }
     }
 
     return static_cast<OtherBasis>(basis_);
