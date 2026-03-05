@@ -34,8 +34,17 @@ inline constexpr bool is_fundamental_unsigned_integral_v = impl::is_fundamental_
 template <typename T>
 concept fundamental_unsigned_integral = is_fundamental_unsigned_integral_v<T>;
 
+template <typename T>
+inline constexpr bool is_fundamental_signed_integral_v = impl::is_fundamental_signed_integral<T>::value;
+
+template <typename T>
+concept fundamental_signed_integral = is_fundamental_signed_integral_v<T>;
+
 template <fundamental_unsigned_integral BasisType>
 class unsigned_integer_basis;
+
+template <fundamental_signed_integral BasisType>
+class signed_integer_basis;
 
 // is_unsigned_library_type (base + unsigned_integer_basis specialization)
 
@@ -44,13 +53,22 @@ namespace impl {
 template <typename>
 struct is_unsigned_library_type : std::false_type {};
 
+template <typename>
+struct is_signed_library_type : std::false_type {};
+
 template <typename T>
 struct is_unsigned_library_type<unsigned_integer_basis<T>> : std::true_type {};
+
+template <typename T>
+struct is_signed_library_type<signed_integer_basis<T>> : std::true_type {};
 
 } // namespace impl
 
 template <typename T>
 inline constexpr bool is_unsigned_library_type_v = impl::is_unsigned_library_type<T>::value;
+
+template <typename T>
+inline constexpr bool is_signed_library_type_v = impl::is_signed_library_type<T>::value;
 
 // underlying type trait (base + unsigned_integer_basis specialization)
 
@@ -64,6 +82,12 @@ struct underlying
 
 template <typename T>
 struct underlying<unsigned_integer_basis<T>>
+{
+    using type = T;
+};
+
+template <typename T>
+struct underlying<signed_integer_basis<T>>
 {
     using type = T;
 };

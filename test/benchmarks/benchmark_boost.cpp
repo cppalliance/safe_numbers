@@ -17,6 +17,7 @@
 #  pragma clang diagnostic ignored "-Woverflow"
 #  pragma clang diagnostic ignored "-Wdouble-promotion"
 #  pragma clang diagnostic ignored "-Wdivision-by-zero"
+#  pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 #  if (__clang_major__ >= 10 && !defined(__APPLE__)) || __clang_major__ >= 13
 #    pragma clang diagnostic ignored "-Wdeprecated-copy"
