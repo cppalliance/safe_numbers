@@ -156,7 +156,7 @@ struct make_unsigned_helper<int128::int128_t>
 };
 
 template <fundamental_signed_integral T>
-using make_unsigned_helper_t = make_unsigned_helper<T>::type;
+using make_unsigned_helper_t = typename make_unsigned_helper<T>::type;
 
 // Determines the direction of signed overflow from the lhs operand.
 // Signed addition overflow only occurs when both operands share the same sign,
