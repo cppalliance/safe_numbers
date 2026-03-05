@@ -393,7 +393,61 @@ template <fundamental_signed_integral BasisType>
 [[nodiscard]] constexpr auto operator+(const signed_integer_basis<BasisType> lhs,
                                        const signed_integer_basis<BasisType> rhs) -> signed_integer_basis<BasisType>
 {
-    return impl::add_impl<overflow_policy::throw_exception, BasisType>(lhs,rhs);
+    if (std::is_constant_evaluated())
+    {
+        BasisType res {};
+        const auto status {impl::signed_no_intrin_add(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res)};
+        if (status == impl::signed_overflow_status::overflow)
+        {
+            if constexpr (std::is_same_v<BasisType, std::int8_t>)
+            {
+                throw std::overflow_error("Overflow detected in i8 addition");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+            {
+                throw std::overflow_error("Overflow detected in i16 addition");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+            {
+                throw std::overflow_error("Overflow detected in i32 addition");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+            {
+                throw std::overflow_error("Overflow detected in i64 addition");
+            }
+            else
+            {
+                throw std::overflow_error("Overflow detected in i128 addition");
+            }
+        }
+        else if (status == impl::signed_overflow_status::underflow)
+        {
+            if constexpr (std::is_same_v<BasisType, std::int8_t>)
+            {
+                throw std::underflow_error("Underflow detected in i8 addition");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+            {
+                throw std::underflow_error("Underflow detected in i16 addition");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+            {
+                throw std::underflow_error("Underflow detected in i32 addition");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+            {
+                throw std::underflow_error("Underflow detected in i64 addition");
+            }
+            else
+            {
+                throw std::underflow_error("Underflow detected in i128 addition");
+            }
+        }
+
+        return signed_integer_basis<BasisType>{res};
+    }
+
+    return impl::signed_add_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
 }
 
 } // namespace boost::safe_numbers::detail
