@@ -95,7 +95,7 @@ struct underlying<signed_integer_basis<T>>
 } // namespace impl
 
 template <typename T>
-using underlying_type_t = impl::underlying<T>::type;
+using underlying_type_t = typename impl::underlying<T>::type;
 
 // valid_bound concept
 
