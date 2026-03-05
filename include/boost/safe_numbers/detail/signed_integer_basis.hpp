@@ -252,7 +252,7 @@ constexpr auto signed_no_intrin_add(const T lhs, const T rhs, T& result) noexcep
     // Signed overflow: both operands have the same sign but the result has a different sign
     const auto ulhs {static_cast<unsigned_t>(lhs)};
     const auto urhs {static_cast<unsigned_t>(rhs)};
-    const bool has_overflow {((~(ulhs ^ urhs)) & (ulhs ^ temp)) >> std::numeric_limits<T>::digits};
+    const auto has_overflow {static_cast<bool>(((~(ulhs ^ urhs)) & (ulhs ^ temp)) >> std::numeric_limits<T>::digits)};
 
     if (has_overflow)
     {
