@@ -34,6 +34,7 @@
 #elif defined(_MSC_VER)
 #  pragma warning(push)
 #  pragma warning(disable : 4804) // Unsafe use of type bool in operation
+#  pragma warning(disable : 4702) // Unreachable code
 #endif
 
 // Workaround for GCC-11 and GCC-12 not following the -Wundef pragma above
