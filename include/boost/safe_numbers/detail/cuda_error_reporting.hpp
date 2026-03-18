@@ -30,20 +30,21 @@ struct cuda_device_error
     const char* expression; // #x stringified expression
 };
 
-#ifdef __NVCC__
+#ifdef __CUDA_ARCH__
+
+__device__ cuda_device_error g_device_error = {0, 0, 0, nullptr, nullptr};
 
 __device__ inline void report_device_error(
-    cuda_device_error* err,
     const char* file,
     int line,
     const char* expression)
 {
-    if (atomicCAS(&err->flag, 0, 1) == 0)
+    if (atomicCAS(&g_device_error.flag, 0, 1) == 0)
     {
-        err->file       = file;
-        err->line       = line;
-        err->expression = expression;
-        err->thread_id  = blockIdx.x * blockDim.x + threadIdx.x;
+        g_device_error.file       = file;
+        g_device_error.line       = line;
+        g_device_error.expression = expression;
+        g_device_error.thread_id  = blockIdx.x * blockDim.x + threadIdx.x;
         __threadfence_system();
     }
 
@@ -55,7 +56,7 @@ __device__ inline void report_device_error(
     __trap();
 }
 
-#endif // __NVCC__
+#endif // __CUDA_ARCH__
 
 } // namespace boost::safe_numbers::detail
 
