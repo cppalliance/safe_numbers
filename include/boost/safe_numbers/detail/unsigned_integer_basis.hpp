@@ -7,12 +7,12 @@
 
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
-#include <boost/safe_numbers/overflow_policy.hpp>
+#include <boost/safe_numbers/detail/throw_exception.hpp>
 #include <boost/safe_numbers/detail/int128/bit.hpp>
+#include <boost/safe_numbers/overflow_policy.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
-#include <boost/throw_exception.hpp>
 #include <boost/core/bit.hpp>
 #include <concepts>
 #include <compare>
@@ -136,7 +136,7 @@ constexpr unsigned_integer_basis<BasisType>::operator OtherBasis() const
     {
         if (basis_ > static_cast<BasisType>(std::numeric_limits<OtherBasis>::max()))
         {
-            BOOST_THROW_EXCEPTION(std::domain_error(std::string("Overflow in ") + unsigned_type_name<BasisType>() + " to " + unsigned_type_name<OtherBasis>() + " conversion"));
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Overflow in ") + unsigned_type_name<BasisType>() + " to " + unsigned_type_name<OtherBasis>() + " conversion"));
         }
     }
 
@@ -275,7 +275,7 @@ struct add_helper
                 if constexpr (Policy == overflow_policy::throw_exception)
                 {
                     static_cast<void>(res);
-                    BOOST_THROW_EXCEPTION(std::overflow_error(std::string("Overflow detected in ") + unsigned_type_name<BasisType>() + " addition"));
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error(std::string("Overflow detected in ") + unsigned_type_name<BasisType>() + " addition"));
                 }
                 else if constexpr (Policy == overflow_policy::saturate)
                 {
@@ -764,7 +764,7 @@ struct sub_helper
                 if constexpr (Policy == overflow_policy::throw_exception)
                 {
                     static_cast<void>(res);
-                    BOOST_THROW_EXCEPTION(std::underflow_error(std::string("Underflow detected in ") + unsigned_type_name<BasisType>() + " subtraction"));
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error(std::string("Underflow detected in ") + unsigned_type_name<BasisType>() + " subtraction"));
                 }
                 else if constexpr (Policy == overflow_policy::saturate)
                 {
@@ -1057,7 +1057,7 @@ struct mul_helper
                 if constexpr (Policy == overflow_policy::throw_exception)
                 {
                     static_cast<void>(res);
-                    BOOST_THROW_EXCEPTION(std::overflow_error(std::string("Overflow detected in ") + unsigned_type_name<BasisType>() + " multiplication"));
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error(std::string("Overflow detected in ") + unsigned_type_name<BasisType>() + " multiplication"));
                 }
                 else if constexpr (Policy == overflow_policy::saturate)
                 {
@@ -1256,11 +1256,11 @@ struct div_helper
         {
             if constexpr (Policy == overflow_policy::throw_exception)
             {
-                BOOST_THROW_EXCEPTION(std::domain_error(std::string("Unsigned ") + unsigned_type_name<BasisType>() + " division by zero"));
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Unsigned ") + unsigned_type_name<BasisType>() + " division by zero"));
             }
             else if constexpr (Policy == overflow_policy::saturate)
             {
-                BOOST_THROW_EXCEPTION(std::domain_error(std::string("Unsigned ") + unsigned_type_name<BasisType>() + " division by zero"));
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Unsigned ") + unsigned_type_name<BasisType>() + " division by zero"));
             }
             else if constexpr (Policy == overflow_policy::strict)
             {
@@ -1296,7 +1296,7 @@ struct div_helper<overflow_policy::overflow_tuple, BasisType>
         const auto divisor {static_cast<BasisType>(rhs)};
         if (divisor == 0U) [[unlikely]]
         {
-            BOOST_THROW_EXCEPTION(std::domain_error(std::string("Unsigned ") + unsigned_type_name<BasisType>() + " division by zero"));
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Unsigned ") + unsigned_type_name<BasisType>() + " division by zero"));
         }
 
         if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
@@ -1400,11 +1400,11 @@ struct mod_helper
         {
             if constexpr (Policy == overflow_policy::throw_exception)
             {
-                BOOST_THROW_EXCEPTION(std::domain_error(std::string("Unsigned ") + unsigned_type_name<BasisType>() + " modulo by zero"));
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Unsigned ") + unsigned_type_name<BasisType>() + " modulo by zero"));
             }
             else if constexpr (Policy == overflow_policy::saturate)
             {
-                BOOST_THROW_EXCEPTION(std::domain_error(std::string("Unsigned ") + unsigned_type_name<BasisType>() + " modulo by zero"));
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Unsigned ") + unsigned_type_name<BasisType>() + " modulo by zero"));
             }
             else if constexpr (Policy == overflow_policy::strict)
             {
@@ -1440,7 +1440,7 @@ struct mod_helper<overflow_policy::overflow_tuple, BasisType>
         const auto divisor {static_cast<BasisType>(rhs)};
         if (divisor == 0U) [[unlikely]]
         {
-            BOOST_THROW_EXCEPTION(std::domain_error(std::string("Unsigned ") + unsigned_type_name<BasisType>() + " division by zero"));
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Unsigned ") + unsigned_type_name<BasisType>() + " division by zero"));
         }
 
         if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
@@ -1535,7 +1535,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator++()
 {
     if (this->basis_ == std::numeric_limits<BasisType>::max()) [[unlikely]]
     {
-        BOOST_THROW_EXCEPTION(std::overflow_error(std::string("Overflow detected in ") + unsigned_type_name<BasisType>() + " increment"));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error(std::string("Overflow detected in ") + unsigned_type_name<BasisType>() + " increment"));
     }
 
     ++this->basis_;
@@ -1548,7 +1548,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator++(int)
 {
     if (this->basis_ == std::numeric_limits<BasisType>::max()) [[unlikely]]
     {
-        BOOST_THROW_EXCEPTION(std::overflow_error(std::string("Overflow detected in ") + unsigned_type_name<BasisType>() + " increment"));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error(std::string("Overflow detected in ") + unsigned_type_name<BasisType>() + " increment"));
     }
 
     const auto temp {*this};
@@ -1566,7 +1566,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator--()
 {
     if (this->basis_ == 0U) [[unlikely]]
     {
-        BOOST_THROW_EXCEPTION(std::underflow_error(std::string("Underflow detected in ") + unsigned_type_name<BasisType>() + " decrement"));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error(std::string("Underflow detected in ") + unsigned_type_name<BasisType>() + " decrement"));
     }
 
     --this->basis_;
@@ -1579,7 +1579,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator--(int)
 {
     if (this->basis_ == 0U) [[unlikely]]
     {
-        BOOST_THROW_EXCEPTION(std::underflow_error(std::string("Underflow detected in ") + unsigned_type_name<BasisType>() + " decrement"));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error(std::string("Underflow detected in ") + unsigned_type_name<BasisType>() + " decrement"));
     }
 
     const auto temp {*this};
@@ -1612,7 +1612,7 @@ struct shl_helper
         {
             if constexpr (Policy == overflow_policy::throw_exception)
             {
-                BOOST_THROW_EXCEPTION(std::overflow_error(std::string("Left shift past the end of ") + unsigned_type_name<BasisType>() + " type width"));
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error(std::string("Left shift past the end of ") + unsigned_type_name<BasisType>() + " type width"));
             }
             else if constexpr (Policy == overflow_policy::saturate)
             {
@@ -1709,7 +1709,7 @@ struct shr_helper
         {
             if constexpr (Policy == overflow_policy::throw_exception)
             {
-                BOOST_THROW_EXCEPTION(std::overflow_error(std::string("Right shift past the end of ") + unsigned_type_name<BasisType>() + " type width"));
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error(std::string("Right shift past the end of ") + unsigned_type_name<BasisType>() + " type width"));
             }
             else if constexpr (Policy == overflow_policy::saturate)
             {
