@@ -5,8 +5,9 @@
 #ifndef BOOST_SAFE_NUMBERS_BYTE_CONVERSIONS_HPP
 #define BOOST_SAFE_NUMBERS_BYTE_CONVERSIONS_HPP
 
-#include <boost/safe_numbers/bit.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
+#include <boost/safe_numbers/detail/throw_exception.hpp>
+#include <boost/safe_numbers/bit.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -89,7 +90,7 @@ template <detail::non_bounded_integral_library_type T, std::size_t N>
     {
         if (bytes.size_bytes() != sizeof(T))
         {
-            BOOST_THROW_EXCEPTION(std::domain_error("The number of bytes provided, and the target type number of bytes do not match"));
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error("The number of bytes provided, and the target type number of bytes do not match"));
         }
 
         std::array<std::byte, sizeof(T)> arr {};
@@ -131,7 +132,7 @@ template <detail::non_bounded_integral_library_type T, std::size_t N>
     {
         if (bytes.size_bytes() != sizeof(T))
         {
-            BOOST_THROW_EXCEPTION(std::domain_error("The number of bytes provided, and the target type number of bytes do not match"));
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error("The number of bytes provided, and the target type number of bytes do not match"));
         }
 
         std::array<std::byte, sizeof(T)> arr {};

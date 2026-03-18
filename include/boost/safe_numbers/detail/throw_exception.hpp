@@ -9,9 +9,12 @@
 #ifndef BOOST_SAFE_NUMBERS_THROW_EXCEPTION_HPP
 #define BOOST_SAFE_NUMBERS_THROW_EXCEPTION_HPP
 
+#include <boost/safe_numbers/detail/cuda_error_reporting.hpp>
+
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 #include <boost/throw_exception.hpp>
+#include <stdexcept>
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -19,7 +22,7 @@
 // as opposed to __NVCC__
 #ifndef __CUDA_ARCH__
 
-#define BOOST_SAFE_NUMBERS_THROW_EXCEPTION(err_ptr, x) static_cast<void>(err_ptr); BOOST_THROW_EXCEPTION(x)
+#define BOOST_SAFE_NUMBERS_THROW_EXCEPTION(x) BOOST_THROW_EXCEPTION(x)
 
 #else
 

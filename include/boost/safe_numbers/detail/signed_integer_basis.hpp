@@ -7,12 +7,12 @@
 
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
-#include <boost/safe_numbers/overflow_policy.hpp>
 #include <boost/safe_numbers/detail/int128/bit.hpp>
+#include <boost/safe_numbers/detail/throw_exception.hpp>
+#include <boost/safe_numbers/overflow_policy.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
-#include <boost/throw_exception.hpp>
 #include <boost/core/bit.hpp>
 #include <concepts>
 #include <compare>
@@ -102,11 +102,11 @@ constexpr signed_integer_basis<BasisType>::operator OtherBasis() const
     {
         if (basis_ > static_cast<BasisType>(std::numeric_limits<OtherBasis>::max()))
         {
-            BOOST_THROW_EXCEPTION(std::domain_error(std::string("Overflow in ") + signed_type_name<BasisType>() + " to " + signed_type_name<OtherBasis>() + " conversion"));
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Overflow in ") + signed_type_name<BasisType>() + " to " + signed_type_name<OtherBasis>() + " conversion"));
         }
         else if (basis_ < static_cast<BasisType>(std::numeric_limits<OtherBasis>::min()))
         {
-            BOOST_THROW_EXCEPTION(std::domain_error(std::string("Underflow in ") + signed_type_name<BasisType>() + " to " + signed_type_name<OtherBasis>() + " conversion"));
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Underflow in ") + signed_type_name<BasisType>() + " to " + signed_type_name<OtherBasis>() + " conversion"));
         }
     }
 
@@ -124,7 +124,7 @@ constexpr auto signed_integer_basis<BasisType>::operator-() const -> signed_inte
 {
     if (basis_ == std::numeric_limits<BasisType>::min()) [[unlikely]]
     {
-        BOOST_THROW_EXCEPTION(std::domain_error(std::string("Overflow in ") + signed_type_name<BasisType>() + " unary minus operator"));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Overflow in ") + signed_type_name<BasisType>() + " unary minus operator"));
     }
 
     return signed_integer_basis{static_cast<BasisType>(-basis_)};
@@ -337,11 +337,11 @@ struct signed_add_helper
 
                     if (status == signed_overflow_status::overflow)
                     {
-                        BOOST_THROW_EXCEPTION(std::overflow_error(message));
+                        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error(message));
                     }
                     else
                     {
-                        BOOST_THROW_EXCEPTION(std::underflow_error(message));
+                        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error(message));
                     }
                 }
                 else
