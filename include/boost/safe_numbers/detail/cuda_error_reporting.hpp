@@ -19,7 +19,9 @@
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
-namespace boost::safe_numbers::detail {
+namespace boost::safe_numbers {
+
+namespace detail {
 
 struct cuda_device_error
 {
@@ -30,7 +32,7 @@ struct cuda_device_error
     const char* expression; // #x stringified expression
 };
 
-#ifdef __CUDA_ARCH__
+#ifdef __NVCC__
 
 __device__ cuda_device_error g_device_error = {0, 0, 0, nullptr, nullptr};
 
@@ -56,8 +58,66 @@ __device__ inline void report_device_error(
     __trap();
 }
 
-#endif // __CUDA_ARCH__
+#endif // __NVCC__
 
-} // namespace boost::safe_numbers::detail
+} // namespace detail
+
+#ifdef __NVCC__
+
+class device_error_context
+{
+public:
+
+    // Clears the global state
+    // The error context can be reused with multiple kernels if this is called
+    void reset()
+    {
+        const cuda_device_error new_error = {0, 0, 0, nullptr, nullptr};
+        cudaMemcpyToSymbol(g_device_error, &new_error, sizeof(cuda_device_error));
+    }
+
+    // On construction, reset the global error state to ensure we have a good start
+    device_error_context()
+    {
+        reset();
+    }
+
+    // Allows the user to synchronize and check for errors as is typical of CUDA
+    // This allows an extra step in that it will throw on the host
+    // Much like cudaGetLastError, the call to synchronize will destroy the information in the global context
+    // This allows trivial reuse of all these facilities
+    void synchronize()
+    {
+        const cudaError_t status = cudaDeviceSynchronize();
+        cuda_device_error err;
+        cudaMemcpyFromSymbol(&err, g_device_error, sizeof(cuda_device_error));
+        reset();
+
+        if (err.flag != 0)
+        {
+            std::ostringstream oss;
+            oss << "Device error on thread " << err.thread_id
+                << " at " << err.file
+                << ":" << err.line
+                << ": " << err.expression;
+
+            // Need to clear our trap
+            cudaGetLastError();
+
+            // TODO(mborland): Can we get the type of exception to throw? e.g., overflow, underflow, range.
+            throw std::runtime_error(oss.str());
+        }
+
+        if (status != cudaSuccess)
+        {
+            cudaGetLastError();
+            throw std::runtime_error(cudaGetErrorString(status));
+        }
+    }
+};
+
+#endif // __NVCC__
+
+} // namespace boost::safe_numbers
 
 #endif // BOOST_SAFE_NUMBERS_CUDA_ERROR_REPORTING_HPP
