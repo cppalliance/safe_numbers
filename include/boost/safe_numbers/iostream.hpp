@@ -7,11 +7,11 @@
 
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
+#include <boost/safe_numbers/detail/throw_exception.hpp>
 #include <boost/safe_numbers/detail/int128/iostream.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
-#include <boost/throw_exception.hpp>
 #include <iostream>
 #include <cstdint>
 
@@ -31,7 +31,7 @@ auto operator>>(std::basic_istream<charT, traits>& is, LibType& v) -> std::basic
 
     if (is.peek() == static_cast<charT>('-'))
     {
-        BOOST_THROW_EXCEPTION(std::domain_error("Attempting to construct negative value with unsigned safe integer"));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error("Attempting to construct negative value with unsigned safe integer"));
     }
     else
     {

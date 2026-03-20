@@ -11,13 +11,6 @@
 #include <boost/safe_numbers/detail/num_digits.hpp>
 #include <boost/safe_numbers/bit.hpp>
 
-#ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
-
-#include <boost/throw_exception.hpp>
-#include <stdexcept>
-
-#endif
-
 namespace boost::safe_numbers {
 
 // Newton's method as it can't possibly overflow, and converges rapidly
@@ -84,7 +77,7 @@ template <detail::non_bounded_unsigned_library_type T>
 
     if (static_cast<underlying_type>(n) == underlying_type{0})
     {
-        BOOST_THROW_EXCEPTION(std::domain_error("ilog2(0) is undefined"));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error("ilog2(0) is undefined"));
     }
 
     return bit_width(n) - 1;
@@ -99,7 +92,7 @@ template <detail::non_bounded_unsigned_library_type T>
 
     if (static_cast<underlying_type>(n) == underlying_type{0})
     {
-        BOOST_THROW_EXCEPTION(std::domain_error("ilog10(0) is undefined"));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error("ilog10(0) is undefined"));
     }
 
     return detail::num_digits(static_cast<underlying_type>(n)) - 1;
@@ -114,12 +107,12 @@ template <detail::non_bounded_unsigned_library_type T>
 
     if (static_cast<underlying_type>(n) == underlying_type{0})
     {
-        BOOST_THROW_EXCEPTION(std::domain_error("ilog(0, base) is undefined"));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error("ilog(0, base) is undefined"));
     }
 
     if (static_cast<underlying_type>(base) < underlying_type{2})
     {
-        BOOST_THROW_EXCEPTION(std::domain_error("ilog(n, base) requires base >= 2"));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error("ilog(n, base) requires base >= 2"));
     }
 
     auto result {0};
