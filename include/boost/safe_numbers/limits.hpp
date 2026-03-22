@@ -5,6 +5,7 @@
 #ifndef BOOST_SAFE_NUMBERS_LIMITS_HPP
 #define BOOST_SAFE_NUMBERS_LIMITS_HPP
 
+#include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/signed_integers.hpp>
@@ -51,15 +52,15 @@ struct numeric_limits_impl
     static constexpr bool traps = std::numeric_limits<basis_type>::traps;
     static constexpr bool tinyness_before = std::numeric_limits<basis_type>::tinyness_before;
 
-    static constexpr T min() { return T{std::numeric_limits<basis_type>::min()}; }
-    static constexpr T max() { return T{std::numeric_limits<basis_type>::max()}; }
-    static constexpr T lowest() { return T{std::numeric_limits<basis_type>::lowest()}; }
-    static constexpr T epsilon() { return T{std::numeric_limits<basis_type>::epsilon()}; }
-    static constexpr T round_error() { return T{std::numeric_limits<basis_type>::round_error() }; }
-    static constexpr T infinity() { return T{std::numeric_limits<basis_type>::infinity()}; }
-    static constexpr T quiet_NaN() { return T{std::numeric_limits<basis_type>::quiet_NaN()}; }
-    static constexpr T signaling_NaN() { return T{std::numeric_limits<basis_type>::signaling_NaN()}; }
-    static constexpr T denorm_min() { return T{std::numeric_limits<basis_type>::denorm_min()}; }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T min() { return T{std::numeric_limits<basis_type>::min()}; }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T max() { return T{std::numeric_limits<basis_type>::max()}; }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T lowest() { return T{std::numeric_limits<basis_type>::lowest()}; }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T epsilon() { return T{std::numeric_limits<basis_type>::epsilon()}; }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T round_error() { return T{std::numeric_limits<basis_type>::round_error() }; }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T infinity() { return T{std::numeric_limits<basis_type>::infinity()}; }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T quiet_NaN() { return T{std::numeric_limits<basis_type>::quiet_NaN()}; }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T signaling_NaN() { return T{std::numeric_limits<basis_type>::signaling_NaN()}; }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T denorm_min() { return T{std::numeric_limits<basis_type>::denorm_min()}; }
 };
 
 } // namespace boost::safe_numbers::detail

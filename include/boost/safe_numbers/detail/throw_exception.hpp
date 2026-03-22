@@ -20,7 +20,7 @@
 
 // This is defined only in the device compilation step
 // as opposed to __NVCC__
-#ifndef __CUDA_ARCH__
+#ifndef __CUDACC__
 
 #define BOOST_SAFE_NUMBERS_THROW_EXCEPTION(x) BOOST_THROW_EXCEPTION(x)
 
