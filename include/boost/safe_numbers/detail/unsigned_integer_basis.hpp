@@ -43,59 +43,59 @@ public:
 
     constexpr unsigned_integer_basis() noexcept = default;
 
-    explicit constexpr unsigned_integer_basis(const BasisType val) noexcept : basis_{val} {}
+    BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr unsigned_integer_basis(const BasisType val) noexcept : basis_{val} {}
 
     template <typename T>
         requires std::is_same_v<T, bool>
-    explicit constexpr unsigned_integer_basis(T) noexcept
+    BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr unsigned_integer_basis(T) noexcept
     {
         static_assert(dependent_false<T>, "Construction from bool is not allowed");
     }
 
     template <fundamental_unsigned_integral OtherBasis>
-    [[nodiscard]] explicit constexpr operator OtherBasis() const;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator OtherBasis() const;
 
-    [[nodiscard]] explicit constexpr operator BasisType() const noexcept { return basis_;}
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator BasisType() const noexcept { return basis_;}
 
-    [[nodiscard]] friend constexpr auto operator<=>(unsigned_integer_basis lhs, unsigned_integer_basis rhs) noexcept
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] friend constexpr auto operator<=>(unsigned_integer_basis lhs, unsigned_integer_basis rhs) noexcept
         -> std::strong_ordering = default;
 
     template <fundamental_unsigned_integral OtherBasis>
-    constexpr auto operator+=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator+=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
     template <fundamental_unsigned_integral OtherBasis>
-    constexpr auto operator-=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator-=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
     template <fundamental_unsigned_integral OtherBasis>
-    constexpr auto operator*=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator*=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
     template <fundamental_unsigned_integral OtherBasis>
-    constexpr auto operator/=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator/=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
     template <fundamental_unsigned_integral OtherBasis>
-    constexpr auto operator%=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator%=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
-    constexpr auto operator&=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator&=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
 
-    constexpr auto operator|=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator|=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
 
-    constexpr auto operator^=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator^=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
 
-    constexpr auto operator<<=(unsigned_integer_basis rhs) -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator<<=(unsigned_integer_basis rhs) -> unsigned_integer_basis&;
 
-    constexpr auto operator>>=(unsigned_integer_basis rhs) -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator>>=(unsigned_integer_basis rhs) -> unsigned_integer_basis&;
 
-    constexpr auto operator++() -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator++() -> unsigned_integer_basis&;
 
-    constexpr auto operator++(int) -> unsigned_integer_basis;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator++(int) -> unsigned_integer_basis;
 
-    constexpr auto operator--() -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator--() -> unsigned_integer_basis&;
 
-    constexpr auto operator--(int) -> unsigned_integer_basis;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator--(int) -> unsigned_integer_basis;
 
-    constexpr auto operator+() const noexcept -> unsigned_integer_basis { return *this; }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator+() const noexcept -> unsigned_integer_basis { return *this; }
 
-    constexpr auto operator-() const noexcept
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator-() const noexcept
     {
         static_assert(dependent_false<BasisType>, "Unary minus is deliberately disabled for unsigned safe integers");
         return *this; // LCOV_EXCL_LINE : deliberately unreachable
@@ -104,7 +104,7 @@ public:
 
 // Helper to map BasisType to a short name for diagnostic messages.
 template <typename BasisType>
-constexpr auto unsigned_type_name() noexcept -> const char*
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto unsigned_type_name() noexcept -> const char*
 {
     if constexpr (std::is_same_v<BasisType, std::uint8_t>)
     {
@@ -130,7 +130,7 @@ constexpr auto unsigned_type_name() noexcept -> const char*
 
 template <fundamental_unsigned_integral BasisType>
 template <fundamental_unsigned_integral OtherBasis>
-constexpr unsigned_integer_basis<BasisType>::operator OtherBasis() const
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr unsigned_integer_basis<BasisType>::operator OtherBasis() const
 {
     if constexpr (sizeof(OtherBasis) < sizeof(BasisType))
     {
@@ -149,7 +149,7 @@ constexpr unsigned_integer_basis<BasisType>::operator OtherBasis() const
 
 namespace impl {
 
-#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow)
+#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_add(const T lhs, const T rhs, T& result)
@@ -157,7 +157,7 @@ bool unsigned_intrin_add(const T lhs, const T rhs, T& result)
     return __builtin_add_overflow(lhs, rhs, &result);
 }
 
-#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN)
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_add(const T lhs, const T rhs, T& result)
@@ -180,7 +180,7 @@ bool unsigned_intrin_add(const T lhs, const T rhs, T& result)
     }
 }
 
-#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_add(const T lhs, const T rhs, T& result)
@@ -208,7 +208,7 @@ bool unsigned_intrin_add(const T lhs, const T rhs, T& result)
 #endif
 
 template <std::unsigned_integral T>
-constexpr bool unsigned_no_intrin_add(const T lhs, const T rhs, T& result) noexcept
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr bool unsigned_no_intrin_add(const T lhs, const T rhs, T& result) noexcept
 {
     if constexpr (std::is_same_v<T, std::uint8_t> || std::is_same_v<T, std::uint16_t>)
     {
@@ -222,7 +222,7 @@ constexpr bool unsigned_no_intrin_add(const T lhs, const T rhs, T& result) noexc
     return result < lhs;
 }
 
-constexpr bool unsigned_no_intrin_add(const int128::uint128_t& lhs, const int128::uint128_t& rhs, int128::uint128_t& result) noexcept
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr bool unsigned_no_intrin_add(const int128::uint128_t& lhs, const int128::uint128_t& rhs, int128::uint128_t& result) noexcept
 {
     result = lhs + rhs;
     return result < lhs;
@@ -234,6 +234,7 @@ constexpr bool unsigned_no_intrin_add(const int128::uint128_t& lhs, const int128
 template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
 struct add_helper
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs)
         noexcept(Policy != overflow_policy::throw_exception)
@@ -247,6 +248,7 @@ struct add_helper
 
         auto handle_overflow = [&res]
         {
+            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, std::uint8_t>)
@@ -271,6 +273,7 @@ struct add_helper
                 }
             }
             else
+            #endif
             {
                 if constexpr (Policy == overflow_policy::throw_exception)
                 {
@@ -298,6 +301,8 @@ struct add_helper
 
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         {
+            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+
             if (!std::is_constant_evaluated())
             {
                 if (impl::unsigned_intrin_add(lhs_basis, rhs_basis, res))
@@ -307,6 +312,8 @@ struct add_helper
 
                 return result_type{res};
             }
+
+            #endif
         }
 
         #endif // BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
@@ -324,6 +331,7 @@ struct add_helper
 template <fundamental_unsigned_integral BasisType>
 struct add_helper<overflow_policy::overflow_tuple, BasisType>
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs) noexcept
         -> std::pair<unsigned_integer_basis<BasisType>, bool>
@@ -336,7 +344,7 @@ struct add_helper<overflow_policy::overflow_tuple, BasisType>
 
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         {
-            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
             if (!std::is_constant_evaluated())
             {
@@ -356,6 +364,7 @@ struct add_helper<overflow_policy::overflow_tuple, BasisType>
 template <fundamental_unsigned_integral BasisType>
 struct add_helper<overflow_policy::checked, BasisType>
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs) noexcept
         -> std::optional<unsigned_integer_basis<BasisType>>
@@ -368,7 +377,7 @@ struct add_helper<overflow_policy::checked, BasisType>
 
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         {
-            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
             if (!std::is_constant_evaluated())
             {
@@ -388,6 +397,7 @@ struct add_helper<overflow_policy::checked, BasisType>
 template <fundamental_unsigned_integral BasisType>
 struct add_helper<overflow_policy::widen, BasisType>
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs) noexcept
     {
@@ -400,6 +410,7 @@ struct add_helper<overflow_policy::widen, BasisType>
 };
 
 template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto add_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
     noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::strict || Policy == overflow_policy::widen)
@@ -408,6 +419,7 @@ template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
 }
 
 template <fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator+(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
@@ -451,6 +463,8 @@ template <fundamental_unsigned_integral BasisType>
     1 error generated.
     */
 
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+
     if (std::is_constant_evaluated())
     {
         BasisType res {};
@@ -481,6 +495,8 @@ template <fundamental_unsigned_integral BasisType>
         return unsigned_integer_basis<BasisType>{res};
     }
 
+    #endif
+
     return add_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
 }
 
@@ -489,7 +505,8 @@ template <fundamental_unsigned_integral BasisType>
 #define BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP(OP_NAME, OP_SYMBOL)                                                                                \
 template <boost::safe_numbers::detail::fundamental_unsigned_integral LHSBasis,                                                                                  \
           boost::safe_numbers::detail::fundamental_unsigned_integral RHSBasis>                                                                                  \
-    requires (!std::is_same_v<LHSBasis, RHSBasis>)                                                                                                             \
+    requires (!std::is_same_v<LHSBasis, RHSBasis>)                                                                                                          \
+BOOST_SAFE_NUMBERS_HOST_DEVICE                                                                                                                              \
 constexpr auto OP_SYMBOL(const boost::safe_numbers::detail::unsigned_integer_basis<LHSBasis>,                                                                  \
                          const boost::safe_numbers::detail::unsigned_integer_basis<RHSBasis>)                                                                  \
 {                                                                                                                                                              \
@@ -625,6 +642,7 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("addition", operator+)
 
 template <fundamental_unsigned_integral BasisType>
 template <fundamental_unsigned_integral OtherBasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto unsigned_integer_basis<BasisType>::operator+=(const unsigned_integer_basis<OtherBasisType> rhs)
     -> unsigned_integer_basis&
 {
@@ -638,7 +656,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator+=(const unsigned_inte
 
 namespace impl {
 
-#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow)
+#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_sub(T lhs, T rhs, T& result)
@@ -646,7 +664,7 @@ bool unsigned_intrin_sub(T lhs, T rhs, T& result)
     return __builtin_sub_overflow(lhs, rhs, &result);
 }
 
-#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN)
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_sub(T lhs, T rhs, T& result)
@@ -669,7 +687,7 @@ bool unsigned_intrin_sub(T lhs, T rhs, T& result)
     }
 }
 
-#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_sub(T lhs, T rhs, T& result)
@@ -697,6 +715,7 @@ bool unsigned_intrin_sub(T lhs, T rhs, T& result)
 #endif
 
 template <std::unsigned_integral T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr bool unsigned_no_intrin_sub(const T lhs, const T rhs, T& result) noexcept
 {
     if constexpr (std::is_same_v<T, std::uint8_t> || std::is_same_v<T, std::uint16_t>)
@@ -711,7 +730,7 @@ constexpr bool unsigned_no_intrin_sub(const T lhs, const T rhs, T& result) noexc
     return result > lhs;
 }
 
-constexpr bool unsigned_no_intrin_sub(const int128::uint128_t& lhs, const int128::uint128_t& rhs, int128::uint128_t& result) noexcept
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr bool unsigned_no_intrin_sub(const int128::uint128_t& lhs, const int128::uint128_t& rhs, int128::uint128_t& result) noexcept
 {
     result = lhs - rhs;
     return result > lhs;
@@ -723,6 +742,7 @@ constexpr bool unsigned_no_intrin_sub(const int128::uint128_t& lhs, const int128
 template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
 struct sub_helper
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs)
         noexcept(Policy != overflow_policy::throw_exception)
@@ -736,6 +756,8 @@ struct sub_helper
 
         auto handle_underflow = [&res]
         {
+            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, std::uint8_t>)
@@ -760,6 +782,7 @@ struct sub_helper
                 }
             }
             else
+            #endif
             {
                 if constexpr (Policy == overflow_policy::throw_exception)
                 {
@@ -785,7 +808,7 @@ struct sub_helper
 
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         {
-            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
             if (!std::is_constant_evaluated())
             {
@@ -813,6 +836,7 @@ struct sub_helper
 template <fundamental_unsigned_integral BasisType>
 struct sub_helper<overflow_policy::overflow_tuple, BasisType>
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs) noexcept
         -> std::pair<unsigned_integer_basis<BasisType>, bool>
@@ -825,7 +849,7 @@ struct sub_helper<overflow_policy::overflow_tuple, BasisType>
 
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         {
-            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
             if (!std::is_constant_evaluated())
             {
@@ -845,6 +869,7 @@ struct sub_helper<overflow_policy::overflow_tuple, BasisType>
 template <fundamental_unsigned_integral BasisType>
 struct sub_helper<overflow_policy::checked, BasisType>
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs) noexcept
         -> std::optional<unsigned_integer_basis<BasisType>>
@@ -857,7 +882,7 @@ struct sub_helper<overflow_policy::checked, BasisType>
 
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         {
-            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
             if (!std::is_constant_evaluated())
             {
@@ -874,6 +899,7 @@ struct sub_helper<overflow_policy::checked, BasisType>
 };
 
 template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto sub_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
     noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::strict)
@@ -882,9 +908,12 @@ template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
 }
 
 template <fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator-(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+
     if (std::is_constant_evaluated())
     {
         BasisType res {};
@@ -915,6 +944,8 @@ template <fundamental_unsigned_integral BasisType>
         return unsigned_integer_basis<BasisType>{res};
     }
 
+    #endif
+
     return sub_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
 }
 
@@ -922,6 +953,7 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("subtraction", operator-)
 
 template <fundamental_unsigned_integral BasisType>
 template <fundamental_unsigned_integral OtherBasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto unsigned_integer_basis<BasisType>::operator-=(const unsigned_integer_basis<OtherBasisType> rhs)
     -> unsigned_integer_basis&
 {
@@ -935,7 +967,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator-=(const unsigned_inte
 
 namespace impl {
 
-#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow)
+#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_mul(const T lhs, const T rhs, T& result)
@@ -943,7 +975,7 @@ bool unsigned_intrin_mul(const T lhs, const T rhs, T& result)
     return __builtin_mul_overflow(lhs, rhs, &result);
 }
 
-#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN)
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_mul(const T lhs, const T rhs, T& result)
@@ -967,7 +999,7 @@ bool unsigned_intrin_mul(const T lhs, const T rhs, T& result)
     }
 }
 
-#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_ARM64_INTRIN)
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_ARM64_INTRIN) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_mul(const T lhs, const T rhs, T& result)
@@ -993,6 +1025,7 @@ bool unsigned_intrin_mul(const T lhs, const T rhs, T& result)
 #endif
 
 template <std::unsigned_integral T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr bool no_intrin_mul(const T lhs, const T rhs, T& result)
 {
     using promoted_type = std::conditional_t<std::is_same_v<T, std::uint8_t>, std::uint_fast16_t,
@@ -1004,6 +1037,7 @@ constexpr bool no_intrin_mul(const T lhs, const T rhs, T& result)
     return temp > static_cast<promoted_type>(std::numeric_limits<T>::max());
 }
 
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr bool no_intrin_mul(const int128::uint128_t& lhs, const int128::uint128_t& rhs, int128::uint128_t& result) noexcept
 {
     result = lhs * rhs;
@@ -1016,6 +1050,7 @@ constexpr bool no_intrin_mul(const int128::uint128_t& lhs, const int128::uint128
 template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
 struct mul_helper
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs)
         noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::strict)
@@ -1029,6 +1064,7 @@ struct mul_helper
 
         auto handle_overflow = [&res]
         {
+            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, std::uint8_t>)
@@ -1053,6 +1089,7 @@ struct mul_helper
                 }
             }
             else
+            #endif
             {
                 if constexpr (Policy == overflow_policy::throw_exception)
                 {
@@ -1078,7 +1115,7 @@ struct mul_helper
 
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         {
-            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)
+            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
             if (!std::is_constant_evaluated())
             {
@@ -1106,6 +1143,7 @@ struct mul_helper
 template <fundamental_unsigned_integral BasisType>
 struct mul_helper<overflow_policy::overflow_tuple, BasisType>
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs) noexcept
         -> std::pair<unsigned_integer_basis<BasisType>, bool>
@@ -1118,7 +1156,7 @@ struct mul_helper<overflow_policy::overflow_tuple, BasisType>
 
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         {
-            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)
+            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
             if (!std::is_constant_evaluated())
             {
@@ -1138,6 +1176,7 @@ struct mul_helper<overflow_policy::overflow_tuple, BasisType>
 template <fundamental_unsigned_integral BasisType>
 struct mul_helper<overflow_policy::checked, BasisType>
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs) noexcept
         -> std::optional<unsigned_integer_basis<BasisType>>
@@ -1150,7 +1189,7 @@ struct mul_helper<overflow_policy::checked, BasisType>
 
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         {
-            #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)
+            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
             if (!std::is_constant_evaluated())
             {
@@ -1170,6 +1209,7 @@ struct mul_helper<overflow_policy::checked, BasisType>
 template <fundamental_unsigned_integral BasisType>
 struct mul_helper<overflow_policy::widen, BasisType>
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs) noexcept
     {
@@ -1182,6 +1222,7 @@ struct mul_helper<overflow_policy::widen, BasisType>
 };
 
 template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto mul_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
     noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::strict || Policy == overflow_policy::widen)
@@ -1190,9 +1231,12 @@ template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
 }
 
 template <fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator*(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+
     if (std::is_constant_evaluated())
     {
         BasisType res {};
@@ -1223,6 +1267,8 @@ template <fundamental_unsigned_integral BasisType>
         return unsigned_integer_basis<BasisType>{res};
     }
 
+    #endif
+
     return mul_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
 }
 
@@ -1230,6 +1276,7 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("multiplication", operator*)
 
 template <fundamental_unsigned_integral BasisType>
 template <fundamental_unsigned_integral OtherBasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto unsigned_integer_basis<BasisType>::operator*=(const unsigned_integer_basis<OtherBasisType> rhs)
     -> unsigned_integer_basis&
 {
@@ -1245,6 +1292,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator*=(const unsigned_inte
 template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
 struct div_helper
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs)
         noexcept(Policy == overflow_policy::strict)
@@ -1287,6 +1335,7 @@ struct div_helper
 template <fundamental_unsigned_integral BasisType>
 struct div_helper<overflow_policy::overflow_tuple, BasisType>
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs)
         -> std::pair<unsigned_integer_basis<BasisType>, bool>
@@ -1314,6 +1363,7 @@ struct div_helper<overflow_policy::overflow_tuple, BasisType>
 template <fundamental_unsigned_integral BasisType>
 struct div_helper<overflow_policy::checked, BasisType>
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs) noexcept
         -> std::optional<unsigned_integer_basis<BasisType>>
@@ -1338,6 +1388,7 @@ struct div_helper<overflow_policy::checked, BasisType>
 };
 
 template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto div_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
     noexcept(Policy == overflow_policy::checked || Policy == overflow_policy::strict)
@@ -1346,9 +1397,12 @@ template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
 }
 
 template <fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator/(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+
     if (std::is_constant_evaluated())
     {
         const auto divisor {static_cast<BasisType>(rhs)};
@@ -1367,6 +1421,8 @@ template <fundamental_unsigned_integral BasisType>
         }
     }
 
+    #endif
+
     return div_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
 }
 
@@ -1374,6 +1430,7 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("division", operator/)
 
 template <fundamental_unsigned_integral BasisType>
 template <fundamental_unsigned_integral OtherBasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto unsigned_integer_basis<BasisType>::operator/=(const unsigned_integer_basis<OtherBasisType> rhs)
     -> unsigned_integer_basis&
 {
@@ -1389,6 +1446,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator/=(const unsigned_inte
 template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
 struct mod_helper
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs)
         noexcept(Policy == overflow_policy::strict)
@@ -1431,6 +1489,7 @@ struct mod_helper
 template <fundamental_unsigned_integral BasisType>
 struct mod_helper<overflow_policy::overflow_tuple, BasisType>
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs)
         -> std::pair<unsigned_integer_basis<BasisType>, bool>
@@ -1458,6 +1517,7 @@ struct mod_helper<overflow_policy::overflow_tuple, BasisType>
 template <fundamental_unsigned_integral BasisType>
 struct mod_helper<overflow_policy::checked, BasisType>
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs) noexcept
         -> std::optional<unsigned_integer_basis<BasisType>>
@@ -1482,6 +1542,7 @@ struct mod_helper<overflow_policy::checked, BasisType>
 };
 
 template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto mod_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
     noexcept(Policy == overflow_policy::checked || Policy == overflow_policy::strict)
@@ -1490,9 +1551,12 @@ template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
 }
 
 template <fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator%(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+
     if (std::is_constant_evaluated())
     {
         const auto divisor {static_cast<BasisType>(rhs)};
@@ -1511,6 +1575,8 @@ template <fundamental_unsigned_integral BasisType>
         }
     }
 
+    #endif
+
     return mod_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
 }
 
@@ -1518,6 +1584,7 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("modulo", operator%)
 
 template <fundamental_unsigned_integral BasisType>
 template <fundamental_unsigned_integral OtherBasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto unsigned_integer_basis<BasisType>::operator%=(const unsigned_integer_basis<OtherBasisType> rhs)
     -> unsigned_integer_basis&
 {
@@ -1530,6 +1597,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator%=(const unsigned_inte
 // ------------------------------
 
 template <fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto unsigned_integer_basis<BasisType>::operator++()
     -> unsigned_integer_basis&
 {
@@ -1543,6 +1611,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator++()
 }
 
 template <fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto unsigned_integer_basis<BasisType>::operator++(int)
     -> unsigned_integer_basis
 {
@@ -1561,6 +1630,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator++(int)
 // ------------------------------
 
 template <fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto unsigned_integer_basis<BasisType>::operator--()
     -> unsigned_integer_basis&
 {
@@ -1574,6 +1644,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator--()
 }
 
 template <fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto unsigned_integer_basis<BasisType>::operator--(int)
     -> unsigned_integer_basis
 {
