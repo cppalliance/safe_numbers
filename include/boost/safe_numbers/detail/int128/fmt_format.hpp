@@ -85,8 +85,8 @@ constexpr auto parse_impl(ParseContext& ctx)
                 case '^':
                     align = alignment::center;
                     break;
-                default:
-                    break;
+                default:                        // LCOV_EXCL_LINE
+                    BOOST_SAFE_NUMBERS_DETAIL_INT128_UNREACHABLE;   // LCOV_EXCL_LINE
             }
             ++it;
         }
@@ -104,8 +104,8 @@ constexpr auto parse_impl(ParseContext& ctx)
                 case '^':
                     align = alignment::center;
                     break;
-                default:
-                    break;
+                default:                        // LCOV_EXCL_LINE
+                    BOOST_SAFE_NUMBERS_DETAIL_INT128_UNREACHABLE;   // LCOV_EXCL_LINE
             }
             ++it;
         }
@@ -280,7 +280,7 @@ struct formatter
         }
         else
         {
-            abs_v = v;
+            abs_v = static_cast<uint128_t>(v);
         }
 
         const auto end = detail::mini_to_chars(buffer, abs_v, base, is_upper);

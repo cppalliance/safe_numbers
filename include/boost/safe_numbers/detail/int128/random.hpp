@@ -5,7 +5,7 @@
 #ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_RANDOM_HPP
 #define BOOST_SAFE_NUMBERS_DETAIL_INT128_RANDOM_HPP
 
-#include "int128.hpp"
+#include <boost/safe_numbers/detail/int128/int128.hpp>
 
 namespace boost {
 namespace random {
@@ -93,4 +93,4 @@ struct is_signed<int128::int128_t> : std::true_type {};
 } // namespace random
 } // namespace boost
 
-#endif //BOOST_SAFE_NUMBERS_DETAIL_INT128_RANDOM_HPP
+#endif // BOOST_SAFE_NUMBERS_DETAIL_INT128_RANDOM_HPP

@@ -2,13 +2,13 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-#ifndef BOOST_SAFE_NUMBERS_INT128_STRING_HPP
-#define BOOST_SAFE_NUMBERS_INT128_STRING_HPP
+#ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_STRING_HPP
+#define BOOST_SAFE_NUMBERS_DETAIL_INT128_STRING_HPP
 
 #include <boost/safe_numbers/detail/int128/int128.hpp>
 #include <boost/safe_numbers/detail/int128/detail/mini_to_chars.hpp>
 
-#ifndef BOOST_INT128_BUILD_MODULE
+#ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_BUILD_MODULE
 
 #include <string>
 
@@ -28,4 +28,4 @@ auto to_string(const T& value) -> std::enable_if_t<(std::is_same<T, int128_t>::v
 } // namespace int128
 } // namespace boost
 
-#endif // BOOST_SAFE_NUMBERS_INT128_STRING_HPP
+#endif // BOOST_SAFE_NUMBERS_DETAIL_INT128_STRING_HPP
