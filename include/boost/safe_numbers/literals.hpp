@@ -27,7 +27,7 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u8(const unsigned long long
 {
     if (constexpr unsigned long long int max_value {std::numeric_limits<std::uint8_t>::max()}; val > max_value)
     {
-        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error("Overflow detected in literal construction"));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "Overflow detected in literal construction");
     }
 
     return static_cast<u8>(static_cast<std::uint8_t>(val));
@@ -37,7 +37,7 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u16(const unsigned long lon
 {
     if (constexpr unsigned long long int max_value {std::numeric_limits<std::uint16_t>::max()}; val > max_value)
     {
-        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error("Overflow detected in literal construction"));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "Overflow detected in literal construction");
     }
 
     return static_cast<u16>(static_cast<std::uint16_t>(val));
@@ -47,7 +47,7 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u32(const unsigned long lon
 {
     if (constexpr unsigned long long int max_value {std::numeric_limits<std::uint32_t>::max()}; val > max_value)
     {
-        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error("Overflow detected in literal construction"));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "Overflow detected in literal construction");
     }
 
     return static_cast<u32>(static_cast<std::uint32_t>(val));
@@ -71,9 +71,9 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u128(const char* str) -> u1
     switch (r)
     {
         case EDOM:
-            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error("Overflow detected in literal construction"));
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "Overflow detected in literal construction");
         case EINVAL:
-            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::invalid_argument("Invalid conversion from literal"));
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::invalid_argument, "Invalid conversion from literal");
         default:
             static_cast<void>(r);
     }
