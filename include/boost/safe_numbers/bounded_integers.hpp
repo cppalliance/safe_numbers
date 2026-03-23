@@ -89,8 +89,6 @@ public:
         requires (detail::is_unsigned_library_type_v<OtherBasis> || detail::is_fundamental_unsigned_integral_v<OtherBasis>)
     [[nodiscard]] explicit constexpr operator OtherBasis() const
     {
-        constexpr auto min_raw {static_cast<underlying_type>(detail::raw_value(Min))};
-        constexpr auto max_raw {static_cast<underlying_type>(detail::raw_value(Max))};
         const auto raw {static_cast<detail::underlying_type_t<basis_type>>(basis_)};
 
         if constexpr (sizeof(OtherBasis) < sizeof(basis_type))
