@@ -26,7 +26,7 @@
 
 #else
 
-#define BOOST_SAFE_NUMBERS_THROW_EXCEPTION(x) boost::safe_numbers::detail::report_device_error(__FILE__, __LINE__, x)
+#define BOOST_SAFE_NUMBERS_THROW_EXCEPTION(x) boost::safe_numbers::detail::report_device_error(__FILE__, __LINE__, #x)
 
 #endif // __CUDA_ARCH__
 
