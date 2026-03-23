@@ -128,6 +128,283 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto unsigned_type_name() noexcept -> c
     }
 }
 
+// Device-friendly error message helpers returning const char* string literals
+// These avoid std::string concatenation which is not available on CUDA device
+
+template <fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto overflow_add_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+    {
+        return "Overflow detected in u8 addition";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
+    {
+        return "Overflow detected in u16 addition";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
+    {
+        return "Overflow detected in u32 addition";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
+    {
+        return "Overflow detected in u64 addition";
+    }
+    else
+    {
+        return "Overflow detected in u128 addition";
+    }
+}
+
+template <fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto underflow_sub_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+    {
+        return "Underflow detected in u8 subtraction";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
+    {
+        return "Underflow detected in u16 subtraction";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
+    {
+        return "Underflow detected in u32 subtraction";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
+    {
+        return "Underflow detected in u64 subtraction";
+    }
+    else
+    {
+        return "Underflow detected in u128 subtraction";
+    }
+}
+
+template <fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto overflow_mul_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+    {
+        return "Overflow detected in u8 multiplication";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
+    {
+        return "Overflow detected in u16 multiplication";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
+    {
+        return "Overflow detected in u32 multiplication";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
+    {
+        return "Overflow detected in u64 multiplication";
+    }
+    else
+    {
+        return "Overflow detected in u128 multiplication";
+    }
+}
+
+template <fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto div_by_zero_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+    {
+        return "Unsigned u8 division by zero";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
+    {
+        return "Unsigned u16 division by zero";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
+    {
+        return "Unsigned u32 division by zero";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
+    {
+        return "Unsigned u64 division by zero";
+    }
+    else
+    {
+        return "Unsigned u128 division by zero";
+    }
+}
+
+template <fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto mod_by_zero_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+    {
+        return "Unsigned u8 modulo by zero";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
+    {
+        return "Unsigned u16 modulo by zero";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
+    {
+        return "Unsigned u32 modulo by zero";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
+    {
+        return "Unsigned u64 modulo by zero";
+    }
+    else
+    {
+        return "Unsigned u128 modulo by zero";
+    }
+}
+
+template <fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto overflow_inc_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+    {
+        return "Overflow detected in u8 increment";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
+    {
+        return "Overflow detected in u16 increment";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
+    {
+        return "Overflow detected in u32 increment";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
+    {
+        return "Overflow detected in u64 increment";
+    }
+    else
+    {
+        return "Overflow detected in u128 increment";
+    }
+}
+
+template <fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto underflow_dec_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+    {
+        return "Underflow detected in u8 decrement";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
+    {
+        return "Underflow detected in u16 decrement";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
+    {
+        return "Underflow detected in u32 decrement";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
+    {
+        return "Underflow detected in u64 decrement";
+    }
+    else
+    {
+        return "Underflow detected in u128 decrement";
+    }
+}
+
+template <fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto left_shift_overflow_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+    {
+        return "Left shift past the end of u8 type width";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
+    {
+        return "Left shift past the end of u16 type width";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
+    {
+        return "Left shift past the end of u32 type width";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
+    {
+        return "Left shift past the end of u64 type width";
+    }
+    else
+    {
+        return "Left shift past the end of u128 type width";
+    }
+}
+
+template <fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto right_shift_overflow_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+    {
+        return "Right shift past the end of u8 type width";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
+    {
+        return "Right shift past the end of u16 type width";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
+    {
+        return "Right shift past the end of u32 type width";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
+    {
+        return "Right shift past the end of u64 type width";
+    }
+    else
+    {
+        return "Right shift past the end of u128 type width";
+    }
+}
+
+template <fundamental_unsigned_integral BasisType, fundamental_unsigned_integral OtherBasis>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto overflow_conversion_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::uint16_t> && std::is_same_v<OtherBasis, std::uint8_t>)
+    {
+        return "Overflow in u16 to u8 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint32_t> && std::is_same_v<OtherBasis, std::uint8_t>)
+    {
+        return "Overflow in u32 to u8 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint32_t> && std::is_same_v<OtherBasis, std::uint16_t>)
+    {
+        return "Overflow in u32 to u16 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint64_t> && std::is_same_v<OtherBasis, std::uint8_t>)
+    {
+        return "Overflow in u64 to u8 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint64_t> && std::is_same_v<OtherBasis, std::uint16_t>)
+    {
+        return "Overflow in u64 to u16 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::uint64_t> && std::is_same_v<OtherBasis, std::uint32_t>)
+    {
+        return "Overflow in u64 to u32 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, int128::uint128_t> && std::is_same_v<OtherBasis, std::uint8_t>)
+    {
+        return "Overflow in u128 to u8 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, int128::uint128_t> && std::is_same_v<OtherBasis, std::uint16_t>)
+    {
+        return "Overflow in u128 to u16 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, int128::uint128_t> && std::is_same_v<OtherBasis, std::uint32_t>)
+    {
+        return "Overflow in u128 to u32 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, int128::uint128_t> && std::is_same_v<OtherBasis, std::uint64_t>)
+    {
+        return "Overflow in u128 to u64 conversion";
+    }
+    else
+    {
+        return "Overflow in unsigned integer conversion";
+    }
+}
+
 template <fundamental_unsigned_integral BasisType>
 template <fundamental_unsigned_integral OtherBasis>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr unsigned_integer_basis<BasisType>::operator OtherBasis() const
@@ -136,7 +413,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr unsigned_integer_basis<BasisType>::oper
     {
         if (basis_ > static_cast<BasisType>(std::numeric_limits<OtherBasis>::max()))
         {
-            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Overflow in ") + unsigned_type_name<BasisType>() + " to " + unsigned_type_name<OtherBasis>() + " conversion"));
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, overflow_conversion_msg<BasisType, OtherBasis>());
         }
     }
 
@@ -278,7 +555,7 @@ struct add_helper
                 if constexpr (Policy == overflow_policy::throw_exception)
                 {
                     static_cast<void>(res);
-                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error(std::string("Overflow detected in ") + unsigned_type_name<BasisType>() + " addition"));
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, overflow_add_msg<BasisType>());
                 }
                 else if constexpr (Policy == overflow_policy::saturate)
                 {
@@ -787,7 +1064,7 @@ struct sub_helper
                 if constexpr (Policy == overflow_policy::throw_exception)
                 {
                     static_cast<void>(res);
-                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error(std::string("Underflow detected in ") + unsigned_type_name<BasisType>() + " subtraction"));
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, underflow_sub_msg<BasisType>());
                 }
                 else if constexpr (Policy == overflow_policy::saturate)
                 {
@@ -1094,7 +1371,7 @@ struct mul_helper
                 if constexpr (Policy == overflow_policy::throw_exception)
                 {
                     static_cast<void>(res);
-                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error(std::string("Overflow detected in ") + unsigned_type_name<BasisType>() + " multiplication"));
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, overflow_mul_msg<BasisType>());
                 }
                 else if constexpr (Policy == overflow_policy::saturate)
                 {
@@ -1304,11 +1581,11 @@ struct div_helper
         {
             if constexpr (Policy == overflow_policy::throw_exception)
             {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Unsigned ") + unsigned_type_name<BasisType>() + " division by zero"));
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, div_by_zero_msg<BasisType>());
             }
             else if constexpr (Policy == overflow_policy::saturate)
             {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Unsigned ") + unsigned_type_name<BasisType>() + " division by zero"));
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, div_by_zero_msg<BasisType>());
             }
             else if constexpr (Policy == overflow_policy::strict)
             {
@@ -1345,7 +1622,7 @@ struct div_helper<overflow_policy::overflow_tuple, BasisType>
         const auto divisor {static_cast<BasisType>(rhs)};
         if (divisor == 0U) [[unlikely]]
         {
-            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Unsigned ") + unsigned_type_name<BasisType>() + " division by zero"));
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, div_by_zero_msg<BasisType>());
         }
 
         if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
@@ -1458,11 +1735,11 @@ struct mod_helper
         {
             if constexpr (Policy == overflow_policy::throw_exception)
             {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Unsigned ") + unsigned_type_name<BasisType>() + " modulo by zero"));
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, mod_by_zero_msg<BasisType>());
             }
             else if constexpr (Policy == overflow_policy::saturate)
             {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Unsigned ") + unsigned_type_name<BasisType>() + " modulo by zero"));
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, mod_by_zero_msg<BasisType>());
             }
             else if constexpr (Policy == overflow_policy::strict)
             {
@@ -1499,7 +1776,7 @@ struct mod_helper<overflow_policy::overflow_tuple, BasisType>
         const auto divisor {static_cast<BasisType>(rhs)};
         if (divisor == 0U) [[unlikely]]
         {
-            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Unsigned ") + unsigned_type_name<BasisType>() + " division by zero"));
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, div_by_zero_msg<BasisType>());
         }
 
         if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
@@ -1603,7 +1880,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator++()
 {
     if (this->basis_ == std::numeric_limits<BasisType>::max()) [[unlikely]]
     {
-        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error(std::string("Overflow detected in ") + unsigned_type_name<BasisType>() + " increment"));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, overflow_inc_msg<BasisType>());
     }
 
     ++this->basis_;
@@ -1617,7 +1894,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator++(int)
 {
     if (this->basis_ == std::numeric_limits<BasisType>::max()) [[unlikely]]
     {
-        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error(std::string("Overflow detected in ") + unsigned_type_name<BasisType>() + " increment"));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, overflow_inc_msg<BasisType>());
     }
 
     const auto temp {*this};
@@ -1636,7 +1913,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator--()
 {
     if (this->basis_ == 0U) [[unlikely]]
     {
-        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error(std::string("Underflow detected in ") + unsigned_type_name<BasisType>() + " decrement"));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, underflow_dec_msg<BasisType>());
     }
 
     --this->basis_;
@@ -1650,7 +1927,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator--(int)
 {
     if (this->basis_ == 0U) [[unlikely]]
     {
-        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error(std::string("Underflow detected in ") + unsigned_type_name<BasisType>() + " decrement"));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, underflow_dec_msg<BasisType>());
     }
 
     const auto temp {*this};
@@ -1683,7 +1960,7 @@ struct shl_helper
         {
             if constexpr (Policy == overflow_policy::throw_exception)
             {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error(std::string("Left shift past the end of ") + unsigned_type_name<BasisType>() + " type width"));
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, left_shift_overflow_msg<BasisType>());
             }
             else if constexpr (Policy == overflow_policy::saturate)
             {
@@ -1780,7 +2057,7 @@ struct shr_helper
         {
             if constexpr (Policy == overflow_policy::throw_exception)
             {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error(std::string("Right shift past the end of ") + unsigned_type_name<BasisType>() + " type width"));
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, right_shift_overflow_msg<BasisType>());
             }
             else if constexpr (Policy == overflow_policy::saturate)
             {

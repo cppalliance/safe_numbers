@@ -94,6 +94,181 @@ constexpr auto signed_type_name() noexcept -> const char*
     }
 }
 
+// Device-friendly error message helpers returning const char* string literals
+
+template <fundamental_signed_integral BasisType>
+constexpr auto signed_overflow_add_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::int8_t>)
+    {
+        return "Overflow detected in i8 addition";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+    {
+        return "Overflow detected in i16 addition";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+    {
+        return "Overflow detected in i32 addition";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+    {
+        return "Overflow detected in i64 addition";
+    }
+    else
+    {
+        return "Overflow detected in i128 addition";
+    }
+}
+
+template <fundamental_signed_integral BasisType>
+constexpr auto signed_underflow_add_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::int8_t>)
+    {
+        return "Underflow detected in i8 addition";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+    {
+        return "Underflow detected in i16 addition";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+    {
+        return "Underflow detected in i32 addition";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+    {
+        return "Underflow detected in i64 addition";
+    }
+    else
+    {
+        return "Underflow detected in i128 addition";
+    }
+}
+
+template <fundamental_signed_integral BasisType>
+constexpr auto signed_unary_minus_overflow_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::int8_t>)
+    {
+        return "Overflow in i8 unary minus operator";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+    {
+        return "Overflow in i16 unary minus operator";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+    {
+        return "Overflow in i32 unary minus operator";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+    {
+        return "Overflow in i64 unary minus operator";
+    }
+    else
+    {
+        return "Overflow in i128 unary minus operator";
+    }
+}
+
+template <fundamental_signed_integral BasisType, fundamental_signed_integral OtherBasis>
+constexpr auto signed_overflow_conversion_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::int16_t> && std::is_same_v<OtherBasis, std::int8_t>)
+    {
+        return "Overflow in i16 to i8 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int32_t> && std::is_same_v<OtherBasis, std::int8_t>)
+    {
+        return "Overflow in i32 to i8 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int32_t> && std::is_same_v<OtherBasis, std::int16_t>)
+    {
+        return "Overflow in i32 to i16 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int64_t> && std::is_same_v<OtherBasis, std::int8_t>)
+    {
+        return "Overflow in i64 to i8 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int64_t> && std::is_same_v<OtherBasis, std::int16_t>)
+    {
+        return "Overflow in i64 to i16 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int64_t> && std::is_same_v<OtherBasis, std::int32_t>)
+    {
+        return "Overflow in i64 to i32 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, int128::int128_t> && std::is_same_v<OtherBasis, std::int8_t>)
+    {
+        return "Overflow in i128 to i8 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, int128::int128_t> && std::is_same_v<OtherBasis, std::int16_t>)
+    {
+        return "Overflow in i128 to i16 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, int128::int128_t> && std::is_same_v<OtherBasis, std::int32_t>)
+    {
+        return "Overflow in i128 to i32 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, int128::int128_t> && std::is_same_v<OtherBasis, std::int64_t>)
+    {
+        return "Overflow in i128 to i64 conversion";
+    }
+    else
+    {
+        return "Overflow in signed integer conversion";
+    }
+}
+
+template <fundamental_signed_integral BasisType, fundamental_signed_integral OtherBasis>
+constexpr auto signed_underflow_conversion_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::int16_t> && std::is_same_v<OtherBasis, std::int8_t>)
+    {
+        return "Underflow in i16 to i8 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int32_t> && std::is_same_v<OtherBasis, std::int8_t>)
+    {
+        return "Underflow in i32 to i8 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int32_t> && std::is_same_v<OtherBasis, std::int16_t>)
+    {
+        return "Underflow in i32 to i16 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int64_t> && std::is_same_v<OtherBasis, std::int8_t>)
+    {
+        return "Underflow in i64 to i8 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int64_t> && std::is_same_v<OtherBasis, std::int16_t>)
+    {
+        return "Underflow in i64 to i16 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int64_t> && std::is_same_v<OtherBasis, std::int32_t>)
+    {
+        return "Underflow in i64 to i32 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, int128::int128_t> && std::is_same_v<OtherBasis, std::int8_t>)
+    {
+        return "Underflow in i128 to i8 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, int128::int128_t> && std::is_same_v<OtherBasis, std::int16_t>)
+    {
+        return "Underflow in i128 to i16 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, int128::int128_t> && std::is_same_v<OtherBasis, std::int32_t>)
+    {
+        return "Underflow in i128 to i32 conversion";
+    }
+    else if constexpr (std::is_same_v<BasisType, int128::int128_t> && std::is_same_v<OtherBasis, std::int64_t>)
+    {
+        return "Underflow in i128 to i64 conversion";
+    }
+    else
+    {
+        return "Underflow in signed integer conversion";
+    }
+}
+
 template <fundamental_signed_integral BasisType>
 template <fundamental_signed_integral OtherBasis>
 constexpr signed_integer_basis<BasisType>::operator OtherBasis() const
@@ -102,11 +277,11 @@ constexpr signed_integer_basis<BasisType>::operator OtherBasis() const
     {
         if (basis_ > static_cast<BasisType>(std::numeric_limits<OtherBasis>::max()))
         {
-            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Overflow in ") + signed_type_name<BasisType>() + " to " + signed_type_name<OtherBasis>() + " conversion"));
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_overflow_conversion_msg<BasisType, OtherBasis>());
         }
         else if (basis_ < static_cast<BasisType>(std::numeric_limits<OtherBasis>::min()))
         {
-            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Underflow in ") + signed_type_name<BasisType>() + " to " + signed_type_name<OtherBasis>() + " conversion"));
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_underflow_conversion_msg<BasisType, OtherBasis>());
         }
     }
 
@@ -124,7 +299,7 @@ constexpr auto signed_integer_basis<BasisType>::operator-() const -> signed_inte
 {
     if (basis_ == std::numeric_limits<BasisType>::min()) [[unlikely]]
     {
-        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error(std::string("Overflow in ") + signed_type_name<BasisType>() + " unary minus operator"));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_unary_minus_overflow_msg<BasisType>());
     }
 
     return signed_integer_basis{static_cast<BasisType>(-basis_)};
@@ -332,16 +507,14 @@ struct signed_add_helper
                 if constexpr (Policy == overflow_policy::throw_exception)
                 {
                     static_cast<void>(result);
-                    const auto message {std::string(status == signed_overflow_status::overflow ? "Overflow" : "Underflow")
-                                        + " detected in " + signed_type_name<BasisType>() + " addition"};
 
                     if (status == signed_overflow_status::overflow)
                     {
-                        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error(message));
+                        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, signed_overflow_add_msg<BasisType>());
                     }
                     else
                     {
-                        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error(message));
+                        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, signed_underflow_add_msg<BasisType>());
                     }
                 }
                 else
