@@ -1,0 +1,45 @@
+# Copyright 2026 Matt Borland
+# Distributed under the Boost Software License, Version 1.0.
+# https://www.boost.org/LICENSE_1_0.txt
+
+import testing ;
+import ../../config/checks/config : requires ;
+
+project : requirements
+    [ requires cxx20_hdr_bit cxx20_hdr_compare cxx20_hdr_concepts ]
+    ;
+
+# u8 tests
+run test_cuda_u8_add.cu ;
+run test_cuda_u8_sub.cu ;
+run test_cuda_u8_mul.cu ;
+run test_cuda_u8_div.cu ;
+run test_cuda_u8_mod.cu ;
+
+# u16 tests
+run test_cuda_u16_add.cu ;
+run test_cuda_u16_sub.cu ;
+run test_cuda_u16_mul.cu ;
+run test_cuda_u16_div.cu ;
+run test_cuda_u16_mod.cu ;
+
+# u32 tests
+run test_cuda_u32_add.cu ;
+run test_cuda_u32_sub.cu ;
+run test_cuda_u32_mul.cu ;
+run test_cuda_u32_div.cu ;
+run test_cuda_u32_mod.cu ;
+
+# u64 tests
+run test_cuda_u64_add.cu ;
+run test_cuda_u64_sub.cu ;
+run test_cuda_u64_mul.cu ;
+run test_cuda_u64_div.cu ;
+run test_cuda_u64_mod.cu ;
+
+# u128 tests
+run test_cuda_u128_add.cu ;
+run test_cuda_u128_sub.cu ;
+run test_cuda_u128_mul.cu ;
+run test_cuda_u128_div.cu ;
+run test_cuda_u128_mod.cu ;
