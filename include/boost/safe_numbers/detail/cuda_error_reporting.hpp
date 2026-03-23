@@ -22,17 +22,24 @@
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
+// Using a macro instead of a global constant because the inline constexpr is not available on device
+#ifdef PATH_MAX
+#  define BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE PATH_MAX
+#else
+#  define BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE 512
+#endif
+
 namespace boost::safe_numbers {
 
 namespace detail {
 
 struct cuda_device_error
 {
-    int  flag;                          // 0 = no error, 1 = error captured
-    int  line;                          // __LINE__
-    int  thread_id;                     // blockIdx.x * blockDim.x + threadIdx.x
-    char file[256];                     // __FILE__ copied by value
-    char expression[256];               // #x copied by value
+    int  flag;                                                      // 0 = no error, 1 = error captured
+    int  line;                                                      // __LINE__
+    int  thread_id;                                                 // blockIdx.x * blockDim.x + threadIdx.x
+    char file[BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE];         // __FILE__ copied by value
+    char expression[BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE];   // x copied by value
 };
 
 BOOST_SAFE_NUMBERS_HOST_DEVICE inline void copy_to_buf(char* dst, const char* src, const int max_len)
@@ -60,9 +67,9 @@ __host__ __device__ inline void report_device_error(
 
     if (atomicCAS(&g_device_error.flag, 0, 1) == 0)
     {
-        copy_to_buf(g_device_error.file, file, 256);
+        copy_to_buf(g_device_error.file, file, BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE);
         g_device_error.line       = line;
-        copy_to_buf(g_device_error.expression, expression, 256);
+        copy_to_buf(g_device_error.expression, expression, BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE);
         g_device_error.thread_id  = blockIdx.x * blockDim.x + threadIdx.x;
         __threadfence_system();
 
