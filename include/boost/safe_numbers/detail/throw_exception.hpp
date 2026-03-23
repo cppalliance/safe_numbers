@@ -28,6 +28,6 @@
 
 #define BOOST_SAFE_NUMBERS_THROW_EXCEPTION(x) boost::safe_numbers::detail::report_device_error(__FILE__, __LINE__, #x)
 
-#endif // __CUDA_ARCH__
+#endif // __CUDACC__
 
 #endif // BOOST_SAFE_NUMBERS_THROW_EXCEPTION_HPP

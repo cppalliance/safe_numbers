@@ -9,11 +9,14 @@
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
+#include <boost/throw_exception.hpp>
 #include <cstdio>
 #include <cmath>
+#include <string>
+#include <stdexcept>
 #include <sstream>
 
-#ifdef __NVCC__
+#ifdef __CUDACC__
 #include <cuda_runtime.h>
 #endif
 
@@ -32,15 +35,16 @@ struct cuda_device_error
     const char* expression; // #x stringified expression
 };
 
-#ifdef __NVCC__
+#ifdef __CUDACC__
 
 __device__ cuda_device_error g_device_error = {0, 0, 0, nullptr, nullptr};
 
-__device__ inline void report_device_error(
+__host__ __device__ inline void report_device_error(
     const char* file,
     int line,
     const char* expression)
 {
+#ifdef __CUDA_ARCH__
     if (atomicCAS(&g_device_error.flag, 0, 1) == 0)
     {
         g_device_error.file       = file;
@@ -50,19 +54,21 @@ __device__ inline void report_device_error(
         __threadfence_system();
     }
 
-    // Print in case things something goes bad in PTX return from __trap
     printf("Device error at: [GPU thread %d] %s:%d: %s\n",
            blockIdx.x * blockDim.x + threadIdx.x,
            file, line, expression);
 
     __trap();
+#else
+    BOOST_THROW_EXCEPTION(std::runtime_error(std::string(file) + ":" + std::to_string(line) + ": " + expression));
+#endif
 }
 
-#endif // __NVCC__
+#endif // __CUDACC__
 
 } // namespace detail
 
-#ifdef __NVCC__
+#ifdef __CUDACC__
 
 class device_error_context
 {
@@ -105,18 +111,18 @@ public:
             cudaGetLastError();
 
             // TODO(mborland): Can we get the type of exception to throw? e.g., overflow, underflow, range.
-            throw std::runtime_error(oss.str());
+            BOOST_THROW_EXCEPTION(std::runtime_error(oss.str()));
         }
 
         if (status != cudaSuccess)
         {
             cudaGetLastError();
-            throw std::runtime_error(cudaGetErrorString(status));
+            BOOST_THROW_EXCEPTION(std::runtime_error(cudaGetErrorString(status)));
         }
     }
 };
 
-#endif // __NVCC__
+#endif // __CUDACC__
 
 } // namespace boost::safe_numbers
 
