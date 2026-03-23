@@ -28,40 +28,59 @@ namespace detail {
 
 struct cuda_device_error
 {
-    int         flag;       // 0 = no error, 1 = error captured
-    int         line;       // __LINE__
-    int         thread_id;  // Approximated by blockIdx.x * blockDim.x + threadIdx.x;
-    const char* file;       // __FILE__ string literal
-    const char* expression; // #x stringified expression
+    int  flag;                          // 0 = no error, 1 = error captured
+    int  line;                          // __LINE__
+    int  thread_id;                     // blockIdx.x * blockDim.x + threadIdx.x
+    char file[256];                     // __FILE__ copied by value
+    char expression[256];               // #x copied by value
 };
+
+BOOST_SAFE_NUMBERS_HOST_DEVICE inline void copy_to_buf(char* dst, const char* src, const int max_len)
+{
+    int i = 0;
+    for (; i < max_len - 1 && src[i] != '\0'; ++i)
+    {
+        dst[i] = src[i];
+    }
+    dst[i] = '\0';
+}
 
 #ifdef __CUDACC__
 
-__device__ cuda_device_error g_device_error = {0, 0, 0, nullptr, nullptr};
+__device__ cuda_device_error g_device_error = {0, 0, 0, {'\0'}, {'\0'}};
 
 __host__ __device__ inline void report_device_error(
     const char* file,
     int line,
     const char* expression)
 {
-#ifdef __CUDA_ARCH__
+    #ifdef __CUDA_ARCH__
+
     if (atomicCAS(&g_device_error.flag, 0, 1) == 0)
     {
-        g_device_error.file       = file;
+        copy_to_buf(g_device_error.file, file, cuda_error_buf_size);
         g_device_error.line       = line;
-        g_device_error.expression = expression;
+        copy_to_buf(g_device_error.expression, expression, cuda_error_buf_size);
         g_device_error.thread_id  = blockIdx.x * blockDim.x + threadIdx.x;
         __threadfence_system();
+
+        printf("Device error at: [GPU thread %d] %s:%d: %s\n",
+               blockIdx.x * blockDim.x + threadIdx.x,
+               file, line, expression);
+
+        __trap();
     }
 
-    printf("Device error at: [GPU thread %d] %s:%d: %s\n",
-           blockIdx.x * blockDim.x + threadIdx.x,
-           file, line, expression);
+    // Other threads: spin until the trap terminates the kernel
+    while (true)
+    {
+        __nanosleep(1000000);
+    }
+    #else
 
-    __trap();
-#else
     BOOST_THROW_EXCEPTION(std::runtime_error(std::string(file) + ":" + std::to_string(line) + ": " + expression));
-#endif
+
+    #endif
 }
 
 #endif // __CUDACC__
@@ -78,7 +97,7 @@ public:
     // The error context can be reused with multiple kernels if this is called
     void reset()
     {
-        const detail::cuda_device_error new_error = {0, 0, 0, nullptr, nullptr};
+        const detail::cuda_device_error new_error = {0, 0, 0, {'\0'}, {'\0'}};
         cudaMemcpyToSymbol(detail::g_device_error, &new_error, sizeof(detail::cuda_device_error));
     }
 
