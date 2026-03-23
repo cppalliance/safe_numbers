@@ -3,8 +3,6 @@
 //  Boost Software License, Version 1.0. (See accompanying file
 //  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#define BOOST_SAFE_NUMBERS_ENABLE_CUDA
-
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -12,7 +10,7 @@
 #include <limits>
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/detail/cuda_error_reporting.hpp>
-#include <boost/int128/random.hpp>
+#include <boost/safe_numbers/detail/int128/random.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
 #include "cuda_managed_ptr.hpp"
 #include "stopwatch.hpp"
