@@ -47,7 +47,9 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE inline void copy_to_buf(char* dst, const char* sr
 
 #ifdef __CUDACC__
 
-__device__ cuda_device_error g_device_error = {0, 0, 0, {'\0'}, {'\0'}};
+// __managed__ places this in unified memory so the host can read it directly
+// without cudaMemcpyFromSymbol, which fails after __trap() corrupts the device context
+__managed__ cuda_device_error g_device_error = {0, 0, 0, {'\0'}, {'\0'}};
 
 __host__ __device__ inline void report_device_error(
     const char* file,
@@ -97,8 +99,11 @@ public:
     // The error context can be reused with multiple kernels if this is called
     void reset()
     {
-        const detail::cuda_device_error new_error = {0, 0, 0, {'\0'}, {'\0'}};
-        cudaMemcpyToSymbol(detail::g_device_error, &new_error, sizeof(detail::cuda_device_error));
+        detail::g_device_error.flag = 0;
+        detail::g_device_error.line = 0;
+        detail::g_device_error.thread_id = 0;
+        detail::g_device_error.file[0] = '\0';
+        detail::g_device_error.expression[0] = '\0';
     }
 
     // On construction, reset the global error state to ensure we have a good start
@@ -113,25 +118,31 @@ public:
     // This allows trivial reuse of all these facilities
     void synchronize()
     {
-        const cudaError_t status = cudaDeviceSynchronize();
-        detail::cuda_device_error err;
-        cudaMemcpyFromSymbol(&err, detail::g_device_error, sizeof(detail::cuda_device_error));
-        reset();
+        const auto status = cudaDeviceSynchronize();
 
-        if (err.flag != 0)
+        // Read directly from managed memory — no cudaMemcpyFromSymbol needed
+        // This works even after __trap() corrupts the device context
+        const auto flag = detail::g_device_error.flag;
+        const auto thread_id = detail::g_device_error.thread_id;
+        const auto line = detail::g_device_error.line;
+
+        if (flag != 0)
         {
             std::ostringstream oss;
-            oss << "Device error on thread " << err.thread_id
-                << " at " << err.file
-                << ":" << err.line
-                << ": " << err.expression;
+            oss << "Device error on thread " << thread_id
+                << " at " << detail::g_device_error.file
+                << ":" << line
+                << ": " << detail::g_device_error.expression;
 
-            // Need to clear our trap
+            // Clear the sticky CUDA error and reset our state
             cudaGetLastError();
+            reset();
 
             // TODO(mborland): Can we get the type of exception to throw? e.g., overflow, underflow, range.
             BOOST_THROW_EXCEPTION(std::runtime_error(oss.str()));
         }
+
+        reset();
 
         if (status != cudaSuccess)
         {
