@@ -72,8 +72,8 @@ public:
     // The error context can be reused with multiple kernels if this is called
     void reset()
     {
-        const cuda_device_error new_error = {0, 0, 0, nullptr, nullptr};
-        cudaMemcpyToSymbol(g_device_error, &new_error, sizeof(cuda_device_error));
+        const detail::cuda_device_error new_error = {0, 0, 0, nullptr, nullptr};
+        cudaMemcpyToSymbol(detail::g_device_error, &new_error, sizeof(detail::cuda_device_error));
     }
 
     // On construction, reset the global error state to ensure we have a good start
@@ -89,8 +89,8 @@ public:
     void synchronize()
     {
         const cudaError_t status = cudaDeviceSynchronize();
-        cuda_device_error err;
-        cudaMemcpyFromSymbol(&err, g_device_error, sizeof(cuda_device_error));
+        detail::cuda_device_error err;
+        cudaMemcpyFromSymbol(&err, detail::g_device_error, sizeof(detail::cuda_device_error));
         reset();
 
         if (err.flag != 0)
