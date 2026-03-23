@@ -277,11 +277,11 @@ constexpr signed_integer_basis<BasisType>::operator OtherBasis() const
     {
         if (basis_ > static_cast<BasisType>(std::numeric_limits<OtherBasis>::max()))
         {
-            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_overflow_conversion_msg<BasisType, OtherBasis>());
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, (signed_overflow_conversion_msg<BasisType, OtherBasis>()));
         }
         else if (basis_ < static_cast<BasisType>(std::numeric_limits<OtherBasis>::min()))
         {
-            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_underflow_conversion_msg<BasisType, OtherBasis>());
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, (signed_underflow_conversion_msg<BasisType, OtherBasis>()));
         }
     }
 

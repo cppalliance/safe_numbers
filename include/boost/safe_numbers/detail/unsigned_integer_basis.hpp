@@ -413,7 +413,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr unsigned_integer_basis<BasisType>::oper
     {
         if (basis_ > static_cast<BasisType>(std::numeric_limits<OtherBasis>::max()))
         {
-            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, overflow_conversion_msg<BasisType, OtherBasis>());
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, (overflow_conversion_msg<BasisType, OtherBasis>()));
         }
     }
 
