@@ -25,7 +25,7 @@ namespace detail {
 #endif
 
 template <typename T>
-BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void half_word_div(const T& lhs, const std::uint32_t rhs, T& quotient, T& remainder) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void half_word_div(const T& lhs, const std::uint32_t rhs, T& quotient, T& remainder) noexcept
 {
     using high_word_type = decltype(T{}.high);
 
@@ -54,7 +54,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void half_word_div(const
 }
 
 template <typename T>
-BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void half_word_div(const T& lhs, const std::uint32_t rhs, T& quotient) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void half_word_div(const T& lhs, const std::uint32_t rhs, T& quotient) noexcept
 {
     BOOST_SAFE_NUMBERS_DETAIL_INT128_ASSUME(rhs != 0); // LCOV_EXCL_LINE
 
@@ -73,7 +73,7 @@ namespace impl {
 #endif
 
 template <std::size_t v_size>
-BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void unpack_v(std::uint32_t (&vn)[4], const std::uint32_t (&v)[v_size],
+BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void unpack_v(std::uint32_t (&vn)[4], const std::uint32_t (&v)[v_size],
     const bool needs_shift, const int s, const int complement_s, const std::integral_constant<std::size_t, 2>&) noexcept
 {
     vn[1] = needs_shift ? ((v[1] << s) | (v[0] >> complement_s)) : v[1];
@@ -81,7 +81,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void unpack_v(std::uint3
 }
 
 template <std::size_t v_size>
-BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void unpack_v(std::uint32_t (&vn)[4], const std::uint32_t (&v)[v_size],
+BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void unpack_v(std::uint32_t (&vn)[4], const std::uint32_t (&v)[v_size],
     const bool needs_shift, const int s, const int complement_s, const std::integral_constant<std::size_t, 4>&) noexcept
 {
     vn[3] = needs_shift ? ((v[3] << s) | (v[2] >> complement_s)) : v[3];
@@ -93,7 +93,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void unpack_v(std::uint3
 // See: The Art of Computer Programming Volume 2 (Semi-numerical algorithms) section 4.3.1
 // Algorithm D: Division of Non-negative integers
 template <bool need_remainder, std::size_t u_size, std::size_t v_size, std::size_t q_size>
-constexpr void knuth_divide(std::uint32_t (&u)[u_size], const std::size_t m,
+BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE constexpr void knuth_divide(std::uint32_t (&u)[u_size], const std::size_t m,
                             const std::uint32_t (&v)[v_size], const std::size_t n,
                             std::uint32_t (&q)[q_size]) noexcept
 {
@@ -203,7 +203,7 @@ constexpr void knuth_divide(std::uint32_t (&u)[u_size], const std::size_t m,
 #endif
 
 template <typename T>
-BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr std::size_t to_words(const T& x, std::uint32_t (&words)[4]) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr std::size_t to_words(const T& x, std::uint32_t (&words)[4]) noexcept
 {
     #if !defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_NO_CONSTEVAL_DETECTION) && !BOOST_SAFE_NUMBERS_DETAIL_INT128_ENDIAN_BIG_BYTE
     if (!BOOST_SAFE_NUMBERS_DETAIL_INT128_IS_CONSTANT_EVALUATED(x))
@@ -230,7 +230,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr std::size_t to_words(con
     return word_count;
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr std::size_t to_words(const std::uint64_t x, std::uint32_t (&words)[2]) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr std::size_t to_words(const std::uint64_t x, std::uint32_t (&words)[2]) noexcept
 {
     #if !defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_NO_CONSTEVAL_DETECTION) && !BOOST_SAFE_NUMBERS_DETAIL_INT128_ENDIAN_BIG_BYTE
     if (!BOOST_SAFE_NUMBERS_DETAIL_INT128_IS_CONSTANT_EVALUATED(x))
@@ -247,7 +247,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr std::size_t to_words(con
     return x > UINT32_MAX ? 2 : 1;
 }
 
-BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr std::size_t to_words(const std::uint32_t x, std::uint32_t (&words)[1]) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr std::size_t to_words(const std::uint32_t x, std::uint32_t (&words)[1]) noexcept
 {
     words[0] = x;
 
@@ -255,7 +255,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr std::size_t to_words(con
 }
 
 template <typename T>
-BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr T from_words(const std::uint32_t (&words)[4]) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr T from_words(const std::uint32_t (&words)[4]) noexcept
 {
     using high_word_type = decltype(T{}.high);
 
@@ -268,7 +268,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr T from_words(const std::
 #if defined(_M_AMD64) && !defined(__GNUC__) && !defined(__clang__) && _MSC_VER >= 1920
 
 template <bool needs_mod, typename T>
-constexpr T div_mod_msvc(T dividend, T divisor, T& remainder)
+BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE constexpr T div_mod_msvc(T dividend, T divisor, T& remainder)
 {
     using high_word_type = decltype(T{}.high);
 
@@ -395,7 +395,7 @@ constexpr T div_mod_msvc(T dividend, T divisor, T& remainder)
 // In the division case it is a waste of cycles
 
 template <typename T>
-BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void one_word_div(const T& lhs, const std::uint64_t rhs, T& quotient) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void one_word_div(const T& lhs, const std::uint64_t rhs, T& quotient) noexcept
 {
     #if defined(_M_AMD64) && !defined(__GNUC__) && !defined(__clang__) && _MSC_VER >= 1920 && !defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_NO_CONSTEVAL_DETECTION)
 
@@ -431,7 +431,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void one_word_div(const 
 }
 
 template <typename T>
-BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void one_word_div(const T& lhs, const std::uint64_t rhs, T& quotient, T& remainder) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void one_word_div(const T& lhs, const std::uint64_t rhs, T& quotient, T& remainder) noexcept
 {
     #if defined(_M_AMD64) && !defined(__GNUC__) && !defined(__clang__) && _MSC_VER >= 1920 && !defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_NO_CONSTEVAL_DETECTION)
 
@@ -470,13 +470,13 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void one_word_div(const 
 }
 
 template <typename T>
-BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void one_word_div(const T& lhs, const std::uint32_t rhs, T& quotient, T& remainder) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void one_word_div(const T& lhs, const std::uint32_t rhs, T& quotient, T& remainder) noexcept
 {
     half_word_div(lhs, rhs, quotient, remainder);
 }
 
 template <typename T>
-BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void one_word_div(const T& lhs, const std::uint32_t rhs, T& quotient) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void one_word_div(const T& lhs, const std::uint32_t rhs, T& quotient) noexcept
 {
     half_word_div(lhs, rhs, quotient);
 }
@@ -488,7 +488,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr void one_word_div(const 
 #endif
 
 template <typename T>
-BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr T knuth_div(const T& dividend, const T& divisor) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr T knuth_div(const T& dividend, const T& divisor) noexcept
 {
     BOOST_SAFE_NUMBERS_DETAIL_INT128_ASSUME(divisor != static_cast<T>(0));
 
@@ -519,7 +519,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr T knuth_div(const T& div
 }
 
 template <typename T>
-BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr T knuth_div(const T& dividend, const T& divisor, T& remainder) noexcept
+BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr T knuth_div(const T& dividend, const T& divisor, T& remainder) noexcept
 {
     BOOST_SAFE_NUMBERS_DETAIL_INT128_ASSUME(divisor != static_cast<T>(0));
     

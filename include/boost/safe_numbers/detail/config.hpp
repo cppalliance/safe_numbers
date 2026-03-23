@@ -67,4 +67,22 @@ inline constexpr auto dependent_false {false};
 
 } // namespace boost::safe_numbers::detail
 
+#if defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA)
+
+#ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_ENABLE_CUDA
+#  define BOOST_SAFE_NUMBERS_DETAIL_INT128_ENABLE_CUDA
+#endif
+
+#ifndef BOOST_CHARCONV_ENABLE_CUDA
+#  define BOOST_CHARCONV_ENABLE_CUDA
+#endif
+
+#define BOOST_SAFE_NUMBERS_HOST_DEVICE __host__ __device__
+
+#else
+
+#define BOOST_SAFE_NUMBERS_HOST_DEVICE
+
+#endif // CUDA
+
 #endif // BOOST_SAFENUMBERS_CONFIG_HPP

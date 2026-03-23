@@ -7,10 +7,27 @@ include(BoostTestJamfile OPTIONAL RESULT_VARIABLE HAVE_BOOST_TEST)
 
 if(HAVE_BOOST_TEST)
 
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64|i386|i686|x86" AND NOT MINGW)
-        boost_test_jamfile(FILE Jamfile LINK_LIBRARIES Boost::safe_numbers Boost::charconv Boost::core Boost::random Boost::safe_numerics Boost::multiprecision Boost::exception Boost::stacktrace_from_exception)
+    if(BOOST_SAFE_NUMBERS_ENABLE_CUDA)
+
+        message(STATUS "Building Boost.safe_numbers with CUDA")
+
+        enable_language(CUDA)
+        find_package(CUDAToolkit REQUIRED)
+        set(CMAKE_CUDA_EXTENSIONS OFF)
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
+
+        enable_testing()
+
+        boost_test_jamfile(FILE cuda_jamfile LINK_LIBRARIES Boost::safe_numbers Boost::random CUDA::cudart COMPILE_DEFINITIONS BOOST_SAFE_NUMBERS_ENABLE_CUDA=1)
+
     else()
-        boost_test_jamfile(FILE Jamfile LINK_LIBRARIES Boost::safe_numbers Boost::charconv Boost::core Boost::random Boost::safe_numerics Boost::multiprecision Boost::exception)
+
+        if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64|i386|i686|x86" AND NOT MINGW)
+            boost_test_jamfile(FILE Jamfile LINK_LIBRARIES Boost::safe_numbers Boost::charconv Boost::core Boost::random Boost::safe_numerics Boost::multiprecision Boost::exception Boost::stacktrace_from_exception)
+        else()
+            boost_test_jamfile(FILE Jamfile LINK_LIBRARIES Boost::safe_numbers Boost::charconv Boost::core Boost::random Boost::safe_numerics Boost::multiprecision Boost::exception)
+        endif()
+
     endif()
 
 endif()

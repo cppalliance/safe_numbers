@@ -90,7 +90,7 @@ template <detail::non_bounded_integral_library_type T, std::size_t N>
     {
         if (bytes.size_bytes() != sizeof(T))
         {
-            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error("The number of bytes provided, and the target type number of bytes do not match"));
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "The number of bytes provided, and the target type number of bytes do not match");
         }
 
         std::array<std::byte, sizeof(T)> arr {};
@@ -132,7 +132,7 @@ template <detail::non_bounded_integral_library_type T, std::size_t N>
     {
         if (bytes.size_bytes() != sizeof(T))
         {
-            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error("The number of bytes provided, and the target type number of bytes do not match"));
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "The number of bytes provided, and the target type number of bytes do not match");
         }
 
         std::array<std::byte, sizeof(T)> arr {};

@@ -9,15 +9,25 @@
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
+#include <boost/throw_exception.hpp>
 #include <cstdio>
 #include <cmath>
+#include <string>
+#include <stdexcept>
 #include <sstream>
 
-#ifdef __NVCC__
+#ifdef __CUDACC__
 #include <cuda_runtime.h>
 #endif
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
+
+// Using a macro instead of a global constant because the inline constexpr is not available on device
+#ifdef PATH_MAX
+#  define BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE PATH_MAX
+#else
+#  define BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE 512
+#endif
 
 namespace boost::safe_numbers {
 
@@ -25,44 +35,68 @@ namespace detail {
 
 struct cuda_device_error
 {
-    int         flag;       // 0 = no error, 1 = error captured
-    int         line;       // __LINE__
-    int         thread_id;  // Approximated by blockIdx.x * blockDim.x + threadIdx.x;
-    const char* file;       // __FILE__ string literal
-    const char* expression; // #x stringified expression
+    int  flag;                                                      // 0 = no error, 1 = error captured
+    int  line;                                                      // __LINE__
+    int  thread_id;                                                 // blockIdx.x * blockDim.x + threadIdx.x
+    char file[BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE];         // __FILE__ copied by value
+    char expression[BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE];   // x copied by value
 };
 
-#ifdef __NVCC__
+BOOST_SAFE_NUMBERS_HOST_DEVICE inline void copy_to_buf(char* dst, const char* src, const int max_len)
+{
+    int i = 0;
+    for (; i < max_len - 1 && src[i] != '\0'; ++i)
+    {
+        dst[i] = src[i];
+    }
+    dst[i] = '\0';
+}
 
-__device__ cuda_device_error g_device_error = {0, 0, 0, nullptr, nullptr};
+#ifdef __CUDACC__
 
-__device__ inline void report_device_error(
+// __managed__ places this in unified memory so the host can read it directly
+// without cudaMemcpyFromSymbol, which fails after __trap() corrupts the device context
+__managed__ cuda_device_error g_device_error = {0, 0, 0, {'\0'}, {'\0'}};
+
+__host__ __device__ inline void report_device_error(
     const char* file,
     int line,
     const char* expression)
 {
+    #ifdef __CUDA_ARCH__
+
     if (atomicCAS(&g_device_error.flag, 0, 1) == 0)
     {
-        g_device_error.file       = file;
+        copy_to_buf(g_device_error.file, file, BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE);
         g_device_error.line       = line;
-        g_device_error.expression = expression;
+        copy_to_buf(g_device_error.expression, expression, BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE);
         g_device_error.thread_id  = blockIdx.x * blockDim.x + threadIdx.x;
         __threadfence_system();
+
+        printf("Device error at: [GPU thread %d] %s:%d: %s\n",
+               blockIdx.x * blockDim.x + threadIdx.x,
+               file, line, expression);
+
+        __trap();
     }
 
-    // Print in case things something goes bad in PTX return from __trap
-    printf("Device error at: [GPU thread %d] %s:%d: %s\n",
-           blockIdx.x * blockDim.x + threadIdx.x,
-           file, line, expression);
+    // Other threads: spin until the trap terminates the kernel
+    while (true)
+    {
+        __nanosleep(1000000);
+    }
+    #else
 
-    __trap();
+    BOOST_THROW_EXCEPTION(std::runtime_error(std::string(file) + ":" + std::to_string(line) + ": " + expression));
+
+    #endif
 }
 
-#endif // __NVCC__
+#endif // __CUDACC__
 
 } // namespace detail
 
-#ifdef __NVCC__
+#ifdef __CUDACC__
 
 class device_error_context
 {
@@ -72,8 +106,11 @@ public:
     // The error context can be reused with multiple kernels if this is called
     void reset()
     {
-        const cuda_device_error new_error = {0, 0, 0, nullptr, nullptr};
-        cudaMemcpyToSymbol(g_device_error, &new_error, sizeof(cuda_device_error));
+        detail::g_device_error.flag = 0;
+        detail::g_device_error.line = 0;
+        detail::g_device_error.thread_id = 0;
+        detail::g_device_error.file[0] = '\0';
+        detail::g_device_error.expression[0] = '\0';
     }
 
     // On construction, reset the global error state to ensure we have a good start
@@ -88,35 +125,41 @@ public:
     // This allows trivial reuse of all these facilities
     void synchronize()
     {
-        const cudaError_t status = cudaDeviceSynchronize();
-        cuda_device_error err;
-        cudaMemcpyFromSymbol(&err, g_device_error, sizeof(cuda_device_error));
-        reset();
+        const auto status = cudaDeviceSynchronize();
 
-        if (err.flag != 0)
+        // Read directly from managed memory — no cudaMemcpyFromSymbol needed
+        // This works even after __trap() corrupts the device context
+        const auto flag = detail::g_device_error.flag;
+        const auto thread_id = detail::g_device_error.thread_id;
+        const auto line = detail::g_device_error.line;
+
+        if (flag != 0)
         {
             std::ostringstream oss;
-            oss << "Device error on thread " << err.thread_id
-                << " at " << err.file
-                << ":" << err.line
-                << ": " << err.expression;
+            oss << "Device error on thread " << thread_id
+                << " at " << detail::g_device_error.file
+                << ":" << line
+                << ": " << detail::g_device_error.expression;
 
-            // Need to clear our trap
+            // Clear the sticky CUDA error and reset our state
             cudaGetLastError();
+            reset();
 
             // TODO(mborland): Can we get the type of exception to throw? e.g., overflow, underflow, range.
-            throw std::runtime_error(oss.str());
+            BOOST_THROW_EXCEPTION(std::runtime_error(oss.str()));
         }
+
+        reset();
 
         if (status != cudaSuccess)
         {
             cudaGetLastError();
-            throw std::runtime_error(cudaGetErrorString(status));
+            BOOST_THROW_EXCEPTION(std::runtime_error(cudaGetErrorString(status)));
         }
     }
 };
 
-#endif // __NVCC__
+#endif // __CUDACC__
 
 } // namespace boost::safe_numbers
 

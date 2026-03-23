@@ -18,16 +18,17 @@
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
-// This is defined only in the device compilation step
-// as opposed to __NVCC__
-#ifndef __CUDA_ARCH__
+// Two-argument form: (exception_type, message)
+// On host: constructs and throws the exception with the message
+// On CUDA device: passes the const char* message to the device error reporter
+#ifndef __CUDACC__
 
-#define BOOST_SAFE_NUMBERS_THROW_EXCEPTION(x) BOOST_THROW_EXCEPTION(x)
+#define BOOST_SAFE_NUMBERS_THROW_EXCEPTION(exc_type, msg) BOOST_THROW_EXCEPTION(exc_type(msg))
 
 #else
 
-#define BOOST_SAFE_NUMBERS_THROW_EXCEPTION(x) boost::safe_numbers::detail::report_device_error(__FILE__, __LINE__, x)
+#define BOOST_SAFE_NUMBERS_THROW_EXCEPTION(exc_type, msg) boost::safe_numbers::detail::report_device_error(__FILE__, __LINE__, msg)
 
-#endif // __CUDA_ARCH__
+#endif // __CUDACC__
 
 #endif // BOOST_SAFE_NUMBERS_THROW_EXCEPTION_HPP
