@@ -14,6 +14,7 @@ if(HAVE_BOOST_TEST)
         find_package(CUDA REQUIRED)
         enable_language(CUDA)
         set(CMAKE_CUDA_EXTENSIONS OFF)
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
 
         enable_testing()
 
