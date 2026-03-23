@@ -43,3 +43,40 @@ run test_cuda_u128_sub.cu ;
 run test_cuda_u128_mul.cu ;
 run test_cuda_u128_div.cu ;
 run test_cuda_u128_mod.cu ;
+
+# Error reporting tests - verify device_error_context catches overflow/underflow/div-by-zero
+
+# u8 error tests
+run test_cuda_u8_add_error.cu ;
+run test_cuda_u8_sub_error.cu ;
+run test_cuda_u8_mul_error.cu ;
+run test_cuda_u8_div_error.cu ;
+run test_cuda_u8_mod_error.cu ;
+
+# u16 error tests
+run test_cuda_u16_add_error.cu ;
+run test_cuda_u16_sub_error.cu ;
+run test_cuda_u16_mul_error.cu ;
+run test_cuda_u16_div_error.cu ;
+run test_cuda_u16_mod_error.cu ;
+
+# u32 error tests
+run test_cuda_u32_add_error.cu ;
+run test_cuda_u32_sub_error.cu ;
+run test_cuda_u32_mul_error.cu ;
+run test_cuda_u32_div_error.cu ;
+run test_cuda_u32_mod_error.cu ;
+
+# u64 error tests
+run test_cuda_u64_add_error.cu ;
+run test_cuda_u64_sub_error.cu ;
+run test_cuda_u64_mul_error.cu ;
+run test_cuda_u64_div_error.cu ;
+run test_cuda_u64_mod_error.cu ;
+
+# u128 error tests
+run test_cuda_u128_add_error.cu ;
+run test_cuda_u128_sub_error.cu ;
+run test_cuda_u128_mul_error.cu ;
+run test_cuda_u128_div_error.cu ;
+run test_cuda_u128_mod_error.cu ;
