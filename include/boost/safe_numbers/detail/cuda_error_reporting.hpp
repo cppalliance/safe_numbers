@@ -58,9 +58,9 @@ __host__ __device__ inline void report_device_error(
 
     if (atomicCAS(&g_device_error.flag, 0, 1) == 0)
     {
-        copy_to_buf(g_device_error.file, file, cuda_error_buf_size);
+        copy_to_buf(g_device_error.file, file, 256);
         g_device_error.line       = line;
-        copy_to_buf(g_device_error.expression, expression, cuda_error_buf_size);
+        copy_to_buf(g_device_error.expression, expression, 256);
         g_device_error.thread_id  = blockIdx.x * blockDim.x + threadIdx.x;
         __threadfence_system();
 
