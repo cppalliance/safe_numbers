@@ -56,8 +56,8 @@ int main(void)
     }
     catch (const std::runtime_error& e)
     {
-        std::cout << "Caught expected error: " << e.what() << std::endl;
-        std::cout << "Test PASSED\n";
+        std::cerr << "Caught expected error: " << e.what() << std::endl;
+        std::cerr << "Test PASSED\n";
         return 0;
     }
 }
