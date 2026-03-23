@@ -54,7 +54,7 @@ jobs:
     runs-on: gpu-runner-1
 
     steps:
-      - uses: Jimver/cuda-toolkit@v0.2.25
+      - uses: Jimver/cuda-toolkit@v0.2.30
         id: cuda-toolkit
         with:
           cuda: '12.8.0'
@@ -66,7 +66,7 @@ jobs:
           echo "Installed cuda version is: ${{steps.cuda-toolkit.outputs.cuda}}"+
           echo "Cuda install location: ${{steps.cuda-toolkit.outputs.CUDA_PATH}}"
           nvcc -V
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Packages
         run: |
@@ -91,16 +91,15 @@ jobs:
           cp -r $GITHUB_WORKSPACE/* libs/$LIBRARY
           git submodule update --init tools/boostdep
           python3 tools/boostdep/depinst/depinst.py --git_args "--jobs 3" $LIBRARY
-      - name: Configure
+      - name: Test C++20/23
         run: |
-          cd ../boost-root
-          mkdir __build__ && cd __build__
-          cmake -DBOOST_INCLUDE_LIBRARIES=$LIBRARY -DBUILD_TESTING=ON -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DBOOST_SAFE_NUMBERS_ENABLE_CUDA=1 -DCMAKE_CUDA_ARCHITECTURES="75;86" -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12.8 -DCMAKE_CUDA_STANDARD=20 ..
-      - name: Build tests
-        run: |
-          cd ../boost-root/__build__
-          cmake --build . --target tests -j $(nproc)
-      - name: Run tests
-        run: |
-          cd ../boost-root/__build__
-          ctest --output-on-failure --no-tests=error
+          for std in 20 23; do
+            echo "======== Testing C++${std} ========"
+            cd ../boost-root
+            rm -rf __build__
+            mkdir __build__ && cd __build__
+            cmake -DBOOST_INCLUDE_LIBRARIES=$LIBRARY -DBUILD_TESTING=ON -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DBOOST_SAFE_NUMBERS_ENABLE_CUDA=1 -DCMAKE_CUDA_ARCHITECTURES="75;86" -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12.8 -DCMAKE_CUDA_STANDARD=${std} ..
+            cmake --build . --target tests -j $(nproc)
+            ctest --output-on-failure --no-tests=error
+            cd $GITHUB_WORKSPACE
+          done
