@@ -29,6 +29,247 @@ void test()
     BOOST_TEST_CSTR_EQ(out.str().c_str(), "42");
 }
 
+// --- Output tests (operator<<) ---
+
+template <typename T>
+void test_dec_output()
+{
+    std::stringstream out;
+    out << std::dec << T{42};
+    BOOST_TEST_CSTR_EQ(out.str().c_str(), "42");
+}
+
+template <typename T>
+void test_oct_output()
+{
+    std::stringstream out;
+    out << std::oct << T{42};
+    if constexpr (std::is_same_v<T, u128>)
+    {
+        // u128 always prepends '0' for octal
+        BOOST_TEST_CSTR_EQ(out.str().c_str(), "052");
+    }
+    else
+    {
+        BOOST_TEST_CSTR_EQ(out.str().c_str(), "52");
+    }
+}
+
+template <typename T>
+void test_hex_output()
+{
+    std::stringstream out;
+    out << std::hex << T{42};
+    if constexpr (std::is_same_v<T, u128>)
+    {
+        // u128 always prepends "0x" for hex
+        BOOST_TEST_CSTR_EQ(out.str().c_str(), "0x2a");
+    }
+    else
+    {
+        BOOST_TEST_CSTR_EQ(out.str().c_str(), "2a");
+    }
+}
+
+template <typename T>
+void test_hex_uppercase_output()
+{
+    std::stringstream out;
+    out << std::hex << std::uppercase << T{42};
+    if constexpr (std::is_same_v<T, u128>)
+    {
+        BOOST_TEST_CSTR_EQ(out.str().c_str(), "0X2A");
+    }
+    else
+    {
+        BOOST_TEST_CSTR_EQ(out.str().c_str(), "2A");
+    }
+}
+
+template <typename T>
+void test_hex_nouppercase_output()
+{
+    std::stringstream out;
+    out << std::hex << std::nouppercase << T{42};
+    if constexpr (std::is_same_v<T, u128>)
+    {
+        BOOST_TEST_CSTR_EQ(out.str().c_str(), "0x2a");
+    }
+    else
+    {
+        BOOST_TEST_CSTR_EQ(out.str().c_str(), "2a");
+    }
+}
+
+// --- Input tests (operator>>) ---
+
+template <typename T>
+void test_dec_input()
+{
+    T val;
+    std::istringstream in("42");
+    in >> std::dec >> val;
+    BOOST_TEST_EQ(val, T{42});
+}
+
+template <typename T>
+void test_oct_input()
+{
+    T val;
+    std::istringstream in("52");
+    in >> std::oct >> val;
+    BOOST_TEST_EQ(val, T{42});
+}
+
+template <typename T>
+void test_hex_input()
+{
+    T val;
+    std::istringstream in("2a");
+    in >> std::hex >> val;
+    BOOST_TEST_EQ(val, T{42});
+}
+
+template <typename T>
+void test_hex_uppercase_input()
+{
+    T val;
+    std::istringstream in("2A");
+    in >> std::hex >> std::uppercase >> val;
+    BOOST_TEST_EQ(val, T{42});
+}
+
+template <typename T>
+void test_hex_nouppercase_input()
+{
+    T val;
+    std::istringstream in("2a");
+    in >> std::hex >> std::nouppercase >> val;
+    BOOST_TEST_EQ(val, T{42});
+}
+
+// --- showbase / noshowbase output tests ---
+
+template <typename T>
+void test_showbase_dec_output()
+{
+    std::stringstream out;
+    out << std::showbase << std::dec << T{42};
+    BOOST_TEST_CSTR_EQ(out.str().c_str(), "42");
+}
+
+template <typename T>
+void test_showbase_oct_output()
+{
+    std::stringstream out;
+    out << std::showbase << std::oct << T{42};
+    BOOST_TEST_CSTR_EQ(out.str().c_str(), "052");
+}
+
+template <typename T>
+void test_showbase_hex_output()
+{
+    std::stringstream out;
+    out << std::showbase << std::hex << T{42};
+    BOOST_TEST_CSTR_EQ(out.str().c_str(), "0x2a");
+}
+
+template <typename T>
+void test_showbase_hex_uppercase_output()
+{
+    std::stringstream out;
+    out << std::showbase << std::hex << std::uppercase << T{42};
+    BOOST_TEST_CSTR_EQ(out.str().c_str(), "0X2A");
+}
+
+template <typename T>
+void test_noshowbase_dec_output()
+{
+    std::stringstream out;
+    out << std::noshowbase << std::dec << T{42};
+    BOOST_TEST_CSTR_EQ(out.str().c_str(), "42");
+}
+
+template <typename T>
+void test_noshowbase_oct_output()
+{
+    std::stringstream out;
+    out << std::noshowbase << std::oct << T{42};
+    BOOST_TEST_CSTR_EQ(out.str().c_str(), "52");
+}
+
+template <typename T>
+void test_noshowbase_hex_output()
+{
+    std::stringstream out;
+    out << std::noshowbase << std::hex << T{42};
+    BOOST_TEST_CSTR_EQ(out.str().c_str(), "2a");
+}
+
+template <typename T>
+void test_noshowbase_hex_uppercase_output()
+{
+    std::stringstream out;
+    out << std::noshowbase << std::hex << std::uppercase << T{42};
+    BOOST_TEST_CSTR_EQ(out.str().c_str(), "2A");
+}
+
+// --- showbase / noshowbase input tests ---
+
+template <typename T>
+void test_showbase_dec_input()
+{
+    T val;
+    std::istringstream in("42");
+    in >> std::showbase >> std::dec >> val;
+    BOOST_TEST_EQ(val, T{42});
+}
+
+template <typename T>
+void test_showbase_oct_input()
+{
+    T val;
+    std::istringstream in("52");
+    in >> std::showbase >> std::oct >> val;
+    BOOST_TEST_EQ(val, T{42});
+}
+
+template <typename T>
+void test_showbase_hex_input()
+{
+    T val;
+    std::istringstream in("2a");
+    in >> std::showbase >> std::hex >> val;
+    BOOST_TEST_EQ(val, T{42});
+}
+
+template <typename T>
+void test_noshowbase_dec_input()
+{
+    T val;
+    std::istringstream in("42");
+    in >> std::noshowbase >> std::dec >> val;
+    BOOST_TEST_EQ(val, T{42});
+}
+
+template <typename T>
+void test_noshowbase_oct_input()
+{
+    T val;
+    std::istringstream in("52");
+    in >> std::noshowbase >> std::oct >> val;
+    BOOST_TEST_EQ(val, T{42});
+}
+
+template <typename T>
+void test_noshowbase_hex_input()
+{
+    T val;
+    std::istringstream in("2a");
+    in >> std::noshowbase >> std::hex >> val;
+    BOOST_TEST_EQ(val, T{42});
+}
+
 #ifndef BOOST_DISABLE_EXCEPTIONS
 
 template <typename T>
@@ -49,6 +290,156 @@ int main()
     test<u32>();
     test<u64>();
     test<u128>();
+
+    // Output tests
+    test_dec_output<u8>();
+    test_dec_output<u16>();
+    test_dec_output<u32>();
+    test_dec_output<u64>();
+    test_dec_output<u128>();
+
+    test_oct_output<u8>();
+    test_oct_output<u16>();
+    test_oct_output<u32>();
+    test_oct_output<u64>();
+    test_oct_output<u128>();
+
+    test_hex_output<u8>();
+    test_hex_output<u16>();
+    test_hex_output<u32>();
+    test_hex_output<u64>();
+    test_hex_output<u128>();
+
+    test_hex_uppercase_output<u8>();
+    test_hex_uppercase_output<u16>();
+    test_hex_uppercase_output<u32>();
+    test_hex_uppercase_output<u64>();
+    test_hex_uppercase_output<u128>();
+
+    test_hex_nouppercase_output<u8>();
+    test_hex_nouppercase_output<u16>();
+    test_hex_nouppercase_output<u32>();
+    test_hex_nouppercase_output<u64>();
+    test_hex_nouppercase_output<u128>();
+
+    // Input tests
+    test_dec_input<u8>();
+    test_dec_input<u16>();
+    test_dec_input<u32>();
+    test_dec_input<u64>();
+    test_dec_input<u128>();
+
+    test_oct_input<u8>();
+    test_oct_input<u16>();
+    test_oct_input<u32>();
+    test_oct_input<u64>();
+    test_oct_input<u128>();
+
+    test_hex_input<u8>();
+    test_hex_input<u16>();
+    test_hex_input<u32>();
+    test_hex_input<u64>();
+    test_hex_input<u128>();
+
+    test_hex_uppercase_input<u8>();
+    test_hex_uppercase_input<u16>();
+    test_hex_uppercase_input<u32>();
+    test_hex_uppercase_input<u64>();
+    test_hex_uppercase_input<u128>();
+
+    test_hex_nouppercase_input<u8>();
+    test_hex_nouppercase_input<u16>();
+    test_hex_nouppercase_input<u32>();
+    test_hex_nouppercase_input<u64>();
+    test_hex_nouppercase_input<u128>();
+
+    // showbase output tests
+    test_showbase_dec_output<u8>();
+    test_showbase_dec_output<u16>();
+    test_showbase_dec_output<u32>();
+    test_showbase_dec_output<u64>();
+    test_showbase_dec_output<u128>();
+
+    test_showbase_oct_output<u8>();
+    test_showbase_oct_output<u16>();
+    test_showbase_oct_output<u32>();
+    test_showbase_oct_output<u64>();
+    test_showbase_oct_output<u128>();
+
+    test_showbase_hex_output<u8>();
+    test_showbase_hex_output<u16>();
+    test_showbase_hex_output<u32>();
+    test_showbase_hex_output<u64>();
+    test_showbase_hex_output<u128>();
+
+    test_showbase_hex_uppercase_output<u8>();
+    test_showbase_hex_uppercase_output<u16>();
+    test_showbase_hex_uppercase_output<u32>();
+    test_showbase_hex_uppercase_output<u64>();
+    test_showbase_hex_uppercase_output<u128>();
+
+    // noshowbase output tests
+    test_noshowbase_dec_output<u8>();
+    test_noshowbase_dec_output<u16>();
+    test_noshowbase_dec_output<u32>();
+    test_noshowbase_dec_output<u64>();
+    test_noshowbase_dec_output<u128>();
+
+    test_noshowbase_oct_output<u8>();
+    test_noshowbase_oct_output<u16>();
+    test_noshowbase_oct_output<u32>();
+    test_noshowbase_oct_output<u64>();
+    test_noshowbase_oct_output<u128>();
+
+    test_noshowbase_hex_output<u8>();
+    test_noshowbase_hex_output<u16>();
+    test_noshowbase_hex_output<u32>();
+    test_noshowbase_hex_output<u64>();
+    test_noshowbase_hex_output<u128>();
+
+    test_noshowbase_hex_uppercase_output<u8>();
+    test_noshowbase_hex_uppercase_output<u16>();
+    test_noshowbase_hex_uppercase_output<u32>();
+    test_noshowbase_hex_uppercase_output<u64>();
+    test_noshowbase_hex_uppercase_output<u128>();
+
+    // showbase input tests
+    test_showbase_dec_input<u8>();
+    test_showbase_dec_input<u16>();
+    test_showbase_dec_input<u32>();
+    test_showbase_dec_input<u64>();
+    test_showbase_dec_input<u128>();
+
+    test_showbase_oct_input<u8>();
+    test_showbase_oct_input<u16>();
+    test_showbase_oct_input<u32>();
+    test_showbase_oct_input<u64>();
+    test_showbase_oct_input<u128>();
+
+    test_showbase_hex_input<u8>();
+    test_showbase_hex_input<u16>();
+    test_showbase_hex_input<u32>();
+    test_showbase_hex_input<u64>();
+    test_showbase_hex_input<u128>();
+
+    // noshowbase input tests
+    test_noshowbase_dec_input<u8>();
+    test_noshowbase_dec_input<u16>();
+    test_noshowbase_dec_input<u32>();
+    test_noshowbase_dec_input<u64>();
+    test_noshowbase_dec_input<u128>();
+
+    test_noshowbase_oct_input<u8>();
+    test_noshowbase_oct_input<u16>();
+    test_noshowbase_oct_input<u32>();
+    test_noshowbase_oct_input<u64>();
+    test_noshowbase_oct_input<u128>();
+
+    test_noshowbase_hex_input<u8>();
+    test_noshowbase_hex_input<u16>();
+    test_noshowbase_hex_input<u32>();
+    test_noshowbase_hex_input<u64>();
+    test_noshowbase_hex_input<u128>();
 
     #ifndef BOOST_DISABLE_EXCEPTIONS
 
