@@ -53,7 +53,7 @@ auto operator>>(std::basic_istream<charT, traits>& is, LibType& v)
 | Converted to the underlying `uint128_t` and written using its stream support
 |===
 
-Standard stream manipulators (`std::hex`, `std::oct`, `std::dec`, `std::setw`, etc.) work as expected.
+Standard stream manipulators (`std::hex`, `std::oct`, `std::dec`, `std::showbase`, `std::setw`, etc.) work as expected.
 
 === Input (`operator>>`)
 
