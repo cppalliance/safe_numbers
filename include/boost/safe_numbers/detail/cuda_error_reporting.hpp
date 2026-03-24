@@ -109,7 +109,7 @@ __host__ __device__ inline void report_device_error(
         copy_to_buf(g_device_error.expression, expression, BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE);
         __threadfence_system();
 
-        printf("Device error at: [GPU thread %d] %s:%d: %s\n",
+        printf("Device error on thread %d at %s:%d: %s\n",
                blockIdx.x * blockDim.x + threadIdx.x,
                file, line, expression);
 
