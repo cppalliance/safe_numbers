@@ -9,6 +9,7 @@
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
+#include <boost/throw_exception.hpp>
 #include <string>
 #include <stdexcept>
 #include <sstream>
