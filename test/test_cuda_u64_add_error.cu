@@ -52,7 +52,7 @@ int main(void)
         std::cerr << "Expected exception from overflow but none was thrown!" << std::endl;
         return EXIT_FAILURE;
     }
-    catch (const std::runtime_error& e)
+    catch (const std::overflow_error& e)
     {
         std::cerr << "Caught expected error: " << e.what() << std::endl;
         std::cerr << "Test PASSED\n";

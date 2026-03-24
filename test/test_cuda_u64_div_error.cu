@@ -53,7 +53,7 @@ int main(void)
         std::cerr << "Expected exception from division by zero but none was thrown!" << std::endl;
         return EXIT_FAILURE;
     }
-    catch (const std::runtime_error& e)
+    catch (const std::domain_error& e)
     {
         std::cerr << "Caught expected error: " << e.what() << std::endl;
         std::cerr << "Test PASSED\n";
