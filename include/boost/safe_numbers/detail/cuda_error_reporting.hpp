@@ -10,8 +10,6 @@
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 #include <boost/throw_exception.hpp>
-#include <cstdio>
-#include <cmath>
 #include <string>
 #include <stdexcept>
 #include <sstream>
@@ -33,14 +31,49 @@ namespace boost::safe_numbers {
 
 namespace detail {
 
+enum class exception_type : unsigned
+{
+    domain_error,
+    overflow,
+    underflow,
+    unknown,
+};
+
 struct cuda_device_error
 {
     int  flag;                                                      // 0 = no error, 1 = error captured
     int  line;                                                      // __LINE__
     int  thread_id;                                                 // blockIdx.x * blockDim.x + threadIdx.x
+    exception_type exception;                                       // Type of exception that would have been thrown on CPU
     char file[BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE];         // __FILE__ copied by value
     char expression[BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE];   // x copied by value
 };
+
+// Compile-time map from std exception type to our enum
+template <typename T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto to_exception_enum() noexcept -> exception_type
+{
+    if constexpr (std::is_same_v<T, std::domain_error>)
+    {
+        return exception_type::domain_error;
+    }
+    else if constexpr (std::is_same_v<T, std::overflow_error>)
+    {
+        return exception_type::overflow;
+    }
+    else if constexpr (std::is_same_v<T, std::underflow_error>)
+    {
+        return exception_type::underflow;
+    }
+    else if constexpr (std::is_same_v<T, std::invalid_argument>)
+    {
+        return exception_type::domain_error;
+    }
+    else
+    {
+        return exception_type::unknown;
+    }
+}
 
 BOOST_SAFE_NUMBERS_HOST_DEVICE inline void copy_to_buf(char* dst, const char* src, const int max_len)
 {
@@ -56,9 +89,10 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE inline void copy_to_buf(char* dst, const char* sr
 
 // __managed__ places this in unified memory so the host can read it directly
 // without cudaMemcpyFromSymbol, which fails after __trap() corrupts the device context
-__managed__ cuda_device_error g_device_error = {0, 0, 0, {'\0'}, {'\0'}};
+__managed__ cuda_device_error g_device_error = {0, 0, 0, exception_type::unknown, {'\0'}, {'\0'}};
 
 __host__ __device__ inline void report_device_error(
+    exception_type exc,
     const char* file,
     int line,
     const char* expression)
@@ -67,10 +101,12 @@ __host__ __device__ inline void report_device_error(
 
     if (atomicCAS(&g_device_error.flag, 0, 1) == 0)
     {
+        g_device_error.line = line;
+        g_device_error.thread_id = blockIdx.x * blockDim.x + threadIdx.x;
+        g_device_error.exception = exc;
+
         copy_to_buf(g_device_error.file, file, BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE);
-        g_device_error.line       = line;
         copy_to_buf(g_device_error.expression, expression, BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE);
-        g_device_error.thread_id  = blockIdx.x * blockDim.x + threadIdx.x;
         __threadfence_system();
 
         printf("Device error at: [GPU thread %d] %s:%d: %s\n",
@@ -87,7 +123,23 @@ __host__ __device__ inline void report_device_error(
     }
     #else
 
-    BOOST_THROW_EXCEPTION(std::runtime_error(std::string(file) + ":" + std::to_string(line) + ": " + expression));
+    const auto msg = std::string(file) + ":" + std::to_string(line) + ": " + expression;
+    switch (exc)
+    {
+        case exception_type::domain_error:
+            BOOST_THROW_EXCEPTION(std::domain_error(msg));
+            break;
+        case exception_type::overflow:
+            BOOST_THROW_EXCEPTION(std::overflow_error(msg));
+            break;
+        case exception_type::underflow:
+            BOOST_THROW_EXCEPTION(std::underflow_error(msg));
+            break;
+        case exception_type::unknown:
+            [[fallthrough]];
+        default:
+            BOOST_THROW_EXCEPTION(std::runtime_error(msg));
+    }
 
     #endif
 }
@@ -109,6 +161,7 @@ public:
         detail::g_device_error.flag = 0;
         detail::g_device_error.line = 0;
         detail::g_device_error.thread_id = 0;
+        detail::g_device_error.exception = detail::exception_type::unknown;
         detail::g_device_error.file[0] = '\0';
         detail::g_device_error.expression[0] = '\0';
     }
@@ -141,12 +194,29 @@ public:
                 << ":" << line
                 << ": " << detail::g_device_error.expression;
 
+            // Read exception type before reset clears it
+            const auto exc = detail::g_device_error.exception;
+
             // Clear the sticky CUDA error and reset our state
             cudaGetLastError();
             reset();
 
-            // TODO(mborland): Can we get the type of exception to throw? e.g., overflow, underflow, range.
-            BOOST_THROW_EXCEPTION(std::runtime_error(oss.str()));
+            switch (exc)
+            {
+                case detail::exception_type::domain_error:
+                    BOOST_THROW_EXCEPTION(std::domain_error(oss.str()));
+                    break;
+                case detail::exception_type::overflow:
+                    BOOST_THROW_EXCEPTION(std::overflow_error(oss.str()));
+                    break;
+                case detail::exception_type::underflow:
+                    BOOST_THROW_EXCEPTION(std::underflow_error(oss.str()));
+                    break;
+                case detail::exception_type::unknown:
+                    [[fallthrough]];
+                default:
+                    BOOST_THROW_EXCEPTION(std::runtime_error(oss.str()));
+            }
         }
 
         reset();
