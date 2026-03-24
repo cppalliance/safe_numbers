@@ -1,0 +1,85 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#cuda]
+= CUDA Support
+:idprefix: cuda_
+
+== Description
+
+The types of this library support compilation with NVCC.
+To get the safety guarantees, there are some small modifications to the way that CUDA code is written.
+Normally you would have something like this:
+
+[source, c++]
+----
+using test_type = boost::safe_numbers::u128;
+
+__global__ void cuda_test(const test_type *in, test_type *out, int numElements)
+{
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+
+    if (i < numElements)
+    {
+        out[i] = boost::safe_numbers::bit_ceil(in[i]);
+    }
+}
+
+int main()
+{
+    // Setup: generate inputs, allocate space for the output, etc.
+
+    // Launch the CUDA kernel, and then synchronize the results and get errors (if they exist)
+    cudaError_t err = cudaSuccess;
+    cuda_test<<<blocksPerGrid, threadsPerBlock>>>(input_vector.get(), output_vector.get(), numElements);
+    cudaDeviceSynchronize();
+    err = cudaGetLastError();
+
+    if (err != cudaSuccess)
+    {
+        // Handle error
+    }
+}
+----
+
+For the on-device computation behavior to match the CPU computation behavior, we have our own error context class
+This reduces our above example to the following:
+
+[source, c++]
+----
+using test_type = boost::safe_numbers::u128;
+
+__global__ void cuda_test(const test_type *in, test_type *out, int numElements)
+{
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+
+    if (i < numElements)
+    {
+        out[i] = boost::safe_numbers::bit_ceil(in[i]);
+    }
+}
+
+int main()
+{
+    // Setup: generate inputs, allocate space for the output, etc.
+
+    // First, initialize the device error context
+    // Then, launch the CUDA kernel, and then synchronize the results and get errors (if they exist)
+    // Upon synchronization, the device_error_context will throw the same exception type as the operation would have on the host
+    boost::safe_numbers::device_error_context ctx;
+    cuda_test<<<blocksPerGrid, threadsPerBlock>>>(input_vector.get(), output_vector.get(), numElements);
+
+    try
+    {
+        // ctx.synchronize() will internally call BOOST_THROW_EXCEPTION if an error occured on device
+        ctx.synchronize();
+    }
+    catch (const /*exception type*/& e)
+    {
+        // Perform error handling
+    }
+}
+----

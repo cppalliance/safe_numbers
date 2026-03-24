@@ -23,6 +23,7 @@
 * xref:policies.adoc[]
 * xref:unsigned_integers.adoc[]
 * xref:bounded_uint.adoc[]
+* xref:cuda.adoc[]
 * xref:literals.adoc[]
 * xref:limits.adoc[]
 * xref:format.adoc[]
