@@ -83,3 +83,14 @@ int main()
     }
 }
 ----
+
+An exception thrown by `ctx.synchronize()` will have an `e.what()` that looks something like:
+
+----
+Device error on thread 256 at /home/runner/work/safe_numbers/boost-root/libs/safe_numbers/include/boost/safe_numbers/detail/unsigned_integer_basis.hpp:1067: Underflow detected in u16 subtraction
+----
+
+The `device_error_context` will also attempt to `printf` the error into the terminal.
+This works when compiling with verbose mode `-V`.
+`printf` error messages will look the same as the message displayed by
+
