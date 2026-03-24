@@ -44,15 +44,7 @@ void test_oct_output()
 {
     std::stringstream out;
     out << std::oct << T{42};
-    if constexpr (std::is_same_v<T, u128>)
-    {
-        // u128 always prepends '0' for octal
-        BOOST_TEST_CSTR_EQ(out.str().c_str(), "052");
-    }
-    else
-    {
-        BOOST_TEST_CSTR_EQ(out.str().c_str(), "52");
-    }
+    BOOST_TEST_CSTR_EQ(out.str().c_str(), "52");
 }
 
 template <typename T>
@@ -60,15 +52,7 @@ void test_hex_output()
 {
     std::stringstream out;
     out << std::hex << T{42};
-    if constexpr (std::is_same_v<T, u128>)
-    {
-        // u128 always prepends "0x" for hex
-        BOOST_TEST_CSTR_EQ(out.str().c_str(), "0x2a");
-    }
-    else
-    {
-        BOOST_TEST_CSTR_EQ(out.str().c_str(), "2a");
-    }
+    BOOST_TEST_CSTR_EQ(out.str().c_str(), "2a");
 }
 
 template <typename T>
@@ -76,14 +60,7 @@ void test_hex_uppercase_output()
 {
     std::stringstream out;
     out << std::hex << std::uppercase << T{42};
-    if constexpr (std::is_same_v<T, u128>)
-    {
-        BOOST_TEST_CSTR_EQ(out.str().c_str(), "0X2A");
-    }
-    else
-    {
-        BOOST_TEST_CSTR_EQ(out.str().c_str(), "2A");
-    }
+    BOOST_TEST_CSTR_EQ(out.str().c_str(), "2A");
 }
 
 template <typename T>
@@ -91,14 +68,7 @@ void test_hex_nouppercase_output()
 {
     std::stringstream out;
     out << std::hex << std::nouppercase << T{42};
-    if constexpr (std::is_same_v<T, u128>)
-    {
-        BOOST_TEST_CSTR_EQ(out.str().c_str(), "0x2a");
-    }
-    else
-    {
-        BOOST_TEST_CSTR_EQ(out.str().c_str(), "2a");
-    }
+    BOOST_TEST_CSTR_EQ(out.str().c_str(), "2a");
 }
 
 // --- Input tests (operator>>) ---
