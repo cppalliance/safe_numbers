@@ -63,6 +63,16 @@ https://www.boost.org/LICENSE_1_0.txt
 | Enum class specifying the overflow handling policy for arithmetic operations
 |===
 
+=== CUDA Specific Handling
+
+[cols="1,2", options="header"]
+|===
+| Type | Description
+
+| xref:cuda.adoc[`device_error_context`]
+| CUDA specific device error context replacing `cudaDeviceSynchronize` and `cudaGetLastError`
+|===
+
 [#api_functions]
 == Functions
 
