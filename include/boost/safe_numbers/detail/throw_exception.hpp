@@ -14,7 +14,6 @@
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 #include <boost/throw_exception.hpp>
-#include <stdexcept>
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -27,7 +26,7 @@
 
 #else
 
-#define BOOST_SAFE_NUMBERS_THROW_EXCEPTION(exc_type, msg) boost::safe_numbers::detail::report_device_error(__FILE__, __LINE__, msg)
+#define BOOST_SAFE_NUMBERS_THROW_EXCEPTION(exc_type, msg) boost::safe_numbers::detail::report_device_error(boost::safe_numbers::detail::to_exception_enum<exc_type>(), __FILE__, __LINE__, msg)
 
 #endif // __CUDACC__
 
