@@ -7,6 +7,7 @@
 #include <boost/core/lightweight_test.hpp>
 #include <random>
 #include <limits>
+#include <sstream>
 
 using namespace boost::safe_numbers;
 
@@ -159,6 +160,61 @@ void test_equality()
 }
 
 template <typename T>
+void test_dist_stream_roundtrip()
+{
+    auto lo = T{-3};
+    auto hi = T{42};
+    boost::random::uniform_int_distribution<T> dist{lo, hi};
+
+    std::stringstream ss;
+    ss << dist;
+
+    boost::random::uniform_int_distribution<T> dist2;
+    ss >> dist2;
+
+    BOOST_TEST(dist == dist2);
+    BOOST_TEST(dist2.a() == lo);
+    BOOST_TEST(dist2.b() == hi);
+}
+
+template <typename T>
+void test_param_stream_roundtrip()
+{
+    using dist_t = boost::random::uniform_int_distribution<T>;
+    using param_t = typename dist_t::param_type;
+
+    auto lo = T{-7};
+    auto hi = T{77};
+    param_t p{lo, hi};
+
+    std::stringstream ss;
+    ss << p;
+
+    param_t p2;
+    ss >> p2;
+
+    BOOST_TEST(p == p2);
+    BOOST_TEST(p2.a() == lo);
+    BOOST_TEST(p2.b() == hi);
+}
+
+template <typename T>
+void test_param_stream_invalid()
+{
+    using dist_t = boost::random::uniform_int_distribution<T>;
+    using param_t = typename dist_t::param_type;
+
+    // Write max < min (invalid)
+    std::stringstream ss;
+    ss << T{50} << " " << T{-5};
+
+    param_t p;
+    ss >> p;
+
+    BOOST_TEST(ss.fail());
+}
+
+template <typename T>
 void test_all()
 {
     test_default_construction<T>();
@@ -170,6 +226,9 @@ void test_all()
     test_param_getter_setter<T>();
     test_reset<T>();
     test_equality<T>();
+    test_dist_stream_roundtrip<T>();
+    test_param_stream_roundtrip<T>();
+    test_param_stream_invalid<T>();
 }
 
 int main()
