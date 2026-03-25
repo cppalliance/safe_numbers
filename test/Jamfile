@@ -142,6 +142,9 @@ run test_abs_diff.cpp ;
 run test_div_ceil.cpp ;
 run test_next_multiple_of.cpp ;
 
+# Random Number tests
+run test_unsigned_random.cpp ;
+
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
 compile compile_tests/compile_test_iostream.cpp ;
