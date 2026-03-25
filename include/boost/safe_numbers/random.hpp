@@ -99,7 +99,7 @@ public:
     }
 
     explicit uniform_int_distribution(const param_type& param)
-        : _min{static_cast<underlying_t>(param._min)}, _max{static_cast<underlying_t>(param._max)} {}
+        : _min{static_cast<underlying_t>(param.a())}, _max{static_cast<underlying_t>(param.b())}, _dist{_min, _max} {}
 
     auto min BOOST_PREVENT_MACRO_SUBSTITUTION () const -> SafeT { return SafeT{_min}; }
     auto max BOOST_PREVENT_MACRO_SUBSTITUTION () const -> SafeT { return SafeT{_max}; }
