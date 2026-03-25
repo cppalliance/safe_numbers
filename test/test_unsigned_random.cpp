@@ -243,5 +243,9 @@ int main()
     test_all<u64>();
     test_all<u128>();
 
+    // Bounded types
+    test_all<bounded_uint<0u, 100u>>();
+    test_all<bounded_uint<0u, 1000u>>();
+
     return boost::report_errors();
 }
