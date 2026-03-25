@@ -82,32 +82,24 @@ public:
             return is;
         }
 
-        friend bool operator==(const param_type& lhs, const param_type& rhs)
+        BOOST_RANDOM_DETAIL_EQUALITY_OPERATOR(param_type, lhs, rhs)
         {
             return lhs._min == rhs._min && lhs._max == rhs._max;
         }
 
-        friend bool operator!=(const param_type& lhs, const param_type& rhs)
-        {
-            return lhs._min != rhs._min || lhs._max != rhs._max;
-        }
+        BOOST_RANDOM_DETAIL_INEQUALITY_OPERATOR(param_type)
     };
 
     explicit uniform_int_distribution(
         const SafeT min_arg = (std::numeric_limits<SafeT>::min)(),
         const SafeT max_arg = (std::numeric_limits<SafeT>::max)())
-        : _min{static_cast<underlying_t>(min_arg)}
-        , _max{static_cast<underlying_t>(max_arg)}
-        , _dist{_min, _max}
+        : _min{static_cast<underlying_t>(min_arg)}, _max{static_cast<underlying_t>(max_arg)}, _dist{_min, _max}
     {
         BOOST_ASSERT(min_arg <= max_arg);
     }
 
-    template <typename Engine>
-    auto operator()(Engine& eng) const -> SafeT
-    {
-        return SafeT{_dist(eng)};
-    }
+    explicit uniform_int_distribution(const param_type& param)
+        : _min{static_cast<underlying_t>(param._min)}, _max{static_cast<underlying_t>(param._max)} {}
 
     auto min BOOST_PREVENT_MACRO_SUBSTITUTION () const -> SafeT { return SafeT{_min}; }
     auto max BOOST_PREVENT_MACRO_SUBSTITUTION () const -> SafeT { return SafeT{_max}; }
@@ -115,15 +107,51 @@ public:
     auto a() const -> SafeT { return SafeT{_min}; }
     auto b() const -> SafeT { return SafeT{_max}; }
 
-    friend bool operator==(const uniform_int_distribution& lhs, const uniform_int_distribution& rhs)
+    param_type param() const { return param_type{SafeT{_min}, SafeT{_max}};}
+
+    void param(const param_type& param)
+    {
+        _min = static_cast<underlying_t>(param.a());
+        _max = static_cast<underlying_t>(param.b());
+    }
+
+    void reset() { }
+
+    template <typename Engine>
+    auto operator()(Engine& eng) const -> SafeT
+    {
+        return SafeT{detail::generate_uniform_int(eng, _min, _max)};
+    }
+
+    template <typename Engine>
+    auto operator()(Engine& eng, const param_type& param) const -> SafeT
+    {
+        return SafeT{detail::generate_uniform_int(eng, static_cast<underlying_t>(param.a()), static_cast<underlying_t>(param.b()))};
+    }
+
+    BOOST_RANDOM_DETAIL_OSTREAM_OPERATOR(os, uniform_int_distribution, ud)
+    {
+        os << ud.param();
+        return os;
+    }
+
+    BOOST_RANDOM_DETAIL_ISTREAM_OPERATOR(is, uniform_int_distribution, ud)
+    {
+        param_type param;
+        if (is >> param)
+        {
+            ud.param(param);
+        }
+
+        return is;
+    }
+
+    BOOST_RANDOM_DETAIL_EQUALITY_OPERATOR(uniform_int_distribution, lhs, rhs)
     {
         return lhs._min == rhs._min && lhs._max == rhs._max;
     }
 
-    friend bool operator!=(const uniform_int_distribution& lhs, const uniform_int_distribution& rhs)
-    {
-        return lhs._min != rhs._min || lhs._max != rhs._max;
-    }
+    BOOST_RANDOM_DETAIL_INEQUALITY_OPERATOR(uniform_int_distribution)
 };
 
 } // namespace boost::random
