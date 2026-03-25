@@ -35,6 +35,64 @@ private:
 
 public:
 
+    class param_type
+    {
+    private:
+
+        SafeT _min;
+        SafeT _max;
+
+    public:
+
+        explicit param_type(
+            const SafeT min_arg = (std::numeric_limits<SafeT>::min)(),
+            const SafeT max_arg = (std::numeric_limits<SafeT>::max)())
+            : _min{static_cast<underlying_t>(min_arg)}, _max{static_cast<underlying_t>(max_arg)}
+        {
+            BOOST_ASSERT(min_arg <= max_arg);
+        }
+
+        auto a() const -> SafeT { return _min; }
+        auto b() const -> SafeT { return _max; }
+
+        BOOST_RANDOM_DETAIL_OSTREAM_OPERATOR(os, param_type, param)
+        {
+            os << param._min << " " << param._max;
+            return os;
+        }
+
+        BOOST_RANDOM_DETAIL_ISTREAM_OPERATOR(is, param_type, param)
+        {
+            SafeT min_in;
+            SafeT max_in;
+
+            if (is >> min_in >> std::ws >> max_in)
+            {
+                if (min_in <= max_in)
+                {
+                    param._min = min_in;
+                    param._max = max_in;
+                }
+                else
+                {
+                    is.setstate(std::ios_base::failbit);
+                }
+            }
+
+            return is;
+        }
+
+        friend bool operator==(const param_type& lhs, const param_type& rhs)
+        {
+            return lhs._min == rhs._min && lhs._max == rhs._max;
+        }
+
+        friend bool operator!=(const param_type& lhs, const param_type& rhs)
+        {
+            return lhs._min != rhs._min || lhs._max != rhs._max;
+        }
+    };
+
     explicit uniform_int_distribution(
         const SafeT min_arg = (std::numeric_limits<SafeT>::min)(),
         const SafeT max_arg = (std::numeric_limits<SafeT>::max)())
