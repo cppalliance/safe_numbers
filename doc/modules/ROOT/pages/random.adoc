@@ -1,0 +1,136 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#random]
+= Random Number Generation
+:idprefix: random_
+
+== Description
+
+The library provides a `boost::random::uniform_int_distribution` specialization for all safe integer types, enabling uniform random number generation that returns safe integers directly.
+This works with any standard or Boost random engine (`std::mt19937`, `std::mt19937_64`, `boost::random::mt19937`, etc.).
+
+All unsigned types (`u8`, `u16`, `u32`, `u64`, `u128`), signed types (`i8`, `i16`, `i32`, `i64`, `i128`), and `bounded_uint<Min, Max>` are supported.
+
+IMPORTANT: The header `<boost/safe_numbers/random.hpp>` is *NOT* included in the convenience header `<boost/safe_numbers.hpp>`, because it requires https://www.boost.org/doc/libs/master/doc/html/boost_random.html[Boost.Random] to be present.
+You must include it explicitly.
+
+[source,c++]
+----
+#include <boost/safe_numbers.hpp>        // Does NOT include random support
+#include <boost/safe_numbers/random.hpp> // Must be included separately
+----
+
+== Synopsis
+
+[source,c++]
+----
+#include <boost/safe_numbers/random.hpp>
+
+namespace boost::random {
+
+template <typename SafeT>
+    requires (safe_numbers::detail::is_unsigned_library_type_v<SafeT> ||
+              safe_numbers::detail::is_signed_library_type_v<SafeT>)
+class uniform_int_distribution<SafeT>
+{
+public:
+    class param_type
+    {
+    public:
+        explicit param_type(
+            SafeT min = std::numeric_limits<SafeT>::min(),
+            SafeT max = std::numeric_limits<SafeT>::max());
+
+        auto a() const -> SafeT;
+        auto b() const -> SafeT;
+
+        friend bool operator==(const param_type& lhs, const param_type& rhs);
+        friend bool operator!=(const param_type& lhs, const param_type& rhs);
+
+        // Stream I/O
+        template <class CharT, class Traits>
+        friend std::basic_ostream<CharT, Traits>&
+        operator<<(std::basic_ostream<CharT, Traits>& os, const param_type& p);
+
+        template <class CharT, class Traits>
+        friend std::basic_istream<CharT, Traits>&
+        operator>>(std::basic_istream<CharT, Traits>& is, param_type& p);
+    };
+
+    explicit uniform_int_distribution(
+        SafeT min = std::numeric_limits<SafeT>::min(),
+        SafeT max = std::numeric_limits<SafeT>::max());
+
+    explicit uniform_int_distribution(const param_type& param);
+
+    // Generation
+    template <typename Engine>
+    auto operator()(Engine& eng) const -> SafeT;
+
+    template <typename Engine>
+    auto operator()(Engine& eng, const param_type& param) const -> SafeT;
+
+    // Observers
+    auto min() const -> SafeT;
+    auto max() const -> SafeT;
+    auto a() const -> SafeT;
+    auto b() const -> SafeT;
+    param_type param() const;
+    void param(const param_type& p);
+    void reset();
+
+    // Comparison
+    friend bool operator==(const uniform_int_distribution& lhs,
+                           const uniform_int_distribution& rhs);
+    friend bool operator!=(const uniform_int_distribution& lhs,
+                           const uniform_int_distribution& rhs);
+
+    // Stream I/O
+    template <class CharT, class Traits>
+    friend std::basic_ostream<CharT, Traits>&
+    operator<<(std::basic_ostream<CharT, Traits>& os,
+               const uniform_int_distribution& ud);
+
+    template <class CharT, class Traits>
+    friend std::basic_istream<CharT, Traits>&
+    operator>>(std::basic_istream<CharT, Traits>& is,
+               uniform_int_distribution& ud);
+};
+
+} // namespace boost::random
+----
+
+== Bounded Types
+
+For `bounded_uint<Min, Max>`, the default range is the declared bounds of the type:
+
+[source,c++]
+----
+using percent = bounded_uint<u8{0}, u8{100}>;
+
+boost::random::uniform_int_distribution<percent> pct_dist;
+auto pct = pct_dist(rng); // percent in [0, 100]
+----
+
+== Examples
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/random.cpp[example] demonstrates generating uniformly distributed safe integer values.
+====
+[source, c++]
+----
+include::example$random.cpp[]
+----
+
+Output:
+----
+u32 in [1, 100]:  76
+i32 in [-50, 50]: 14
+u64 full range:   13874630024467741450
+u16 in [0, 10]:   1
+u128 in [0, 1000]: 904
+----
+====

@@ -535,3 +535,26 @@ std::max(u16(100), u16(200)) = 200
 std::clamp(u64(500), u64(0), u64(100)) = 100
 ----
 ====
+
+[#examples_random]
+== Random Number Generation
+
+The library integrates with https://www.boost.org/doc/libs/master/doc/html/boost_random.html[Boost.Random] by providing a `uniform_int_distribution` specialization for all safe integer types.
+This supports the full distribution interface including `param_type`, stream I/O, and range-constrained generation.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/random.cpp[example] demonstrates generating uniformly distributed safe integer values.
+====
+[source, c++]
+----
+include::example$random.cpp[]
+----
+
+Output:
+----
+u32 in [1, 100]:  76
+i32 in [-50, 50]: 14
+u64 full range:   13874630024467741450
+u16 in [0, 10]:   1
+u128 in [0, 1000]: 904
+----
+====

@@ -142,6 +142,10 @@ run test_abs_diff.cpp ;
 run test_div_ceil.cpp ;
 run test_next_multiple_of.cpp ;
 
+# Random Number tests
+run test_unsigned_random.cpp ;
+run test_signed_random.cpp ;
+
 # Compile Tests
 compile compile_tests/compile_test_unsigned_integers.cpp ;
 compile compile_tests/compile_test_iostream.cpp ;
@@ -172,5 +176,6 @@ run ../examples/bitwise_ops.cpp ;
 run ../examples/safe_numerics_comparison.cpp ;
 run ../examples/byte_conversions.cpp ;
 run ../examples/std_numeric_usage.cpp ;
+run ../examples/random.cpp ;
 run ../examples/basic_bounded_usage.cpp ;
 compile-fail ../examples/compile_fail_basic_bounded_usage_constexpr.cpp ;

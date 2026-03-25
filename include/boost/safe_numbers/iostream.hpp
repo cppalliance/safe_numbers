@@ -29,24 +29,31 @@ auto operator>>(std::basic_istream<charT, traits>& is, LibType& v) -> std::basic
 {
     using underlying_type = underlying_type_t<LibType>;
 
-    if (is.peek() == static_cast<charT>('-'))
+    if constexpr (is_unsigned_library_type_v<LibType>)
     {
-        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "Attempting to construct negative value with unsigned safe integer");
+        if (is.peek() == static_cast<charT>('-'))
+        {
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "Attempting to construct negative value with unsigned safe integer");
+        }
+    }
+
+    if constexpr (std::is_same_v<underlying_type, std::uint8_t>)
+    {
+        std::uint32_t temp;
+        is >> temp;
+        v = static_cast<LibType>(static_cast<std::uint8_t>(temp));
+    }
+    else if constexpr (std::is_same_v<underlying_type, std::int8_t>)
+    {
+        std::int32_t temp;
+        is >> temp;
+        v = static_cast<LibType>(static_cast<std::int8_t>(temp));
     }
     else
     {
-        if constexpr (std::is_same_v<underlying_type, std::uint8_t>)
-        {
-            std::uint32_t temp;
-            is >> temp;
-            v = static_cast<LibType>(static_cast<std::uint8_t>(temp));
-        }
-        else
-        {
-            underlying_type temp;
-            is >> temp;
-            v = static_cast<LibType>(temp);
-        }
+        underlying_type temp;
+        is >> temp;
+        v = static_cast<LibType>(temp);
     }
 
     return is;
@@ -65,8 +72,12 @@ auto operator<<(std::basic_ostream<charT, traits>& os, const LibType& v) -> std:
 
     if constexpr (std::is_same_v<underlying_type, std::uint8_t>)
     {
-        // Display the value not the underlying representation like a carriage return
+        // Display the value, not the underlying representation like a carriage return
         os << static_cast<std::uint32_t>(temp);
+    }
+    else if constexpr (std::is_same_v<underlying_type, std::int8_t>)
+    {
+        os << static_cast<std::int32_t>(temp);
     }
     else
     {

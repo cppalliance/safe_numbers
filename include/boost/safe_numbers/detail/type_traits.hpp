@@ -165,6 +165,9 @@ struct is_library_type : std::false_type {};
 template <typename T>
 struct is_library_type<unsigned_integer_basis<T>> : std::true_type {};
 
+template <typename T>
+struct is_library_type<signed_integer_basis<T>> : std::true_type {};
+
 template <auto Min, auto Max>
 struct is_library_type<bounded_uint<Min, Max>> : std::true_type {};
 
@@ -173,6 +176,9 @@ struct is_integral_library_type : std::false_type {};
 
 template <typename T>
 struct is_integral_library_type<unsigned_integer_basis<T>> : std::true_type {};
+
+template <typename T>
+struct is_integral_library_type<signed_integer_basis<T>> : std::true_type {};
 
 template <auto Min, auto Max>
 struct is_integral_library_type<bounded_uint<Min, Max>> : std::true_type {};
