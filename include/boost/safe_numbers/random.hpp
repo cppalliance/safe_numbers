@@ -63,8 +63,8 @@ public:
 
         BOOST_RANDOM_DETAIL_ISTREAM_OPERATOR(is, param_type, param)
         {
-            SafeT min_in;
-            SafeT max_in;
+            auto min_in = (std::numeric_limits<SafeT>::min)();
+            auto max_in = (std::numeric_limits<SafeT>::min)();
 
             if (is >> min_in >> std::ws >> max_in)
             {
