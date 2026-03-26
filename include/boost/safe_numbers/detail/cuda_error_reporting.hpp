@@ -16,6 +16,7 @@
 
 #ifdef __CUDACC__
 #include <cuda_runtime.h>
+#include <cuda.h>
 #endif
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
@@ -287,12 +288,15 @@ public:
     {
         m_allocation = nullptr;
 
-        // The sticky error from __trap() must be drained BEFORE
-        // cudaDeviceReset(), otherwise the reset call itself fails
-        // silently (all CUDA runtime calls return the sticky error
-        // until cudaGetLastError() clears it).
-        cudaGetLastError();
-        cudaDeviceReset();
+        // __trap() creates a sticky error that corrupts the CUDA context.
+        // cudaDeviceReset() alone cannot recover from this in the same
+        // process. We must use the driver API to fully reset the primary
+        // context, then re-initialize the runtime on a fresh context.
+        // See: https://stackoverflow.com/questions/43659314/how-can-i-reset-the-cuda-error-to-success-with-driver-api-after-a-trap-instructi
+        int dev {0};
+        cudaGetDevice(&dev);
+        cuDevicePrimaryCtxReset(dev);
+        cudaSetDevice(dev);
 
         reset();
     }
