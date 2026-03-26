@@ -224,25 +224,13 @@ public:
     //
     // When a device error is detected (flag != 0):
     //   1. The error info is copied to local variables
-    //   2. The managed allocation is freed and the device is reset
-    //      (required because __trap() corrupts the device context)
-    //   3. The appropriate std::exception is thrown
+    //   2. The appropriate std::exception is thrown
     //
-    // After catching the exception, the same context can be reused —
-    // the next call to synchronize() automatically re-allocates.
+    // After catching the exception, call reset_after_error() to restore
+    // the device and error context before launching new kernels.
     void synchronize()
     {
         const auto status = cudaDeviceSynchronize();
-
-        if (m_allocation == nullptr)
-        {
-            if (status != cudaSuccess)
-            {
-                cudaGetLastError();
-                BOOST_THROW_EXCEPTION(std::runtime_error(cudaGetErrorString(status)));
-            }
-            return;
-        }
 
         // Read directly from managed memory via host-side pointer
         // This works even after __trap() corrupts the device context
@@ -262,17 +250,6 @@ public:
                 << ": " << m_allocation->expression;
 
             const auto msg = oss.str();
-
-            // Reset the device so that new kernels can be launched after
-            // the user catches the exception. cudaDeviceReset() frees all
-            // device and managed allocations (including what m_allocation
-            // points to), so we do NOT call cudaFree first — the device
-            // context is corrupted by __trap() and cudaFree may hang or
-            // fail in that state.
-            m_allocation = nullptr;
-            cudaDeviceReset();
-            cudaGetLastError(); // Clear the sticky error left by __trap()
-            reset();
 
             switch (exc)
             {
@@ -299,6 +276,19 @@ public:
             cudaGetLastError();
             BOOST_THROW_EXCEPTION(std::runtime_error(cudaGetErrorString(status)));
         }
+    }
+
+    // Call this in a catch block after synchronize() throws a device error.
+    // Resets the device (required because __trap() corrupts the device context),
+    // clears the sticky CUDA error, re-allocates the managed error buffer,
+    // and re-initializes the device global so new kernels can report errors.
+    // After this returns, the context is fully ready for new kernel launches.
+    void reset_after_error()
+    {
+        m_allocation = nullptr;
+        cudaDeviceReset();
+        cudaGetLastError();
+        reset();
     }
 
 private:

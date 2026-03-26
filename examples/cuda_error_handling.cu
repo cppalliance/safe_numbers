@@ -79,14 +79,17 @@ int main()
     catch (const std::overflow_error& e)
     {
         std::cout << "Caught overflow_error: " << e.what() << std::endl;
+
+        // Recover from the device error: resets the device, clears the
+        // sticky CUDA error, and re-allocates the error reporting buffer.
+        ctx.reset_after_error();
     }
 
     // ---------------------------------------------------------------
     // Step 2: After catching the error, the same ctx can be reused.
-    //         The next synchronize() call automatically re-allocates
-    //         managed memory for error reporting.
-    //         Note: cudaDeviceReset() freed all prior allocations,
-    //         so we must re-allocate our data buffers too.
+    //         reset_after_error() restored the device and error context,
+    //         but cudaDeviceReset() freed all prior allocations, so we
+    //         must re-allocate our data buffers.
     // ---------------------------------------------------------------
 
     std::cout << "\n=== Launching kernel with valid arithmetic ===" << std::endl;
