@@ -11,9 +11,18 @@
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
-#include <boost/core/bit.hpp>
 #include <array>
+
+#if (defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+#include <cuda/std/bit>
+
+#else
+
+#include <boost/core/bit.hpp>
 #include <bit>
+
+#endif
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -22,109 +31,205 @@ namespace boost::safe_numbers {
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto has_single_bit(const UnsignedInt x) noexcept -> bool
 {
-    using boost::core::has_single_bit;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
 
+    #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+    using boost::core::has_single_bit;
     return has_single_bit(static_cast<underlying_type>(x));
+
+    #else
+
+    return cuda::std::has_single_bit(static_cast<underlying_type>(x));
+
+    #endif
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto bit_ceil(const UnsignedInt x) noexcept -> UnsignedInt
 {
-    using boost::core::bit_ceil;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
 
+    #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+    using boost::core::bit_ceil;
     return UnsignedInt{bit_ceil(static_cast<underlying_type>(x))};
+
+    #else
+
+    return UnsignedInt{cuda::std::bit_ceil(static_cast<underlying_type>(x))};
+
+    #endif
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto bit_floor(const UnsignedInt x) noexcept -> UnsignedInt
 {
-    using boost::core::bit_floor;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
 
+    #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+    using boost::core::bit_floor;
     return UnsignedInt{bit_floor(static_cast<underlying_type>(x))};
+
+    #else
+
+    return UnsignedInt{cuda::std::bit_floor(static_cast<underlying_type>(x))};
+
+    #endif
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto bit_width(const UnsignedInt x) noexcept -> int
 {
-    using boost::core::bit_width;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
 
+    #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+    using boost::core::bit_width;
     return static_cast<int>(bit_width(static_cast<underlying_type>(x)));
+
+    #else
+
+    return static_cast<int>(cuda::std::bit_width(static_cast<underlying_type>(x)));
+
+    #endif
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type UnsignedInt>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto rotl(const UnsignedInt x, const int s) noexcept -> UnsignedInt
 {
-    using boost::core::rotl;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
 
+    #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+    using boost::core::rotl;
     return UnsignedInt{rotl(static_cast<underlying_type>(x), s)};
+
+    #else
+
+    return UnsignedInt{cuda::std::rotl(static_cast<underlying_type>(x), s)};
+
+    #endif
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type UnsignedInt>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto rotr(const UnsignedInt x, const int s) noexcept -> UnsignedInt
 {
-    using boost::core::rotr;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
 
+    #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+    using boost::core::rotr;
     return UnsignedInt{rotr(static_cast<underlying_type>(x), s)};
+
+    #else
+
+    return UnsignedInt{cuda::std::rotr(static_cast<underlying_type>(x), s)};
+
+    #endif
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto countl_zero(const UnsignedInt x) noexcept -> int
 {
-    using boost::core::countl_zero;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
 
+    #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+    using boost::core::countl_zero;
     return countl_zero(static_cast<underlying_type>(x));
+
+    #else
+
+    return cuda::std::countl_zero(static_cast<underlying_type>(x));
+
+    #endif
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto countl_one(const UnsignedInt x) noexcept -> int
 {
-    using boost::core::countl_one;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
 
+    #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+    using boost::core::countl_one;
     return countl_one(static_cast<underlying_type>(x));
+
+    #else
+
+    return cuda::std::countl_one(static_cast<underlying_type>(x));
+
+    #endif
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto countr_zero(const UnsignedInt x) noexcept -> int
 {
-    using boost::core::countr_zero;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
 
+    #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+    using boost::core::countr_zero;
     return countr_zero(static_cast<underlying_type>(x));
+
+    #else
+
+    return cuda::std::countr_zero(static_cast<underlying_type>(x));
+
+    #endif
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto countr_one(const UnsignedInt x) noexcept -> int
 {
-    using boost::core::countr_one;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
 
+    #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+    using boost::core::countr_one;
     return countr_one(static_cast<underlying_type>(x));
+
+    #else
+
+    return cuda::std::countr_one(static_cast<underlying_type>(x));
+
+    #endif
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto popcount(const UnsignedInt x) noexcept -> int
 {
-    using boost::core::popcount;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
 
+    #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+    using boost::core::popcount;
     return popcount(static_cast<underlying_type>(x));
+
+    #else
+
+    return cuda::std::popcount(static_cast<underlying_type>(x));
+
+    #endif
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_integral_library_type Int>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto byteswap(const Int x) noexcept -> Int
 {
-    using boost::core::byteswap;
     using underlying_type = detail::underlying_type_t<Int>;
 
+    #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+    using boost::core::byteswap;
     return Int{byteswap(static_cast<underlying_type>(x))};
+
+    #else
+
+    return Int{cuda::std::byteswap(static_cast<underlying_type>(x))};
+
+    #endif
 }
 
 namespace detail {
