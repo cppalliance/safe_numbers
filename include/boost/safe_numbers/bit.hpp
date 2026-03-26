@@ -13,13 +13,14 @@
 
 #include <boost/core/bit.hpp>
 #include <array>
+#include <bit>
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 namespace boost::safe_numbers {
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-[[nodiscard]] constexpr auto has_single_bit(const UnsignedInt x) noexcept -> bool
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto has_single_bit(const UnsignedInt x) noexcept -> bool
 {
     using boost::core::has_single_bit;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -28,7 +29,7 @@ BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-[[nodiscard]] constexpr auto bit_ceil(const UnsignedInt x) noexcept -> UnsignedInt
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto bit_ceil(const UnsignedInt x) noexcept -> UnsignedInt
 {
     using boost::core::bit_ceil;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -37,7 +38,7 @@ BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-[[nodiscard]] constexpr auto bit_floor(const UnsignedInt x) noexcept -> UnsignedInt
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto bit_floor(const UnsignedInt x) noexcept -> UnsignedInt
 {
     using boost::core::bit_floor;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -46,7 +47,7 @@ BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-[[nodiscard]] constexpr auto bit_width(const UnsignedInt x) noexcept -> int
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto bit_width(const UnsignedInt x) noexcept -> int
 {
     using boost::core::bit_width;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -55,7 +56,7 @@ BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type UnsignedInt>
-[[nodiscard]] constexpr auto rotl(const UnsignedInt x, const int s) noexcept -> UnsignedInt
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto rotl(const UnsignedInt x, const int s) noexcept -> UnsignedInt
 {
     using boost::core::rotl;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -64,7 +65,7 @@ BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type Un
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type UnsignedInt>
-[[nodiscard]] constexpr auto rotr(const UnsignedInt x, const int s) noexcept -> UnsignedInt
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto rotr(const UnsignedInt x, const int s) noexcept -> UnsignedInt
 {
     using boost::core::rotr;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -73,7 +74,7 @@ BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_unsigned_library_type Un
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-[[nodiscard]] constexpr auto countl_zero(const UnsignedInt x) noexcept -> int
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto countl_zero(const UnsignedInt x) noexcept -> int
 {
     using boost::core::countl_zero;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -82,7 +83,7 @@ BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-[[nodiscard]] constexpr auto countl_one(const UnsignedInt x) noexcept -> int
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto countl_one(const UnsignedInt x) noexcept -> int
 {
     using boost::core::countl_one;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -91,7 +92,7 @@ BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-[[nodiscard]] constexpr auto countr_zero(const UnsignedInt x) noexcept -> int
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto countr_zero(const UnsignedInt x) noexcept -> int
 {
     using boost::core::countr_zero;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -100,7 +101,7 @@ BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-[[nodiscard]] constexpr auto countr_one(const UnsignedInt x) noexcept -> int
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto countr_one(const UnsignedInt x) noexcept -> int
 {
     using boost::core::countr_one;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -109,7 +110,7 @@ BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
-[[nodiscard]] constexpr auto popcount(const UnsignedInt x) noexcept -> int
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto popcount(const UnsignedInt x) noexcept -> int
 {
     using boost::core::popcount;
     using underlying_type = detail::underlying_type_t<UnsignedInt>;
@@ -118,7 +119,7 @@ BOOST_SAFE_NUMBERS_EXPORT template <detail::unsigned_library_type UnsignedInt>
 }
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_integral_library_type Int>
-[[nodiscard]] constexpr auto byteswap(const Int x) noexcept -> Int
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto byteswap(const Int x) noexcept -> Int
 {
     using boost::core::byteswap;
     using underlying_type = detail::underlying_type_t<Int>;
@@ -149,11 +150,21 @@ consteval auto make_byte_reverse_table() -> std::array<std::uint8_t, 256>
     return table;
 }
 
+#if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
 inline constexpr auto reverse_table {make_byte_reverse_table()};
 
+#endif
+
 template <fundamental_unsigned_integral UnsignedInt>
-[[nodiscard]] constexpr auto bitswap_impl(UnsignedInt x) noexcept -> UnsignedInt
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto bitswap_impl(UnsignedInt x) noexcept -> UnsignedInt
 {
+    #if (defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+    constexpr auto reverse_table {make_byte_reverse_table()};
+
+    #endif
+
     if constexpr (sizeof(UnsignedInt) == 1)
     {
         return static_cast<UnsignedInt>(reverse_table[static_cast<std::uint8_t>(x)]);
@@ -177,7 +188,7 @@ template <fundamental_unsigned_integral UnsignedInt>
 } // namespace detail
 
 BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_integral_library_type Int>
-[[nodiscard]] constexpr auto bitswap(Int x) noexcept -> Int
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto bitswap(Int x) noexcept -> Int
 {
     using underlying_type = detail::underlying_type_t<Int>;
     return static_cast<Int>(detail::bitswap_impl(static_cast<underlying_type>(x)));
