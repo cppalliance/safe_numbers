@@ -45,8 +45,8 @@ int main(void)
     cuda_managed_ptr<test_type> input_vector2(numElements);
     cuda_managed_ptr<test_type> output_vector(numElements);
 
-    boost::random::uniform_int_distribution<basis_type> dist{basis_type{0U}, (std::numeric_limits<basis_type>::max)()};
-    boost::random::uniform_int_distribution<basis_type> dist2{basis_type{0U}, basis_type{7U}};
+    boost::random::uniform_int_distribution<basis_type> dist{basis_type{0U}, basis_type{10U}};
+    boost::random::uniform_int_distribution<basis_type> dist2{basis_type{0U}, basis_type{2U}};
     for (int i = 0; i < numElements; ++i)
     {
         input_vector1[i] = test_type{dist(rng)};

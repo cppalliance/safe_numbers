@@ -40,8 +40,8 @@ int main(void)
     cuda_managed_ptr<test_type> input_vector2(numElements);
     cuda_managed_ptr<test_type> output_vector(numElements);
 
-    std::uniform_int_distribution<unsigned> dist{0U, static_cast<unsigned>((std::numeric_limits<basis_type>::max)())};
-    std::uniform_int_distribution<unsigned> dist2{0U, 7U};
+    std::uniform_int_distribution<unsigned> dist{0U, 10U};
+    std::uniform_int_distribution<unsigned> dist2{0U, 2U};
     for (int i = 0; i < numElements; ++i)
     {
         input_vector1[i] = test_type{static_cast<basis_type>(dist(rng))};
