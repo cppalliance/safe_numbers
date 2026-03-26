@@ -288,6 +288,14 @@ public:
         m_allocation = nullptr;
         cudaDeviceReset();
         cudaGetLastError();
+
+        // cudaDeviceReset() destroyed the CUDA context. Force the runtime
+        // to create a fresh one by re-selecting the current device before
+        // any allocations.
+        int dev {0};
+        cudaGetDevice(&dev);
+        cudaSetDevice(dev);
+
         reset();
     }
 
