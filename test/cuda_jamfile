@@ -80,3 +80,80 @@ run test_cuda_u128_sub_error.cu ;
 run test_cuda_u128_mul_error.cu ;
 run test_cuda_u128_div_error.cu ;
 run test_cuda_u128_mod_error.cu ;
+
+# Bit function tests
+
+# u8 bit tests
+run test_cuda_u8_has_single_bit.cu ;
+run test_cuda_u8_bit_ceil.cu ;
+run test_cuda_u8_bit_floor.cu ;
+run test_cuda_u8_bit_width.cu ;
+run test_cuda_u8_rotl.cu ;
+run test_cuda_u8_rotr.cu ;
+run test_cuda_u8_countl_zero.cu ;
+run test_cuda_u8_countl_one.cu ;
+run test_cuda_u8_countr_zero.cu ;
+run test_cuda_u8_countr_one.cu ;
+run test_cuda_u8_popcount.cu ;
+run test_cuda_u8_byteswap.cu ;
+run test_cuda_u8_bitswap.cu ;
+
+# u16 bit tests
+run test_cuda_u16_has_single_bit.cu ;
+run test_cuda_u16_bit_ceil.cu ;
+run test_cuda_u16_bit_floor.cu ;
+run test_cuda_u16_bit_width.cu ;
+run test_cuda_u16_rotl.cu ;
+run test_cuda_u16_rotr.cu ;
+run test_cuda_u16_countl_zero.cu ;
+run test_cuda_u16_countl_one.cu ;
+run test_cuda_u16_countr_zero.cu ;
+run test_cuda_u16_countr_one.cu ;
+run test_cuda_u16_popcount.cu ;
+run test_cuda_u16_byteswap.cu ;
+run test_cuda_u16_bitswap.cu ;
+
+# u32 bit tests
+run test_cuda_u32_has_single_bit.cu ;
+run test_cuda_u32_bit_ceil.cu ;
+run test_cuda_u32_bit_floor.cu ;
+run test_cuda_u32_bit_width.cu ;
+run test_cuda_u32_rotl.cu ;
+run test_cuda_u32_rotr.cu ;
+run test_cuda_u32_countl_zero.cu ;
+run test_cuda_u32_countl_one.cu ;
+run test_cuda_u32_countr_zero.cu ;
+run test_cuda_u32_countr_one.cu ;
+run test_cuda_u32_popcount.cu ;
+run test_cuda_u32_byteswap.cu ;
+run test_cuda_u32_bitswap.cu ;
+
+# u64 bit tests
+run test_cuda_u64_has_single_bit.cu ;
+run test_cuda_u64_bit_ceil.cu ;
+run test_cuda_u64_bit_floor.cu ;
+run test_cuda_u64_bit_width.cu ;
+run test_cuda_u64_rotl.cu ;
+run test_cuda_u64_rotr.cu ;
+run test_cuda_u64_countl_zero.cu ;
+run test_cuda_u64_countl_one.cu ;
+run test_cuda_u64_countr_zero.cu ;
+run test_cuda_u64_countr_one.cu ;
+run test_cuda_u64_popcount.cu ;
+run test_cuda_u64_byteswap.cu ;
+run test_cuda_u64_bitswap.cu ;
+
+# u128 bit tests
+run test_cuda_u128_has_single_bit.cu ;
+run test_cuda_u128_bit_ceil.cu ;
+run test_cuda_u128_bit_floor.cu ;
+run test_cuda_u128_bit_width.cu ;
+run test_cuda_u128_rotl.cu ;
+run test_cuda_u128_rotr.cu ;
+run test_cuda_u128_countl_zero.cu ;
+run test_cuda_u128_countl_one.cu ;
+run test_cuda_u128_countr_zero.cu ;
+run test_cuda_u128_countr_one.cu ;
+run test_cuda_u128_popcount.cu ;
+run test_cuda_u128_byteswap.cu ;
+run test_cuda_u128_bitswap.cu ;
