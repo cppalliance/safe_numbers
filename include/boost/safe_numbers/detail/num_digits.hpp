@@ -13,10 +13,19 @@
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
-#include <boost/core/bit.hpp>
 #include <array>
 #include <cstdint>
 #include <limits>
+
+#if (defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+#include <cuda/std/bit>
+
+#else
+
+#include <boost/core/bit.hpp>
+
+#endif
 
 #endif
 
@@ -75,7 +84,11 @@ constexpr auto num_digits(const T init_x) noexcept -> int
         return 1;
     }
 
+    #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
     const auto msb {32 - boost::core::countl_zero(x)};
+    #else
+    const auto msb {32 - cuda::std::countl_zero(x)};
+    #endif
 
     // Approximate log10
     const auto estimated_digits {(msb * 1000) / 3322 + 1};
@@ -107,7 +120,11 @@ constexpr auto num_digits(const std::uint64_t x) noexcept -> int
         return num_digits(static_cast<std::uint32_t>(x));
     }
 
+    #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
     const auto msb {64 - boost::core::countl_zero(x)};
+    #else
+    const auto msb {64 - cuda::std::countl_zero(x)};
+    #endif
 
     // Approximate log10
     const auto estimated_digits {(msb * 1000) / 3322 + 1};
