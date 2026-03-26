@@ -95,6 +95,10 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE inline void copy_to_buf(char* dst, const char* sr
 // dereference it directly.
 __managed__ cuda_device_error* g_device_error = nullptr;
 
+// Tracks whether a device_error_context instance is alive.
+// Only one may exist at a time to prevent races on g_device_error.
+inline bool g_device_error_context_active = false;
+
 __host__ __device__ inline void report_device_error(
     exception_type exc,
     const char* file,
@@ -161,8 +165,15 @@ public:
     // Allocates the managed error struct if it does not already exist,
     // then clears the error state. After cudaDeviceReset() the __managed__
     // pointer is back to nullptr, so the next construction re-allocates.
+    // Only one device_error_context may exist at a time.
     device_error_context()
     {
+        if (detail::g_device_error_context_active)
+        {
+            BOOST_THROW_EXCEPTION(std::logic_error(
+                "Only one device_error_context may exist at a time"));
+        }
+        detail::g_device_error_context_active = true;
         ensure_allocated();
         reset();
     }
@@ -176,6 +187,7 @@ public:
             cudaFree(detail::g_device_error);
             detail::g_device_error = nullptr;
         }
+        detail::g_device_error_context_active = false;
     }
 
     device_error_context(const device_error_context&) = delete;
