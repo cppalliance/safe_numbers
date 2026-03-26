@@ -305,3 +305,7 @@ run test_cuda_u64_midpoint.cu ;
 run test_cuda_u128_gcd.cu ;
 run test_cuda_u128_lcm.cu ;
 run test_cuda_u128_midpoint.cu ;
+
+# Examples
+run ../examples/cuda.cu ;
+run ../examples/cuda_error_handling.cu ;
