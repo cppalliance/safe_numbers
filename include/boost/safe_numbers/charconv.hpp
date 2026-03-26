@@ -18,7 +18,7 @@
 namespace boost::charconv {
 
 template <safe_numbers::detail::library_type T>
-constexpr auto from_chars(const char* first, const char* last, T& value, int base = 10)
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto from_chars(const char* first, const char* last, T& value, int base = 10)
     -> charconv::from_chars_result
 {
     using underlying_type = safe_numbers::detail::underlying_type_t<T>;
@@ -31,7 +31,7 @@ constexpr auto from_chars(const char* first, const char* last, T& value, int bas
 }
 
 template <safe_numbers::detail::library_type T>
-constexpr auto to_chars(char* first, char* last, const T value, int base = 10)
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto to_chars(char* first, char* last, const T value, int base = 10)
     -> charconv::to_chars_result
 {
     using underlying_type = safe_numbers::detail::underlying_type_t<T>;
