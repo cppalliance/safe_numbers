@@ -271,6 +271,8 @@ public:
             // fail in that state.
             m_allocation = nullptr;
             cudaDeviceReset();
+            cudaGetLastError(); // Clear the sticky error left by __trap()
+            reset();
 
             switch (exc)
             {
