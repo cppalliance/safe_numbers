@@ -15,7 +15,7 @@ namespace boost::safe_numbers {
 
 // Newton's method as it can't possibly overflow, and converges rapidly
 template <detail::non_bounded_unsigned_library_type T>
-[[nodiscard]] constexpr auto isqrt(const T val) -> T
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto isqrt(const T val) -> T
 {
     using underlying_type = detail::underlying_type_t<T>;
 
@@ -42,7 +42,7 @@ template <detail::non_bounded_unsigned_library_type T>
 }
 
 template <detail::non_bounded_unsigned_library_type T>
-[[nodiscard]] constexpr auto remove_trailing_zeros(const T n)
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto remove_trailing_zeros(const T n)
 {
     using underlying_type = detail::underlying_type_t<T>;
 
@@ -55,7 +55,7 @@ template <detail::non_bounded_unsigned_library_type T>
 }
 
 template <detail::non_bounded_unsigned_library_type T>
-[[nodiscard]] constexpr auto is_power_10(const T n) -> bool
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto is_power_10(const T n) -> bool
 {
     using underlying_type = detail::underlying_type_t<T>;
 
@@ -64,14 +64,14 @@ template <detail::non_bounded_unsigned_library_type T>
 }
 
 template <detail::non_bounded_unsigned_library_type T>
-[[nodiscard]] constexpr auto is_power_2(const T n) noexcept -> bool
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto is_power_2(const T n) noexcept -> bool
 {
     return has_single_bit(n);
 }
 
 // Integer log base 2: floor(log2(n)) == bit_width(n) - 1
 template <detail::non_bounded_unsigned_library_type T>
-[[nodiscard]] constexpr auto ilog2(const T n) -> int
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto ilog2(const T n) -> int
 {
     using underlying_type = detail::underlying_type_t<T>;
 
@@ -86,7 +86,7 @@ template <detail::non_bounded_unsigned_library_type T>
 // Integer log base 10: floor(ilog10(n)) == num_digits(n) - 1
 // Uses MSB-based approximation with power-of-10 table lookup (O(1))
 template <detail::non_bounded_unsigned_library_type T>
-[[nodiscard]] constexpr auto ilog10(const T n) -> int
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto ilog10(const T n) -> int
 {
     using underlying_type = detail::underlying_type_t<T>;
 
@@ -101,7 +101,7 @@ template <detail::non_bounded_unsigned_library_type T>
 // Integer log arbitrary base: floor(log_base(n))
 // Repeated division: O(log_base(n)) divisions
 template <detail::non_bounded_unsigned_library_type T>
-[[nodiscard]] constexpr auto ilog(const T n, const T base) -> int
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto ilog(const T n, const T base) -> int
 {
     using underlying_type = detail::underlying_type_t<T>;
 
@@ -132,7 +132,7 @@ namespace detail {
 
 // Iterative exponentiation by squaring: O(log b) multiplications
 template <non_bounded_unsigned_library_type T>
-[[nodiscard]] constexpr auto ipow_impl(T base, T exp) -> T
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto ipow_impl(T base, T exp) -> T
 {
     using underlying_type = underlying_type_t<T>;
 
@@ -157,19 +157,19 @@ template <non_bounded_unsigned_library_type T>
 } // namespace detail
 
 template <detail::non_bounded_unsigned_library_type T>
-[[nodiscard]] constexpr auto ipow(const T a, const T b) -> T
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto ipow(const T a, const T b) -> T
 {
     return detail::ipow_impl(a, b);
 }
 
 template <detail::integral_library_type T>
-[[nodiscard]] constexpr auto abs_diff(const T a, const T b) noexcept -> T
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto abs_diff(const T a, const T b) noexcept -> T
 {
     return a > b ? a - b : b - a;
 }
 
 template <detail::integral_library_type T>
-[[nodiscard]] constexpr auto div_ceil(const T a, const T b) noexcept -> T
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto div_ceil(const T a, const T b) noexcept -> T
 {
     using underlying_type = detail::underlying_type_t<T>;
 
@@ -187,7 +187,7 @@ template <detail::integral_library_type T>
 }
 
 template <detail::integral_library_type T>
-[[nodiscard]] constexpr auto next_multiple_of(const T a, const T b) noexcept -> T
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto next_multiple_of(const T a, const T b) noexcept -> T
 {
     return div_ceil(a, b) * b;
 }
