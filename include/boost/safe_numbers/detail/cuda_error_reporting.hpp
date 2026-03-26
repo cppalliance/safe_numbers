@@ -87,13 +87,15 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE inline void copy_to_buf(char* dst, const char* sr
 
 #ifdef __CUDACC__
 
-// __managed__ pointer to dynamically allocated managed memory.
-// Using a pointer (rather than a __managed__ struct) lets us free and
-// re-allocate after cudaDeviceReset(), which is required to recover
-// from __trap() corrupting the device context.
-// The pointer itself lives in managed memory so device code can
-// dereference it directly.
-__managed__ cuda_device_error* g_device_error = nullptr;
+// __device__ pointer to dynamically allocated managed memory.
+// Using __device__ (not __managed__) means the pointer variable itself
+// lives in device memory, not unified memory. This is critical because
+// after cudaDeviceReset() a __managed__ variable's backing memory is
+// freed and any host-side access segfaults. A __device__ variable is
+// re-initialized to its static initializer (nullptr) when the runtime
+// restarts, and the host never dereferences it directly — it uses
+// cudaMemcpyToSymbol to update it.
+__device__ cuda_device_error* g_device_error = nullptr;
 
 // Tracks whether a device_error_context instance is alive.
 // Only one may exist at a time to prevent races on g_device_error.
@@ -308,8 +310,10 @@ private:
                 BOOST_THROW_EXCEPTION(std::runtime_error(
                     std::string("Failed to allocate device error context: ") + cudaGetErrorString(err)));
             }
-            // Point the __managed__ global at the new allocation so device code can find it
-            detail::g_device_error = m_allocation;
+
+            // Point the __device__ global at the new allocation so device code can find it.
+            // We must use cudaMemcpyToSymbol because g_device_error is in device memory.
+            cudaMemcpyToSymbol(detail::g_device_error, &m_allocation, sizeof(detail::cuda_device_error*));
             cudaDeviceSynchronize();
         }
     }
