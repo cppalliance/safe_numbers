@@ -211,3 +211,70 @@ run test_cuda_u64_charconv_all_bases.cu ;
 # u128 charconv tests
 run test_cuda_u128_charconv.cu ;
 run test_cuda_u128_charconv_all_bases.cu ;
+
+# Integer utilities tests
+
+# u8 integer utilities tests
+run test_cuda_u8_isqrt.cu ;
+run test_cuda_u8_remove_trailing_zeros.cu ;
+run test_cuda_u8_is_power_10.cu ;
+run test_cuda_u8_is_power_2.cu ;
+run test_cuda_u8_ilog2.cu ;
+run test_cuda_u8_ilog10.cu ;
+run test_cuda_u8_ilog.cu ;
+run test_cuda_u8_ipow.cu ;
+run test_cuda_u8_abs_diff.cu ;
+run test_cuda_u8_div_ceil.cu ;
+run test_cuda_u8_next_multiple_of.cu ;
+
+# u16 integer utilities tests
+run test_cuda_u16_isqrt.cu ;
+run test_cuda_u16_remove_trailing_zeros.cu ;
+run test_cuda_u16_is_power_10.cu ;
+run test_cuda_u16_is_power_2.cu ;
+run test_cuda_u16_ilog2.cu ;
+run test_cuda_u16_ilog10.cu ;
+run test_cuda_u16_ilog.cu ;
+run test_cuda_u16_ipow.cu ;
+run test_cuda_u16_abs_diff.cu ;
+run test_cuda_u16_div_ceil.cu ;
+run test_cuda_u16_next_multiple_of.cu ;
+
+# u32 integer utilities tests
+run test_cuda_u32_isqrt.cu ;
+run test_cuda_u32_remove_trailing_zeros.cu ;
+run test_cuda_u32_is_power_10.cu ;
+run test_cuda_u32_is_power_2.cu ;
+run test_cuda_u32_ilog2.cu ;
+run test_cuda_u32_ilog10.cu ;
+run test_cuda_u32_ilog.cu ;
+run test_cuda_u32_ipow.cu ;
+run test_cuda_u32_abs_diff.cu ;
+run test_cuda_u32_div_ceil.cu ;
+run test_cuda_u32_next_multiple_of.cu ;
+
+# u64 integer utilities tests
+run test_cuda_u64_isqrt.cu ;
+run test_cuda_u64_remove_trailing_zeros.cu ;
+run test_cuda_u64_is_power_10.cu ;
+run test_cuda_u64_is_power_2.cu ;
+run test_cuda_u64_ilog2.cu ;
+run test_cuda_u64_ilog10.cu ;
+run test_cuda_u64_ilog.cu ;
+run test_cuda_u64_ipow.cu ;
+run test_cuda_u64_abs_diff.cu ;
+run test_cuda_u64_div_ceil.cu ;
+run test_cuda_u64_next_multiple_of.cu ;
+
+# u128 integer utilities tests
+run test_cuda_u128_isqrt.cu ;
+run test_cuda_u128_remove_trailing_zeros.cu ;
+run test_cuda_u128_is_power_10.cu ;
+run test_cuda_u128_is_power_2.cu ;
+run test_cuda_u128_ilog2.cu ;
+run test_cuda_u128_ilog10.cu ;
+run test_cuda_u128_ilog.cu ;
+run test_cuda_u128_ipow.cu ;
+run test_cuda_u128_abs_diff.cu ;
+run test_cuda_u128_div_ceil.cu ;
+run test_cuda_u128_next_multiple_of.cu ;
