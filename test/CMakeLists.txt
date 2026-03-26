@@ -18,7 +18,7 @@ if(HAVE_BOOST_TEST)
 
         enable_testing()
 
-        boost_test_jamfile(FILE cuda_jamfile LINK_LIBRARIES Boost::safe_numbers Boost::random CUDA::cudart COMPILE_DEFINITIONS BOOST_SAFE_NUMBERS_ENABLE_CUDA=1)
+        boost_test_jamfile(FILE cuda_jamfile LINK_LIBRARIES Boost::safe_numbers Boost::random CUDA::cudart CUDA::cuda_driver COMPILE_DEFINITIONS BOOST_SAFE_NUMBERS_ENABLE_CUDA=1)
 
     else()
 
