@@ -7,6 +7,13 @@
 // operation overflows on the GPU, the error is captured in managed
 // memory and rethrown with BOOST_THROW_EXCEPTION on the host when
 // you call ctx.synchronize().
+//
+// The device_error_context manages a dynamically allocated managed
+// memory buffer. When an error is detected, synchronize() copies the
+// error info to host locals, frees the managed buffer, resets the
+// device, and throws. After catching the exception, the same context
+// can be reused — the next call to synchronize() automatically
+// re-allocates fresh managed memory via reset().
 
 #include <iostream>
 #include <limits>
@@ -43,29 +50,27 @@ __global__ void safe_kernel(const test_type* in, test_type* out, int n)
 
 int main()
 {
-    test_type* data = nullptr;
-    test_type* result = nullptr;
-
-    cudaMallocManaged(&data, 4 * sizeof(test_type));
-    cudaMallocManaged(&result, 4 * sizeof(test_type));
-    cudaDeviceSynchronize();
-
-    // ---------------------------------------------------------------
-    // Step 1: Demonstrate catching a device-side overflow
-    // ---------------------------------------------------------------
-
-    // Create a device_error_context. The constructor clears any
-    // stale error state from previous kernel launches.
+    // Create a single device_error_context for the lifetime of the program.
+    // The constructor allocates managed memory for error reporting and
+    // clears any stale state.
     boost::safe_numbers::device_error_context ctx;
+
+    // ---------------------------------------------------------------
+    // Step 1: Launch a kernel that overflows and catch the error
+    // ---------------------------------------------------------------
+
+    test_type* result = nullptr;
+    cudaMallocManaged(&result, sizeof(test_type));
+    cudaDeviceSynchronize();
 
     std::cout << "=== Launching kernel that overflows ===" << std::endl;
 
     overflow_kernel<<<1, 1>>>(result);
 
-    // synchronize() does three things:
-    //   1. Calls cudaDeviceSynchronize() to wait for the kernel
-    //   2. Reads the error state from managed memory
-    //   3. Throws the appropriate std::exception if an error was captured
+    // synchronize() waits for the kernel, reads the error state,
+    // and throws the appropriate std::exception if one was captured.
+    // On error it also calls cudaDeviceReset() internally, so the
+    // device is ready for fresh work after catching the exception.
     try
     {
         ctx.synchronize();
@@ -77,18 +82,28 @@ int main()
     }
 
     // ---------------------------------------------------------------
-    // Step 2: After catching the error, the context is automatically
-    //         reset. You can reuse it for the next kernel launch.
+    // Step 2: After catching the error, the same ctx can be reused.
+    //         The next synchronize() call automatically re-allocates
+    //         managed memory for error reporting.
+    //         Note: cudaDeviceReset() freed all prior allocations,
+    //         so we must re-allocate our data buffers too.
     // ---------------------------------------------------------------
 
     std::cout << "\n=== Launching kernel with valid arithmetic ===" << std::endl;
+
+    test_type* data = nullptr;
+    test_type* out = nullptr;
+
+    cudaMallocManaged(&data, 4 * sizeof(test_type));
+    cudaMallocManaged(&out, 4 * sizeof(test_type));
+    cudaDeviceSynchronize();
 
     data[0] = test_type{10};
     data[1] = test_type{20};
     data[2] = test_type{30};
     data[3] = test_type{40};
 
-    safe_kernel<<<1, 4>>>(data, result, 4);
+    safe_kernel<<<1, 4>>>(data, out, 4);
 
     try
     {
@@ -100,11 +115,10 @@ int main()
         std::cout << "Unexpected error: " << e.what() << std::endl;
     }
 
-    // Verify results
     for (int i = 0; i < 4; ++i)
     {
         std::cout << "result[" << i << "] = "
-                  << static_cast<basis_type>(result[i]) << std::endl;
+                  << static_cast<basis_type>(out[i]) << std::endl;
     }
 
     // ---------------------------------------------------------------
@@ -112,7 +126,7 @@ int main()
     // ---------------------------------------------------------------
 
     cudaFree(data);
-    cudaFree(result);
+    cudaFree(out);
     cudaDeviceReset();
 
     return 0;
