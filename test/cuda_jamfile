@@ -278,3 +278,30 @@ run test_cuda_u128_ipow.cu ;
 run test_cuda_u128_abs_diff.cu ;
 run test_cuda_u128_div_ceil.cu ;
 run test_cuda_u128_next_multiple_of.cu ;
+
+# Numeric tests
+
+# u8 numeric tests
+run test_cuda_u8_gcd.cu ;
+run test_cuda_u8_lcm.cu ;
+run test_cuda_u8_midpoint.cu ;
+
+# u16 numeric tests
+run test_cuda_u16_gcd.cu ;
+run test_cuda_u16_lcm.cu ;
+run test_cuda_u16_midpoint.cu ;
+
+# u32 numeric tests
+run test_cuda_u32_gcd.cu ;
+run test_cuda_u32_lcm.cu ;
+run test_cuda_u32_midpoint.cu ;
+
+# u64 numeric tests
+run test_cuda_u64_gcd.cu ;
+run test_cuda_u64_lcm.cu ;
+run test_cuda_u64_midpoint.cu ;
+
+# u128 numeric tests
+run test_cuda_u128_gcd.cu ;
+run test_cuda_u128_lcm.cu ;
+run test_cuda_u128_midpoint.cu ;
