@@ -157,3 +157,35 @@ run test_cuda_u128_countr_one.cu ;
 run test_cuda_u128_popcount.cu ;
 run test_cuda_u128_byteswap.cu ;
 run test_cuda_u128_bitswap.cu ;
+
+# Byte conversion tests
+
+# u8 byte conversion tests
+run test_cuda_u8_to_be.cu ;
+run test_cuda_u8_from_be.cu ;
+run test_cuda_u8_to_le.cu ;
+run test_cuda_u8_from_le.cu ;
+
+# u16 byte conversion tests
+run test_cuda_u16_to_be.cu ;
+run test_cuda_u16_from_be.cu ;
+run test_cuda_u16_to_le.cu ;
+run test_cuda_u16_from_le.cu ;
+
+# u32 byte conversion tests
+run test_cuda_u32_to_be.cu ;
+run test_cuda_u32_from_be.cu ;
+run test_cuda_u32_to_le.cu ;
+run test_cuda_u32_from_le.cu ;
+
+# u64 byte conversion tests
+run test_cuda_u64_to_be.cu ;
+run test_cuda_u64_from_be.cu ;
+run test_cuda_u64_to_le.cu ;
+run test_cuda_u64_from_le.cu ;
+
+# u128 byte conversion tests
+run test_cuda_u128_to_be.cu ;
+run test_cuda_u128_from_be.cu ;
+run test_cuda_u128_to_le.cu ;
+run test_cuda_u128_from_le.cu ;
