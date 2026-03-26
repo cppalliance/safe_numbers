@@ -21,7 +21,7 @@
 namespace boost::safe_numbers {
 
 template <detail::non_bounded_integral_library_type T>
-[[nodiscard]] constexpr auto to_be(const T value) noexcept -> T
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto to_be(const T value) noexcept -> T
 {
     if constexpr (std::endian::native == std::endian::big)
     {
@@ -34,14 +34,14 @@ template <detail::non_bounded_integral_library_type T>
 }
 
 template <detail::non_bounded_integral_library_type T>
-[[nodiscard]] constexpr auto from_be(const T value) noexcept -> T
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto from_be(const T value) noexcept -> T
 {
     // Self-inverse
     return to_be(value);
 }
 
 template <detail::non_bounded_integral_library_type T>
-[[nodiscard]] constexpr auto to_le(const T value) noexcept -> T
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto to_le(const T value) noexcept -> T
 {
     if constexpr (std::endian::native == std::endian::little)
     {
@@ -54,21 +54,21 @@ template <detail::non_bounded_integral_library_type T>
 }
 
 template <detail::non_bounded_integral_library_type T>
-[[nodiscard]] constexpr auto from_le(const T value) noexcept -> T
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto from_le(const T value) noexcept -> T
 {
     // Self-inverse
     return to_le(value);
 }
 
 template <detail::non_bounded_integral_library_type T>
-[[nodiscard]] constexpr auto to_be_bytes(const T value) noexcept -> std::array<std::byte, sizeof(T)>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto to_be_bytes(const T value) noexcept -> std::array<std::byte, sizeof(T)>
 {
     const auto be_value {to_be(value)};
     return std::bit_cast<std::array<std::byte, sizeof(T)>>(be_value);
 }
 
 template <detail::non_bounded_integral_library_type T, std::size_t N>
-[[nodiscard]] constexpr auto from_be_bytes(const std::span<const std::byte, N> bytes) -> T
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto from_be_bytes(const std::span<const std::byte, N> bytes) -> T
 {
     using underlying_type = detail::underlying_type_t<T>;
 
@@ -103,14 +103,14 @@ template <detail::non_bounded_integral_library_type T, std::size_t N>
 }
 
 template <detail::non_bounded_integral_library_type T>
-[[nodiscard]] constexpr auto to_le_bytes(const T value) noexcept -> std::array<std::byte, sizeof(T)>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto to_le_bytes(const T value) noexcept -> std::array<std::byte, sizeof(T)>
 {
     const auto le_value {to_le(value)};
     return std::bit_cast<std::array<std::byte, sizeof(T)>>(le_value);
 }
 
 template <detail::non_bounded_integral_library_type T, std::size_t N>
-[[nodiscard]] constexpr auto from_le_bytes(const std::span<const std::byte, N> bytes) -> T
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto from_le_bytes(const std::span<const std::byte, N> bytes) -> T
 {
     using underlying_type = detail::underlying_type_t<T>;
 
@@ -145,7 +145,7 @@ template <detail::non_bounded_integral_library_type T, std::size_t N>
 }
 
 template <detail::non_bounded_integral_library_type T>
-[[nodiscard]] constexpr auto to_ne_bytes(const T value) noexcept -> std::array<std::byte, sizeof(T)>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto to_ne_bytes(const T value) noexcept -> std::array<std::byte, sizeof(T)>
 {
     if constexpr (std::endian::native == std::endian::little)
     {
@@ -158,7 +158,7 @@ template <detail::non_bounded_integral_library_type T>
 }
 
 template <detail::non_bounded_integral_library_type T, std::size_t N>
-[[nodiscard]] constexpr auto from_ne_bytes(const std::span<const std::byte, N> bytes) -> T
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto from_ne_bytes(const std::span<const std::byte, N> bytes) -> T
 {
     if constexpr (std::endian::native == std::endian::little)
     {
