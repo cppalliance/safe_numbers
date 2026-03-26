@@ -90,20 +90,14 @@ int main()
     test_type* data = nullptr;
     test_type* out = nullptr;
 
-    std::cout << "Reallocating Memory" << std::endl;
-
     cudaMallocManaged(&data, 4 * sizeof(test_type));
     cudaMallocManaged(&out, 4 * sizeof(test_type));
     cudaDeviceSynchronize();
-
-    std::cout << "Writing data" << std::endl;
 
     data[0] = test_type{10};
     data[1] = test_type{20};
     data[2] = test_type{30};
     data[3] = test_type{40};
-
-    std::cout << "Launching kernel" << std::endl;
 
     safe_kernel<<<1, 4>>>(data, out, 4);
 
