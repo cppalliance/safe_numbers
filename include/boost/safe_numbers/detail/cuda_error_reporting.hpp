@@ -160,11 +160,17 @@ __host__ __device__ inline void report_device_error(
 
 class device_error_context
 {
+    // Host-side mirror of the managed allocation pointer.
+    // All host-side reads go through this so we never touch the
+    // __managed__ variable g_device_error after cudaDeviceReset().
+    detail::cuda_device_error* m_allocation {nullptr};
+
 public:
 
     // Allocates the managed error struct if it does not already exist,
     // then clears the error state. After cudaDeviceReset() the __managed__
-    // pointer is back to nullptr, so the next construction re-allocates.
+    // pointer is back to nullptr, so the next call to reset() or
+    // synchronize() re-allocates automatically.
     // Only one device_error_context may exist at a time.
     device_error_context()
     {
@@ -179,13 +185,14 @@ public:
     }
 
     // Free the managed allocation during normal (non-error) shutdown.
-    // After cudaDeviceReset(), g_device_error is already nullptr.
+    // Uses the host-side m_allocation pointer so this is safe even
+    // after cudaDeviceReset() has invalidated the __managed__ global.
     ~device_error_context()
     {
-        if (detail::g_device_error != nullptr)
+        if (m_allocation != nullptr)
         {
-            cudaFree(detail::g_device_error);
-            detail::g_device_error = nullptr;
+            cudaFree(m_allocation);
+            m_allocation = nullptr;
         }
         detail::g_device_error_context_active = false;
     }
@@ -193,20 +200,21 @@ public:
     device_error_context(const device_error_context&) = delete;
     device_error_context& operator=(const device_error_context&) = delete;
 
-    // Clears the error fields so the context can be reused across kernel launches
+    // Clears the error fields so the context can be reused across kernel launches.
+    // If the managed buffer was freed (e.g. after a device reset), re-allocates it.
     void reset()
     {
-        if (detail::g_device_error == nullptr)
+        if (m_allocation == nullptr)
         {
             ensure_allocated();
         }
 
-        detail::g_device_error->flag = 0;
-        detail::g_device_error->line = 0;
-        detail::g_device_error->thread_id = 0;
-        detail::g_device_error->exception = detail::exception_type::unknown;
-        detail::g_device_error->file[0] = '\0';
-        detail::g_device_error->expression[0] = '\0';
+        m_allocation->flag = 0;
+        m_allocation->line = 0;
+        m_allocation->thread_id = 0;
+        m_allocation->exception = detail::exception_type::unknown;
+        m_allocation->file[0] = '\0';
+        m_allocation->expression[0] = '\0';
     }
 
     // Allows the user to synchronize and check for errors as is typical of CUDA.
@@ -218,13 +226,13 @@ public:
     //      (required because __trap() corrupts the device context)
     //   3. The appropriate std::exception is thrown
     //
-    // After catching the exception, a new device_error_context can be
-    // constructed which will re-allocate fresh managed memory.
+    // After catching the exception, the same context can be reused —
+    // the next call to synchronize() automatically re-allocates.
     void synchronize()
     {
         const auto status = cudaDeviceSynchronize();
 
-        if (detail::g_device_error == nullptr)
+        if (m_allocation == nullptr)
         {
             if (status != cudaSuccess)
             {
@@ -234,30 +242,31 @@ public:
             return;
         }
 
-        // Read directly from managed memory — no cudaMemcpyFromSymbol needed
+        // Read directly from managed memory via host-side pointer
         // This works even after __trap() corrupts the device context
-        const auto flag = detail::g_device_error->flag;
+        const auto flag = m_allocation->flag;
 
         if (flag != 0)
         {
             // Copy everything we need to local storage before freeing
-            const auto thread_id = detail::g_device_error->thread_id;
-            const auto line = detail::g_device_error->line;
-            const auto exc = detail::g_device_error->exception;
+            const auto thread_id = m_allocation->thread_id;
+            const auto line = m_allocation->line;
+            const auto exc = m_allocation->exception;
 
             std::ostringstream oss;
             oss << "Device error on thread " << thread_id
-                << " at " << detail::g_device_error->file
+                << " at " << m_allocation->file
                 << ":" << line
-                << ": " << detail::g_device_error->expression;
+                << ": " << m_allocation->expression;
 
             const auto msg = oss.str();
 
             // Free the managed allocation and reset the device so that
             // new kernels can be launched after the user catches the exception.
-            // cudaDeviceReset() re-initializes the __managed__ pointer to nullptr.
-            cudaFree(detail::g_device_error);
-            detail::g_device_error = nullptr;
+            // cudaDeviceReset() re-initializes the __managed__ pointer to nullptr,
+            // but we track our own state via m_allocation.
+            cudaFree(m_allocation);
+            m_allocation = nullptr;
             cudaDeviceReset();
 
             switch (exc)
@@ -291,14 +300,16 @@ private:
 
     void ensure_allocated()
     {
-        if (detail::g_device_error == nullptr)
+        if (m_allocation == nullptr)
         {
-            const auto err = cudaMallocManaged(&detail::g_device_error, sizeof(detail::cuda_device_error));
+            const auto err = cudaMallocManaged(&m_allocation, sizeof(detail::cuda_device_error));
             if (err != cudaSuccess)
             {
                 BOOST_THROW_EXCEPTION(std::runtime_error(
                     std::string("Failed to allocate device error context: ") + cudaGetErrorString(err)));
             }
+            // Point the __managed__ global at the new allocation so device code can find it
+            detail::g_device_error = m_allocation;
             cudaDeviceSynchronize();
         }
     }
