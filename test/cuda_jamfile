@@ -189,3 +189,25 @@ run test_cuda_u128_to_be.cu ;
 run test_cuda_u128_from_be.cu ;
 run test_cuda_u128_to_le.cu ;
 run test_cuda_u128_from_le.cu ;
+
+# Charconv tests
+
+# u8 charconv tests
+run test_cuda_u8_charconv.cu ;
+run test_cuda_u8_charconv_all_bases.cu ;
+
+# u16 charconv tests
+run test_cuda_u16_charconv.cu ;
+run test_cuda_u16_charconv_all_bases.cu ;
+
+# u32 charconv tests
+run test_cuda_u32_charconv.cu ;
+run test_cuda_u32_charconv_all_bases.cu ;
+
+# u64 charconv tests
+run test_cuda_u64_charconv.cu ;
+run test_cuda_u64_charconv_all_bases.cu ;
+
+# u128 charconv tests
+run test_cuda_u128_charconv.cu ;
+run test_cuda_u128_charconv_all_bases.cu ;
