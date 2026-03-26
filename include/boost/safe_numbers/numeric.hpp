@@ -17,7 +17,7 @@
 namespace boost::safe_numbers {
 
 template <detail::non_bounded_integral_library_type T>
-[[nodiscard]] constexpr auto gcd(const T m, const T n) noexcept -> T
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto gcd(const T m, const T n) noexcept -> T
 {
     using underlying_type = detail::underlying_type_t<T>;
 
@@ -32,7 +32,7 @@ template <detail::non_bounded_integral_library_type T>
 }
 
 template <detail::non_bounded_integral_library_type T>
-[[nodiscard]] constexpr auto lcm(const T m, const T n) noexcept -> T
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto lcm(const T m, const T n) noexcept -> T
 {
     using underlying_type = detail::underlying_type_t<T>;
 
@@ -47,7 +47,7 @@ template <detail::non_bounded_integral_library_type T>
 }
 
 template <detail::non_bounded_integral_library_type T>
-[[nodiscard]] constexpr auto midpoint(const T a, const T b) noexcept -> T
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto midpoint(const T a, const T b) noexcept -> T
 {
     using underlying_type = detail::underlying_type_t<T>;
 
