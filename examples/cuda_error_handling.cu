@@ -9,11 +9,9 @@
 // you call ctx.synchronize().
 //
 // The device_error_context manages a dynamically allocated managed
-// memory buffer. When an error is detected, synchronize() copies the
-// error info to host locals, frees the managed buffer, resets the
-// device, and throws. After catching the exception, the same context
-// can be reused — the next call to synchronize() automatically
-// re-allocates fresh managed memory via reset().
+// memory buffer. When an error is detected, synchronize() clears the
+// error state and throws. After catching the exception, the same
+// context can be reused immediately for new kernel launches.
 
 #include <iostream>
 #include <limits>
@@ -69,8 +67,8 @@ int main()
 
     // synchronize() waits for the kernel, reads the error state,
     // and throws the appropriate std::exception if one was captured.
-    // On error it also calls cudaDeviceReset() internally, so the
-    // device is ready for fresh work after catching the exception.
+    // On error it clears the error state before throwing, so the
+    // context is immediately reusable after catching the exception.
     try
     {
         ctx.synchronize();
@@ -79,17 +77,12 @@ int main()
     catch (const std::overflow_error& e)
     {
         std::cout << "Caught overflow_error: " << e.what() << std::endl;
-
-        // Recover from the device error: resets the device, clears the
-        // sticky CUDA error, and re-allocates the error reporting buffer.
-        ctx.reset_after_error();
     }
 
     // ---------------------------------------------------------------
-    // Step 2: After catching the error, the same ctx can be reused.
-    //         reset_after_error() restored the device and error context,
-    //         but cudaDeviceReset() freed all prior allocations, so we
-    //         must re-allocate our data buffers.
+    // Step 2: After catching the error, the same ctx can be reused
+    //         immediately. synchronize() already cleared the error
+    //         state before throwing, so no recovery step is needed.
     // ---------------------------------------------------------------
 
     std::cout << "\n=== Launching kernel with valid arithmetic ===" << std::endl;
@@ -134,9 +127,9 @@ int main()
     // Cleanup
     // ---------------------------------------------------------------
 
+    cudaFree(result);
     cudaFree(data);
     cudaFree(out);
-    cudaDeviceReset();
 
     return 0;
 }
