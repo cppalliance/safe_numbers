@@ -10,7 +10,11 @@
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
+#if (defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+#include <cuda/std/numeric>
+#else
 #include <numeric>
+#endif
 
 #endif
 
@@ -27,7 +31,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto gcd(const T m, const
     }
     else
     {
+        #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
         return T{static_cast<underlying_type>(std::gcd(static_cast<underlying_type>(m), static_cast<underlying_type>(n)))};
+        #else
+        return T{static_cast<underlying_type>(cuda::std::gcd(static_cast<underlying_type>(m), static_cast<underlying_type>(n)))};
+        #endif
     }
 }
 
@@ -42,7 +50,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto lcm(const T m, const
     }
     else
     {
+        #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
         return T{static_cast<underlying_type>(std::lcm(static_cast<underlying_type>(m), static_cast<underlying_type>(n)))};
+        #else
+        return T{static_cast<underlying_type>(cuda::std::lcm(static_cast<underlying_type>(m), static_cast<underlying_type>(n)))};
+        #endif
     }
 }
 
@@ -57,7 +69,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto midpoint(const T a, 
     }
     else
     {
+        #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
         return T{static_cast<underlying_type>(std::midpoint(static_cast<underlying_type>(a), static_cast<underlying_type>(b)))};
+        #else
+        return T{static_cast<underlying_type>(cuda::std::midpoint(static_cast<underlying_type>(a), static_cast<underlying_type>(b)))};
+        #endif
     }
 }
 
