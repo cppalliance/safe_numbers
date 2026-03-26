@@ -40,7 +40,14 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto has_single_bit(const
 
     #else
 
-    return cuda::std::has_single_bit(static_cast<underlying_type>(x));
+    if constexpr (std::is_same_v<UnsignedInt, u128>)
+    {
+        return boost::int128::has_single_bit(static_cast<underlying_type>(x));
+    }
+    else
+    {
+        return cuda::std::has_single_bit(static_cast<underlying_type>(x));
+    }
 
     #endif
 }
@@ -57,7 +64,14 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto bit_ceil(const Unsig
 
     #else
 
-    return UnsignedInt{cuda::std::bit_ceil(static_cast<underlying_type>(x))};
+    if constexpr (std::is_same_v<UnsignedInt, u128>)
+    {
+        return UnsignedInt{boost::int128::bit_ceil(static_cast<underlying_type>(x))};
+    }
+    else
+    {
+        return UnsignedInt{cuda::std::bit_ceil(static_cast<underlying_type>(x))};
+    }
 
     #endif
 }
@@ -74,7 +88,14 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto bit_floor(const Unsi
 
     #else
 
-    return UnsignedInt{cuda::std::bit_floor(static_cast<underlying_type>(x))};
+    if constexpr (std::is_same_v<UnsignedInt, u128>)
+    {
+        return UnsignedInt{boost::int128::bit_floor(static_cast<underlying_type>(x))};
+    }
+    else
+    {
+        return UnsignedInt{cuda::std::bit_floor(static_cast<underlying_type>(x))};
+    }
 
     #endif
 }
@@ -91,7 +112,14 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto bit_width(const Unsi
 
     #else
 
-    return static_cast<int>(cuda::std::bit_width(static_cast<underlying_type>(x)));
+    if constexpr (std::is_same_v<UnsignedInt, u128>)
+    {
+        return static_cast<int>(boost::int128::bit_width(static_cast<underlying_type>(x)));
+    }
+    else
+    {
+        return static_cast<int>(cuda::std::bit_width(static_cast<underlying_type>(x)));
+    }
 
     #endif
 }
@@ -108,7 +136,14 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto rotl(const UnsignedI
 
     #else
 
-    return UnsignedInt{cuda::std::rotl(static_cast<underlying_type>(x), s)};
+    if constexpr (std::is_same_v<UnsignedInt, u128>)
+    {
+        return UnsignedInt{boost::int128::rotl(static_cast<underlying_type>(x), s)};
+    }
+    else
+    {
+        return UnsignedInt{cuda::std::rotl(static_cast<underlying_type>(x), s)};
+    }
 
     #endif
 }
@@ -125,7 +160,14 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto rotr(const UnsignedI
 
     #else
 
-    return UnsignedInt{cuda::std::rotr(static_cast<underlying_type>(x), s)};
+    if constexpr (std::is_same_v<UnsignedInt, u128>)
+    {
+        return UnsignedInt{boost::int128::rotr(static_cast<underlying_type>(x), s)};
+    }
+    else
+    {
+        return UnsignedInt{cuda::std::rotr(static_cast<underlying_type>(x), s)};
+    }
 
     #endif
 }
@@ -142,7 +184,14 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto countl_zero(const Un
 
     #else
 
-    return cuda::std::countl_zero(static_cast<underlying_type>(x));
+    if constexpr (std::is_same_v<UnsignedInt, u128>)
+    {
+        return boost::int128::countl_zero(static_cast<underlying_type>(x));
+    }
+    else
+    {
+        return cuda::std::countl_zero(static_cast<underlying_type>(x));
+    }
 
     #endif
 }
@@ -159,7 +208,14 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto countl_one(const Uns
 
     #else
 
-    return cuda::std::countl_one(static_cast<underlying_type>(x));
+    if constexpr (std::is_same_v<UnsignedInt, u128>)
+    {
+        return boost::int128::countl_one(static_cast<underlying_type>(x));
+    }
+    else
+    {
+        return cuda::std::countl_one(static_cast<underlying_type>(x));
+    }
 
     #endif
 }
@@ -176,7 +232,14 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto countr_zero(const Un
 
     #else
 
-    return cuda::std::countr_zero(static_cast<underlying_type>(x));
+    if constexpr (std::is_same_v<UnsignedInt, u128>)
+    {
+        return boost::int128::countr_zero(static_cast<underlying_type>(x));
+    }
+    else
+    {
+        return cuda::std::countr_zero(static_cast<underlying_type>(x));
+    }
 
     #endif
 }
@@ -193,7 +256,14 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto countr_one(const Uns
 
     #else
 
-    return cuda::std::countr_one(static_cast<underlying_type>(x));
+    if constexpr (std::is_same_v<UnsignedInt, u128>)
+    {
+        return boost::int128::countr_one(static_cast<underlying_type>(x));
+    }
+    else
+    {
+        return cuda::std::countr_one(static_cast<underlying_type>(x));
+    }
 
     #endif
 }
@@ -210,7 +280,14 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto popcount(const Unsig
 
     #else
 
-    return cuda::std::popcount(static_cast<underlying_type>(x));
+    if constexpr (std::is_same_v<UnsignedInt, u128>)
+    {
+        return boost::int128::popcount(static_cast<underlying_type>(x));
+    }
+    else
+    {
+        return cuda::std::popcount(static_cast<underlying_type>(x));
+    }
 
     #endif
 }
@@ -227,7 +304,14 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto byteswap(const Int x
 
     #else
 
-    return Int{cuda::std::byteswap(static_cast<underlying_type>(x))};
+    if constexpr (std::is_same_v<Int, u128>)
+    {
+        return Int{boost::int128::byteswap(static_cast<underlying_type>(x))};
+    }
+    else
+    {
+        return Int{cuda::std::byteswap(static_cast<underlying_type>(x))};
+    }
 
     #endif
 }
