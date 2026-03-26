@@ -263,11 +263,12 @@ public:
 
             const auto msg = oss.str();
 
-            // Free the managed allocation and reset the device so that
-            // new kernels can be launched after the user catches the exception.
-            // cudaDeviceReset() re-initializes the __managed__ pointer to nullptr,
-            // but we track our own state via m_allocation.
-            cudaFree(m_allocation);
+            // Reset the device so that new kernels can be launched after
+            // the user catches the exception. cudaDeviceReset() frees all
+            // device and managed allocations (including what m_allocation
+            // points to), so we do NOT call cudaFree first — the device
+            // context is corrupted by __trap() and cudaFree may hang or
+            // fail in that state.
             m_allocation = nullptr;
             cudaDeviceReset();
 
