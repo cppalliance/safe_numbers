@@ -44,103 +44,120 @@ public:
     using basis_type = BasisType;
 
     // Construction
-    constexpr unsigned_integer_basis() noexcept = default;
-    explicit constexpr unsigned_integer_basis(BasisType val) noexcept;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr unsigned_integer_basis() noexcept = default;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr unsigned_integer_basis(BasisType val) noexcept;
 
     template <typename T>
         requires std::is_same_v<T, bool>
-    explicit constexpr unsigned_integer_basis(T) noexcept = delete; // bool prohibited
+    BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr unsigned_integer_basis(T) noexcept = delete; // bool prohibited
 
     // Conversion to underlying types
     template <unsigned_integral OtherBasis>
-    explicit constexpr operator OtherBasis() const;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr operator OtherBasis() const;
 
     // Comparison operators
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     friend constexpr auto operator<=>(unsigned_integer_basis lhs, unsigned_integer_basis rhs) noexcept
         -> std::strong_ordering = default;
 
     // Compound assignment operators (arithmetic)
     template <unsigned_integral OtherBasis>
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     constexpr auto operator+=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
     template <unsigned_integral OtherBasis>
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     constexpr auto operator-=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
     template <unsigned_integral OtherBasis>
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     constexpr auto operator*=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
     template <unsigned_integral OtherBasis>
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     constexpr auto operator/=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
     template <unsigned_integral OtherBasis>
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     constexpr auto operator%=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
     // Compound assignment operators (bitwise)
-    constexpr auto operator&=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
-    constexpr auto operator|=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
-    constexpr auto operator^=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
-    constexpr auto operator<<=(unsigned_integer_basis rhs) -> unsigned_integer_basis&;
-    constexpr auto operator>>=(unsigned_integer_basis rhs) -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator&=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator|=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator^=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator<<=(unsigned_integer_basis rhs) -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator>>=(unsigned_integer_basis rhs) -> unsigned_integer_basis&;
 
     // Increment and decrement operators
-    constexpr auto operator++() -> unsigned_integer_basis&;
-    constexpr auto operator++(int) -> unsigned_integer_basis;
-    constexpr auto operator--() -> unsigned_integer_basis&;
-    constexpr auto operator--(int) -> unsigned_integer_basis;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator++() -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator++(int) -> unsigned_integer_basis;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator--() -> unsigned_integer_basis&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator--(int) -> unsigned_integer_basis;
 
     // Unary operators
-    constexpr auto operator+() const noexcept -> unsigned_integer_basis;
-    constexpr auto operator-() const noexcept; // compile-time error
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator+() const noexcept -> unsigned_integer_basis;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator-() const noexcept; // compile-time error
 
 }; // class unsigned_integer_basis
 
 // Arithmetic operators (throw on overflow/underflow)
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator+(unsigned_integer_basis<BasisType> lhs,
                          unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
 
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator-(unsigned_integer_basis<BasisType> lhs,
                          unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
 
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator*(unsigned_integer_basis<BasisType> lhs,
                          unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
 
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator/(unsigned_integer_basis<BasisType> lhs,
                          unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
 
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator%(unsigned_integer_basis<BasisType> lhs,
                          unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
 
 // Bitwise operators
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator~(unsigned_integer_basis<BasisType> lhs) noexcept
     -> unsigned_integer_basis<BasisType>;
 
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator&(unsigned_integer_basis<BasisType> lhs,
                          unsigned_integer_basis<BasisType> rhs) noexcept
     -> unsigned_integer_basis<BasisType>;
 
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator|(unsigned_integer_basis<BasisType> lhs,
                          unsigned_integer_basis<BasisType> rhs) noexcept
     -> unsigned_integer_basis<BasisType>;
 
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator^(unsigned_integer_basis<BasisType> lhs,
                          unsigned_integer_basis<BasisType> rhs) noexcept
     -> unsigned_integer_basis<BasisType>;
 
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator<<(unsigned_integer_basis<BasisType> lhs,
                           unsigned_integer_basis<BasisType> rhs)
     -> unsigned_integer_basis<BasisType>;
 
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator>>(unsigned_integer_basis<BasisType> lhs,
                           unsigned_integer_basis<BasisType> rhs)
     -> unsigned_integer_basis<BasisType>;
@@ -269,7 +286,7 @@ constexpr auto shr(T lhs, T rhs);
 
 [source,c++]
 ----
-constexpr unsigned_integer_basis() noexcept = default;
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr unsigned_integer_basis() noexcept = default;
 ----
 
 Values are default-initialized to zero.
@@ -278,7 +295,7 @@ Values are default-initialized to zero.
 
 [source,c++]
 ----
-explicit constexpr unsigned_integer_basis(BasisType val) noexcept;
+BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr unsigned_integer_basis(BasisType val) noexcept;
 ----
 
 Construction from the underlying type is explicit to prevent accidental conversions.
@@ -289,7 +306,7 @@ Construction from the underlying type is explicit to prevent accidental conversi
 ----
 template <typename T>
     requires std::is_same_v<T, bool>
-explicit constexpr unsigned_integer_basis(T) noexcept = delete;
+BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr unsigned_integer_basis(T) noexcept = delete;
 ----
 
 Constructing from `bool` is a compile-time error.
@@ -299,7 +316,7 @@ Constructing from `bool` is a compile-time error.
 [source,c++]
 ----
 template <unsigned_integral OtherBasis>
-explicit constexpr operator OtherBasis() const;
+BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr operator OtherBasis() const;
 ----
 
 Conversion to other unsigned integral types is explicit.
@@ -311,6 +328,7 @@ This allows safe narrowing when the value is known to fit at runtime.
 
 [source,c++]
 ----
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 friend constexpr auto operator<=>(unsigned_integer_basis lhs, unsigned_integer_basis rhs) noexcept
     -> std::strong_ordering = default;
 ----
@@ -323,22 +341,27 @@ All comparison operators (`<`, `<=`, `>`, `>=`, `==`, `!=`) are available.
 [source,c++]
 ----
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator+(unsigned_integer_basis<BasisType> lhs,
                          unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
 
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator-(unsigned_integer_basis<BasisType> lhs,
                          unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
 
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator*(unsigned_integer_basis<BasisType> lhs,
                          unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
 
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator/(unsigned_integer_basis<BasisType> lhs,
                          unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
 
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator%(unsigned_integer_basis<BasisType> lhs,
                          unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>;
 ----
@@ -356,18 +379,23 @@ All arithmetic operators perform runtime checks and throw exceptions when undefi
 [source,c++]
 ----
 template <unsigned_integral OtherBasis>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator+=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
 template <unsigned_integral OtherBasis>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator-=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
 template <unsigned_integral OtherBasis>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator*=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
 template <unsigned_integral OtherBasis>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator/=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 
 template <unsigned_integral OtherBasis>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator%=(unsigned_integer_basis<OtherBasis> rhs) -> unsigned_integer_basis&;
 ----
 
@@ -378,30 +406,36 @@ Compound assignment operators follow the same exception behavior as their corres
 [source,c++]
 ----
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator~(unsigned_integer_basis<BasisType> lhs) noexcept
     -> unsigned_integer_basis<BasisType>;
 
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator&(unsigned_integer_basis<BasisType> lhs,
                          unsigned_integer_basis<BasisType> rhs) noexcept
     -> unsigned_integer_basis<BasisType>;
 
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator|(unsigned_integer_basis<BasisType> lhs,
                          unsigned_integer_basis<BasisType> rhs) noexcept
     -> unsigned_integer_basis<BasisType>;
 
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator^(unsigned_integer_basis<BasisType> lhs,
                          unsigned_integer_basis<BasisType> rhs) noexcept
     -> unsigned_integer_basis<BasisType>;
 
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator<<(unsigned_integer_basis<BasisType> lhs,
                           unsigned_integer_basis<BasisType> rhs)
     -> unsigned_integer_basis<BasisType>;
 
 template <unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto operator>>(unsigned_integer_basis<BasisType> lhs,
                           unsigned_integer_basis<BasisType> rhs)
     -> unsigned_integer_basis<BasisType>;
@@ -473,11 +507,11 @@ All shift policy functions are `noexcept`.
 
 [source,c++]
 ----
-constexpr auto operator&=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
-constexpr auto operator|=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
-constexpr auto operator^=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
-constexpr auto operator<<=(unsigned_integer_basis rhs) -> unsigned_integer_basis&;
-constexpr auto operator>>=(unsigned_integer_basis rhs) -> unsigned_integer_basis&;
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator&=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator|=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator^=(unsigned_integer_basis rhs) noexcept -> unsigned_integer_basis&;
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator<<=(unsigned_integer_basis rhs) -> unsigned_integer_basis&;
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator>>=(unsigned_integer_basis rhs) -> unsigned_integer_basis&;
 ----
 
 Compound bitwise assignment operators delegate to the corresponding free-function bitwise operators and follow the same exception behavior.
@@ -488,10 +522,10 @@ Compound bitwise assignment operators delegate to the corresponding free-functio
 
 [source,c++]
 ----
-constexpr auto operator++() -> unsigned_integer_basis&;
-constexpr auto operator++(int) -> unsigned_integer_basis;
-constexpr auto operator--() -> unsigned_integer_basis&;
-constexpr auto operator--(int) -> unsigned_integer_basis;
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator++() -> unsigned_integer_basis&;
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator++(int) -> unsigned_integer_basis;
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator--() -> unsigned_integer_basis&;
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator--(int) -> unsigned_integer_basis;
 ----
 
 - `++` (pre/post): Throws `std::overflow_error` if the value is already at the maximum
@@ -501,8 +535,8 @@ constexpr auto operator--(int) -> unsigned_integer_basis;
 
 [source,c++]
 ----
-constexpr auto operator+() const noexcept -> unsigned_integer_basis;
-constexpr auto operator-() const noexcept; // compile-time error
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator+() const noexcept -> unsigned_integer_basis;
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator-() const noexcept; // compile-time error
 ----
 
 - `+`: Returns a copy of the value (identity). This is consistent with built-in unsigned integer behavior.

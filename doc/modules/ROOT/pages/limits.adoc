@@ -79,15 +79,15 @@ struct numeric_limits<T>
     static constexpr bool tinyness_before = std::numeric_limits<basis_type>::tinyness_before;
 
     // Static member functions
-    static constexpr T min() noexcept;
-    static constexpr T max() noexcept;
-    static constexpr T lowest() noexcept;
-    static constexpr T epsilon() noexcept;
-    static constexpr T round_error() noexcept;
-    static constexpr T infinity() noexcept;
-    static constexpr T quiet_NaN() noexcept;
-    static constexpr T signaling_NaN() noexcept;
-    static constexpr T denorm_min() noexcept;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T min() noexcept;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T max() noexcept;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T lowest() noexcept;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T epsilon() noexcept;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T round_error() noexcept;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T infinity() noexcept;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T quiet_NaN() noexcept;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T signaling_NaN() noexcept;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T denorm_min() noexcept;
 };
 
 } // namespace std
@@ -138,63 +138,63 @@ For unsigned integer types, the following values are consistent across all speci
 
 [source,c++]
 ----
-static constexpr T min() noexcept;
+BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T min() noexcept;
 ----
 
 Returns the minimum finite value (always `Tpass:[{0}]` for unsigned types).
 
 [source,c++]
 ----
-static constexpr T max() noexcept;
+BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T max() noexcept;
 ----
 
 Returns the maximum finite value.
 
 [source,c++]
 ----
-static constexpr T lowest() noexcept;
+BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T lowest() noexcept;
 ----
 
 Returns the lowest finite value (same as `min()` for unsigned types).
 
 [source,c++]
 ----
-static constexpr T epsilon() noexcept;
+BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T epsilon() noexcept;
 ----
 
 Returns `Tpass:[{0}]` (not meaningful for integer types).
 
 [source,c++]
 ----
-static constexpr T round_error() noexcept;
+BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T round_error() noexcept;
 ----
 
 Returns `Tpass:[{0}]` (not meaningful for integer types).
 
 [source,c++]
 ----
-static constexpr T infinity() noexcept;
+BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T infinity() noexcept;
 ----
 
 Returns `Tpass:[{0}]` (unsigned integers cannot represent infinity).
 
 [source,c++]
 ----
-static constexpr T quiet_NaN() noexcept;
+BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T quiet_NaN() noexcept;
 ----
 
 Returns `Tpass:[{0}]` (unsigned integers cannot represent NaN).
 
 [source,c++]
 ----
-static constexpr T signaling_NaN() noexcept;
+BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T signaling_NaN() noexcept;
 ----
 
 Returns `Tpass:[{0}]` (unsigned integers cannot represent NaN).
 
 [source,c++]
 ----
-static constexpr T denorm_min() noexcept;
+BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T denorm_min() noexcept;
 ----
 
 Returns `Tpass:[{0}]` (not meaningful for integer types).
