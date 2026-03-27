@@ -80,3 +80,232 @@ run test_cuda_u128_sub_error.cu ;
 run test_cuda_u128_mul_error.cu ;
 run test_cuda_u128_div_error.cu ;
 run test_cuda_u128_mod_error.cu ;
+
+# Bit function tests
+
+# u8 bit tests
+run test_cuda_u8_has_single_bit.cu ;
+run test_cuda_u8_bit_ceil.cu ;
+run test_cuda_u8_bit_floor.cu ;
+run test_cuda_u8_bit_width.cu ;
+run test_cuda_u8_rotl.cu ;
+run test_cuda_u8_rotr.cu ;
+run test_cuda_u8_countl_zero.cu ;
+run test_cuda_u8_countl_one.cu ;
+run test_cuda_u8_countr_zero.cu ;
+run test_cuda_u8_countr_one.cu ;
+run test_cuda_u8_popcount.cu ;
+run test_cuda_u8_byteswap.cu ;
+run test_cuda_u8_bitswap.cu ;
+
+# u16 bit tests
+run test_cuda_u16_has_single_bit.cu ;
+run test_cuda_u16_bit_ceil.cu ;
+run test_cuda_u16_bit_floor.cu ;
+run test_cuda_u16_bit_width.cu ;
+run test_cuda_u16_rotl.cu ;
+run test_cuda_u16_rotr.cu ;
+run test_cuda_u16_countl_zero.cu ;
+run test_cuda_u16_countl_one.cu ;
+run test_cuda_u16_countr_zero.cu ;
+run test_cuda_u16_countr_one.cu ;
+run test_cuda_u16_popcount.cu ;
+run test_cuda_u16_byteswap.cu ;
+run test_cuda_u16_bitswap.cu ;
+
+# u32 bit tests
+run test_cuda_u32_has_single_bit.cu ;
+run test_cuda_u32_bit_ceil.cu ;
+run test_cuda_u32_bit_floor.cu ;
+run test_cuda_u32_bit_width.cu ;
+run test_cuda_u32_rotl.cu ;
+run test_cuda_u32_rotr.cu ;
+run test_cuda_u32_countl_zero.cu ;
+run test_cuda_u32_countl_one.cu ;
+run test_cuda_u32_countr_zero.cu ;
+run test_cuda_u32_countr_one.cu ;
+run test_cuda_u32_popcount.cu ;
+run test_cuda_u32_byteswap.cu ;
+run test_cuda_u32_bitswap.cu ;
+
+# u64 bit tests
+run test_cuda_u64_has_single_bit.cu ;
+run test_cuda_u64_bit_ceil.cu ;
+run test_cuda_u64_bit_floor.cu ;
+run test_cuda_u64_bit_width.cu ;
+run test_cuda_u64_rotl.cu ;
+run test_cuda_u64_rotr.cu ;
+run test_cuda_u64_countl_zero.cu ;
+run test_cuda_u64_countl_one.cu ;
+run test_cuda_u64_countr_zero.cu ;
+run test_cuda_u64_countr_one.cu ;
+run test_cuda_u64_popcount.cu ;
+run test_cuda_u64_byteswap.cu ;
+run test_cuda_u64_bitswap.cu ;
+
+# u128 bit tests
+run test_cuda_u128_has_single_bit.cu ;
+run test_cuda_u128_bit_ceil.cu ;
+run test_cuda_u128_bit_floor.cu ;
+run test_cuda_u128_bit_width.cu ;
+run test_cuda_u128_rotl.cu ;
+run test_cuda_u128_rotr.cu ;
+run test_cuda_u128_countl_zero.cu ;
+run test_cuda_u128_countl_one.cu ;
+run test_cuda_u128_countr_zero.cu ;
+run test_cuda_u128_countr_one.cu ;
+run test_cuda_u128_popcount.cu ;
+run test_cuda_u128_byteswap.cu ;
+run test_cuda_u128_bitswap.cu ;
+
+# Byte conversion tests
+
+# u8 byte conversion tests
+run test_cuda_u8_to_be.cu ;
+run test_cuda_u8_from_be.cu ;
+run test_cuda_u8_to_le.cu ;
+run test_cuda_u8_from_le.cu ;
+
+# u16 byte conversion tests
+run test_cuda_u16_to_be.cu ;
+run test_cuda_u16_from_be.cu ;
+run test_cuda_u16_to_le.cu ;
+run test_cuda_u16_from_le.cu ;
+
+# u32 byte conversion tests
+run test_cuda_u32_to_be.cu ;
+run test_cuda_u32_from_be.cu ;
+run test_cuda_u32_to_le.cu ;
+run test_cuda_u32_from_le.cu ;
+
+# u64 byte conversion tests
+run test_cuda_u64_to_be.cu ;
+run test_cuda_u64_from_be.cu ;
+run test_cuda_u64_to_le.cu ;
+run test_cuda_u64_from_le.cu ;
+
+# u128 byte conversion tests
+run test_cuda_u128_to_be.cu ;
+run test_cuda_u128_from_be.cu ;
+run test_cuda_u128_to_le.cu ;
+run test_cuda_u128_from_le.cu ;
+
+# Charconv tests
+
+# u8 charconv tests
+run test_cuda_u8_charconv.cu ;
+run test_cuda_u8_charconv_all_bases.cu ;
+
+# u16 charconv tests
+run test_cuda_u16_charconv.cu ;
+run test_cuda_u16_charconv_all_bases.cu ;
+
+# u32 charconv tests
+run test_cuda_u32_charconv.cu ;
+run test_cuda_u32_charconv_all_bases.cu ;
+
+# u64 charconv tests
+run test_cuda_u64_charconv.cu ;
+run test_cuda_u64_charconv_all_bases.cu ;
+
+# u128 charconv tests
+run test_cuda_u128_charconv.cu ;
+run test_cuda_u128_charconv_all_bases.cu ;
+
+# Integer utilities tests
+
+# u8 integer utilities tests
+run test_cuda_u8_isqrt.cu ;
+run test_cuda_u8_remove_trailing_zeros.cu ;
+run test_cuda_u8_is_power_10.cu ;
+run test_cuda_u8_is_power_2.cu ;
+run test_cuda_u8_ilog2.cu ;
+run test_cuda_u8_ilog10.cu ;
+run test_cuda_u8_ilog.cu ;
+run test_cuda_u8_ipow.cu ;
+run test_cuda_u8_abs_diff.cu ;
+run test_cuda_u8_div_ceil.cu ;
+run test_cuda_u8_next_multiple_of.cu ;
+
+# u16 integer utilities tests
+run test_cuda_u16_isqrt.cu ;
+run test_cuda_u16_remove_trailing_zeros.cu ;
+run test_cuda_u16_is_power_10.cu ;
+run test_cuda_u16_is_power_2.cu ;
+run test_cuda_u16_ilog2.cu ;
+run test_cuda_u16_ilog10.cu ;
+run test_cuda_u16_ilog.cu ;
+run test_cuda_u16_ipow.cu ;
+run test_cuda_u16_abs_diff.cu ;
+run test_cuda_u16_div_ceil.cu ;
+run test_cuda_u16_next_multiple_of.cu ;
+
+# u32 integer utilities tests
+run test_cuda_u32_isqrt.cu ;
+run test_cuda_u32_remove_trailing_zeros.cu ;
+run test_cuda_u32_is_power_10.cu ;
+run test_cuda_u32_is_power_2.cu ;
+run test_cuda_u32_ilog2.cu ;
+run test_cuda_u32_ilog10.cu ;
+run test_cuda_u32_ilog.cu ;
+run test_cuda_u32_ipow.cu ;
+run test_cuda_u32_abs_diff.cu ;
+run test_cuda_u32_div_ceil.cu ;
+run test_cuda_u32_next_multiple_of.cu ;
+
+# u64 integer utilities tests
+run test_cuda_u64_isqrt.cu ;
+run test_cuda_u64_remove_trailing_zeros.cu ;
+run test_cuda_u64_is_power_10.cu ;
+run test_cuda_u64_is_power_2.cu ;
+run test_cuda_u64_ilog2.cu ;
+run test_cuda_u64_ilog10.cu ;
+run test_cuda_u64_ilog.cu ;
+run test_cuda_u64_ipow.cu ;
+run test_cuda_u64_abs_diff.cu ;
+run test_cuda_u64_div_ceil.cu ;
+run test_cuda_u64_next_multiple_of.cu ;
+
+# u128 integer utilities tests
+run test_cuda_u128_isqrt.cu ;
+run test_cuda_u128_remove_trailing_zeros.cu ;
+run test_cuda_u128_is_power_10.cu ;
+run test_cuda_u128_is_power_2.cu ;
+run test_cuda_u128_ilog2.cu ;
+run test_cuda_u128_ilog10.cu ;
+run test_cuda_u128_ilog.cu ;
+run test_cuda_u128_ipow.cu ;
+run test_cuda_u128_abs_diff.cu ;
+run test_cuda_u128_div_ceil.cu ;
+run test_cuda_u128_next_multiple_of.cu ;
+
+# Numeric tests
+
+# u8 numeric tests
+run test_cuda_u8_gcd.cu ;
+run test_cuda_u8_lcm.cu ;
+run test_cuda_u8_midpoint.cu ;
+
+# u16 numeric tests
+run test_cuda_u16_gcd.cu ;
+run test_cuda_u16_lcm.cu ;
+run test_cuda_u16_midpoint.cu ;
+
+# u32 numeric tests
+run test_cuda_u32_gcd.cu ;
+run test_cuda_u32_lcm.cu ;
+run test_cuda_u32_midpoint.cu ;
+
+# u64 numeric tests
+run test_cuda_u64_gcd.cu ;
+run test_cuda_u64_lcm.cu ;
+run test_cuda_u64_midpoint.cu ;
+
+# u128 numeric tests
+run test_cuda_u128_gcd.cu ;
+run test_cuda_u128_lcm.cu ;
+run test_cuda_u128_midpoint.cu ;
+
+# Examples
+run ../examples/cuda.cu ;
+run ../examples/cuda_error_handling.cu ;

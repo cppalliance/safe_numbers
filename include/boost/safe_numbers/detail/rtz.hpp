@@ -21,7 +21,7 @@ namespace boost::safe_numbers::detail {
 
 // n is assumed to be at most of bit_width bits
 template <std::size_t bit_width, fundamental_unsigned_integral UInt>
-constexpr auto rotr(UInt n, unsigned int r) noexcept -> UInt
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto rotr(UInt n, unsigned int r) noexcept -> UInt
 {
     static_assert(bit_width >= std::numeric_limits<UInt>::digits);
 
@@ -38,7 +38,7 @@ struct remove_trailing_zeros_return
     std::size_t number_of_removed_zeros;
 };
 
-constexpr auto remove_trailing_zeros(std::uint8_t n) noexcept -> remove_trailing_zeros_return<std::uint8_t>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto remove_trailing_zeros(std::uint8_t n) noexcept -> remove_trailing_zeros_return<std::uint8_t>
 {
     std::size_t s {};
 
@@ -55,7 +55,7 @@ constexpr auto remove_trailing_zeros(std::uint8_t n) noexcept -> remove_trailing
     return {n, s};
 }
 
-constexpr auto remove_trailing_zeros(std::uint16_t n) noexcept -> remove_trailing_zeros_return<std::uint16_t>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto remove_trailing_zeros(std::uint16_t n) noexcept -> remove_trailing_zeros_return<std::uint16_t>
 {
     std::size_t s {};
 
@@ -77,7 +77,7 @@ constexpr auto remove_trailing_zeros(std::uint16_t n) noexcept -> remove_trailin
     return {n, s};
 }
 
-constexpr auto remove_trailing_zeros(std::uint32_t n) noexcept -> remove_trailing_zeros_return<std::uint32_t>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto remove_trailing_zeros(std::uint32_t n) noexcept -> remove_trailing_zeros_return<std::uint32_t>
 {
     std::size_t s {};
 
@@ -104,7 +104,7 @@ constexpr auto remove_trailing_zeros(std::uint32_t n) noexcept -> remove_trailin
     return {n, s};
 }
 
-constexpr auto remove_trailing_zeros(std::uint64_t n) noexcept -> remove_trailing_zeros_return<std::uint64_t>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto remove_trailing_zeros(std::uint64_t n) noexcept -> remove_trailing_zeros_return<std::uint64_t>
 {
     std::size_t s {};
 
@@ -136,7 +136,7 @@ constexpr auto remove_trailing_zeros(std::uint64_t n) noexcept -> remove_trailin
     return {n, s};
 }
 
-constexpr auto remove_trailing_zeros(int128::uint128_t n) noexcept -> remove_trailing_zeros_return<int128::uint128_t>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto remove_trailing_zeros(int128::uint128_t n) noexcept -> remove_trailing_zeros_return<int128::uint128_t>
 {
     std::size_t s {};
 

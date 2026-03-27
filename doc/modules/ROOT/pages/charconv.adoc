@@ -33,12 +33,14 @@ namespace boost::charconv {
 
 // Convert safe integer to character string
 template <safe_numbers::detail::library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto to_chars(char* first, char* last,
                         T value,
                         int base = 10) -> charconv::to_chars_result;
 
 // Convert character string to safe integer
 template <safe_numbers::detail::library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto from_chars(const char* first, const char* last,
                           T& value,
                           int base = 10) -> charconv::from_chars_result;
@@ -57,8 +59,10 @@ struct to_chars_result
     char* ptr;
     std::errc ec;
 
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     friend constexpr bool operator==(const to_chars_result& lhs,
                                      const to_chars_result& rhs) noexcept = default;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     constexpr explicit operator bool() const noexcept { return ec == std::errc{}; }
 };
 
@@ -83,8 +87,11 @@ struct from_chars_result
     const char* ptr;
     std::errc ec;
 
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     friend constexpr bool operator==(const from_chars_result& lhs,
                                      const from_chars_result& rhs) noexcept = default;
+
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     constexpr explicit operator bool() const noexcept { return ec == std::errc{}; }
 };
 
@@ -103,6 +110,7 @@ struct from_chars_result
 [source,c++]
 ----
 template <safe_numbers::detail::library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto to_chars(char* first, char* last,
                         T value,
                         int base = 10) -> charconv::to_chars_result;
@@ -133,6 +141,7 @@ Returns `boost::charconv::to_chars_result` with:
 [source,c++]
 ----
 template <safe_numbers::detail::library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto from_chars(const char* first, const char* last,
                           T& value,
                           int base = 10) -> charconv::from_chars_result;

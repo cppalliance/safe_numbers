@@ -13,10 +13,19 @@
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
-#include <boost/core/bit.hpp>
 #include <array>
 #include <cstdint>
 #include <limits>
+
+#if (defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+#include <cuda/std/bit>
+
+#else
+
+#include <boost/core/bit.hpp>
+
+#endif
 
 #endif
 
@@ -41,9 +50,13 @@ consteval auto make_powers_of_10() noexcept
     return table;
 }
 
+#if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
 inline constexpr auto powers_of_10_u32 {make_powers_of_10<std::uint32_t>()};
 inline constexpr auto powers_of_10_u64 {make_powers_of_10<std::uint64_t>()};
 inline constexpr auto powers_of_10_u128 {make_powers_of_10<int128::uint128_t>()};
+
+#endif
 
 // ============================================================================
 // num_digits: counts the number of decimal digits using MSB approximation
@@ -58,6 +71,12 @@ template <typename T>
     requires (std::numeric_limits<T>::digits <= 32 && std::is_unsigned_v<T>)
 constexpr auto num_digits(const T init_x) noexcept -> int
 {
+    #if (defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+    constexpr auto powers_of_10_u32 {make_powers_of_10<std::uint32_t>()};
+
+    #endif
+
     const auto x {static_cast<std::uint32_t>(init_x)};
 
     if (x == 0)
@@ -65,7 +84,11 @@ constexpr auto num_digits(const T init_x) noexcept -> int
         return 1;
     }
 
+    #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
     const auto msb {32 - boost::core::countl_zero(x)};
+    #else
+    const auto msb {32 - cuda::std::countl_zero(x)};
+    #endif
 
     // Approximate log10
     const auto estimated_digits {(msb * 1000) / 3322 + 1};
@@ -86,12 +109,22 @@ constexpr auto num_digits(const T init_x) noexcept -> int
 // Overload for uint64_t
 constexpr auto num_digits(const std::uint64_t x) noexcept -> int
 {
+    #if (defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+    constexpr auto powers_of_10_u64 {make_powers_of_10<std::uint64_t>()};
+
+    #endif
+
     if (x <= UINT32_MAX)
     {
         return num_digits(static_cast<std::uint32_t>(x));
     }
 
+    #if !(defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
     const auto msb {64 - boost::core::countl_zero(x)};
+    #else
+    const auto msb {64 - cuda::std::countl_zero(x)};
+    #endif
 
     // Approximate log10
     const auto estimated_digits {(msb * 1000) / 3322 + 1};
@@ -112,6 +145,12 @@ constexpr auto num_digits(const std::uint64_t x) noexcept -> int
 // Overload for uint128_t
 constexpr auto num_digits(const boost::int128::uint128_t& x) noexcept -> int
 {
+    #if (defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+    constexpr auto powers_of_10_u128 {make_powers_of_10<int128::uint128_t>()};
+
+    #endif
+
     if (x.high == UINT64_C(0))
     {
         return num_digits(x.low);

@@ -87,9 +87,13 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE inline void copy_to_buf(char* dst, const char* sr
 
 #ifdef __CUDACC__
 
-// __managed__ places this in unified memory so the host can read it directly
-// without cudaMemcpyFromSymbol, which fails after __trap() corrupts the device context
-__managed__ cuda_device_error g_device_error = {0, 0, 0, exception_type::unknown, {'\0'}, {'\0'}};
+// Managed memory error struct accessible from both host and device.
+// Since we never destroy the CUDA context, __managed__ is safe to use.
+__managed__ cuda_device_error g_device_error {};
+
+// Tracks whether a device_error_context instance is alive.
+// Only one may exist at a time to prevent races on g_device_error.
+inline bool g_device_error_context_active = false;
 
 __host__ __device__ inline void report_device_error(
     exception_type exc,
@@ -108,19 +112,13 @@ __host__ __device__ inline void report_device_error(
         copy_to_buf(g_device_error.file, file, BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE);
         copy_to_buf(g_device_error.expression, expression, BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE);
         __threadfence_system();
-
-        printf("Device error on thread %d at %s:%d: %s\n",
-               blockIdx.x * blockDim.x + threadIdx.x,
-               file, line, expression);
-
-        __trap();
     }
 
-    // Other threads: spin until the trap terminates the kernel
-    while (true)
-    {
-        __nanosleep(1000000);
-    }
+    // Return instead of calling __trap(). This allows the kernel to
+    // complete normally without corrupting the CUDA context. Other
+    // threads may continue with incorrect values, but synchronize()
+    // will detect the error via the flag and throw on the host.
+    return;
     #else
 
     const auto msg = std::string(file) + ":" + std::to_string(line) + ": " + expression;
@@ -154,8 +152,27 @@ class device_error_context
 {
 public:
 
-    // Clears the global state
-    // The error context can be reused with multiple kernels if this is called
+    // Clears the error state. Only one device_error_context may exist at a time.
+    device_error_context()
+    {
+        if (detail::g_device_error_context_active)
+        {
+            BOOST_THROW_EXCEPTION(std::logic_error(
+                "Only one device_error_context may exist at a time"));
+        }
+        detail::g_device_error_context_active = true;
+        reset();
+    }
+
+    ~device_error_context()
+    {
+        detail::g_device_error_context_active = false;
+    }
+
+    device_error_context(const device_error_context&) = delete;
+    device_error_context& operator=(const device_error_context&) = delete;
+
+    // Clears the error fields so the context can be reused across kernel launches.
     void reset()
     {
         detail::g_device_error.flag = 0;
@@ -166,60 +183,54 @@ public:
         detail::g_device_error.expression[0] = '\0';
     }
 
-    // On construction, reset the global error state to ensure we have a good start
-    device_error_context()
-    {
-        reset();
-    }
-
-    // Allows the user to synchronize and check for errors as is typical of CUDA
-    // This allows an extra step in that it will throw on the host
-    // Much like cudaGetLastError, the call to synchronize will destroy the information in the global context
-    // This allows trivial reuse of all these facilities
+    // Synchronizes the device and checks for errors captured by device code.
+    // If an error was detected, the error state is cleared (so the context
+    // is immediately reusable), and the appropriate std::exception is thrown.
     void synchronize()
     {
         const auto status = cudaDeviceSynchronize();
 
-        // Read directly from managed memory — no cudaMemcpyFromSymbol needed
-        // This works even after __trap() corrupts the device context
         const auto flag = detail::g_device_error.flag;
-        const auto thread_id = detail::g_device_error.thread_id;
-        const auto line = detail::g_device_error.line;
 
         if (flag != 0)
         {
+            const auto thread_id = detail::g_device_error.thread_id;
+            const auto line = detail::g_device_error.line;
+            const auto exc = detail::g_device_error.exception;
+
             std::ostringstream oss;
             oss << "Device error on thread " << thread_id
                 << " at " << detail::g_device_error.file
                 << ":" << line
                 << ": " << detail::g_device_error.expression;
 
-            // Read exception type before reset clears it
-            const auto exc = detail::g_device_error.exception;
+            const auto msg = oss.str();
 
-            // Clear the sticky CUDA error and reset our state
-            cudaGetLastError();
+            // Clear the error state so the context can be reused
+            // immediately after catching the exception.
             reset();
 
             switch (exc)
             {
                 case detail::exception_type::domain_error:
-                    BOOST_THROW_EXCEPTION(std::domain_error(oss.str()));
+                    BOOST_THROW_EXCEPTION(std::domain_error(msg));
                     break;
                 case detail::exception_type::overflow:
-                    BOOST_THROW_EXCEPTION(std::overflow_error(oss.str()));
+                    BOOST_THROW_EXCEPTION(std::overflow_error(msg));
                     break;
                 case detail::exception_type::underflow:
-                    BOOST_THROW_EXCEPTION(std::underflow_error(oss.str()));
+                    BOOST_THROW_EXCEPTION(std::underflow_error(msg));
                     break;
                 case detail::exception_type::unknown:
                     [[fallthrough]];
                 default:
-                    BOOST_THROW_EXCEPTION(std::runtime_error(oss.str()));
+                    BOOST_THROW_EXCEPTION(std::runtime_error(msg));
             }
         }
-
-        reset();
+        else
+        {
+            reset();
+        }
 
         if (status != cudaSuccess)
         {

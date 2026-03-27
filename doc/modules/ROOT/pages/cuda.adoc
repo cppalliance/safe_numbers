@@ -92,5 +92,5 @@ Device error on thread 256 at /home/runner/work/safe_numbers/boost-root/libs/saf
 
 The `device_error_context` will also attempt to `printf` the error into the terminal.
 This works when compiling with verbose mode `-V`.
-`printf` error messages will look the same as the message displayed by
+`printf` error messages will look the same as the message displayed by the thrown exception
 
