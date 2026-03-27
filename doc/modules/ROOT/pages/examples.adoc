@@ -558,3 +558,53 @@ u16 in [0, 10]:   1
 u128 in [0, 1000]: 904
 ----
 ====
+
+[#examples_cuda]
+== CUDA Device Support
+
+All safe_numbers types and free functions are annotated with `\\__host__ __device__`, so they work identically on both host and device.
+This example exercises arithmetic, bit functions, integer utilities, numeric algorithms, and charconv round-trips on a CUDA device using managed memory.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/cuda.cu[example] demonstrates safe_numbers operations running on a CUDA device.
+====
+[source, cuda]
+----
+include::example$cuda.cu[]
+----
+
+Output:
+----
+Arithmetic (add):  PASSED
+Bit (popcount):    PASSED
+Utility (isqrt):   PASSED
+Numeric (gcd):     PASSED
+Charconv (rt):     PASSED
+----
+====
+
+[#examples_cuda_error_handling]
+== CUDA Error Handling
+
+When a safe_numbers operation overflows on the GPU, the error is captured in managed memory and rethrown with `BOOST_THROW_EXCEPTION` on the host when you call `ctx.synchronize()`.
+The `device_error_context` manages a dynamically allocated managed memory buffer; after catching an exception the same context can be reused immediately for new kernel launches.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/cuda_error_handling.cu[example] demonstrates catching arithmetic errors that occur on a CUDA device using `device_error_context`.
+====
+[source, cuda]
+----
+include::example$cuda_error_handling.cu[]
+----
+
+Output:
+----
+=== Launching kernel that overflows ===
+Caught overflow_error: Device error on thread 0 at /home/mborland/Documents/boost/libs/safe_numbers/include/boost/safe_numbers/detail/unsigned_integer_basis.hpp:558: Overflow detected in u32 addition
+
+=== Launching kernel with valid arithmetic ===
+No error detected (expected)
+result[0] = 11
+result[1] = 21
+result[2] = 31
+result[3] = 41
+----
+====
