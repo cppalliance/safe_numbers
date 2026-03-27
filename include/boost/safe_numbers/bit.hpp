@@ -1,3 +1,4 @@
+// Copyright 2020 Peter Dimov
 // Copyright 2026 Matt Borland
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
@@ -292,6 +293,38 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto popcount(const Unsig
     #endif
 }
 
+// NVCC 12 does not have byteswap builtin, only 13+
+#if (defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+
+namespace detail {
+
+constexpr auto byteswap_impl(const std::uint8_t x) noexcept
+{
+    return x;
+}
+
+constexpr auto byteswap_impl(const std::uint16_t x) noexcept
+{
+    return static_cast<std::uint16_t>( x << 8 | x >> 8 );
+}
+
+constexpr auto byteswap_impl(const std::uint32_t x) noexcept
+{
+    const auto step16 = x << 16 | x >> 16;
+    return ((step16 << 8) & 0xff00ff00) | ((step16 >> 8) & 0x00ff00ff);
+}
+
+constexpr auto byteswap_impl(const std::uint64_t x) noexcept
+{
+    const auto step32 = x << 32 | x >> 32;
+    const auto step16 = (step32 & 0x0000FFFF0000FFFFULL) << 16 | (step32 & 0xFFFF0000FFFF0000ULL) >> 16;
+    return (step16 & 0x00FF00FF00FF00FFULL) << 8 | (step16 & 0xFF00FF00FF00FF00ULL) >> 8;
+}
+
+} // namespace detail
+
+#endif
+
 BOOST_SAFE_NUMBERS_EXPORT template <detail::non_bounded_integral_library_type Int>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto byteswap(const Int x) noexcept -> Int
 {
@@ -310,7 +343,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto byteswap(const Int x
     }
     else
     {
-        return Int{cuda::std::byteswap(static_cast<underlying_type>(x))};
+        return Int{detail::byteswap_impl(static_cast<underlying_type>(x))};
     }
 
     #endif
