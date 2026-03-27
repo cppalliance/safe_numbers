@@ -57,6 +57,7 @@ run test_signed_conversions.cpp ;
 run test_signed_comparisons.cpp ;
 run test_signed_unary_operators.cpp ;
 run test_signed_addition.cpp ;
+run test_signed_subtraction.cpp ;
 
 run test_unsigned_addition.cpp ;
 compile-fail compile_fail_unsigned_addition.cpp ;
