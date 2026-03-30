@@ -75,6 +75,9 @@ public:
 
     template <fundamental_signed_integral OtherBasis>
     constexpr auto operator/=(signed_integer_basis<OtherBasis> rhs) -> signed_integer_basis&;
+
+    template <fundamental_signed_integral OtherBasis>
+    constexpr auto operator%=(signed_integer_basis<OtherBasis> rhs) -> signed_integer_basis&;
 };
 
 // Helper for diagnostic messages
@@ -1755,6 +1758,185 @@ constexpr auto signed_integer_basis<BasisType>::operator/=(const signed_integer_
     -> signed_integer_basis&
 {
     *this = *this / rhs;
+    return *this;
+}
+
+// ------------------------------
+// Modulo
+// ------------------------------
+
+namespace impl {
+
+template <fundamental_signed_integral BasisType>
+constexpr auto signed_mod_by_zero_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::int8_t>)
+    {
+        return "Division by zero in i8 modulo";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+    {
+        return "Division by zero in i16 modulo";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+    {
+        return "Division by zero in i32 modulo";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+    {
+        return "Division by zero in i64 modulo";
+    }
+    else
+    {
+        return "Division by zero in i128 modulo";
+    }
+}
+
+template <fundamental_signed_integral BasisType>
+constexpr auto signed_overflow_mod_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::int8_t>)
+    {
+        return "Overflow detected in i8 modulo";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+    {
+        return "Overflow detected in i16 modulo";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+    {
+        return "Overflow detected in i32 modulo";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+    {
+        return "Overflow detected in i64 modulo";
+    }
+    else
+    {
+        return "Overflow detected in i128 modulo";
+    }
+}
+
+template <overflow_policy Policy, fundamental_signed_integral BasisType>
+struct signed_mod_helper
+{
+    [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType> lhs,
+                                              const signed_integer_basis<BasisType> rhs)
+        noexcept(Policy != overflow_policy::throw_exception)
+        -> signed_integer_basis<BasisType>
+    {
+        using result_type = signed_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+
+        if (rhs_basis == BasisType{0}) [[unlikely]]
+        {
+            if (std::is_constant_evaluated())
+            {
+                if constexpr (std::is_same_v<BasisType, std::int8_t>)
+                {
+                    throw std::domain_error("Division by zero in i8 modulo");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+                {
+                    throw std::domain_error("Division by zero in i16 modulo");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+                {
+                    throw std::domain_error("Division by zero in i32 modulo");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+                {
+                    throw std::domain_error("Division by zero in i64 modulo");
+                }
+                else
+                {
+                    throw std::domain_error("Division by zero in i128 modulo");
+                }
+            }
+            else
+            {
+                if constexpr (Policy == overflow_policy::throw_exception)
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_mod_by_zero_msg<BasisType>());
+                }
+                else
+                {
+                    BOOST_SAFE_NUMBERS_UNREACHABLE;
+                }
+            }
+        }
+
+        // min % -1 is UB for built-in signed types (the implicit division overflows)
+        // The mathematical result is 0, but we treat this as overflow consistent with min / -1
+        if (lhs_basis == std::numeric_limits<BasisType>::min() &&
+            rhs_basis == static_cast<BasisType>(-1)) [[unlikely]]
+        {
+            if (std::is_constant_evaluated())
+            {
+                if constexpr (std::is_same_v<BasisType, std::int8_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i8 modulo");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i16 modulo");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i32 modulo");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i64 modulo");
+                }
+                else
+                {
+                    throw std::overflow_error("Overflow detected in i128 modulo");
+                }
+            }
+            else
+            {
+                if constexpr (Policy == overflow_policy::throw_exception)
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, signed_overflow_mod_msg<BasisType>());
+                }
+                else
+                {
+                    BOOST_SAFE_NUMBERS_UNREACHABLE;
+                }
+            }
+        }
+
+        return result_type{static_cast<BasisType>(lhs_basis % rhs_basis)};
+    }
+};
+
+template <overflow_policy Policy, fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto mod_impl(const signed_integer_basis<BasisType> lhs,
+                                      const signed_integer_basis<BasisType> rhs)
+{
+    return signed_mod_helper<Policy, BasisType>::apply(lhs, rhs);
+}
+
+} // namespace impl
+
+template <fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto operator%(const signed_integer_basis<BasisType> lhs,
+                                       const signed_integer_basis<BasisType> rhs) -> signed_integer_basis<BasisType>
+{
+    return impl::signed_mod_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("modulo", operator%)
+
+template <fundamental_signed_integral BasisType>
+template <fundamental_signed_integral OtherBasisType>
+constexpr auto signed_integer_basis<BasisType>::operator%=(const signed_integer_basis<OtherBasisType> rhs)
+    -> signed_integer_basis&
+{
+    *this = *this % rhs;
     return *this;
 }
 
