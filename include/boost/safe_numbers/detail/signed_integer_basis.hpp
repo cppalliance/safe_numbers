@@ -1681,6 +1681,12 @@ struct signed_div_helper
             }
         }
 
+        // Fast path: 0 / x = 0 for any non-zero x
+        if (lhs_basis == BasisType{0})
+        {
+            return result_type{BasisType{0}};
+        }
+
         // min / -1 is the only division that overflows (since -min > max in two's complement)
         if (lhs_basis == std::numeric_limits<BasisType>::min() &&
             rhs_basis == static_cast<BasisType>(-1)) [[unlikely]]
