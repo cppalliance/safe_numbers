@@ -69,6 +69,9 @@ public:
 
     template <fundamental_signed_integral OtherBasis>
     constexpr auto operator-=(signed_integer_basis<OtherBasis> rhs) -> signed_integer_basis&;
+
+    template <fundamental_signed_integral OtherBasis>
+    constexpr auto operator*=(signed_integer_basis<OtherBasis> rhs) -> signed_integer_basis&;
 };
 
 // Helper for diagnostic messages
@@ -1119,6 +1122,466 @@ constexpr auto signed_integer_basis<BasisType>::operator-=(const signed_integer_
     -> signed_integer_basis&
 {
     *this = *this - rhs;
+    return *this;
+}
+
+// ------------------------------
+// Multiplication
+// ------------------------------
+
+namespace impl {
+
+template <fundamental_signed_integral BasisType>
+constexpr auto signed_overflow_mul_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::int8_t>)
+    {
+        return "Overflow detected in i8 multiplication";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+    {
+        return "Overflow detected in i16 multiplication";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+    {
+        return "Overflow detected in i32 multiplication";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+    {
+        return "Overflow detected in i64 multiplication";
+    }
+    else
+    {
+        return "Overflow detected in i128 multiplication";
+    }
+}
+
+template <fundamental_signed_integral BasisType>
+constexpr auto signed_underflow_mul_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::int8_t>)
+    {
+        return "Underflow detected in i8 multiplication";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+    {
+        return "Underflow detected in i16 multiplication";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+    {
+        return "Underflow detected in i32 multiplication";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+    {
+        return "Underflow detected in i64 multiplication";
+    }
+    else
+    {
+        return "Underflow detected in i128 multiplication";
+    }
+}
+
+#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow)
+
+template <std::signed_integral T>
+auto signed_intrin_mul(const T lhs, const T rhs, T& result) -> signed_overflow_status
+{
+    if (__builtin_mul_overflow(lhs, rhs, &result))
+    {
+        return (lhs >= 0) == (rhs >= 0) ? signed_overflow_status::overflow : signed_overflow_status::underflow;
+    }
+
+    return signed_overflow_status::no_error;
+}
+
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+template <std::signed_integral T>
+auto signed_intrin_mul(const T lhs, const T rhs, T& result) -> signed_overflow_status
+{
+    if constexpr (std::is_same_v<T, std::int8_t> || std::is_same_v<T, std::int16_t>)
+    {
+        const auto wide {static_cast<std::int32_t>(lhs) * static_cast<std::int32_t>(rhs)};
+        result = static_cast<T>(wide);
+
+        if (wide > static_cast<std::int32_t>(std::numeric_limits<T>::max()))
+        {
+            return signed_overflow_status::overflow;
+        }
+        if (wide < static_cast<std::int32_t>(std::numeric_limits<T>::min()))
+        {
+            return signed_overflow_status::underflow;
+        }
+
+        return signed_overflow_status::no_error;
+    }
+    else if constexpr (std::is_same_v<T, std::int32_t>)
+    {
+        const auto wide {static_cast<std::int64_t>(lhs) * static_cast<std::int64_t>(rhs)};
+        result = static_cast<T>(wide);
+
+        if (wide > static_cast<std::int64_t>(std::numeric_limits<T>::max()))
+        {
+            return signed_overflow_status::overflow;
+        }
+        if (wide < static_cast<std::int64_t>(std::numeric_limits<T>::min()))
+        {
+            return signed_overflow_status::underflow;
+        }
+
+        return signed_overflow_status::no_error;
+    }
+    else if constexpr (std::is_same_v<T, std::int64_t>)
+    {
+        if (lhs == 0 || rhs == 0)
+        {
+            result = 0;
+            return signed_overflow_status::no_error;
+        }
+
+        if (lhs > 0)
+        {
+            if (rhs > 0)
+            {
+                if (lhs > std::numeric_limits<T>::max() / rhs)
+                {
+                    result = 0;
+                    return signed_overflow_status::overflow;
+                }
+            }
+            else
+            {
+                if (rhs < std::numeric_limits<T>::min() / lhs)
+                {
+                    result = 0;
+                    return signed_overflow_status::underflow;
+                }
+            }
+        }
+        else
+        {
+            if (rhs > 0)
+            {
+                if (lhs < std::numeric_limits<T>::min() / rhs)
+                {
+                    result = 0;
+                    return signed_overflow_status::underflow;
+                }
+            }
+            else
+            {
+                if (lhs < std::numeric_limits<T>::max() / rhs)
+                {
+                    result = 0;
+                    return signed_overflow_status::overflow;
+                }
+            }
+        }
+
+        result = static_cast<T>(lhs * rhs);
+        return signed_overflow_status::no_error;
+    }
+}
+
+#endif
+
+template <fundamental_signed_integral T>
+constexpr auto signed_no_intrin_mul(const T lhs, const T rhs, T& result) noexcept -> signed_overflow_status
+{
+    if constexpr (std::is_same_v<T, int128::int128_t>)
+    {
+        if (lhs == 0 || rhs == 0)
+        {
+            result = 0;
+            return signed_overflow_status::no_error;
+        }
+
+        if (lhs > 0)
+        {
+            if (rhs > 0)
+            {
+                if (lhs > std::numeric_limits<T>::max() / rhs)
+                {
+                    result = 0;
+                    return signed_overflow_status::overflow;
+                }
+            }
+            else
+            {
+                if (rhs < std::numeric_limits<T>::min() / lhs)
+                {
+                    result = 0;
+                    return signed_overflow_status::underflow;
+                }
+            }
+        }
+        else
+        {
+            if (rhs > 0)
+            {
+                if (lhs < std::numeric_limits<T>::min() / rhs)
+                {
+                    result = 0;
+                    return signed_overflow_status::underflow;
+                }
+            }
+            else
+            {
+                if (lhs < std::numeric_limits<T>::max() / rhs)
+                {
+                    result = 0;
+                    return signed_overflow_status::overflow;
+                }
+            }
+        }
+
+        result = static_cast<T>(lhs * rhs);
+        return signed_overflow_status::no_error;
+    }
+    else if constexpr (std::is_same_v<T, std::int8_t> || std::is_same_v<T, std::int16_t>)
+    {
+        const auto wide {static_cast<std::int32_t>(lhs) * static_cast<std::int32_t>(rhs)};
+        result = static_cast<T>(wide);
+
+        if (wide > static_cast<std::int32_t>(std::numeric_limits<T>::max()))
+        {
+            return signed_overflow_status::overflow;
+        }
+        if (wide < static_cast<std::int32_t>(std::numeric_limits<T>::min()))
+        {
+            return signed_overflow_status::underflow;
+        }
+
+        return signed_overflow_status::no_error;
+    }
+    else if constexpr (std::is_same_v<T, std::int32_t>)
+    {
+        const auto wide {static_cast<std::int64_t>(lhs) * static_cast<std::int64_t>(rhs)};
+        result = static_cast<T>(wide);
+
+        if (wide > static_cast<std::int64_t>(std::numeric_limits<T>::max()))
+        {
+            return signed_overflow_status::overflow;
+        }
+        if (wide < static_cast<std::int64_t>(std::numeric_limits<T>::min()))
+        {
+            return signed_overflow_status::underflow;
+        }
+
+        return signed_overflow_status::no_error;
+    }
+    else // std::int64_t
+    {
+        const auto wide {static_cast<int128::int128_t>(lhs) * static_cast<int128::int128_t>(rhs)};
+        result = static_cast<T>(wide);
+
+        if (wide > static_cast<int128::int128_t>(std::numeric_limits<T>::max()))
+        {
+            return signed_overflow_status::overflow;
+        }
+        if (wide < static_cast<int128::int128_t>(std::numeric_limits<T>::min()))
+        {
+            return signed_overflow_status::underflow;
+        }
+
+        return signed_overflow_status::no_error;
+    }
+}
+
+template <overflow_policy Policy, fundamental_signed_integral BasisType>
+struct signed_mul_helper
+{
+    [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType> lhs,
+                                              const signed_integer_basis<BasisType> rhs)
+        noexcept(Policy != overflow_policy::throw_exception)
+        -> signed_integer_basis<BasisType>
+    {
+        using result_type = signed_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType result {};
+
+        auto handle_error = [&result](signed_overflow_status status)
+        {
+            if (std::is_constant_evaluated())
+            {
+                if (status == signed_overflow_status::overflow)
+                {
+                    if constexpr (std::is_same_v<BasisType, std::int8_t>)
+                    {
+                        throw std::overflow_error("Overflow detected in i8 multiplication");
+                    }
+                    else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+                    {
+                        throw std::overflow_error("Overflow detected in i16 multiplication");
+                    }
+                    else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+                    {
+                        throw std::overflow_error("Overflow detected in i32 multiplication");
+                    }
+                    else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+                    {
+                        throw std::overflow_error("Overflow detected in i64 multiplication");
+                    }
+                    else
+                    {
+                        throw std::overflow_error("Overflow detected in i128 multiplication");
+                    }
+                }
+                else
+                {
+                    if constexpr (std::is_same_v<BasisType, std::int8_t>)
+                    {
+                        throw std::underflow_error("Underflow detected in i8 multiplication");
+                    }
+                    else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+                    {
+                        throw std::underflow_error("Underflow detected in i16 multiplication");
+                    }
+                    else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+                    {
+                        throw std::underflow_error("Underflow detected in i32 multiplication");
+                    }
+                    else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+                    {
+                        throw std::underflow_error("Underflow detected in i64 multiplication");
+                    }
+                    else
+                    {
+                        throw std::underflow_error("Underflow detected in i128 multiplication");
+                    }
+                }
+            }
+            else
+            {
+                if constexpr (Policy == overflow_policy::throw_exception)
+                {
+                    static_cast<void>(result);
+
+                    if (status == signed_overflow_status::overflow)
+                    {
+                        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, signed_overflow_mul_msg<BasisType>());
+                    }
+                    else
+                    {
+                        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, signed_underflow_mul_msg<BasisType>());
+                    }
+                }
+                else
+                {
+                    static_cast<void>(result);
+                    BOOST_SAFE_NUMBERS_UNREACHABLE;
+                }
+            }
+        };
+
+        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+        if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
+        {
+            if (!std::is_constant_evaluated())
+            {
+                const auto status {impl::signed_intrin_mul(lhs_basis, rhs_basis, result)};
+                if (status != signed_overflow_status::no_error)
+                {
+                    handle_error(status);
+                }
+
+                return result_type{result};
+            }
+        }
+
+        #endif // BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+        const auto status {impl::signed_no_intrin_mul(lhs_basis, rhs_basis, result)};
+        if (status != signed_overflow_status::no_error)
+        {
+            handle_error(status);
+        }
+
+        return result_type{result};
+    }
+};
+
+template <overflow_policy Policy, fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto mul_impl(const signed_integer_basis<BasisType> lhs,
+                                      const signed_integer_basis<BasisType> rhs)
+{
+    return signed_mul_helper<Policy, BasisType>::apply(lhs, rhs);
+}
+
+} // namespace impl
+
+template <fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto operator*(const signed_integer_basis<BasisType> lhs,
+                                       const signed_integer_basis<BasisType> rhs) -> signed_integer_basis<BasisType>
+{
+    if (std::is_constant_evaluated())
+    {
+        BasisType res {};
+        const auto status {impl::signed_no_intrin_mul(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res)};
+        if (status == impl::signed_overflow_status::overflow)
+        {
+            if constexpr (std::is_same_v<BasisType, std::int8_t>)
+            {
+                throw std::overflow_error("Overflow detected in i8 multiplication");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+            {
+                throw std::overflow_error("Overflow detected in i16 multiplication");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+            {
+                throw std::overflow_error("Overflow detected in i32 multiplication");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+            {
+                throw std::overflow_error("Overflow detected in i64 multiplication");
+            }
+            else
+            {
+                throw std::overflow_error("Overflow detected in i128 multiplication");
+            }
+        }
+        else if (status == impl::signed_overflow_status::underflow)
+        {
+            if constexpr (std::is_same_v<BasisType, std::int8_t>)
+            {
+                throw std::underflow_error("Underflow detected in i8 multiplication");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+            {
+                throw std::underflow_error("Underflow detected in i16 multiplication");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+            {
+                throw std::underflow_error("Underflow detected in i32 multiplication");
+            }
+            else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+            {
+                throw std::underflow_error("Underflow detected in i64 multiplication");
+            }
+            else
+            {
+                throw std::underflow_error("Underflow detected in i128 multiplication");
+            }
+        }
+
+        return signed_integer_basis<BasisType>{res};
+    }
+
+    return impl::signed_mul_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("multiplication", operator*)
+
+template <fundamental_signed_integral BasisType>
+template <fundamental_signed_integral OtherBasisType>
+constexpr auto signed_integer_basis<BasisType>::operator*=(const signed_integer_basis<OtherBasisType> rhs)
+    -> signed_integer_basis&
+{
+    *this = *this * rhs;
     return *this;
 }
 
