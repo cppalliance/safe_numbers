@@ -1868,6 +1868,13 @@ struct signed_mod_helper
             }
         }
 
+        // Fast path: 0 % x = 0 for any non-zero x
+        // Also avoids int128 software division assertion on zero dividend
+        if (lhs_basis == BasisType{0})
+        {
+            return result_type{BasisType{0}};
+        }
+
         // min % -1 is UB for built-in signed types (the implicit division overflows)
         // The mathematical result is 0, but we treat this as overflow consistent with min / -1
         if (lhs_basis == std::numeric_limits<BasisType>::min() &&
