@@ -118,8 +118,15 @@ void test_valid_division()
             continue;
         }
 
-        T ref_value {};
-        if constexpr (std::is_same_v<basis_type, std::int8_t> || std::is_same_v<basis_type, std::int16_t>)
+        // Compute reference value using raw division
+        // For int128 on software platforms, to_words asserts non-zero on both operands,
+        // so we handle zero dividend separately
+        T ref_value {basis_type{0}};
+        if (lhs_value == basis_type{0})
+        {
+            // 0 / x = 0 for any non-zero x; ref_value already set to 0
+        }
+        else if constexpr (std::is_same_v<basis_type, std::int8_t> || std::is_same_v<basis_type, std::int16_t>)
         {
             ref_value = T{static_cast<basis_type>(static_cast<std::int32_t>(lhs_value) / static_cast<std::int32_t>(rhs_value))};
         }
