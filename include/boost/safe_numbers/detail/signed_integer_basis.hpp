@@ -72,6 +72,9 @@ public:
 
     template <fundamental_signed_integral OtherBasis>
     constexpr auto operator*=(signed_integer_basis<OtherBasis> rhs) -> signed_integer_basis&;
+
+    template <fundamental_signed_integral OtherBasis>
+    constexpr auto operator/=(signed_integer_basis<OtherBasis> rhs) -> signed_integer_basis&;
 };
 
 // Helper for diagnostic messages
@@ -1296,43 +1299,29 @@ constexpr auto signed_no_intrin_mul(const T lhs, const T rhs, T& result) noexcep
             return signed_overflow_status::no_error;
         }
 
-        if (lhs > 0)
+        // Use unsigned arithmetic for overflow detection (avoids int128 signed division issues)
+        using unsigned_t = make_unsigned_helper_t<T>;
+
+        // Compute absolute values in unsigned domain (two's complement negation)
+        const auto abs_lhs = lhs < 0
+            ? static_cast<unsigned_t>(~static_cast<unsigned_t>(lhs)) + unsigned_t{1}
+            : static_cast<unsigned_t>(lhs);
+        const auto abs_rhs = rhs < 0
+            ? static_cast<unsigned_t>(~static_cast<unsigned_t>(rhs)) + unsigned_t{1}
+            : static_cast<unsigned_t>(rhs);
+
+        const auto result_negative = (lhs < 0) != (rhs < 0);
+
+        // Maximum magnitude the result can have
+        const auto max_magnitude = result_negative
+            ? static_cast<unsigned_t>(std::numeric_limits<T>::max()) + unsigned_t{1}  // |min|
+            : static_cast<unsigned_t>(std::numeric_limits<T>::max());
+
+        // Unsigned overflow check (well-tested for uint128)
+        if (abs_rhs != unsigned_t{0} && abs_lhs > max_magnitude / abs_rhs)
         {
-            if (rhs > 0)
-            {
-                if (lhs > std::numeric_limits<T>::max() / rhs)
-                {
-                    result = 0;
-                    return signed_overflow_status::overflow;
-                }
-            }
-            else
-            {
-                if (rhs < std::numeric_limits<T>::min() / lhs)
-                {
-                    result = 0;
-                    return signed_overflow_status::underflow;
-                }
-            }
-        }
-        else
-        {
-            if (rhs > 0)
-            {
-                if (lhs < std::numeric_limits<T>::min() / rhs)
-                {
-                    result = 0;
-                    return signed_overflow_status::underflow;
-                }
-            }
-            else
-            {
-                if (lhs < std::numeric_limits<T>::max() / rhs)
-                {
-                    result = 0;
-                    return signed_overflow_status::overflow;
-                }
-            }
+            result = 0;
+            return result_negative ? signed_overflow_status::underflow : signed_overflow_status::overflow;
         }
 
         result = static_cast<T>(lhs * rhs);
@@ -1582,6 +1571,190 @@ constexpr auto signed_integer_basis<BasisType>::operator*=(const signed_integer_
     -> signed_integer_basis&
 {
     *this = *this * rhs;
+    return *this;
+}
+
+// ------------------------------
+// Division
+// ------------------------------
+
+namespace impl {
+
+template <fundamental_signed_integral BasisType>
+constexpr auto signed_div_by_zero_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::int8_t>)
+    {
+        return "Division by zero in i8 division";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+    {
+        return "Division by zero in i16 division";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+    {
+        return "Division by zero in i32 division";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+    {
+        return "Division by zero in i64 division";
+    }
+    else
+    {
+        return "Division by zero in i128 division";
+    }
+}
+
+template <fundamental_signed_integral BasisType>
+constexpr auto signed_overflow_div_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::int8_t>)
+    {
+        return "Overflow detected in i8 division";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+    {
+        return "Overflow detected in i16 division";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+    {
+        return "Overflow detected in i32 division";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+    {
+        return "Overflow detected in i64 division";
+    }
+    else
+    {
+        return "Overflow detected in i128 division";
+    }
+}
+
+template <overflow_policy Policy, fundamental_signed_integral BasisType>
+struct signed_div_helper
+{
+    [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType> lhs,
+                                              const signed_integer_basis<BasisType> rhs)
+        noexcept(Policy != overflow_policy::throw_exception)
+        -> signed_integer_basis<BasisType>
+    {
+        using result_type = signed_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+
+        if (rhs_basis == BasisType{0}) [[unlikely]]
+        {
+            if (std::is_constant_evaluated())
+            {
+                if constexpr (std::is_same_v<BasisType, std::int8_t>)
+                {
+                    throw std::domain_error("Division by zero in i8 division");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+                {
+                    throw std::domain_error("Division by zero in i16 division");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+                {
+                    throw std::domain_error("Division by zero in i32 division");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+                {
+                    throw std::domain_error("Division by zero in i64 division");
+                }
+                else
+                {
+                    throw std::domain_error("Division by zero in i128 division");
+                }
+            }
+            else
+            {
+                if constexpr (Policy == overflow_policy::throw_exception)
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_div_by_zero_msg<BasisType>());
+                }
+                else
+                {
+                    BOOST_SAFE_NUMBERS_UNREACHABLE;
+                }
+            }
+        }
+
+        // Fast path: 0 / x = 0 for any non-zero x
+        if (lhs_basis == BasisType{0})
+        {
+            return result_type{BasisType{0}};
+        }
+
+        // min / -1 is the only division that overflows (since -min > max in two's complement)
+        if (lhs_basis == std::numeric_limits<BasisType>::min() &&
+            rhs_basis == static_cast<BasisType>(-1)) [[unlikely]]
+        {
+            if (std::is_constant_evaluated())
+            {
+                if constexpr (std::is_same_v<BasisType, std::int8_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i8 division");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i16 division");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i32 division");
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i64 division");
+                }
+                else
+                {
+                    throw std::overflow_error("Overflow detected in i128 division");
+                }
+            }
+            else
+            {
+                if constexpr (Policy == overflow_policy::throw_exception)
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, signed_overflow_div_msg<BasisType>());
+                }
+                else
+                {
+                    BOOST_SAFE_NUMBERS_UNREACHABLE;
+                }
+            }
+        }
+
+        return result_type{static_cast<BasisType>(lhs_basis / rhs_basis)};
+    }
+};
+
+template <overflow_policy Policy, fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto div_impl(const signed_integer_basis<BasisType> lhs,
+                                      const signed_integer_basis<BasisType> rhs)
+{
+    return signed_div_helper<Policy, BasisType>::apply(lhs, rhs);
+}
+
+} // namespace impl
+
+template <fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto operator/(const signed_integer_basis<BasisType> lhs,
+                                       const signed_integer_basis<BasisType> rhs) -> signed_integer_basis<BasisType>
+{
+    return impl::signed_div_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("division", operator/)
+
+template <fundamental_signed_integral BasisType>
+template <fundamental_signed_integral OtherBasisType>
+constexpr auto signed_integer_basis<BasisType>::operator/=(const signed_integer_basis<OtherBasisType> rhs)
+    -> signed_integer_basis&
+{
+    *this = *this / rhs;
     return *this;
 }
 
