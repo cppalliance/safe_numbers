@@ -110,6 +110,12 @@ void test_valid_modulo()
             continue;
         }
 
+        // Defensive: skip if rhs is somehow zero (should not happen with nonzero_dist)
+        if (rhs_value == basis_type{0})
+        {
+            continue;
+        }
+
         T ref_value {};
         if constexpr (std::is_same_v<basis_type, std::int8_t> || std::is_same_v<basis_type, std::int16_t>)
         {
