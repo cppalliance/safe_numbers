@@ -35,6 +35,9 @@ enum class device_exception_type : unsigned
     throw_exception,
 };
 
+inline constexpr auto trap_and_throw = device_exception_type::trap_and_throw;
+inline constexpr auto throw_exception = device_exception_type::throw_exception;
+
 namespace detail {
 
 enum class exception_type : unsigned
