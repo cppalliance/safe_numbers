@@ -29,6 +29,12 @@
 
 namespace boost::safe_numbers {
 
+enum class device_exception_type : unsigned
+{
+    trap_and_throw,
+    throw_exception,
+};
+
 namespace detail {
 
 enum class exception_type : unsigned
