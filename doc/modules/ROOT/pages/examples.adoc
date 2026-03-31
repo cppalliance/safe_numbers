@@ -567,7 +567,7 @@ This example exercises arithmetic, bit functions, integer utilities, numeric alg
 
 .This https://github.com/boostorg/safe_numbers/blob/develop/examples/cuda.cu[example] demonstrates safe_numbers operations running on a CUDA device.
 ====
-[source, cuda]
+[source, c++]
 ----
 include::example$cuda.cu[]
 ----
@@ -590,7 +590,7 @@ The `device_error_context` manages a dynamically allocated managed memory buffer
 
 .This https://github.com/boostorg/safe_numbers/blob/develop/examples/cuda_error_handling.cu[example] demonstrates catching arithmetic errors that occur on a CUDA device using `device_error_context`.
 ====
-[source, cuda]
+[source, c++]
 ----
 include::example$cuda_error_handling.cu[]
 ----
