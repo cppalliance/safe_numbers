@@ -51,7 +51,7 @@ int main()
     // Create a single device_error_context for the lifetime of the program.
     // The constructor allocates managed memory for error reporting and
     // clears any stale state.
-    boost::safe_numbers::device_error_context ctx;
+    boost::safe_numbers::device_error_context ctx(boost::safe_numbers::throw_exception);
 
     // ---------------------------------------------------------------
     // Step 1: Launch a kernel that overflows and catch the error
