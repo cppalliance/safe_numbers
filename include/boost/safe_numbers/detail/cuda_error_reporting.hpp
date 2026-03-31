@@ -195,6 +195,21 @@ public:
         reset();
     }
 
+    // Sets a different error type to our managed global variable
+    device_error_context(const device_exception_type e)
+    {
+        if (detail::g_device_error_context_active)
+        {
+            BOOST_THROW_EXCEPTION(std::logic_error(
+                "Only one device_error_context may exist at a time"));
+        }
+
+        g_device_fail_type = e;
+
+        detail::g_device_error_context_active = true;
+        reset();
+    }
+
     ~device_error_context()
     {
         detail::g_device_error_context_active = false;
@@ -212,6 +227,12 @@ public:
         detail::g_device_error.exception = detail::exception_type::unknown;
         detail::g_device_error.file[0] = '\0';
         detail::g_device_error.expression[0] = '\0';
+    }
+
+    // Adds a post-construction way of setting the failure mode for the device
+    void set_device_exception_method(const device_exception_type e)
+    {
+        g_device_fail_type = e;
     }
 
     // Synchronizes the device and checks for errors captured by device code.
