@@ -97,6 +97,9 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE inline void copy_to_buf(char* dst, const char* sr
 // Since we never destroy the CUDA context, __managed__ is safe to use.
 __managed__ cuda_device_error g_device_error {};
 
+// Managed memory enum class that allows us to set what report_device_error should do
+__managed__ device_exception_type g_device_fail_type {device_exception_type::trap_and_throw};
+
 // Tracks whether a device_error_context instance is alive.
 // Only one may exist at a time to prevent races on g_device_error.
 inline bool g_device_error_context_active = false;
@@ -118,13 +121,35 @@ __host__ __device__ inline void report_device_error(
         copy_to_buf(g_device_error.file, file, BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE);
         copy_to_buf(g_device_error.expression, expression, BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE);
         __threadfence_system();
+
+        if (g_device_fail_type == device_exception_type::trap_and_throw)
+        {
+            __trap();
+        }
     }
 
-    // Return instead of calling __trap(). This allows the kernel to
-    // complete normally without corrupting the CUDA context. Other
-    // threads may continue with incorrect values, but synchronize()
-    // will detect the error via the flag and throw on the host.
-    return;
+    switch (g_device_fail_type)
+    {
+        case device_exception_type::trap_and_throw:
+            // In the event that __trap() is called the error is non-recoverable
+            // The user must terminate the current PROCESS in order to reuse the device
+            // There is currently (3/26) way to recover using the cuda_runtime or hardware APIs
+            // Other threads: spin until the trap terminates the kernel
+            while (true)
+            {
+                __nanosleep(1000000);
+            }
+            break;
+
+        case device_exception_type::throw_exception:
+            // Return instead of calling __trap(). This allows the kernel to
+            // complete normally without corrupting the CUDA context. Other
+            // threads may continue with incorrect values, but synchronize()
+            // will detect the error via the flag and throw on the host.
+            return;
+            break;
+    }
+
     #else
 
     const auto msg = std::string(file) + ":" + std::to_string(line) + ": " + expression;
