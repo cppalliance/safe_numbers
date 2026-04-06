@@ -208,7 +208,7 @@ public:
                 "Only one device_error_context may exist at a time"));
         }
 
-        g_device_fail_type = e;
+        detail::g_device_fail_type = e;
 
         detail::g_device_error_context_active = true;
         reset();
@@ -236,7 +236,7 @@ public:
     // Adds a post-construction way of setting the failure mode for the device
     void set_device_exception_method(const device_exception_mode e)
     {
-        g_device_fail_type = e;
+        detail::g_device_fail_type = e;
     }
 
     // Synchronizes the device and checks for errors captured by device code.
