@@ -101,6 +101,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE inline void copy_to_buf(char* dst, const char* sr
 __managed__ cuda_device_error g_device_error {};
 
 // Managed memory enum class that allows us to set what report_device_error should do
+// We default to trapped as that's the best way to ensure hard failure in the event of error
 __managed__ device_exception_mode g_device_fail_type {device_exception_mode::trapped};
 
 // Tracks whether a device_error_context instance is alive.
