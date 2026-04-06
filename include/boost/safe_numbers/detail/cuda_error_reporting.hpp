@@ -145,7 +145,7 @@ __host__ __device__ inline void report_device_error(
             }
             break;
 
-        case device_exception_mode::throw_exception:
+        case device_exception_mode::untrapped:
             // Return instead of calling __trap(). This allows the kernel to
             // complete normally without corrupting the CUDA context. Other
             // threads may continue with incorrect values, but synchronize()

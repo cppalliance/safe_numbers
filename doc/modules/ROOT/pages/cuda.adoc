@@ -45,7 +45,7 @@ int main()
 }
 ----
 
-For the on-device computation behavior to match the CPU computation behavior, we have our own error context class
+For the on-device computation behavior to match the CPU computation behavior, we have our own error context class.
 This reduces our above example to the following:
 
 [source, c++]
@@ -92,5 +92,196 @@ Device error on thread 256 at /home/runner/work/safe_numbers/boost-root/libs/saf
 
 The `device_error_context` will also attempt to `printf` the error into the terminal.
 This works when compiling with verbose mode `-V`.
-`printf` error messages will look the same as the message displayed by the thrown exception
+`printf` error messages will look the same as the message displayed by the thrown exception.
+
+== The `device_exception_mode` Enum
+
+[source,c++]
+----
+#include <boost/safe_numbers/detail/cuda_error_reporting.hpp>
+
+namespace boost::safe_numbers {
+
+enum class device_exception_mode : unsigned
+{
+    trapped,
+    untrapped,
+};
+
+inline constexpr auto trapped = device_exception_mode::trapped;
+inline constexpr auto untrapped = device_exception_mode::untrapped;
+
+} // namespace boost::safe_numbers
+----
+
+This enum controls what happens when a safe_numbers operation detects an error on the CUDA device.
+
+|===
+| Mode | Behavior
+
+| `trapped`
+| Calls `__trap()` on the device, which immediately terminates the kernel.
+This is a *sticky, unrecoverable error*: the CUDA context is corrupted and the entire host process must be terminated in order to reuse the device.
+All other threads in the kernel spin until `__trap()` takes effect.
+This is the default mode because it guarantees a hard failure that cannot be silently ignored.
+
+| `untrapped`
+| Records the error in managed memory and returns without calling `__trap()`.
+The kernel completes normally — other threads may continue executing with potentially incorrect values.
+The error is detected on the host when `synchronize()` is called, which throws the appropriate exception.
+This mode preserves the CUDA context, allowing the `device_error_context` to be reused for subsequent kernel launches after catching the exception.
+|===
+
+Convenience constants `boost::safe_numbers::trapped` and `boost::safe_numbers::untrapped` are provided so the mode can be passed without qualifying the enum:
+
+[source,c++]
+----
+boost::safe_numbers::device_error_context ctx{boost::safe_numbers::untrapped};
+----
+
+== The `device_error_context` Class
+
+[source,c++]
+----
+#include <boost/safe_numbers/detail/cuda_error_reporting.hpp>
+
+namespace boost::safe_numbers {
+
+class device_error_context
+{
+public:
+    device_error_context();
+    explicit device_error_context(device_exception_mode e);
+    ~device_error_context();
+
+    device_error_context(const device_error_context&) = delete;
+    device_error_context& operator=(const device_error_context&) = delete;
+
+    void reset();
+    void set_device_exception_method(device_exception_mode e);
+    void synchronize();
+};
+
+} // namespace boost::safe_numbers
+----
+
+The `device_error_context` class manages a CUDA `__managed__` memory buffer used to capture errors from device code.
+When a safe_numbers operation detects an error on the GPU (overflow, underflow, domain error), the error details — file, line, thread ID, expression, and exception type — are written into this shared buffer.
+The host then reads the buffer during `synchronize()` and throws the corresponding `std::exception`.
+
+Only *one* `device_error_context` may exist at a time.
+Constructing a second instance while one is already alive throws `std::logic_error`.
+This constraint prevents races on the shared error buffer.
+
+=== Constructors
+
+[source,c++]
+----
+device_error_context();
+----
+
+Constructs a context with the default `device_exception_mode::trapped` mode.
+Clears any stale error state.
+
+[source,c++]
+----
+explicit device_error_context(device_exception_mode e);
+----
+
+Constructs a context with the specified exception mode.
+Clears any stale error state.
+
+=== `reset`
+
+[source,c++]
+----
+void reset();
+----
+
+Clears the error fields (flag, file, line, thread ID, expression) so the context can be reused across kernel launches.
+This is called automatically by the constructors and by `synchronize()` after reading the error state.
+
+=== `set_device_exception_method`
+
+[source,c++]
+----
+void set_device_exception_method(device_exception_mode e);
+----
+
+Changes the device exception mode after construction.
+This writes to `__managed__` memory, so it takes effect on the next kernel launch.
+
+=== `synchronize`
+
+[source,c++]
+----
+void synchronize();
+----
+
+Calls `cudaDeviceSynchronize()`, then inspects the managed error buffer.
+If an error was captured by device code, the error state is cleared and the appropriate exception is thrown on the host:
+
+|===
+| Device Error | Host Exception
+
+| Overflow
+| `std::overflow_error`
+
+| Underflow
+| `std::underflow_error`
+
+| Domain error (e.g. division by zero)
+| `std::domain_error`
+
+| Unknown
+| `std::runtime_error`
+|===
+
+The error state is cleared *before* throwing, so after catching the exception the same context is immediately reusable — no manual `reset()` call is needed.
+
+If no device error was captured but `cudaDeviceSynchronize()` returned a non-success status (e.g. from a `__trap()` in trapped mode), a `std::runtime_error` is thrown with the CUDA error string.
+
+== Choosing a Mode
+
+Use `trapped` (the default) when errors must halt execution immediately and silently continuing with wrong results is unacceptable.
+This is the safest option, but the CUDA context cannot be recovered — the process must exit.
+
+Use `untrapped` when you want to detect errors on the host and handle them gracefully (e.g. retry with different inputs, log and continue, or run a fallback path).
+Be aware that other threads in the kernel may continue executing with incorrect values between the point of error and kernel completion.
+
+[source,c++]
+----
+// Trapped mode (default): any device error is immediately fatal
+{
+    boost::safe_numbers::device_error_context ctx;
+    my_kernel<<<blocks, threads>>>(input, output, n);
+
+    try
+    {
+        ctx.synchronize();
+    }
+    catch (const std::runtime_error& e)
+    {
+        // CUDA context is corrupted — log and terminate
+        std::cerr << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+}
+
+// Untrapped mode: errors are deferred to the host
+{
+    boost::safe_numbers::device_error_context ctx{boost::safe_numbers::untrapped};
+    my_kernel<<<blocks, threads>>>(input, output, n);
+
+    try
+    {
+        ctx.synchronize();
+    }
+    catch (const std::overflow_error& e)
+    {
+        // Context is still valid — can reuse for another launch
+        std::cerr << "Overflow detected: " << e.what() << std::endl;
+    }
+}
+----
 
