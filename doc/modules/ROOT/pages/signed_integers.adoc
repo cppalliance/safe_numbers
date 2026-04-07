@@ -1,0 +1,150 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#signed_integers]
+
+= Signed Integer Types
+
+== Description
+
+The library provides safe signed integer types that detect overflow, underflow, division by zero, and other undefined behavior at runtime.
+These types are drop-in replacements for the standard signed integer types with added safety guarantees.
+
+|===
+| Type | Underlying Type | Width | Min | Max
+
+| `i8`   | `std::int8_t`   | 8 bits   | -128 | 127
+| `i16`  | `std::int16_t`  | 16 bits  | -32,768 | 32,767
+| `i32`  | `std::int32_t`  | 32 bits  | -2,147,483,648 | 2,147,483,647
+| `i64`  | `std::int64_t`  | 64 bits  | -9,223,372,036,854,775,808 | 9,223,372,036,854,775,807
+| `i128` | `int128_t`      | 128 bits | -170,141,183,460,469,231,731,687,303,715,884,105,728 | 170,141,183,460,469,231,731,687,303,715,884,105,727
+|===
+
+Each type exposes a `basis_type` member type alias that refers to the underlying integer type, allowing conversion back to built-in types when needed.
+
+[source,c++]
+----
+#include <boost/safe_numbers/signed_integers.hpp>
+
+namespace boost::safe_numbers {
+
+using i8   = detail::signed_integer_basis<std::int8_t>;
+using i16  = detail::signed_integer_basis<std::int16_t>;
+using i32  = detail::signed_integer_basis<std::int32_t>;
+using i64  = detail::signed_integer_basis<std::int64_t>;
+using i128 = detail::signed_integer_basis<int128::int128_t>;
+
+template <signed_integral BasisType>
+class signed_integer_basis {
+
+public:
+    using basis_type = BasisType;
+
+    // Construction
+    constexpr signed_integer_basis() noexcept = default;
+    explicit constexpr signed_integer_basis(BasisType val) noexcept;
+
+    template <typename T>
+        requires std::is_same_v<T, bool>
+    explicit constexpr signed_integer_basis(T) noexcept = delete; // bool prohibited
+
+    // Conversion to underlying types
+    template <signed_integral OtherBasis>
+    explicit constexpr operator OtherBasis() const;
+
+    // Comparison operators
+    friend constexpr auto operator<=>(signed_integer_basis lhs, signed_integer_basis rhs) noexcept
+        -> std::strong_ordering = default;
+
+    // Unary operators
+    constexpr auto operator+() const noexcept -> signed_integer_basis;
+    constexpr auto operator-() const -> signed_integer_basis;
+
+    // Compound assignment operators (arithmetic)
+    template <signed_integral OtherBasis>
+    constexpr auto operator+=(signed_integer_basis<OtherBasis> rhs) -> signed_integer_basis&;
+
+    template <signed_integral OtherBasis>
+    constexpr auto operator-=(signed_integer_basis<OtherBasis> rhs) -> signed_integer_basis&;
+
+    template <signed_integral OtherBasis>
+    constexpr auto operator*=(signed_integer_basis<OtherBasis> rhs) -> signed_integer_basis&;
+
+    template <signed_integral OtherBasis>
+    constexpr auto operator/=(signed_integer_basis<OtherBasis> rhs) -> signed_integer_basis&;
+
+    template <signed_integral OtherBasis>
+    constexpr auto operator%=(signed_integer_basis<OtherBasis> rhs) -> signed_integer_basis&;
+
+    // Increment and decrement operators
+    constexpr auto operator++() -> signed_integer_basis&;
+    constexpr auto operator++(int) -> signed_integer_basis;
+    constexpr auto operator--() -> signed_integer_basis&;
+    constexpr auto operator--(int) -> signed_integer_basis;
+
+}; // class signed_integer_basis
+
+// Arithmetic operators (throw on overflow/underflow)
+template <signed_integral BasisType>
+constexpr auto operator+(signed_integer_basis<BasisType> lhs,
+                         signed_integer_basis<BasisType> rhs) -> signed_integer_basis<BasisType>;
+
+template <signed_integral BasisType>
+constexpr auto operator-(signed_integer_basis<BasisType> lhs,
+                         signed_integer_basis<BasisType> rhs) -> signed_integer_basis<BasisType>;
+
+template <signed_integral BasisType>
+constexpr auto operator*(signed_integer_basis<BasisType> lhs,
+                         signed_integer_basis<BasisType> rhs) -> signed_integer_basis<BasisType>;
+
+template <signed_integral BasisType>
+constexpr auto operator/(signed_integer_basis<BasisType> lhs,
+                         signed_integer_basis<BasisType> rhs) -> signed_integer_basis<BasisType>;
+
+template <signed_integral BasisType>
+constexpr auto operator%(signed_integer_basis<BasisType> lhs,
+                         signed_integer_basis<BasisType> rhs) -> signed_integer_basis<BasisType>;
+
+} // namespace boost::safe_numbers
+----
+
+== Increment and Decrement Operators
+
+[source,c++]
+----
+constexpr auto operator++() -> signed_integer_basis&;
+constexpr auto operator++(int) -> signed_integer_basis;
+constexpr auto operator--() -> signed_integer_basis&;
+constexpr auto operator--(int) -> signed_integer_basis;
+----
+
+- `++` (pre/post): Throws `std::overflow_error` if the value is already at `std::numeric_limits<BasisType>::max()`
+- `--` (pre/post): Throws `std::underflow_error` if the value is already at `std::numeric_limits<BasisType>::min()`
+
+== Unary Operators
+
+[source,c++]
+----
+constexpr auto operator+() const noexcept -> signed_integer_basis;
+constexpr auto operator-() const -> signed_integer_basis;
+----
+
+- `+`: Returns a copy of the value (identity).
+- `-`: Throws `std::domain_error` if the value is `std::numeric_limits<BasisType>::min()`, since negating the minimum value of a two's complement signed integer overflows.
+
+== Mixed-Width Operations
+
+Operations between different width safe signed integer types are compile-time errors.
+The operands must be promoted to a common type explicitly before performing the operation.
+
+[source,c++]
+----
+auto a = i16{100};
+auto b = i32{200};
+
+// auto result = a + b;  // Compile error: mismatched types
+auto result = static_cast<i32>(a) + b;  // OK: explicit promotion
+----
