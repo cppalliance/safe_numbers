@@ -148,3 +148,91 @@ auto b = i32{200};
 // auto result = a + b;  // Compile error: mismatched types
 auto result = static_cast<i32>(a) + b;  // OK: explicit promotion
 ----
+
+== Policy-Based Arithmetic Functions
+
+In addition to the default operators (which throw on overflow/underflow), signed integer types support the same policy-based free functions as unsigned types.
+See xref:policies.adoc[] for a detailed description of each overflow policy.
+
+=== Saturating Arithmetic
+
+Saturating operations clamp the result to `std::numeric_limits<T>::max()` on overflow or `std::numeric_limits<T>::min()` on underflow, rather than throwing.
+
+[source,c++]
+----
+template <SignedLibType T> constexpr T saturating_add(T lhs, T rhs) noexcept;
+template <SignedLibType T> constexpr T saturating_sub(T lhs, T rhs) noexcept;
+template <SignedLibType T> constexpr T saturating_mul(T lhs, T rhs) noexcept;
+template <SignedLibType T> constexpr T saturating_div(T lhs, T rhs);  // throws on div-by-zero
+template <SignedLibType T> constexpr T saturating_mod(T lhs, T rhs);  // throws on mod-by-zero
+----
+
+NOTE: Division by zero always throws `std::domain_error`, even with the saturating policy. The `min / -1` overflow case saturates to `max()`. The `min % -1` case returns `0`.
+
+=== Overflowing Arithmetic
+
+Overflowing operations return a `std::pair<T, bool>` where the bool indicates whether overflow or underflow occurred. The result wraps on overflow (two's complement behavior).
+
+[source,c++]
+----
+template <SignedLibType T> constexpr std::pair<T, bool> overflowing_add(T lhs, T rhs) noexcept;
+template <SignedLibType T> constexpr std::pair<T, bool> overflowing_sub(T lhs, T rhs) noexcept;
+template <SignedLibType T> constexpr std::pair<T, bool> overflowing_mul(T lhs, T rhs) noexcept;
+template <SignedLibType T> constexpr std::pair<T, bool> overflowing_div(T lhs, T rhs);  // throws on div-by-zero
+template <SignedLibType T> constexpr std::pair<T, bool> overflowing_mod(T lhs, T rhs);  // throws on mod-by-zero
+----
+
+NOTE: Division by zero still throws `std::domain_error`. The `min / -1` case returns `(min, true)`. The `min % -1` case returns `(0, true)`.
+
+=== Checked Arithmetic
+
+Checked operations return `std::optional<T>`. If the operation would overflow, underflow, or divide by zero, `std::nullopt` is returned.
+
+[source,c++]
+----
+template <SignedLibType T> constexpr std::optional<T> checked_add(T lhs, T rhs) noexcept;
+template <SignedLibType T> constexpr std::optional<T> checked_sub(T lhs, T rhs) noexcept;
+template <SignedLibType T> constexpr std::optional<T> checked_mul(T lhs, T rhs) noexcept;
+template <SignedLibType T> constexpr std::optional<T> checked_div(T lhs, T rhs) noexcept;
+template <SignedLibType T> constexpr std::optional<T> checked_mod(T lhs, T rhs) noexcept;
+----
+
+NOTE: All checked operations are `noexcept`. Division by zero and `min / -1` both return `std::nullopt`.
+
+=== Strict Arithmetic
+
+Strict operations call `std::exit(EXIT_FAILURE)` on overflow, underflow, or (for div/mod) division by zero.
+
+[source,c++]
+----
+template <SignedLibType T> constexpr T strict_add(T lhs, T rhs) noexcept;
+template <SignedLibType T> constexpr T strict_sub(T lhs, T rhs) noexcept;
+template <SignedLibType T> constexpr T strict_mul(T lhs, T rhs) noexcept;
+template <SignedLibType T> constexpr T strict_div(T lhs, T rhs) noexcept;
+template <SignedLibType T> constexpr T strict_mod(T lhs, T rhs) noexcept;
+----
+
+=== Widening Arithmetic
+
+Widening operations return the result in the next wider signed integer type, guaranteeing no overflow. Only available for addition and multiplication.
+
+[source,c++]
+----
+template <SignedLibType T> constexpr auto widening_add(T lhs, T rhs) noexcept;
+template <SignedLibType T> constexpr auto widening_mul(T lhs, T rhs) noexcept;
+----
+
+NOTE: Widening is not supported for `i128` (there is no wider signed type). Attempting to use it with `i128` is a compile-time error.
+
+=== Generic Policy-Parameterized Arithmetic
+
+These functions accept an `overflow_policy` template parameter and dispatch to the corresponding named function above.
+
+[source,c++]
+----
+template <overflow_policy Policy, SignedLibType T> constexpr auto add(T lhs, T rhs);
+template <overflow_policy Policy, SignedLibType T> constexpr auto sub(T lhs, T rhs);
+template <overflow_policy Policy, SignedLibType T> constexpr auto mul(T lhs, T rhs);
+template <overflow_policy Policy, SignedLibType T> constexpr auto div(T lhs, T rhs);
+template <overflow_policy Policy, SignedLibType T> constexpr auto mod(T lhs, T rhs);
+----
