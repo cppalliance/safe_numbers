@@ -98,7 +98,7 @@ This works when compiling with verbose mode `-V`.
 
 [source,c++]
 ----
-#include <boost/safe_numbers/detail/cuda_error_reporting.hpp>
+#include <boost/safe_numbers/cuda_error_reporting.hpp>
 
 namespace boost::safe_numbers {
 
@@ -143,7 +143,7 @@ boost::safe_numbers::device_error_context ctx{boost::safe_numbers::untrapped};
 
 [source,c++]
 ----
-#include <boost/safe_numbers/detail/cuda_error_reporting.hpp>
+#include <boost/safe_numbers/cuda_error_reporting.hpp>
 
 namespace boost::safe_numbers {
 

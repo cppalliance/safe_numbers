@@ -9,7 +9,7 @@
 #ifndef BOOST_SAFE_NUMBERS_THROW_EXCEPTION_HPP
 #define BOOST_SAFE_NUMBERS_THROW_EXCEPTION_HPP
 
-#include <boost/safe_numbers/detail/cuda_error_reporting.hpp>
+#include <boost/safe_numbers/cuda_error_reporting.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
