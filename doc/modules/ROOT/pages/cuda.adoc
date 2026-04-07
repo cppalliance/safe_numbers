@@ -290,3 +290,8 @@ Be aware that other threads in the kernel may continue executing with incorrect 
 }
 ----
 
+== Examples
+
+* xref:examples.adoc#examples_cuda[CUDA Device Support] — demonstrates that all safe_numbers types and free functions work on a CUDA device.
+* xref:examples.adoc#examples_cuda_error_handling[CUDA Error Handling] — shows how to use `device_error_context` to catch device-side overflow on the host and recover gracefully.
+* xref:examples.adoc#examples_cuda_error_handling_without_error_context[CUDA Error Handling Without Error Context] — demonstrates what happens when an overflow occurs on the device *without* `device_error_context`: the CUDA context is irrecoverably corrupted and no further kernels can be launched.
