@@ -226,6 +226,14 @@ using promoted_type = std::conditional_t<std::is_same_v<T, std::uint8_t>, std::u
                               std::conditional_t<std::is_same_v<T, std::uint32_t>, std::uint64_t,
                                   std::conditional_t<std::is_same_v<T, std::uint64_t>, int128::uint128_t, bool>>>>;
 
+// Promotes a signed integer to the next higher type
+// int128_t becomes bool so that we can static_assert on bool check that we can't widen int128_t
+template <fundamental_signed_integral T>
+using signed_promoted_type = std::conditional_t<std::is_same_v<T, std::int8_t>, std::int16_t,
+                                 std::conditional_t<std::is_same_v<T, std::int16_t>, std::int32_t,
+                                     std::conditional_t<std::is_same_v<T, std::int32_t>, std::int64_t,
+                                         std::conditional_t<std::is_same_v<T, std::int64_t>, int128::int128_t, bool>>>>;
+
 } // namespace boost::safe_numbers::detail
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_TYPE_TRAITS_HPP
