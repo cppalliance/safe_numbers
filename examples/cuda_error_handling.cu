@@ -16,7 +16,7 @@
 #include <iostream>
 #include <limits>
 #include <boost/safe_numbers/unsigned_integers.hpp>
-#include <boost/safe_numbers/detail/cuda_error_reporting.hpp>
+#include <boost/safe_numbers/cuda_error_reporting.hpp>
 
 #include <cuda_runtime.h>
 
@@ -51,7 +51,7 @@ int main()
     // Create a single device_error_context for the lifetime of the program.
     // The constructor allocates managed memory for error reporting and
     // clears any stale state.
-    boost::safe_numbers::device_error_context ctx;
+    boost::safe_numbers::device_error_context ctx(boost::safe_numbers::untrapped);
 
     // ---------------------------------------------------------------
     // Step 1: Launch a kernel that overflows and catch the error

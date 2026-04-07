@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <limits>
 #include <boost/safe_numbers/unsigned_integers.hpp>
-#include <boost/safe_numbers/detail/cuda_error_reporting.hpp>
+#include <boost/safe_numbers/cuda_error_reporting.hpp>
 #include "cuda_managed_ptr.hpp"
 #include "stopwatch.hpp"
 

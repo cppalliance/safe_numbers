@@ -11,7 +11,7 @@
 #include <boost/safe_numbers/integer_utilities.hpp>
 #include <boost/safe_numbers/numeric.hpp>
 #include <boost/safe_numbers/charconv.hpp>
-#include <boost/safe_numbers/detail/cuda_error_reporting.hpp>
+#include <boost/safe_numbers/cuda_error_reporting.hpp>
 
 #include <cuda_runtime.h>
 

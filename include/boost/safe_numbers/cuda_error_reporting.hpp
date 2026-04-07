@@ -29,6 +29,15 @@
 
 namespace boost::safe_numbers {
 
+enum class device_exception_mode : unsigned
+{
+    trapped,
+    untrapped,
+};
+
+inline constexpr auto trapped = device_exception_mode::trapped;
+inline constexpr auto untrapped = device_exception_mode::untrapped;
+
 namespace detail {
 
 enum class exception_type : unsigned
@@ -91,6 +100,10 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE inline void copy_to_buf(char* dst, const char* sr
 // Since we never destroy the CUDA context, __managed__ is safe to use.
 __managed__ cuda_device_error g_device_error {};
 
+// Managed memory enum class that allows us to set what report_device_error should do
+// We default to trapped as that's the best way to ensure hard failure in the event of error
+__managed__ device_exception_mode g_device_fail_type {device_exception_mode::trapped};
+
 // Tracks whether a device_error_context instance is alive.
 // Only one may exist at a time to prevent races on g_device_error.
 inline bool g_device_error_context_active = false;
@@ -112,13 +125,35 @@ __host__ __device__ inline void report_device_error(
         copy_to_buf(g_device_error.file, file, BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE);
         copy_to_buf(g_device_error.expression, expression, BOOST_SAFE_NUMBERS_DEVICE_ERROR_BUFFER_SIZE);
         __threadfence_system();
+
+        if (g_device_fail_type == device_exception_mode::trapped)
+        {
+            __trap();
+        }
     }
 
-    // Return instead of calling __trap(). This allows the kernel to
-    // complete normally without corrupting the CUDA context. Other
-    // threads may continue with incorrect values, but synchronize()
-    // will detect the error via the flag and throw on the host.
-    return;
+    switch (g_device_fail_type)
+    {
+        case device_exception_mode::trapped:
+            // In the event that __trap() is called the error is non-recoverable
+            // The user must terminate the current PROCESS in order to reuse the device
+            // There is currently (3/26) way to recover using the cuda_runtime or hardware APIs
+            // Other threads: spin until the trap terminates the kernel
+            while (true)
+            {
+                __nanosleep(1000000);
+            }
+            break;
+
+        case device_exception_mode::untrapped:
+            // Return instead of calling __trap(). This allows the kernel to
+            // complete normally without corrupting the CUDA context. Other
+            // threads may continue with incorrect values, but synchronize()
+            // will detect the error via the flag and throw on the host.
+            return;
+            break;
+    }
+
     #else
 
     const auto msg = std::string(file) + ":" + std::to_string(line) + ": " + expression;
@@ -164,6 +199,21 @@ public:
         reset();
     }
 
+    // Sets a different error type to our managed global variable
+    device_error_context(const device_exception_mode e)
+    {
+        if (detail::g_device_error_context_active)
+        {
+            BOOST_THROW_EXCEPTION(std::logic_error(
+                "Only one device_error_context may exist at a time"));
+        }
+
+        detail::g_device_fail_type = e;
+
+        detail::g_device_error_context_active = true;
+        reset();
+    }
+
     ~device_error_context()
     {
         detail::g_device_error_context_active = false;
@@ -181,6 +231,12 @@ public:
         detail::g_device_error.exception = detail::exception_type::unknown;
         detail::g_device_error.file[0] = '\0';
         detail::g_device_error.expression[0] = '\0';
+    }
+
+    // Adds a post-construction way of setting the failure mode for the device
+    void set_device_exception_method(const device_exception_mode e)
+    {
+        detail::g_device_fail_type = e;
     }
 
     // Synchronizes the device and checks for errors captured by device code.

@@ -61,16 +61,38 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:policies.adoc[`overflow_policy`]
 | Enum class specifying the overflow handling policy for arithmetic operations
+
+| xref:cuda.adoc#cuda_device_exception_mode[`device_exception_mode`]
+| Enum class controlling whether CUDA device errors trap the kernel or defer to the host
 |===
 
-=== CUDA Specific Handling
+=== CUDA Support
 
 [cols="1,2", options="header"]
 |===
 | Type | Description
 
-| xref:cuda.adoc[`device_error_context`]
-| CUDA specific device error context replacing `cudaDeviceSynchronize` and `cudaGetLastError`
+| xref:cuda.adoc#cuda_device_error_context[`device_error_context`]
+| CUDA device error context replacing `cudaDeviceSynchronize` and `cudaGetLastError`
+
+| xref:cuda.adoc#cuda_device_exception_mode[`device_exception_mode`]
+| Enum selecting trapped (immediate `__trap()`) or untrapped (deferred host exception) error handling
+|===
+
+==== `device_error_context` Member Functions
+
+[cols="1,2", options="header"]
+|===
+| Function | Description
+
+| xref:cuda.adoc#cuda_device_error_context_reset[`reset`]
+| Clears the error state so the context can be reused across kernel launches
+
+| xref:cuda.adoc#cuda_device_error_context_set_mode[`set_device_exception_method`]
+| Changes the device exception mode after construction
+
+| xref:cuda.adoc#cuda_device_error_context_synchronize[`synchronize`]
+| Synchronizes the device, checks for captured errors, and throws the corresponding host exception
 |===
 
 [#api_functions]
@@ -337,4 +359,7 @@ This header is not included in the convenience header since it requires external
 
 | `<boost/safe_numbers/byte_conversions.hpp>`
 | Byte order conversion functions (`to_be`, `from_be`, `to_le`, `from_le`, `to_be_bytes`, `from_be_bytes`, `to_le_bytes`, `from_le_bytes`, `to_ne_bytes`, `from_ne_bytes`)
+
+| `<boost/safe_numbers/cuda_error_reporting.hpp>`
+| CUDA device error handling (`device_exception_mode`, `device_error_context`)
 |===
