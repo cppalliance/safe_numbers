@@ -537,6 +537,22 @@ struct signed_add_helper
                         BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, signed_underflow_add_msg<BasisType>());
                     }
                 }
+                else if constexpr (Policy == overflow_policy::saturate)
+                {
+                    if (status == signed_overflow_status::overflow)
+                    {
+                        result = std::numeric_limits<BasisType>::max();
+                    }
+                    else
+                    {
+                        result = std::numeric_limits<BasisType>::min();
+                    }
+                }
+                else if constexpr (Policy == overflow_policy::strict)
+                {
+                    static_cast<void>(result);
+                    std::exit(EXIT_FAILURE);
+                }
                 else
                 {
                     static_cast<void>(result);
@@ -573,9 +589,95 @@ struct signed_add_helper
     }
 };
 
+// Partial specialization for overflow_tuple policy
+template <fundamental_signed_integral BasisType>
+struct signed_add_helper<overflow_policy::overflow_tuple, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType> lhs,
+                                              const signed_integer_basis<BasisType> rhs) noexcept
+        -> std::pair<signed_integer_basis<BasisType>, bool>
+    {
+        using result_type = signed_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType result {};
+
+        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+        if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
+        {
+            if (!std::is_constant_evaluated())
+            {
+                const auto status {impl::signed_intrin_add(lhs_basis, rhs_basis, result)};
+                return std::make_pair(result_type{result}, status != signed_overflow_status::no_error);
+            }
+        }
+
+        #endif
+
+        const auto status {impl::signed_no_intrin_add(lhs_basis, rhs_basis, result)};
+        return std::make_pair(result_type{result}, status != signed_overflow_status::no_error);
+    }
+};
+
+// Partial specialization for checked policy
+template <fundamental_signed_integral BasisType>
+struct signed_add_helper<overflow_policy::checked, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType> lhs,
+                                              const signed_integer_basis<BasisType> rhs) noexcept
+        -> std::optional<signed_integer_basis<BasisType>>
+    {
+        using result_type = signed_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType result {};
+
+        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+        if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
+        {
+            if (!std::is_constant_evaluated())
+            {
+                const auto status {impl::signed_intrin_add(lhs_basis, rhs_basis, result)};
+                return status != signed_overflow_status::no_error
+                    ? std::nullopt
+                    : std::make_optional(result_type{result});
+            }
+        }
+
+        #endif
+
+        const auto status {impl::signed_no_intrin_add(lhs_basis, rhs_basis, result)};
+        return status != signed_overflow_status::no_error
+            ? std::nullopt
+            : std::make_optional(result_type{result});
+    }
+};
+
+// Partial specialization for widening policy
+template <fundamental_signed_integral BasisType>
+struct signed_add_helper<overflow_policy::widen, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType> lhs,
+                                              const signed_integer_basis<BasisType> rhs) noexcept
+    {
+        using promoted = signed_promoted_type<BasisType>;
+        static_assert(!std::is_same_v<promoted, bool>, "Widening policy with int128_t is not supported");
+
+        using result_type = signed_integer_basis<promoted>;
+        return result_type{static_cast<promoted>(static_cast<promoted>(static_cast<BasisType>(lhs)) + static_cast<BasisType>(rhs))};
+    }
+};
+
 template <overflow_policy Policy, fundamental_signed_integral BasisType>
 [[nodiscard]] constexpr auto add_impl(const signed_integer_basis<BasisType> lhs,
                                       const signed_integer_basis<BasisType> rhs)
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple ||
+             Policy == overflow_policy::checked || Policy == overflow_policy::strict ||
+             Policy == overflow_policy::widen)
 {
     return signed_add_helper<Policy, BasisType>::apply(lhs,rhs);
 }
@@ -1022,6 +1124,22 @@ struct signed_sub_helper
                         BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, signed_underflow_sub_msg<BasisType>());
                     }
                 }
+                else if constexpr (Policy == overflow_policy::saturate)
+                {
+                    if (status == signed_overflow_status::overflow)
+                    {
+                        result = std::numeric_limits<BasisType>::max();
+                    }
+                    else
+                    {
+                        result = std::numeric_limits<BasisType>::min();
+                    }
+                }
+                else if constexpr (Policy == overflow_policy::strict)
+                {
+                    static_cast<void>(result);
+                    std::exit(EXIT_FAILURE);
+                }
                 else
                 {
                     static_cast<void>(result);
@@ -1058,9 +1176,79 @@ struct signed_sub_helper
     }
 };
 
+// Partial specialization for overflow_tuple policy
+template <fundamental_signed_integral BasisType>
+struct signed_sub_helper<overflow_policy::overflow_tuple, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType> lhs,
+                                              const signed_integer_basis<BasisType> rhs) noexcept
+        -> std::pair<signed_integer_basis<BasisType>, bool>
+    {
+        using result_type = signed_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType result {};
+
+        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+        if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
+        {
+            if (!std::is_constant_evaluated())
+            {
+                const auto status {impl::signed_intrin_sub(lhs_basis, rhs_basis, result)};
+                return std::make_pair(result_type{result}, status != signed_overflow_status::no_error);
+            }
+        }
+
+        #endif
+
+        const auto status {impl::signed_no_intrin_sub(lhs_basis, rhs_basis, result)};
+        return std::make_pair(result_type{result}, status != signed_overflow_status::no_error);
+    }
+};
+
+// Partial specialization for checked policy
+template <fundamental_signed_integral BasisType>
+struct signed_sub_helper<overflow_policy::checked, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType> lhs,
+                                              const signed_integer_basis<BasisType> rhs) noexcept
+        -> std::optional<signed_integer_basis<BasisType>>
+    {
+        using result_type = signed_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType result {};
+
+        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+        if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
+        {
+            if (!std::is_constant_evaluated())
+            {
+                const auto status {impl::signed_intrin_sub(lhs_basis, rhs_basis, result)};
+                return status != signed_overflow_status::no_error
+                    ? std::nullopt
+                    : std::make_optional(result_type{result});
+            }
+        }
+
+        #endif
+
+        const auto status {impl::signed_no_intrin_sub(lhs_basis, rhs_basis, result)};
+        return status != signed_overflow_status::no_error
+            ? std::nullopt
+            : std::make_optional(result_type{result});
+    }
+};
+
 template <overflow_policy Policy, fundamental_signed_integral BasisType>
 [[nodiscard]] constexpr auto sub_impl(const signed_integer_basis<BasisType> lhs,
                                       const signed_integer_basis<BasisType> rhs)
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple ||
+             Policy == overflow_policy::checked || Policy == overflow_policy::strict)
 {
     return signed_sub_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -1329,13 +1517,13 @@ constexpr auto signed_no_intrin_mul(const T lhs, const T rhs, T& result) noexcep
             : static_cast<unsigned_t>(std::numeric_limits<T>::max());
 
         // Unsigned overflow check (well-tested for uint128)
+        // Always compute the wrapped product so overflow_tuple policy gets the correct value
+        result = static_cast<T>(lhs * rhs);
         if (abs_rhs != unsigned_t{0} && abs_lhs > max_magnitude / abs_rhs)
         {
-            result = 0;
             return result_negative ? signed_overflow_status::underflow : signed_overflow_status::overflow;
         }
 
-        result = static_cast<T>(lhs * rhs);
         return signed_overflow_status::no_error;
     }
     else if constexpr (std::is_same_v<T, std::int8_t> || std::is_same_v<T, std::int16_t>)
@@ -1468,6 +1656,22 @@ struct signed_mul_helper
                         BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, signed_underflow_mul_msg<BasisType>());
                     }
                 }
+                else if constexpr (Policy == overflow_policy::saturate)
+                {
+                    if (status == signed_overflow_status::overflow)
+                    {
+                        result = std::numeric_limits<BasisType>::max();
+                    }
+                    else
+                    {
+                        result = std::numeric_limits<BasisType>::min();
+                    }
+                }
+                else if constexpr (Policy == overflow_policy::strict)
+                {
+                    static_cast<void>(result);
+                    std::exit(EXIT_FAILURE);
+                }
                 else
                 {
                     static_cast<void>(result);
@@ -1504,9 +1708,95 @@ struct signed_mul_helper
     }
 };
 
+// Partial specialization for overflow_tuple policy
+template <fundamental_signed_integral BasisType>
+struct signed_mul_helper<overflow_policy::overflow_tuple, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType> lhs,
+                                              const signed_integer_basis<BasisType> rhs) noexcept
+        -> std::pair<signed_integer_basis<BasisType>, bool>
+    {
+        using result_type = signed_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType result {};
+
+        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+        if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
+        {
+            if (!std::is_constant_evaluated())
+            {
+                const auto status {impl::signed_intrin_mul(lhs_basis, rhs_basis, result)};
+                return std::make_pair(result_type{result}, status != signed_overflow_status::no_error);
+            }
+        }
+
+        #endif
+
+        const auto status {impl::signed_no_intrin_mul(lhs_basis, rhs_basis, result)};
+        return std::make_pair(result_type{result}, status != signed_overflow_status::no_error);
+    }
+};
+
+// Partial specialization for checked policy
+template <fundamental_signed_integral BasisType>
+struct signed_mul_helper<overflow_policy::checked, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType> lhs,
+                                              const signed_integer_basis<BasisType> rhs) noexcept
+        -> std::optional<signed_integer_basis<BasisType>>
+    {
+        using result_type = signed_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+        BasisType result {};
+
+        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
+
+        if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
+        {
+            if (!std::is_constant_evaluated())
+            {
+                const auto status {impl::signed_intrin_mul(lhs_basis, rhs_basis, result)};
+                return status != signed_overflow_status::no_error
+                    ? std::nullopt
+                    : std::make_optional(result_type{result});
+            }
+        }
+
+        #endif
+
+        const auto status {impl::signed_no_intrin_mul(lhs_basis, rhs_basis, result)};
+        return status != signed_overflow_status::no_error
+            ? std::nullopt
+            : std::make_optional(result_type{result});
+    }
+};
+
+// Partial specialization for widening policy
+template <fundamental_signed_integral BasisType>
+struct signed_mul_helper<overflow_policy::widen, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType> lhs,
+                                              const signed_integer_basis<BasisType> rhs) noexcept
+    {
+        using promoted = signed_promoted_type<BasisType>;
+        static_assert(!std::is_same_v<promoted, bool>, "Widening policy with int128_t is not supported");
+
+        using result_type = signed_integer_basis<promoted>;
+        return result_type{static_cast<promoted>(static_cast<promoted>(static_cast<BasisType>(lhs)) * static_cast<BasisType>(rhs))};
+    }
+};
+
 template <overflow_policy Policy, fundamental_signed_integral BasisType>
 [[nodiscard]] constexpr auto mul_impl(const signed_integer_basis<BasisType> lhs,
                                       const signed_integer_basis<BasisType> rhs)
+    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple ||
+             Policy == overflow_policy::checked || Policy == overflow_policy::strict ||
+             Policy == overflow_policy::widen)
 {
     return signed_mul_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -1646,7 +1936,7 @@ struct signed_div_helper
 {
     [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType> lhs,
                                               const signed_integer_basis<BasisType> rhs)
-        noexcept(Policy != overflow_policy::throw_exception)
+        noexcept(Policy == overflow_policy::strict)
         -> signed_integer_basis<BasisType>
     {
         using result_type = signed_integer_basis<BasisType>;
@@ -1684,6 +1974,14 @@ struct signed_div_helper
                 if constexpr (Policy == overflow_policy::throw_exception)
                 {
                     BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_div_by_zero_msg<BasisType>());
+                }
+                else if constexpr (Policy == overflow_policy::saturate)
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_div_by_zero_msg<BasisType>());
+                }
+                else if constexpr (Policy == overflow_policy::strict)
+                {
+                    std::exit(EXIT_FAILURE);
                 }
                 else
                 {
@@ -1731,6 +2029,14 @@ struct signed_div_helper
                 {
                     BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, signed_overflow_div_msg<BasisType>());
                 }
+                else if constexpr (Policy == overflow_policy::saturate)
+                {
+                    return result_type{std::numeric_limits<BasisType>::max()};
+                }
+                else if constexpr (Policy == overflow_policy::strict)
+                {
+                    std::exit(EXIT_FAILURE);
+                }
                 else
                 {
                     BOOST_SAFE_NUMBERS_UNREACHABLE;
@@ -1742,9 +2048,77 @@ struct signed_div_helper
     }
 };
 
+// Partial specialization for overflow_tuple policy
+template <fundamental_signed_integral BasisType>
+struct signed_div_helper<overflow_policy::overflow_tuple, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType> lhs,
+                                              const signed_integer_basis<BasisType> rhs)
+        -> std::pair<signed_integer_basis<BasisType>, bool>
+    {
+        using result_type = signed_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+
+        if (rhs_basis == BasisType{0}) [[unlikely]]
+        {
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_div_by_zero_msg<BasisType>());
+        }
+
+        if (lhs_basis == BasisType{0})
+        {
+            return std::make_pair(result_type{BasisType{0}}, false);
+        }
+
+        if (lhs_basis == std::numeric_limits<BasisType>::min() &&
+            rhs_basis == static_cast<BasisType>(-1)) [[unlikely]]
+        {
+            // The wrapped result is min (since -min overflows back to min in two's complement)
+            return std::make_pair(result_type{std::numeric_limits<BasisType>::min()}, true);
+        }
+
+        return std::make_pair(result_type{static_cast<BasisType>(lhs_basis / rhs_basis)}, false);
+    }
+};
+
+// Partial specialization for checked policy
+template <fundamental_signed_integral BasisType>
+struct signed_div_helper<overflow_policy::checked, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType> lhs,
+                                              const signed_integer_basis<BasisType> rhs) noexcept
+        -> std::optional<signed_integer_basis<BasisType>>
+    {
+        using result_type = signed_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+
+        if (rhs_basis == BasisType{0}) [[unlikely]]
+        {
+            return std::nullopt;
+        }
+
+        if (lhs_basis == BasisType{0})
+        {
+            return std::make_optional(result_type{BasisType{0}});
+        }
+
+        if (lhs_basis == std::numeric_limits<BasisType>::min() &&
+            rhs_basis == static_cast<BasisType>(-1)) [[unlikely]]
+        {
+            return std::nullopt;
+        }
+
+        return std::make_optional(result_type{static_cast<BasisType>(lhs_basis / rhs_basis)});
+    }
+};
+
 template <overflow_policy Policy, fundamental_signed_integral BasisType>
 [[nodiscard]] constexpr auto div_impl(const signed_integer_basis<BasisType> lhs,
                                       const signed_integer_basis<BasisType> rhs)
+    noexcept(Policy == overflow_policy::checked || Policy == overflow_policy::strict)
 {
     return signed_div_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -1830,7 +2204,7 @@ struct signed_mod_helper
 {
     [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType> lhs,
                                               const signed_integer_basis<BasisType> rhs)
-        noexcept(Policy != overflow_policy::throw_exception)
+        noexcept(Policy == overflow_policy::strict)
         -> signed_integer_basis<BasisType>
     {
         using result_type = signed_integer_basis<BasisType>;
@@ -1868,6 +2242,14 @@ struct signed_mod_helper
                 if constexpr (Policy == overflow_policy::throw_exception)
                 {
                     BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_mod_by_zero_msg<BasisType>());
+                }
+                else if constexpr (Policy == overflow_policy::saturate)
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_mod_by_zero_msg<BasisType>());
+                }
+                else if constexpr (Policy == overflow_policy::strict)
+                {
+                    std::exit(EXIT_FAILURE);
                 }
                 else
                 {
@@ -1917,6 +2299,15 @@ struct signed_mod_helper
                 {
                     BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, signed_overflow_mod_msg<BasisType>());
                 }
+                else if constexpr (Policy == overflow_policy::saturate)
+                {
+                    // The mathematical result of min % -1 is 0
+                    return result_type{BasisType{0}};
+                }
+                else if constexpr (Policy == overflow_policy::strict)
+                {
+                    std::exit(EXIT_FAILURE);
+                }
                 else
                 {
                     BOOST_SAFE_NUMBERS_UNREACHABLE;
@@ -1928,9 +2319,77 @@ struct signed_mod_helper
     }
 };
 
+// Partial specialization for overflow_tuple policy
+template <fundamental_signed_integral BasisType>
+struct signed_mod_helper<overflow_policy::overflow_tuple, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType> lhs,
+                                              const signed_integer_basis<BasisType> rhs)
+        -> std::pair<signed_integer_basis<BasisType>, bool>
+    {
+        using result_type = signed_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+
+        if (rhs_basis == BasisType{0}) [[unlikely]]
+        {
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_mod_by_zero_msg<BasisType>());
+        }
+
+        if (lhs_basis == BasisType{0})
+        {
+            return std::make_pair(result_type{BasisType{0}}, false);
+        }
+
+        if (lhs_basis == std::numeric_limits<BasisType>::min() &&
+            rhs_basis == static_cast<BasisType>(-1)) [[unlikely]]
+        {
+            // The mathematical result is 0, but the implied division overflows
+            return std::make_pair(result_type{BasisType{0}}, true);
+        }
+
+        return std::make_pair(result_type{static_cast<BasisType>(lhs_basis % rhs_basis)}, false);
+    }
+};
+
+// Partial specialization for checked policy
+template <fundamental_signed_integral BasisType>
+struct signed_mod_helper<overflow_policy::checked, BasisType>
+{
+    [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType> lhs,
+                                              const signed_integer_basis<BasisType> rhs) noexcept
+        -> std::optional<signed_integer_basis<BasisType>>
+    {
+        using result_type = signed_integer_basis<BasisType>;
+
+        const auto lhs_basis {static_cast<BasisType>(lhs)};
+        const auto rhs_basis {static_cast<BasisType>(rhs)};
+
+        if (rhs_basis == BasisType{0}) [[unlikely]]
+        {
+            return std::nullopt;
+        }
+
+        if (lhs_basis == BasisType{0})
+        {
+            return std::make_optional(result_type{BasisType{0}});
+        }
+
+        if (lhs_basis == std::numeric_limits<BasisType>::min() &&
+            rhs_basis == static_cast<BasisType>(-1)) [[unlikely]]
+        {
+            return std::nullopt;
+        }
+
+        return std::make_optional(result_type{static_cast<BasisType>(lhs_basis % rhs_basis)});
+    }
+};
+
 template <overflow_policy Policy, fundamental_signed_integral BasisType>
 [[nodiscard]] constexpr auto mod_impl(const signed_integer_basis<BasisType> lhs,
                                       const signed_integer_basis<BasisType> rhs)
+    noexcept(Policy == overflow_policy::checked || Policy == overflow_policy::strict)
 {
     return signed_mod_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -2072,6 +2531,415 @@ constexpr auto signed_integer_basis<BasisType>::operator--(int)
 }
 
 } // namespace boost::safe_numbers::detail
+
+// ------------------------------
+// Saturating Math
+// ------------------------------
+
+namespace boost::safe_numbers {
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto saturating_add(const detail::signed_integer_basis<BasisType> lhs,
+                                            const detail::signed_integer_basis<BasisType> rhs) noexcept
+    -> detail::signed_integer_basis<BasisType>
+{
+    return detail::impl::add_impl<overflow_policy::saturate>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("saturating addition", saturating_add)
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto saturating_sub(const detail::signed_integer_basis<BasisType> lhs,
+                                            const detail::signed_integer_basis<BasisType> rhs) noexcept
+    -> detail::signed_integer_basis<BasisType>
+{
+    return detail::impl::sub_impl<overflow_policy::saturate>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("saturating subtraction", saturating_sub)
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto saturating_mul(const detail::signed_integer_basis<BasisType> lhs,
+                                            const detail::signed_integer_basis<BasisType> rhs) noexcept
+    -> detail::signed_integer_basis<BasisType>
+{
+    return detail::impl::mul_impl<overflow_policy::saturate>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("saturating multiplication", saturating_mul)
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto saturating_div(const detail::signed_integer_basis<BasisType> lhs,
+                                            const detail::signed_integer_basis<BasisType> rhs)
+    -> detail::signed_integer_basis<BasisType>
+{
+    return detail::impl::div_impl<overflow_policy::saturate>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("saturating division", saturating_div)
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto saturating_mod(const detail::signed_integer_basis<BasisType> lhs,
+                                            const detail::signed_integer_basis<BasisType> rhs)
+    -> detail::signed_integer_basis<BasisType>
+{
+    return detail::impl::mod_impl<overflow_policy::saturate>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("saturating modulo", saturating_mod)
+
+// ------------------------------
+// Overflowing Math
+// ------------------------------
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto overflowing_add(const detail::signed_integer_basis<BasisType> lhs,
+                                             const detail::signed_integer_basis<BasisType> rhs) noexcept
+    -> std::pair<detail::signed_integer_basis<BasisType>, bool>
+{
+    return detail::impl::add_impl<overflow_policy::overflow_tuple>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("overflowing addition", overflowing_add)
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto overflowing_sub(const detail::signed_integer_basis<BasisType> lhs,
+                                             const detail::signed_integer_basis<BasisType> rhs) noexcept
+    -> std::pair<detail::signed_integer_basis<BasisType>, bool>
+{
+    return detail::impl::sub_impl<overflow_policy::overflow_tuple>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("overflowing subtraction", overflowing_sub)
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto overflowing_mul(const detail::signed_integer_basis<BasisType> lhs,
+                                             const detail::signed_integer_basis<BasisType> rhs) noexcept
+    -> std::pair<detail::signed_integer_basis<BasisType>, bool>
+{
+    return detail::impl::mul_impl<overflow_policy::overflow_tuple>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("overflowing multiplication", overflowing_mul)
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto overflowing_div(const detail::signed_integer_basis<BasisType> lhs,
+                                             const detail::signed_integer_basis<BasisType> rhs)
+    -> std::pair<detail::signed_integer_basis<BasisType>, bool>
+{
+    return detail::impl::div_impl<overflow_policy::overflow_tuple>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("overflowing division", overflowing_div)
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto overflowing_mod(const detail::signed_integer_basis<BasisType> lhs,
+                                             const detail::signed_integer_basis<BasisType> rhs)
+    -> std::pair<detail::signed_integer_basis<BasisType>, bool>
+{
+    return detail::impl::mod_impl<overflow_policy::overflow_tuple>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("overflowing modulo", overflowing_mod)
+
+// ------------------------------
+// Checked Math
+// ------------------------------
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto checked_add(const detail::signed_integer_basis<BasisType> lhs,
+                                         const detail::signed_integer_basis<BasisType> rhs) noexcept
+    -> std::optional<detail::signed_integer_basis<BasisType>>
+{
+    return detail::impl::add_impl<overflow_policy::checked>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("checked addition", checked_add)
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto checked_sub(const detail::signed_integer_basis<BasisType> lhs,
+                                         const detail::signed_integer_basis<BasisType> rhs) noexcept
+    -> std::optional<detail::signed_integer_basis<BasisType>>
+{
+    return detail::impl::sub_impl<overflow_policy::checked>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("checked subtraction", checked_sub)
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto checked_mul(const detail::signed_integer_basis<BasisType> lhs,
+                                         const detail::signed_integer_basis<BasisType> rhs) noexcept
+    -> std::optional<detail::signed_integer_basis<BasisType>>
+{
+    return detail::impl::mul_impl<overflow_policy::checked>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("checked multiplication", checked_mul)
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto checked_div(const detail::signed_integer_basis<BasisType> lhs,
+                                         const detail::signed_integer_basis<BasisType> rhs) noexcept
+    -> std::optional<detail::signed_integer_basis<BasisType>>
+{
+    return detail::impl::div_impl<overflow_policy::checked>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("checked division", checked_div)
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto checked_mod(const detail::signed_integer_basis<BasisType> lhs,
+                                         const detail::signed_integer_basis<BasisType> rhs) noexcept
+    -> std::optional<detail::signed_integer_basis<BasisType>>
+{
+    return detail::impl::mod_impl<overflow_policy::checked>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("checked modulo", checked_mod)
+
+// ------------------------------
+// Strict Math
+// ------------------------------
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto strict_add(const detail::signed_integer_basis<BasisType> lhs,
+                                        const detail::signed_integer_basis<BasisType> rhs) noexcept
+    -> detail::signed_integer_basis<BasisType>
+{
+    return detail::impl::add_impl<overflow_policy::strict>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("strict addition", strict_add)
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto strict_sub(const detail::signed_integer_basis<BasisType> lhs,
+                                        const detail::signed_integer_basis<BasisType> rhs) noexcept
+    -> detail::signed_integer_basis<BasisType>
+{
+    return detail::impl::sub_impl<overflow_policy::strict>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("strict subtraction", strict_sub)
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto strict_mul(const detail::signed_integer_basis<BasisType> lhs,
+                                        const detail::signed_integer_basis<BasisType> rhs) noexcept
+    -> detail::signed_integer_basis<BasisType>
+{
+    return detail::impl::mul_impl<overflow_policy::strict>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("strict multiplication", strict_mul)
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto strict_div(const detail::signed_integer_basis<BasisType> lhs,
+                                        const detail::signed_integer_basis<BasisType> rhs) noexcept
+    -> detail::signed_integer_basis<BasisType>
+{
+    return detail::impl::div_impl<overflow_policy::strict>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("strict division", strict_div)
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto strict_mod(const detail::signed_integer_basis<BasisType> lhs,
+                                        const detail::signed_integer_basis<BasisType> rhs) noexcept
+    -> detail::signed_integer_basis<BasisType>
+{
+    return detail::impl::mod_impl<overflow_policy::strict>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("strict modulo", strict_mod)
+
+// ------------------------------
+// Widening Math
+// ------------------------------
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto widening_add(const detail::signed_integer_basis<BasisType> lhs,
+                                          const detail::signed_integer_basis<BasisType> rhs) noexcept
+{
+    return detail::impl::add_impl<overflow_policy::widen>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("widening add", widening_add)
+
+template <detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto widening_mul(const detail::signed_integer_basis<BasisType> lhs,
+                                          const detail::signed_integer_basis<BasisType> rhs) noexcept
+{
+    return detail::impl::mul_impl<overflow_policy::widen>(lhs, rhs);
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP("widening mul", widening_mul)
+
+// ------------------------------
+// Generic policy-parameterized functions
+// ------------------------------
+
+template <overflow_policy Policy, detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto add(const detail::signed_integer_basis<BasisType> lhs,
+                                 const detail::signed_integer_basis<BasisType> rhs)
+    noexcept(Policy != overflow_policy::throw_exception)
+{
+    if constexpr (Policy == overflow_policy::throw_exception)
+    {
+        return lhs + rhs;
+    }
+    else if constexpr (Policy == overflow_policy::saturate)
+    {
+        return saturating_add(lhs, rhs);
+    }
+    else if constexpr (Policy == overflow_policy::overflow_tuple)
+    {
+        return overflowing_add(lhs, rhs);
+    }
+    else if constexpr (Policy == overflow_policy::checked)
+    {
+        return checked_add(lhs, rhs);
+    }
+    else if constexpr (Policy == overflow_policy::strict)
+    {
+        return strict_add(lhs, rhs);
+    }
+    else if constexpr (Policy == overflow_policy::widen)
+    {
+        return widening_add(lhs, rhs);
+    }
+    else
+    {
+        static_assert(detail::dependent_false<BasisType>, "Policy is not supported for addition");
+    }
+}
+
+template <overflow_policy Policy, detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto sub(const detail::signed_integer_basis<BasisType> lhs,
+                                 const detail::signed_integer_basis<BasisType> rhs)
+    noexcept(Policy != overflow_policy::throw_exception)
+{
+    if constexpr (Policy == overflow_policy::throw_exception)
+    {
+        return lhs - rhs;
+    }
+    else if constexpr (Policy == overflow_policy::saturate)
+    {
+        return saturating_sub(lhs, rhs);
+    }
+    else if constexpr (Policy == overflow_policy::overflow_tuple)
+    {
+        return overflowing_sub(lhs, rhs);
+    }
+    else if constexpr (Policy == overflow_policy::checked)
+    {
+        return checked_sub(lhs, rhs);
+    }
+    else if constexpr (Policy == overflow_policy::strict)
+    {
+        return strict_sub(lhs, rhs);
+    }
+    else
+    {
+        static_assert(detail::dependent_false<BasisType>, "Policy is not supported for subtraction");
+    }
+}
+
+template <overflow_policy Policy, detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto mul(const detail::signed_integer_basis<BasisType> lhs,
+                                 const detail::signed_integer_basis<BasisType> rhs)
+    noexcept(Policy != overflow_policy::throw_exception)
+{
+    if constexpr (Policy == overflow_policy::throw_exception)
+    {
+        return lhs * rhs;
+    }
+    else if constexpr (Policy == overflow_policy::saturate)
+    {
+        return saturating_mul(lhs, rhs);
+    }
+    else if constexpr (Policy == overflow_policy::overflow_tuple)
+    {
+        return overflowing_mul(lhs, rhs);
+    }
+    else if constexpr (Policy == overflow_policy::checked)
+    {
+        return checked_mul(lhs, rhs);
+    }
+    else if constexpr (Policy == overflow_policy::strict)
+    {
+        return strict_mul(lhs, rhs);
+    }
+    else if constexpr (Policy == overflow_policy::widen)
+    {
+        return widening_mul(lhs, rhs);
+    }
+    else
+    {
+        static_assert(detail::dependent_false<BasisType>, "Policy is not supported for multiplication");
+    }
+}
+
+template <overflow_policy Policy, detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto div(const detail::signed_integer_basis<BasisType> lhs,
+                                 const detail::signed_integer_basis<BasisType> rhs)
+    noexcept(Policy == overflow_policy::checked || Policy == overflow_policy::strict)
+{
+    if constexpr (Policy == overflow_policy::throw_exception)
+    {
+        return lhs / rhs;
+    }
+    else if constexpr (Policy == overflow_policy::saturate)
+    {
+        return saturating_div(lhs, rhs);
+    }
+    else if constexpr (Policy == overflow_policy::overflow_tuple)
+    {
+        return overflowing_div(lhs, rhs);
+    }
+    else if constexpr (Policy == overflow_policy::checked)
+    {
+        return checked_div(lhs, rhs);
+    }
+    else if constexpr (Policy == overflow_policy::strict)
+    {
+        return strict_div(lhs, rhs);
+    }
+    else
+    {
+        static_assert(detail::dependent_false<BasisType>, "Policy is not supported for division");
+    }
+}
+
+template <overflow_policy Policy, detail::fundamental_signed_integral BasisType>
+[[nodiscard]] constexpr auto mod(const detail::signed_integer_basis<BasisType> lhs,
+                                 const detail::signed_integer_basis<BasisType> rhs)
+    noexcept(Policy == overflow_policy::checked || Policy == overflow_policy::strict)
+{
+    if constexpr (Policy == overflow_policy::throw_exception)
+    {
+        return lhs % rhs;
+    }
+    else if constexpr (Policy == overflow_policy::saturate)
+    {
+        return saturating_mod(lhs, rhs);
+    }
+    else if constexpr (Policy == overflow_policy::overflow_tuple)
+    {
+        return overflowing_mod(lhs, rhs);
+    }
+    else if constexpr (Policy == overflow_policy::checked)
+    {
+        return checked_mod(lhs, rhs);
+    }
+    else if constexpr (Policy == overflow_policy::strict)
+    {
+        return strict_mod(lhs, rhs);
+    }
+    else
+    {
+        static_assert(detail::dependent_false<BasisType>, "Policy is not supported for modulo");
+    }
+}
+
+} // namespace boost::safe_numbers
 
 #undef BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP
 
