@@ -1946,46 +1946,38 @@ struct signed_div_helper
 
         if (rhs_basis == BasisType{0}) [[unlikely]]
         {
-            if (std::is_constant_evaluated())
+            if constexpr (Policy == overflow_policy::strict)
             {
-                if constexpr (std::is_same_v<BasisType, std::int8_t>)
-                {
-                    throw std::domain_error("Division by zero in i8 division");
-                }
-                else if constexpr (std::is_same_v<BasisType, std::int16_t>)
-                {
-                    throw std::domain_error("Division by zero in i16 division");
-                }
-                else if constexpr (std::is_same_v<BasisType, std::int32_t>)
-                {
-                    throw std::domain_error("Division by zero in i32 division");
-                }
-                else if constexpr (std::is_same_v<BasisType, std::int64_t>)
-                {
-                    throw std::domain_error("Division by zero in i64 division");
-                }
-                else
-                {
-                    throw std::domain_error("Division by zero in i128 division");
-                }
+                std::exit(EXIT_FAILURE);
             }
             else
             {
-                if constexpr (Policy == overflow_policy::throw_exception)
+                if (std::is_constant_evaluated())
                 {
-                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_div_by_zero_msg<BasisType>());
-                }
-                else if constexpr (Policy == overflow_policy::saturate)
-                {
-                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_div_by_zero_msg<BasisType>());
-                }
-                else if constexpr (Policy == overflow_policy::strict)
-                {
-                    std::exit(EXIT_FAILURE);
+                    if constexpr (std::is_same_v<BasisType, std::int8_t>)
+                    {
+                        throw std::domain_error("Division by zero in i8 division");
+                    }
+                    else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+                    {
+                        throw std::domain_error("Division by zero in i16 division");
+                    }
+                    else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+                    {
+                        throw std::domain_error("Division by zero in i32 division");
+                    }
+                    else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+                    {
+                        throw std::domain_error("Division by zero in i64 division");
+                    }
+                    else
+                    {
+                        throw std::domain_error("Division by zero in i128 division");
+                    }
                 }
                 else
                 {
-                    BOOST_SAFE_NUMBERS_UNREACHABLE;
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_div_by_zero_msg<BasisType>());
                 }
             }
         }
@@ -2000,46 +1992,42 @@ struct signed_div_helper
         if (lhs_basis == std::numeric_limits<BasisType>::min() &&
             rhs_basis == static_cast<BasisType>(-1)) [[unlikely]]
         {
-            if (std::is_constant_evaluated())
+            if constexpr (Policy == overflow_policy::strict)
             {
-                if constexpr (std::is_same_v<BasisType, std::int8_t>)
-                {
-                    throw std::overflow_error("Overflow detected in i8 division");
-                }
-                else if constexpr (std::is_same_v<BasisType, std::int16_t>)
-                {
-                    throw std::overflow_error("Overflow detected in i16 division");
-                }
-                else if constexpr (std::is_same_v<BasisType, std::int32_t>)
-                {
-                    throw std::overflow_error("Overflow detected in i32 division");
-                }
-                else if constexpr (std::is_same_v<BasisType, std::int64_t>)
-                {
-                    throw std::overflow_error("Overflow detected in i64 division");
-                }
-                else
-                {
-                    throw std::overflow_error("Overflow detected in i128 division");
-                }
+                std::exit(EXIT_FAILURE);
+            }
+            else if constexpr (Policy == overflow_policy::saturate)
+            {
+                return result_type{std::numeric_limits<BasisType>::max()};
             }
             else
             {
-                if constexpr (Policy == overflow_policy::throw_exception)
+                if (std::is_constant_evaluated())
                 {
-                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, signed_overflow_div_msg<BasisType>());
-                }
-                else if constexpr (Policy == overflow_policy::saturate)
-                {
-                    return result_type{std::numeric_limits<BasisType>::max()};
-                }
-                else if constexpr (Policy == overflow_policy::strict)
-                {
-                    std::exit(EXIT_FAILURE);
+                    if constexpr (std::is_same_v<BasisType, std::int8_t>)
+                    {
+                        throw std::overflow_error("Overflow detected in i8 division");
+                    }
+                    else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+                    {
+                        throw std::overflow_error("Overflow detected in i16 division");
+                    }
+                    else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+                    {
+                        throw std::overflow_error("Overflow detected in i32 division");
+                    }
+                    else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+                    {
+                        throw std::overflow_error("Overflow detected in i64 division");
+                    }
+                    else
+                    {
+                        throw std::overflow_error("Overflow detected in i128 division");
+                    }
                 }
                 else
                 {
-                    BOOST_SAFE_NUMBERS_UNREACHABLE;
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, signed_overflow_div_msg<BasisType>());
                 }
             }
         }
@@ -2214,46 +2202,38 @@ struct signed_mod_helper
 
         if (rhs_basis == BasisType{0}) [[unlikely]]
         {
-            if (std::is_constant_evaluated())
+            if constexpr (Policy == overflow_policy::strict)
             {
-                if constexpr (std::is_same_v<BasisType, std::int8_t>)
-                {
-                    throw std::domain_error("Division by zero in i8 modulo");
-                }
-                else if constexpr (std::is_same_v<BasisType, std::int16_t>)
-                {
-                    throw std::domain_error("Division by zero in i16 modulo");
-                }
-                else if constexpr (std::is_same_v<BasisType, std::int32_t>)
-                {
-                    throw std::domain_error("Division by zero in i32 modulo");
-                }
-                else if constexpr (std::is_same_v<BasisType, std::int64_t>)
-                {
-                    throw std::domain_error("Division by zero in i64 modulo");
-                }
-                else
-                {
-                    throw std::domain_error("Division by zero in i128 modulo");
-                }
+                std::exit(EXIT_FAILURE);
             }
             else
             {
-                if constexpr (Policy == overflow_policy::throw_exception)
+                if (std::is_constant_evaluated())
                 {
-                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_mod_by_zero_msg<BasisType>());
-                }
-                else if constexpr (Policy == overflow_policy::saturate)
-                {
-                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_mod_by_zero_msg<BasisType>());
-                }
-                else if constexpr (Policy == overflow_policy::strict)
-                {
-                    std::exit(EXIT_FAILURE);
+                    if constexpr (std::is_same_v<BasisType, std::int8_t>)
+                    {
+                        throw std::domain_error("Division by zero in i8 modulo");
+                    }
+                    else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+                    {
+                        throw std::domain_error("Division by zero in i16 modulo");
+                    }
+                    else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+                    {
+                        throw std::domain_error("Division by zero in i32 modulo");
+                    }
+                    else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+                    {
+                        throw std::domain_error("Division by zero in i64 modulo");
+                    }
+                    else
+                    {
+                        throw std::domain_error("Division by zero in i128 modulo");
+                    }
                 }
                 else
                 {
-                    BOOST_SAFE_NUMBERS_UNREACHABLE;
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_mod_by_zero_msg<BasisType>());
                 }
             }
         }
@@ -2270,47 +2250,43 @@ struct signed_mod_helper
         if (lhs_basis == std::numeric_limits<BasisType>::min() &&
             rhs_basis == static_cast<BasisType>(-1)) [[unlikely]]
         {
-            if (std::is_constant_evaluated())
+            if constexpr (Policy == overflow_policy::strict)
             {
-                if constexpr (std::is_same_v<BasisType, std::int8_t>)
-                {
-                    throw std::overflow_error("Overflow detected in i8 modulo");
-                }
-                else if constexpr (std::is_same_v<BasisType, std::int16_t>)
-                {
-                    throw std::overflow_error("Overflow detected in i16 modulo");
-                }
-                else if constexpr (std::is_same_v<BasisType, std::int32_t>)
-                {
-                    throw std::overflow_error("Overflow detected in i32 modulo");
-                }
-                else if constexpr (std::is_same_v<BasisType, std::int64_t>)
-                {
-                    throw std::overflow_error("Overflow detected in i64 modulo");
-                }
-                else
-                {
-                    throw std::overflow_error("Overflow detected in i128 modulo");
-                }
+                std::exit(EXIT_FAILURE);
+            }
+            else if constexpr (Policy == overflow_policy::saturate)
+            {
+                // The mathematical result of min % -1 is 0
+                return result_type{BasisType{0}};
             }
             else
             {
-                if constexpr (Policy == overflow_policy::throw_exception)
+                if (std::is_constant_evaluated())
                 {
-                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, signed_overflow_mod_msg<BasisType>());
-                }
-                else if constexpr (Policy == overflow_policy::saturate)
-                {
-                    // The mathematical result of min % -1 is 0
-                    return result_type{BasisType{0}};
-                }
-                else if constexpr (Policy == overflow_policy::strict)
-                {
-                    std::exit(EXIT_FAILURE);
+                    if constexpr (std::is_same_v<BasisType, std::int8_t>)
+                    {
+                        throw std::overflow_error("Overflow detected in i8 modulo");
+                    }
+                    else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+                    {
+                        throw std::overflow_error("Overflow detected in i16 modulo");
+                    }
+                    else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+                    {
+                        throw std::overflow_error("Overflow detected in i32 modulo");
+                    }
+                    else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+                    {
+                        throw std::overflow_error("Overflow detected in i64 modulo");
+                    }
+                    else
+                    {
+                        throw std::overflow_error("Overflow detected in i128 modulo");
+                    }
                 }
                 else
                 {
-                    BOOST_SAFE_NUMBERS_UNREACHABLE;
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, signed_overflow_mod_msg<BasisType>());
                 }
             }
         }
