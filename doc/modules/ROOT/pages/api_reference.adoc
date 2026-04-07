@@ -43,6 +43,28 @@ https://www.boost.org/LICENSE_1_0.txt
 | Safe unsigned 128-bit integer
 |===
 
+=== Signed Integer Types
+
+[cols="1,2", options="header"]
+|===
+| Type | Description
+
+| xref:signed_integers.adoc[`i8`]
+| Safe signed 8-bit integer
+
+| xref:signed_integers.adoc[`i16`]
+| Safe signed 16-bit integer
+
+| xref:signed_integers.adoc[`i32`]
+| Safe signed 32-bit integer
+
+| xref:signed_integers.adoc[`i64`]
+| Safe signed 64-bit integer
+
+| xref:signed_integers.adoc[`i128`]
+| Safe signed 128-bit integer
+|===
+
 === Bounded Unsigned Integer Type
 
 [cols="1,2", options="header"]
@@ -350,6 +372,9 @@ This header is not included in the convenience header since it requires external
 
 | `<boost/safe_numbers/overflow_policy.hpp>`
 | The `overflow_policy` enum class
+
+| `<boost/safe_numbers/signed_integers.hpp>`
+| All signed safe integer types (`i8`, `i16`, `i32`, `i64`, `i128`)
 
 | `<boost/safe_numbers/unsigned_integers.hpp>`
 | All unsigned safe integer types (`u8`, `u16`, `u32`, `u64`, `u128`)
