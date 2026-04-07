@@ -585,6 +585,9 @@ Charconv (rt):     PASSED
 [#examples_cuda_error_handling]
 == CUDA Error Handling
 
+[#examples_cuda_error_handling_with_error_context]
+=== CUDA Error Handling With Error Context
+
 When a safe_numbers operation overflows on the GPU, the error is captured in managed memory and rethrown with `BOOST_THROW_EXCEPTION` on the host when you call `ctx.synchronize()`.
 The `device_error_context` manages a dynamically allocated managed memory buffer; after catching an exception the same context can be reused immediately for new kernel launches.
 
@@ -610,7 +613,7 @@ result[3] = 41
 ====
 
 [#examples_cuda_error_handling_without_error_context]
-== CUDA Error Handling Without Error Context
+=== CUDA Error Handling Without Error Context
 
 This example demonstrates what happens when a safe_numbers overflow occurs on a CUDA device *without* using `device_error_context`.
 The overflow triggers a device-side trap that corrupts the CUDA context, making `cudaDeviceSynchronize()` report an unspecified launch failure.
