@@ -97,28 +97,41 @@ int main()
         const auto error = cudaGetLastError();
         std::cerr << "Kernel failed with error: " << cudaGetErrorString(error) << std::endl;
     }
-
-    data[0] = test_type{10};
-    data[1] = test_type{20};
-    data[2] = test_type{30};
-    data[3] = test_type{40};
-
-    safe_kernel<<<1, 4>>>(data, out, 4);
-    status = cudaDeviceSynchronize();
-
-    if (status != cudaSuccess)
+    else
     {
-        const auto error = cudaGetLastError();
-        std::cerr << "Kernel failed with error: " << cudaGetErrorString(error) << std::endl;
+        // If we had not checked status, this following code would have terminated with SegFault at data[0]
+
+        data[0] = test_type{10};
+        data[1] = test_type{20};
+        data[2] = test_type{30};
+        data[3] = test_type{40};
+
+        safe_kernel<<<1, 4>>>(data, out, 4);
+        status = cudaDeviceSynchronize();
+
+        if (status != cudaSuccess)
+        {
+            const auto error = cudaGetLastError();
+            std::cerr << "Kernel failed with error: " << cudaGetErrorString(error) << std::endl;
+        }
     }
 
     // ---------------------------------------------------------------
     // Cleanup
     // ---------------------------------------------------------------
 
-    cudaFree(result);
-    cudaFree(data);
-    cudaFree(out);
+    if (result != nullptr)
+    {
+        cudaFree(result);
+    }
+    if (data != nullptr)
+    {
+        cudaFree(data);
+    }
+    if (out != nullptr)
+    {
+        cudaFree(out);
+    }
 
     return 0;
 }
