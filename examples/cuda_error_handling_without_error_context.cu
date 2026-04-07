@@ -70,7 +70,7 @@ int main()
     if (status != cudaSuccess)
     {
         const auto error = cudaGetLastError();
-        std::cerr << "Kernel failed with error: " << cudaGetErrorString(err) << std::endl;
+        std::cerr << "Kernel failed with error: " << cudaGetErrorString(error) << std::endl;
         cudaDeviceReset();
         std::cerr << "Kernel has been reset via CUDA API" << std::endl;
     }
@@ -95,7 +95,7 @@ int main()
     if (status != cudaSuccess)
     {
         const auto error = cudaGetLastError();
-        std::cerr << "Kernel failed with error: " << cudaGetErrorString(err) << std::endl;
+        std::cerr << "Kernel failed with error: " << cudaGetErrorString(error) << std::endl;
     }
 
     data[0] = test_type{10};
@@ -109,7 +109,7 @@ int main()
     if (status != cudaSuccess)
     {
         const auto error = cudaGetLastError();
-        std::cerr << "Kernel failed with error: " << cudaGetErrorString(err) << std::endl;
+        std::cerr << "Kernel failed with error: " << cudaGetErrorString(error) << std::endl;
     }
 
     // ---------------------------------------------------------------
