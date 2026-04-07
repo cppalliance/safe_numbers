@@ -105,6 +105,26 @@ run-fail test_unsigned_strict_subtraction.cpp ;
 run-fail test_unsigned_strict_multiplication.cpp ;
 run-fail test_unsigned_strict_division.cpp ;
 run-fail test_unsigned_strict_mod.cpp ;
+run test_signed_saturating_addition.cpp ;
+run test_signed_saturating_subtraction.cpp ;
+run test_signed_saturating_multiplication.cpp ;
+run test_signed_saturating_division.cpp ;
+run test_signed_saturating_mod.cpp ;
+run test_signed_overflowing_addition.cpp ;
+run test_signed_overflowing_subtraction.cpp ;
+run test_signed_overflowing_multiplication.cpp ;
+run test_signed_overflowing_division.cpp ;
+run test_signed_overflowing_mod.cpp ;
+run test_signed_checked_addition.cpp ;
+run test_signed_checked_subtraction.cpp ;
+run test_signed_checked_multiplication.cpp ;
+run test_signed_checked_division.cpp ;
+run test_signed_checked_mod.cpp ;
+run-fail test_signed_strict_addition.cpp ;
+run-fail test_signed_strict_subtraction.cpp ;
+run-fail test_signed_strict_multiplication.cpp ;
+run-fail test_signed_strict_division.cpp ;
+run-fail test_signed_strict_mod.cpp ;
 
 # Exhaustive verification tests
 run test_exhaustive_u8_arithmetic.cpp ;
