@@ -78,6 +78,14 @@ public:
 
     template <fundamental_signed_integral OtherBasis>
     constexpr auto operator%=(signed_integer_basis<OtherBasis> rhs) -> signed_integer_basis&;
+
+    constexpr auto operator++() -> signed_integer_basis&;
+
+    constexpr auto operator++(int) -> signed_integer_basis;
+
+    constexpr auto operator--() -> signed_integer_basis&;
+
+    constexpr auto operator--(int) -> signed_integer_basis;
 };
 
 // Helper for diagnostic messages
@@ -1945,6 +1953,122 @@ constexpr auto signed_integer_basis<BasisType>::operator%=(const signed_integer_
 {
     *this = *this % rhs;
     return *this;
+}
+
+// ------------------------------
+// Increment / Decrement error messages
+// ------------------------------
+
+template <fundamental_signed_integral BasisType>
+constexpr auto signed_overflow_inc_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::int8_t>)
+    {
+        return "Overflow detected in i8 increment";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+    {
+        return "Overflow detected in i16 increment";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+    {
+        return "Overflow detected in i32 increment";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+    {
+        return "Overflow detected in i64 increment";
+    }
+    else
+    {
+        return "Overflow detected in i128 increment";
+    }
+}
+
+template <fundamental_signed_integral BasisType>
+constexpr auto signed_underflow_dec_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, std::int8_t>)
+    {
+        return "Underflow detected in i8 decrement";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+    {
+        return "Underflow detected in i16 decrement";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+    {
+        return "Underflow detected in i32 decrement";
+    }
+    else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+    {
+        return "Underflow detected in i64 decrement";
+    }
+    else
+    {
+        return "Underflow detected in i128 decrement";
+    }
+}
+
+// ------------------------------
+// Pre and post increment
+// ------------------------------
+
+template <fundamental_signed_integral BasisType>
+constexpr auto signed_integer_basis<BasisType>::operator++()
+    -> signed_integer_basis&
+{
+    if (this->basis_ == std::numeric_limits<BasisType>::max()) [[unlikely]]
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, signed_overflow_inc_msg<BasisType>());
+    }
+
+    ++this->basis_;
+    return *this;
+}
+
+template <fundamental_signed_integral BasisType>
+constexpr auto signed_integer_basis<BasisType>::operator++(int)
+    -> signed_integer_basis
+{
+    if (this->basis_ == std::numeric_limits<BasisType>::max()) [[unlikely]]
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, signed_overflow_inc_msg<BasisType>());
+    }
+
+    const auto temp {*this};
+    ++this->basis_;
+    return temp;
+}
+
+// ------------------------------
+// Pre and post decrement
+// ------------------------------
+
+template <fundamental_signed_integral BasisType>
+constexpr auto signed_integer_basis<BasisType>::operator--()
+    -> signed_integer_basis&
+{
+    if (this->basis_ == std::numeric_limits<BasisType>::min()) [[unlikely]]
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, signed_underflow_dec_msg<BasisType>());
+    }
+
+    --this->basis_;
+    return *this;
+}
+
+template <fundamental_signed_integral BasisType>
+constexpr auto signed_integer_basis<BasisType>::operator--(int)
+    -> signed_integer_basis
+{
+    if (this->basis_ == std::numeric_limits<BasisType>::min()) [[unlikely]]
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, signed_underflow_dec_msg<BasisType>());
+    }
+
+    const auto temp {*this};
+    --this->basis_;
+    return temp;
 }
 
 } // namespace boost::safe_numbers::detail
