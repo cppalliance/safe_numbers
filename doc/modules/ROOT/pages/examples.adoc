@@ -608,3 +608,29 @@ result[2] = 31
 result[3] = 41
 ----
 ====
+
+[#examples_cuda_error_handling_without_error_context]
+== CUDA Error Handling Without Error Context
+
+This example demonstrates what happens when a safe_numbers overflow occurs on a CUDA device *without* using `device_error_context`.
+The overflow triggers a device-side trap that corrupts the CUDA context, making `cudaDeviceSynchronize()` report an unspecified launch failure.
+Even after calling `cudaDeviceReset()`, the process cannot launch any further kernels — all subsequent CUDA operations fail.
+This motivates the use of `device_error_context` shown in the previous example.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/cuda_error_handling_without_error_context.cu[example] demonstrates the consequences of not using `device_error_context` for GPU error handling.
+====
+[source, c++]
+----
+include::example$cuda_error_handling_without_error_context.cu[]
+----
+
+Output:
+----
+=== Launching kernel that overflows ===
+Kernel failed with error: unspecified launch failure
+Kernel has been reset via CUDA API
+
+=== Launching kernel with valid arithmetic ===
+Kernel failed with error: CUDA-capable device(s) is/are busy or unavailable
+----
+====
