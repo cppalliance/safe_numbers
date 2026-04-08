@@ -605,8 +605,9 @@ public:
     [[nodiscard]] explicit constexpr operator bounded_int<Min2, Max2>() const
     {
         using target_basis = typename bounded_int<Min2, Max2>::basis_type;
+        using target_underlying = detail::underlying_type_t<target_basis>;
         const auto raw {static_cast<detail::underlying_type_t<basis_type>>(basis_)};
-        return bounded_int<Min2, Max2>{static_cast<target_basis>(raw)};
+        return bounded_int<Min2, Max2>{target_basis{static_cast<target_underlying>(raw)}};
     }
 
     [[nodiscard]] explicit constexpr operator basis_type() const noexcept { return basis_; }
