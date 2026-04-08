@@ -309,6 +309,41 @@ run test_cuda_u128_gcd.cu ;
 run test_cuda_u128_lcm.cu ;
 run test_cuda_u128_midpoint.cu ;
 
+# i8 tests
+run test_cuda_i8_add.cu ;
+run test_cuda_i8_sub.cu ;
+run test_cuda_i8_mul.cu ;
+run test_cuda_i8_div.cu ;
+run test_cuda_i8_mod.cu ;
+
+# i16 tests
+run test_cuda_i16_add.cu ;
+run test_cuda_i16_sub.cu ;
+run test_cuda_i16_mul.cu ;
+run test_cuda_i16_div.cu ;
+run test_cuda_i16_mod.cu ;
+
+# i32 tests
+run test_cuda_i32_add.cu ;
+run test_cuda_i32_sub.cu ;
+run test_cuda_i32_mul.cu ;
+run test_cuda_i32_div.cu ;
+run test_cuda_i32_mod.cu ;
+
+# i64 tests
+run test_cuda_i64_add.cu ;
+run test_cuda_i64_sub.cu ;
+run test_cuda_i64_mul.cu ;
+run test_cuda_i64_div.cu ;
+run test_cuda_i64_mod.cu ;
+
+# i128 tests
+run test_cuda_i128_add.cu ;
+run test_cuda_i128_sub.cu ;
+run test_cuda_i128_mul.cu ;
+run test_cuda_i128_div.cu ;
+run test_cuda_i128_mod.cu ;
+
 # Examples
 run ../examples/cuda.cu ;
 run ../examples/cuda_error_handling.cu ;
