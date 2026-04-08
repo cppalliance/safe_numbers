@@ -151,6 +151,25 @@ run test_signed_bounded_conversions.cpp ;
 run test_signed_bounded_unary.cpp ;
 compile-fail compile_fail_bounded_int_mixed_ops.cpp ;
 
+# Signed free function tests
+run test_signed_charconv.cpp ;
+run test_signed_fmt_format.cpp ;
+run test_signed_std_format.cpp ;
+run test_signed_streaming.cpp ;
+run test_signed_bounded_charconv.cpp ;
+run test_signed_bounded_fmt_format.cpp ;
+run test_signed_bounded_std_format.cpp ;
+run test_signed_limits.cpp ;
+run test_signed_gcd.cpp ;
+run test_signed_lcm.cpp ;
+run test_signed_midpoint.cpp ;
+run test_signed_abs_diff.cpp ;
+run test_signed_to_from_be.cpp ;
+run test_signed_to_from_le.cpp ;
+run test_signed_to_from_be_bytes.cpp ;
+run test_signed_to_from_le_bytes.cpp ;
+run test_signed_to_from_ne_bytes.cpp ;
+
 # Byte conversion tests
 run test_to_from_be.cpp ;
 run test_to_from_le.cpp ;
