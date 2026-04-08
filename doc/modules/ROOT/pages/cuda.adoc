@@ -10,7 +10,7 @@ https://www.boost.org/LICENSE_1_0.txt
 
 == Description
 
-The types of this library support compilation with NVCC.
+All integer types of this library (unsigned `u8`-`u128`, signed `i8`-`i128`, and bounded types) support compilation with NVCC.
 To get the safety guarantees, there are some small modifications to the way that CUDA code is written.
 Normally you would have something like this:
 
