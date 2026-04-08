@@ -65,7 +65,7 @@ https://www.boost.org/LICENSE_1_0.txt
 | Safe signed 128-bit integer
 |===
 
-=== Bounded Unsigned Integer Type
+=== Bounded Integer Types
 
 [cols="1,2", options="header"]
 |===
@@ -73,6 +73,9 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:bounded_uint.adoc[`bounded_uint<Min, Max>`]
 | Safe unsigned integer constrained to a compile-time range `[Min, Max]`
+
+| xref:bounded_int.adoc[`bounded_int<Min, Max>`]
+| Safe signed integer constrained to a compile-time range `[Min, Max]`
 |===
 
 === Enumerations

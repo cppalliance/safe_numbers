@@ -141,6 +141,15 @@ run test_unsigned_bounded_fmt_format.cpp ;
 run test_unsigned_bounded_std_format.cpp ;
 compile-fail compile_fail_bounded_mixed_ops.cpp ;
 compile-fail compile_fail_bounded_bool_bounds.cpp ;
+run test_signed_bounded_construction.cpp ;
+run test_signed_bounded_addition.cpp ;
+run test_signed_bounded_subtraction.cpp ;
+run test_signed_bounded_multiplication.cpp ;
+run test_signed_bounded_division.cpp ;
+run test_signed_bounded_modulo.cpp ;
+run test_signed_bounded_conversions.cpp ;
+run test_signed_bounded_unary.cpp ;
+compile-fail compile_fail_bounded_int_mixed_ops.cpp ;
 
 # Byte conversion tests
 run test_to_from_be.cpp ;

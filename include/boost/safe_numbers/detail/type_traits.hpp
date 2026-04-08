@@ -118,6 +118,27 @@ constexpr auto raw_value(T val) noexcept
     }
 }
 
+// valid_signed_bound concept
+
+template <typename T>
+concept valid_signed_bound = !std::is_same_v<T, bool> && (is_signed_library_type_v<T> || is_fundamental_signed_integral_v<T>);
+
+// signed_raw_value function
+
+template <typename T>
+    requires valid_signed_bound<T>
+constexpr auto signed_raw_value(T val) noexcept
+{
+    if constexpr (is_signed_library_type_v<T>)
+    {
+        return static_cast<underlying_type_t<T>>(val);
+    }
+    else
+    {
+        return val;
+    }
+}
+
 } // namespace boost::safe_numbers::detail
 
 // Constrained forward declaration of bounded_uint
@@ -131,11 +152,30 @@ class bounded_uint;
 
 } // namespace boost::safe_numbers
 
+// Constrained forward declaration of bounded_int
+namespace boost::safe_numbers {
+
+template <auto Min, auto Max>
+    requires (detail::valid_signed_bound<decltype(Min)> &&
+              detail::valid_signed_bound<decltype(Max)> &&
+              detail::signed_raw_value(Max) > detail::signed_raw_value(Min))
+class bounded_int;
+
+} // namespace boost::safe_numbers
+
 // bounded_uint specialization of is_unsigned_library_type
 namespace boost::safe_numbers::detail::impl {
 
 template <auto Min, auto Max>
 struct is_unsigned_library_type<bounded_uint<Min, Max>> : std::true_type {};
+
+} // namespace boost::safe_numbers::detail::impl
+
+// bounded_int specialization of is_signed_library_type
+namespace boost::safe_numbers::detail::impl {
+
+template <auto Min, auto Max>
+struct is_signed_library_type<bounded_int<Min, Max>> : std::true_type {};
 
 } // namespace boost::safe_numbers::detail::impl
 
@@ -149,6 +189,9 @@ struct is_bounded_type : std::false_type {};
 
 template <auto Min, auto Max>
 struct is_bounded_type<bounded_uint<Min, Max>> : std::true_type {};
+
+template <auto Min, auto Max>
+struct is_bounded_type<bounded_int<Min, Max>> : std::true_type {};
 
 } // namespace impl
 
@@ -171,6 +214,9 @@ struct is_library_type<signed_integer_basis<T>> : std::true_type {};
 template <auto Min, auto Max>
 struct is_library_type<bounded_uint<Min, Max>> : std::true_type {};
 
+template <auto Min, auto Max>
+struct is_library_type<bounded_int<Min, Max>> : std::true_type {};
+
 template <typename>
 struct is_integral_library_type : std::false_type {};
 
@@ -182,6 +228,9 @@ struct is_integral_library_type<signed_integer_basis<T>> : std::true_type {};
 
 template <auto Min, auto Max>
 struct is_integral_library_type<bounded_uint<Min, Max>> : std::true_type {};
+
+template <auto Min, auto Max>
+struct is_integral_library_type<bounded_int<Min, Max>> : std::true_type {};
 
 } // namespace impl
 
@@ -214,6 +263,12 @@ template <auto Min, auto Max>
 struct underlying<bounded_uint<Min, Max>>
 {
     using type = typename underlying<typename bounded_uint<Min, Max>::basis_type>::type;
+};
+
+template <auto Min, auto Max>
+struct underlying<bounded_int<Min, Max>>
+{
+    using type = typename underlying<typename bounded_int<Min, Max>::basis_type>::type;
 };
 
 } // namespace impl

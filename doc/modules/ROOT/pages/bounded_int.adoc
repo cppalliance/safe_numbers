@@ -1,0 +1,122 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#bounded_int]
+
+= Bounded Signed Integer Types
+
+== Description
+
+`bounded_int<Min, Max>` is a compile-time bounded signed integer type that enforces value constraints at both compile time and runtime.
+The bounds `Min` and `Max` are non-type template parameters of any signed integer type (including the library's `i8`, `i16`, etc.).
+
+The underlying storage type (`basis_type`) is automatically selected as the smallest signed safe integer type that can represent the full `[Min, Max]` range:
+
+|===
+| Condition | Basis Type
+
+| Both bounds fit in `[-128, 127]` | `i8`
+| Both bounds fit in `[-32768, 32767]` | `i16`
+| Both bounds fit in `[-2^31, 2^31-1]` | `i32`
+| Both bounds fit in `[-2^63, 2^63-1]` | `i64`
+| Otherwise | `i128`
+|===
+
+== Synopsis
+
+[source,c++]
+----
+#include <boost/safe_numbers/bounded_integers.hpp>
+
+namespace boost::safe_numbers {
+
+template <auto Min, auto Max>
+    requires (valid_signed_bound<decltype(Min)> &&
+              valid_signed_bound<decltype(Max)> &&
+              signed_raw_value(Max) > signed_raw_value(Min))
+class bounded_int {
+public:
+    using basis_type = /* automatically selected */;
+
+    // Construction (throws std::domain_error if out of range)
+    explicit constexpr bounded_int(basis_type val);
+    explicit constexpr bounded_int(underlying_type val);
+
+    // Conversions
+    template <SignedType T>
+    explicit constexpr operator T() const;
+
+    template <auto Min2, auto Max2>
+    explicit constexpr operator bounded_int<Min2, Max2>() const;
+
+    explicit constexpr operator basis_type() const noexcept;
+    explicit constexpr operator underlying_type() const noexcept;
+
+    // Comparison (defaulted three-way)
+    friend constexpr auto operator<=>(bounded_int, bounded_int) noexcept -> std::strong_ordering = default;
+
+    // Unary operators
+    constexpr auto operator+() const noexcept -> bounded_int;
+    constexpr auto operator-() const -> bounded_int;  // throws on min negation or out-of-bounds
+
+    // Arithmetic operators (throw on overflow/underflow/out-of-range)
+    friend constexpr auto operator+(bounded_int, bounded_int) -> bounded_int;
+    friend constexpr auto operator-(bounded_int, bounded_int) -> bounded_int;
+    friend constexpr auto operator*(bounded_int, bounded_int) -> bounded_int;
+    friend constexpr auto operator/(bounded_int, bounded_int) -> bounded_int;
+    friend constexpr auto operator%(bounded_int, bounded_int) -> bounded_int;
+
+    // Compound assignment
+    constexpr auto operator+=(bounded_int) -> bounded_int&;
+    constexpr auto operator-=(bounded_int) -> bounded_int&;
+    constexpr auto operator*=(bounded_int) -> bounded_int&;
+    constexpr auto operator/=(bounded_int) -> bounded_int&;
+
+    // Increment / Decrement
+    constexpr auto operator++() -> bounded_int&;
+    constexpr auto operator++(int) -> bounded_int;
+    constexpr auto operator--() -> bounded_int&;
+    constexpr auto operator--(int) -> bounded_int;
+};
+
+} // namespace boost::safe_numbers
+----
+
+== Exception Behavior
+
+|===
+| Condition | Exception Type
+
+| Value outside `[Min, Max]` at construction or after arithmetic | `std::domain_error`
+| Signed addition overflow | `std::overflow_error`
+| Signed addition underflow | `std::underflow_error`
+| Signed subtraction overflow | `std::overflow_error`
+| Signed subtraction underflow | `std::underflow_error`
+| Signed multiplication overflow | `std::overflow_error`
+| Signed multiplication underflow | `std::underflow_error`
+| Division by zero | `std::domain_error`
+| Division `min / -1` overflow | `std::overflow_error`
+| Modulo by zero | `std::domain_error`
+| Modulo `min % -1` overflow | `std::overflow_error`
+| Negation of type minimum | `std::overflow_error`
+| Negation result outside bounds | `std::domain_error`
+| Increment result exceeds Max | `std::domain_error`
+| Decrement result below Min | `std::domain_error`
+|===
+
+== Mixed-Width Operations
+
+Operations between `bounded_int` types with different bounds are compile-time errors:
+
+[source,c++]
+----
+bounded_int<-100, 100> a {50};
+bounded_int<-200, 200> b {50};
+
+// auto c = a + b;  // Compile error: different bounds
+----
+
+Bitwise operations are also compile-time errors on `bounded_int` types.
