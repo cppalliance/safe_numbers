@@ -62,6 +62,7 @@ run test_signed_multiplication.cpp ;
 run test_signed_division.cpp ;
 run test_signed_modulo.cpp ;
 run test_signed_inc_dec.cpp ;
+compile-fail compile_fail_signed_bitwise.cpp ;
 
 run test_unsigned_addition.cpp ;
 compile-fail compile_fail_unsigned_addition.cpp ;
