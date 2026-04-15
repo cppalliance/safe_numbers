@@ -135,6 +135,26 @@ constexpr auto operator-() const -> signed_integer_basis;
 - `+`: Returns a copy of the value (identity).
 - `-`: Throws `std::domain_error` if the value is `std::numeric_limits<BasisType>::min()`, since negating the minimum value of a two's complement signed integer overflows.
 
+== Bitwise Operations
+
+Signed integer types in this library deliberately do **not** provide bitwise operations.
+Any attempt to use `~`, `&`, `|`, `^`, `<<`, or `>>` — or the corresponding compound-assignment forms `&=`, `|=`, `^=`, `<<=`, `>>=` on a signed safe integer is a compile-time error.
+
+This design follows the precedent set by the https://ada-lang.io/[Ada] programming language, which treats signed integers as purely numeric values and reserves bit-level manipulation for distinct modular (unsigned) types.
+The rationale is that bitwise reasoning about a two's-complement sign bit is a frequent source of portability and correctness bugs: right-shifting a negative value, masking off the high bit, or reinterpreting the result of an arithmetic operation as a bit pattern all invite surprise and, historically in C and C++, implementation-defined or undefined behavior.
+
+Code that genuinely needs bit manipulation should convert the value to the corresponding unsigned safe integer type, perform the operation, and convert back.
+
+[source,c++]
+----
+auto s = i32{0x1234};
+
+// auto m = s & i32{0xFF};                       // Compile error: bitwise ops disabled for signed
+auto m = static_cast<i32>(                       // OK: convert, mask, convert back
+    static_cast<u32>(s) & u32{0xFF}
+);
+----
+
 == Mixed-Width Operations
 
 Operations between different width safe signed integer types are compile-time errors.
