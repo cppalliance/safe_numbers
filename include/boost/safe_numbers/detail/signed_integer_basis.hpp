@@ -79,6 +79,36 @@ public:
     template <fundamental_signed_integral OtherBasis>
     BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator%=(signed_integer_basis<OtherBasis> rhs) -> signed_integer_basis&;
 
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator&=(signed_integer_basis) -> signed_integer_basis&
+    {
+        static_assert(dependent_false<BasisType>, "Bitwise AND is deliberately disabled for signed safe integers (see Ada)");
+        return *this; // LCOV_EXCL_LINE : deliberately unreachable
+    }
+
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator|=(signed_integer_basis) -> signed_integer_basis&
+    {
+        static_assert(dependent_false<BasisType>, "Bitwise OR is deliberately disabled for signed safe integers (see Ada)");
+        return *this; // LCOV_EXCL_LINE : deliberately unreachable
+    }
+
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator^=(signed_integer_basis) -> signed_integer_basis&
+    {
+        static_assert(dependent_false<BasisType>, "Bitwise XOR is deliberately disabled for signed safe integers (see Ada)");
+        return *this; // LCOV_EXCL_LINE : deliberately unreachable
+    }
+
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator<<=(signed_integer_basis) -> signed_integer_basis&
+    {
+        static_assert(dependent_false<BasisType>, "Left shift is deliberately disabled for signed safe integers (see Ada)");
+        return *this; // LCOV_EXCL_LINE : deliberately unreachable
+    }
+
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator>>=(signed_integer_basis) -> signed_integer_basis&
+    {
+        static_assert(dependent_false<BasisType>, "Right shift is deliberately disabled for signed safe integers (see Ada)");
+        return *this; // LCOV_EXCL_LINE : deliberately unreachable
+    }
+
     BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator++() -> signed_integer_basis&;
 
     BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator++(int) -> signed_integer_basis;
@@ -3012,6 +3042,53 @@ template <overflow_policy Policy, detail::fundamental_signed_integral BasisType>
     {
         static_assert(detail::dependent_false<BasisType>, "Policy is not supported for modulo");
     }
+}
+
+template <detail::fundamental_signed_integral BasisType>
+constexpr auto operator~(const detail::signed_integer_basis<BasisType> lhs) noexcept
+{
+    static_assert(detail::dependent_false<BasisType>, "Bitwise NOT is deliberately disabled for signed safe integers (see Ada)");
+    return lhs; // LCOV_EXCL_LINE : deliberately unreachable
+}
+
+template <detail::fundamental_signed_integral BasisType>
+constexpr auto operator&(const detail::signed_integer_basis<BasisType> lhs,
+                         const detail::signed_integer_basis<BasisType>) noexcept
+{
+    static_assert(detail::dependent_false<BasisType>, "Bitwise AND is deliberately disabled for signed safe integers (see Ada)");
+    return lhs; // LCOV_EXCL_LINE : deliberately unreachable
+}
+
+template <detail::fundamental_signed_integral BasisType>
+constexpr auto operator|(const detail::signed_integer_basis<BasisType> lhs,
+                         const detail::signed_integer_basis<BasisType>) noexcept
+{
+    static_assert(detail::dependent_false<BasisType>, "Bitwise OR is deliberately disabled for signed safe integers (see Ada)");
+    return lhs; // LCOV_EXCL_LINE : deliberately unreachable
+}
+
+template <detail::fundamental_signed_integral BasisType>
+constexpr auto operator^(const detail::signed_integer_basis<BasisType> lhs,
+                         const detail::signed_integer_basis<BasisType>) noexcept
+{
+    static_assert(detail::dependent_false<BasisType>, "Bitwise XOR is deliberately disabled for signed safe integers (see Ada)");
+    return lhs; // LCOV_EXCL_LINE : deliberately unreachable
+}
+
+template <detail::fundamental_signed_integral BasisType>
+constexpr auto operator<<(const detail::signed_integer_basis<BasisType> lhs,
+                          const detail::signed_integer_basis<BasisType>) noexcept
+{
+    static_assert(detail::dependent_false<BasisType>, "Left shift is deliberately disabled for signed safe integers (see Ada)");
+    return lhs; // LCOV_EXCL_LINE : deliberately unreachable
+}
+
+template <detail::fundamental_signed_integral BasisType>
+constexpr auto operator>>(const detail::signed_integer_basis<BasisType> lhs,
+                          const detail::signed_integer_basis<BasisType>) noexcept
+{
+    static_assert(detail::dependent_false<BasisType>, "Right shift is deliberately disabled for signed safe integers (see Ada)");
+    return lhs; // LCOV_EXCL_LINE : deliberately unreachable
 }
 
 } // namespace boost::safe_numbers
