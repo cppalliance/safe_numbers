@@ -38,10 +38,29 @@ Division and modulo do not belong to the ring operations xref:reference.adoc[pas
 What we do know is that latexmath:[\forall a \in \{0, \ldots, 2^n -1\}] and latexmath:[\forall b \in \{1, \ldots, 2^n -1\}] the result of latexmath:[a / b \in \{0, \ldots, 2^n - 1\}].
 This means that we need only check for the case where b = 0, as this operation is undefined.
 
-////
 == Signed Integers
 
-Since the library is written using C++20 we get the language level guarantee that signed integers are defined as two's complement
-This allows us re-interpret all operations as unsigned integers, and then verify that the results are sane
+Signed arithmetic is bounded on both sides, latexmath:[a \in \{-2^{n - 1}, \ldots, 2^{n - 1} - 1\}], so every operation admits two failure modes rather than one: overflow above latexmath:[2^{n - 1} - 1] and underflow below latexmath:[-2^{n - 1}].
+The library uses the two's-complement representation mandated by pass:[C++20], under which the high bit of the unsigned view is the arithmetic sign.
+Signed overflow remains undefined in C++, so detection is performed in the unsigned domain before the result is reinterpreted.
 
-////
+=== Addition and Subtracting
+
+The inequality latexmath:[\text{result} < \text{lhs}] that serves unsigned addition does not carry over: adding two negatives can wrap to a positive result that is still less than either operand.
+Detection instead relies on a sign-bit identity.
+A signed sum overflows iff the operands share a sign and the result sign differs, which in two's complement is the predicate latexmath:[((\mathord{\sim}(u_a \oplus u_b)) \wedge (u_a \oplus u_r)) \gg (n-1) = 1] where latexmath:[u_x] denotes the unsigned view of latexmath:[x].
+Subtraction is the dual case: latexmath:[a - b] overflows iff the operands differ in sign and the result sign differs from latexmath:[a], captured by latexmath:[((u_a \oplus u_b) \wedge (u_a \oplus u_r)) \gg (n-1) = 1].
+Examples are `INT32_MAX + 1` (overflow) and `INT32_MIN - 1` (underflow); a familiar asymmetric case is `-INT32_MIN`, which cannot be represented because latexmath:[-(-2^{n - 1}) = 2^{n - 1} > 2^{n - 1} - 1].
+
+=== Multiplication
+
+For widths `i8` through `i64` the argument of xref:reference.adoc[pass:[[5]]] applies unchanged: the signed integers of width latexmath:[n] embed into the signed integers of width latexmath:[2n] by a ring homomorphism, so we lift latexmath:[a \cdot b] into the wider arithmetic and compare against the bounds latexmath:[\{-2^{n - 1}, \ldots, 2^{n - 1} - 1\}] of the narrower ring.
+In the `i128` case there is no wider native arithmetic to lift into, and the unsigned division trick must account for sign.
+Working in absolute values, overflow occurs iff latexmath:[b \ne 0 \wedge |a| > \lfloor M / |b| \rfloor], where latexmath:[M = 2^{n - 1} - 1] when the signs of latexmath:[a] and latexmath:[b] agree and latexmath:[M = 2^{n - 1}] when they differ — the latter accommodating products that land exactly on latexmath:[-2^{n - 1}], which is representable only when the result is negative.
+
+=== Division and Modulo
+
+Division and modulo again fall outside the ring operations xref:reference.adoc[pass:[[5]]], but for signed arithmetic the safe region is narrowly smaller than in the unsigned case.
+For latexmath:[a \in \{-2^{n - 1}, \ldots, 2^{n - 1} - 1\}] and latexmath:[b \in \{-2^{n - 1}, \ldots, 2^{n - 1} - 1\} \setminus \{0\}], truncated division places latexmath:[a / b] in the closed interval latexmath:[\{-2^{n - 1}, \ldots, 2^{n - 1} - 1\}] except in the single pair latexmath:[(a, b) = (-2^{n - 1}, -1)], for which the mathematical quotient latexmath:[2^{n - 1}] is unrepresentable.
+Two inputs must therefore be rejected: latexmath:[b = 0], which is undefined, and the `INT_MIN / -1` pair, which overflows.
+The same pair is rejected for modulo even though latexmath:[a \bmod b = 0] mathematically, because the C++ language specifies the result of `INT_MIN % -1` as undefined behavior on native types and the library preserves that contract at the type boundary.
