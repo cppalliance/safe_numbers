@@ -1,0 +1,1585 @@
+(*
+ * Formal Verification of Signed Integer Overflow Detection
+ * for Boost.SafeNumbers
+ *
+ * Copyright 2026 Matt Borland
+ * Distributed under the Boost Software License, Version 1.0.
+ * https://www.boost.org/LICENSE_1_0.txt
+ *
+ * This file formally proves the correctness of all signed arithmetic
+ * operations (+, -, *, /, %, unary -, ++, --) in Boost.SafeNumbers.
+ * The C++ implementation is in:
+ *
+ *   include/boost/safe_numbers/detail/signed_integer_basis.hpp
+ *
+ * The portable overflow detection for addition (lines 461-488) is:
+ *
+ *   temp = (unsigned)lhs + (unsigned)rhs;   // wrapping addition
+ *   result = (signed)temp;                   // two's complement cast
+ *   has_overflow = ((~(ulhs ^ urhs)) & (ulhs ^ temp)) >> (N-1);
+ *
+ * This bit formula evaluates to 1 iff the sign bits of lhs and rhs agree
+ * AND the sign bit of the result differs from lhs. We model it in Why3
+ * as an arithmetic predicate over the unsigned view of each value.
+ *
+ * The portable overflow detection for subtraction (lines 1074-1101) is:
+ *
+ *   temp = (unsigned)lhs - (unsigned)rhs;   // wrapping subtraction
+ *   has_overflow = ((ulhs ^ urhs) & (ulhs ^ temp)) >> (N-1);
+ *
+ * This fires iff the operand signs differ AND the result sign differs
+ * from lhs.
+ *
+ * Multiplication overflow detection uses two strategies:
+ *
+ * 1. Wide multiplication (i8/i16/i32/i64, lines 1609-1656):
+ *    Promote to a wider signed type, compute exact product, check
+ *    against max() and min().
+ *
+ * 2. Absolute-value division check (i128, lines 1573-1608):
+ *    abs_lhs = |a|, abs_rhs = |b| computed in unsigned domain;
+ *    max_magnitude = max() if signs agree, |min()| if signs differ;
+ *    overflow iff abs_rhs != 0 && abs_lhs > max_magnitude / abs_rhs.
+ *
+ * Division (lines 2040-2149): throws domain_error on rhs == 0, and
+ * overflow_error on lhs == min() && rhs == -1 (the only overflowing
+ * pair of signed operands).
+ *
+ * Modulo (lines 2305-2500): throws domain_error on rhs == 0, and
+ * overflow_error on lhs == min() && rhs == -1. The latter is C++ UB
+ * for native types even though the mathematical remainder is 0; the
+ * library treats it as overflow for consistency with division.
+ *
+ * Unary minus (lines 348-356): throws domain_error on -min().
+ * Increment (lines 2578-2603): throws overflow_error on a == max().
+ * Decrement (lines 2611-2636): throws underflow_error on a == min().
+ *
+ * Modeling notes:
+ *   - Signed wrap is s_wrap(s, n) = either mod s 2^n or mod s 2^n - 2^n,
+ *     chosen to land in [-2^(n-1), 2^(n-1)). Euclidean mod is used
+ *     throughout the wrap-based theories.
+ *   - Signed div/mod use int.ComputerDivision (truncated toward zero)
+ *     to match C++ / and % semantics. The alias `Comp` disambiguates
+ *     against EuclideanDivision's div/mod when both are in scope.
+ *   - The connection between this Why3 model and the C++ bit formula
+ *     is established by inspection: the shift-by-(N-1) extracts the
+ *     high bit, which our model encodes as is_neg_bit u n := u >= 2^(n-1).
+ *
+ * Verification: All 287 lemmas are proved using two complementary provers:
+ *   - Alt-Ergo 2.4.3: proves 285/287
+ *   - Z3 4.15.4:      proves the remaining 2 (div_neg_below_zero and
+ *                      mul_monotone_bounds) in under 20 ms combined.
+ *   Every lemma is proved by at least one prover (zero gaps).
+ *
+ *   why3 prove -P alt-ergo -t 10 -L theorems theorems/signed_integers.why
+ *   why3 prove -P z3 -t 30 -L theorems theorems/signed_integers.why
+ *)
+
+(* ================================================================
+ * Theory: PowerOfTwo
+ *
+ * Step-by-step computation of power 2 N for specific bit widths.
+ * Duplicated from unsigned_integers.why so this file is standalone.
+ * ================================================================ *)
+theory PowerOfTwo
+
+  use int.Int
+  use int.Power
+
+  lemma p2_1:   power 2 1   = 2
+  lemma p2_2:   power 2 2   = 4
+  lemma p2_4:   power 2 4   = 16
+  lemma p2_7:   power 2 7   = 128
+  lemma p2_8:   power 2 8   = 256
+  (* Odd exponents: decompose via Power_sum so Alt-Ergo can close
+   * the concrete value from the two halves it already knows. *)
+  lemma p2_15_split:  power 2 15  = power 2 7  * power 2 8
+  lemma p2_15:        power 2 15  = 32768
+  lemma p2_16:        power 2 16  = 65536
+  lemma p2_31_split:  power 2 31  = power 2 15 * power 2 16
+  lemma p2_31:        power 2 31  = 2147483648
+  lemma p2_32:        power 2 32  = 4294967296
+  lemma p2_63_split:  power 2 63  = power 2 31 * power 2 32
+  lemma p2_63:        power 2 63  = 9223372036854775808
+  lemma p2_64:        power 2 64  = 18446744073709551616
+  lemma p2_127_split: power 2 127 = power 2 63 * power 2 64
+  lemma p2_127:       power 2 127 = 170141183460469231731687303715884105728
+  lemma p2_128:       power 2 128 = 340282366920938463463374607431768211456
+
+end
+
+(* ================================================================
+ * Theory: SignedBounds
+ *
+ * The signed N-bit representable range and its basic properties.
+ * Kept free of any division/mod theory so that the div/mod proof
+ * theories (which need int.ComputerDivision) can depend on it
+ * without creating a name clash against int.EuclideanDivision.
+ * ================================================================ *)
+theory SignedBounds
+
+  use int.Int
+  use int.Power
+
+  (* The maximum signed N-bit value: 2^(N-1) - 1 *)
+  function max_s (n: int) : int = power 2 (n - 1) - 1
+
+  (* The minimum signed N-bit value: -2^(N-1) *)
+  function min_s (n: int) : int = - power 2 (n - 1)
+
+  (* Whether a value is a valid signed N-bit integer *)
+  predicate valid_s (x n: int) =
+    min_s n <= x /\ x <= max_s n
+
+  (* Mathematical absolute value over integers. In the C++ code |min_s|
+   * is computed in unsigned domain via two's-complement negation; in
+   * the Why3 model we work in the integers directly, where -min_s n
+   * = 2^(n-1) is representable. *)
+  function abs_s (x: int) : int = if x >= 0 then x else - x
+
+  (* ---- Basic lemmas ---- *)
+
+  lemma power_pos:
+    forall n: int. n >= 1 -> power 2 n > 0
+
+  lemma half_pos:
+    forall n: int. n >= 1 -> power 2 (n - 1) >= 1
+
+  lemma modulus_is_two_halves:
+    forall n: int. n >= 1 -> power 2 n = 2 * power 2 (n - 1)
+
+  lemma max_s_pos:
+    forall n: int. n >= 2 -> max_s n >= 1
+
+  lemma min_s_neg:
+    forall n: int. n >= 1 -> min_s n <= -1
+
+  lemma min_max_diff:
+    forall n: int. n >= 1 -> max_s n - min_s n = power 2 n - 1
+
+  lemma neg_min_is_half:
+    forall n: int. n >= 1 -> - min_s n = power 2 (n - 1)
+
+  lemma neg_min_eq_max_plus_one:
+    forall n: int. n >= 1 -> - min_s n = max_s n + 1
+
+  (* Absolute value properties *)
+
+  lemma abs_nonneg:
+    forall x: int. abs_s x >= 0
+
+  lemma abs_zero_iff:
+    forall x: int. abs_s x = 0 <-> x = 0
+
+  lemma abs_neg:
+    forall x: int. x < 0 -> abs_s x = - x
+
+  lemma abs_pos:
+    forall x: int. x >= 0 -> abs_s x = x
+
+  lemma abs_le_half_when_not_min:
+    forall x n: int.
+      n >= 1 -> valid_s x n -> x <> min_s n ->
+      abs_s x <= max_s n
+
+  lemma abs_le_half:
+    forall x n: int.
+      n >= 1 -> valid_s x n ->
+      abs_s x <= power 2 (n - 1)
+
+  (* Product-sign lemmas used by multiplication overflow reasoning *)
+
+  lemma abs_product:
+    forall a b: int. abs_s (a * b) = abs_s a * abs_s b
+
+  lemma product_nonneg_iff_signs_agree:
+    forall a b: int. a * b >= 0 <-> ((a >= 0) = (b >= 0)) \/ a = 0 \/ b = 0
+
+end
+
+(* ================================================================
+ * Theory: SignedWrap
+ *
+ * Two's complement wrapping interpretation of an arbitrary integer
+ * into a signed N-bit value. Uses Euclidean mod (non-negative)
+ * internally. Exposes uview, is_neg_bit, and s_wrap, the primitives
+ * used to express the C++ bit-pattern detection predicates.
+ * ================================================================ *)
+theory SignedWrap
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+  use SignedBounds
+
+  (* The N-bit unsigned view of an integer x: its two's complement
+   * representation as an unsigned value in [0, 2^N).
+   * Models: static_cast<unsigned_t>(value)
+   * Reference: signed_integer_basis.hpp lines 446-447, 478-479 *)
+  function uview (x n: int) : int = mod x (power 2 n)
+
+  (* Whether the sign bit (bit N-1) of an unsigned N-bit value is set.
+   * Models: (u >> (N-1)) & 1 == 1, equivalently u >= 2^(N-1).
+   * Reference: the shift-by-digits in the detection formula,
+   * signed_integer_basis.hpp line 480, 1093 *)
+  predicate is_neg_bit (u n: int) =
+    u >= power 2 (n - 1)
+
+  (* The signed interpretation of the wrapping result.
+   * Models: result = static_cast<T>(temp), where temp is the unsigned
+   * wrap. If the high bit is 0 the value is already in range; if the
+   * high bit is 1 we subtract 2^N to land in [min_s, 0).
+   * Reference: signed_integer_basis.hpp lines 475, 1088 *)
+  function s_wrap (s n: int) : int =
+    let u = mod s (power 2 n) in
+    if u < power 2 (n - 1) then u else u - power 2 n
+
+  (* ---- Helper lemmas about uview ---- *)
+
+  (* Modulus is positive for n >= 1. *)
+  lemma modulus_positive:
+    forall n: int. n >= 1 -> power 2 n > 0
+
+  (* Abstract mod bound -- specialises to Mod_bound in EuclideanDivision. *)
+  lemma mod_lt_divisor_pos:
+    forall x y: int. y > 0 -> mod x y < y
+
+  lemma mod_ge_zero_pos:
+    forall x y: int. y > 0 -> mod x y >= 0
+
+  lemma uview_nonneg:
+    forall x n: int. n >= 1 -> uview x n >= 0
+
+  lemma uview_lt_modulus:
+    forall x n: int. n >= 1 -> uview x n < power 2 n
+
+  (* For non-negative x < 2^n, uview is identity *)
+  lemma uview_identity_nonneg_small:
+    forall x n: int. n >= 1 -> 0 <= x -> x < power 2 n -> uview x n = x
+
+  (* Uniqueness of Euclidean mod: given any witness decomposition
+   * x = y*q + r with 0 <= r < y, the mod must equal r. *)
+  lemma mod_unique_pos:
+    forall x y q r: int. y > 0 -> x = y * q + r -> 0 <= r -> r < y -> mod x y = r
+
+  (* Euclidean div is -1 for x in [-y, 0). Mirrors the stdlib's
+   * Div_inf_neg (forall x y. 0 < x <= y -> div (-x) y = -1). *)
+  lemma div_inf_neg_explicit:
+    forall u y: int. u > 0 -> u <= y -> div (- u) y = -1
+
+  (* Renaming of div_inf_neg_explicit with the convenient range
+   * hypothesis shape. Alt-Ergo fails to fire the substitution u := -x
+   * on its own, so we state it here directly for downstream lemmas
+   * (mod_neg_below_zero) to pick up. Proved by Z3. *)
+  lemma div_neg_below_zero:
+    forall x y: int. y > 0 -> - y <= x -> x < 0 -> div x y = -1
+
+  (* Hint: for x in (-y, 0) and y > 0, mod x y = x + y (Euclidean mod).
+   * Follows from div = -1 plus Div_mod identity. *)
+  lemma mod_neg_below_zero:
+    forall x y: int. y > 0 -> - y < x -> x < 0 -> mod x y = x + y
+
+  (* For negative x > -2^n, uview adds 2^n *)
+  lemma uview_shift_neg:
+    forall x n: int. n >= 1 -> - power 2 n < x -> x < 0 -> uview x n = x + power 2 n
+
+  (* Key equivalence: for a valid signed value, is_neg_bit (uview x n) n
+   * holds iff x is negative. This is the arithmetic counterpart of the
+   * C++ bit-formula's use of the sign bit. *)
+  lemma is_neg_bit_iff_neg_valid:
+    forall x n: int. n >= 1 -> valid_s x n ->
+      (is_neg_bit (uview x n) n <-> x < 0)
+
+  (* ---- Helper lemmas about s_wrap ---- *)
+
+  lemma s_wrap_lower_bound:
+    forall s n: int. n >= 1 -> s_wrap s n >= - power 2 (n - 1)
+
+  lemma s_wrap_upper_bound:
+    forall s n: int. n >= 1 -> s_wrap s n < power 2 (n - 1)
+
+  lemma s_wrap_valid:
+    forall s n: int. n >= 1 -> valid_s (s_wrap s n) n
+
+  (* Identity split: the two halves of s_wrap_identity_in_range. Giving
+   * Alt-Ergo the sign case explicitly avoids the mod-analysis blow-up. *)
+  lemma s_wrap_identity_nonneg:
+    forall s n: int. n >= 1 -> 0 <= s -> s <= max_s n -> s_wrap s n = s
+
+  lemma s_wrap_identity_neg:
+    forall s n: int. n >= 1 -> min_s n <= s -> s < 0 -> s_wrap s n = s
+
+  (* When s is already in the signed range, s_wrap is identity. *)
+  lemma s_wrap_identity_in_range:
+    forall s n: int. n >= 1 -> valid_s s n -> s_wrap s n = s
+
+  (* When s lies one modulus above the range (max_s, 2*max_s], wrap
+   * subtracts 2^n. *)
+  lemma s_wrap_subtracts_modulus:
+    forall s n: int. n >= 1 -> s > max_s n -> s < power 2 n ->
+      s_wrap s n = s - power 2 n
+
+  (* When s lies one modulus below the range [-2^n, min_s), wrap adds 2^n. *)
+  lemma s_wrap_adds_modulus:
+    forall s n: int. n >= 1 -> s < min_s n -> s >= - power 2 n ->
+      s_wrap s n = s + power 2 n
+
+end
+
+(* ================================================================
+ * Theory: SignedAddOverflow
+ *
+ * Signed N-bit addition with two's complement wrap and bit-pattern
+ * overflow detection.
+ * ================================================================ *)
+theory SignedAddOverflow
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+  use SignedBounds
+  use SignedWrap
+
+  (* Wrapping signed addition: the signed interpretation of (a+b) mod 2^n *)
+  function wrap_add_s (a b n: int) : int = s_wrap (a + b) n
+
+  (* True mathematical overflow / underflow *)
+  predicate add_overflows (a b n: int) = a + b > max_s n
+  predicate add_underflows (a b n: int) = a + b < min_s n
+
+  (* Bit-pattern detection: signs agree in, signs differ out.
+   * Models the C++ formula ((~(ulhs^urhs)) & (ulhs^temp)) >> (N-1).
+   * Reference: signed_integer_basis.hpp line 480 *)
+  predicate add_detected (a b n: int) =
+    (is_neg_bit (uview a n) n = is_neg_bit (uview b n) n) /\
+    (is_neg_bit (uview a n) n <> is_neg_bit (uview (a + b) n) n)
+
+  (* ---- Helper lemmas ---- *)
+
+  (* Sum bounds for valid operands: a+b in [2*min_s, 2*max_s],
+   * strictly inside (-2^n, 2^n). *)
+  lemma sum_bounds_signed:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      2 * min_s n <= a + b /\ a + b <= 2 * max_s n
+
+  (* Sum is within one modulus of zero: exactly in [-2^n, 2^n - 2].
+   * The lower bound is achieved at a = b = min_s n (sum = -2^n), so
+   * we use <=, not <. *)
+  lemma sum_in_open_modulus:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      - power 2 n <= a + b /\ a + b < power 2 n
+
+  (* Case quadrants: an overflow only happens when both operands are
+   * non-negative, and an underflow only when both are negative. *)
+  lemma overflow_implies_both_nonneg:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      add_overflows a b n -> a >= 0 /\ b >= 0
+
+  lemma underflow_implies_both_neg:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      add_underflows a b n -> a < 0 /\ b < 0
+
+  (* When signs differ, no overflow or underflow. *)
+  lemma diff_signs_no_overflow:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      ((a >= 0 /\ b < 0) \/ (a < 0 /\ b >= 0)) ->
+      not (add_overflows a b n) /\ not (add_underflows a b n)
+
+  (* Sign of (a+b)'s unsigned view in each case *)
+  lemma uview_sum_nonneg_no_overflow:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      a >= 0 -> b >= 0 -> not (add_overflows a b n) ->
+      not (is_neg_bit (uview (a + b) n) n)
+
+  lemma uview_sum_nonneg_overflow:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      a >= 0 -> b >= 0 -> add_overflows a b n ->
+      is_neg_bit (uview (a + b) n) n
+
+  lemma uview_sum_neg_no_underflow:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      a < 0 -> b < 0 -> not (add_underflows a b n) ->
+      is_neg_bit (uview (a + b) n) n
+
+  lemma uview_sum_neg_underflow:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      a < 0 -> b < 0 -> add_underflows a b n ->
+      not (is_neg_bit (uview (a + b) n) n)
+
+  lemma uview_sum_diff_signs:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      ((a >= 0 /\ b < 0) \/ (a < 0 /\ b >= 0)) ->
+      (is_neg_bit (uview (a + b) n) n <-> a + b < 0)
+
+  (* ---- Main Theorems ---- *)
+
+  (* Theorem 1 (Soundness): true overflow/underflow implies detection. *)
+  lemma add_soundness:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      (add_overflows a b n \/ add_underflows a b n) ->
+      add_detected a b n
+
+  (* Theorem 2 (No false positives): no overflow/underflow implies no detection. *)
+  lemma add_no_false_positives:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      not (add_overflows a b n) -> not (add_underflows a b n) ->
+      not (add_detected a b n)
+
+  (* Theorem 3 (Correctness): when no overflow/underflow, wrap = true sum. *)
+  lemma add_correctness:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      not (add_overflows a b n) -> not (add_underflows a b n) ->
+      wrap_add_s a b n = a + b
+
+  (* Theorem 4 (Biconditional): detection iff overflow or underflow. *)
+  lemma add_biconditional:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      (add_detected a b n <-> (add_overflows a b n \/ add_underflows a b n))
+
+  (* Theorem 5 (Direction classification): when detection fires, the
+   * sign of lhs correctly identifies overflow vs underflow.
+   * Models: classify_signed_overflow(lhs) at line 390. *)
+  lemma classify_direction_overflow:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      add_overflows a b n -> a >= 0
+
+  lemma classify_direction_underflow:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      add_underflows a b n -> a < 0
+
+end
+
+(* ================================================================
+ * Theory: SignedSubOverflow
+ *
+ * Signed N-bit subtraction with two's complement wrap and bit-pattern
+ * overflow detection.
+ * ================================================================ *)
+theory SignedSubOverflow
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+  use SignedBounds
+  use SignedWrap
+
+  function wrap_sub_s (a b n: int) : int = s_wrap (a - b) n
+
+  predicate sub_overflows (a b n: int) = a - b > max_s n
+  predicate sub_underflows (a b n: int) = a - b < min_s n
+
+  (* Subtraction detection: signs differ in, lhs differs from result out.
+   * Models: ((ulhs ^ urhs) & (ulhs ^ temp)) >> (N-1).
+   * Reference: signed_integer_basis.hpp line 1093 *)
+  predicate sub_detected (a b n: int) =
+    (is_neg_bit (uview a n) n <> is_neg_bit (uview b n) n) /\
+    (is_neg_bit (uview a n) n <> is_neg_bit (uview (a - b) n) n)
+
+  (* ---- Helper lemmas ---- *)
+
+  lemma diff_bounds_signed:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      min_s n - max_s n <= a - b /\ a - b <= max_s n - min_s n
+
+  lemma diff_in_open_modulus:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      - power 2 n < a - b /\ a - b < power 2 n
+
+  lemma sub_overflow_needs_pos_neg:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      sub_overflows a b n -> a >= 0 /\ b < 0
+
+  lemma sub_underflow_needs_neg_pos:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      sub_underflows a b n -> a < 0 /\ b >= 0
+
+  lemma sub_same_signs_no_overflow:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      ((a >= 0 /\ b >= 0) \/ (a < 0 /\ b < 0)) ->
+      not (sub_overflows a b n) /\ not (sub_underflows a b n)
+
+  (* Sign of the unsigned view of a-b in each quadrant *)
+  lemma uview_diff_same_sign:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      ((a >= 0 /\ b >= 0) \/ (a < 0 /\ b < 0)) ->
+      (is_neg_bit (uview (a - b) n) n <-> a - b < 0)
+
+  lemma uview_diff_pos_neg_no_overflow:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      a >= 0 -> b < 0 -> not (sub_overflows a b n) ->
+      not (is_neg_bit (uview (a - b) n) n)
+
+  lemma uview_diff_pos_neg_overflow:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      a >= 0 -> b < 0 -> sub_overflows a b n ->
+      is_neg_bit (uview (a - b) n) n
+
+  lemma uview_diff_neg_pos_no_underflow:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      a < 0 -> b >= 0 -> not (sub_underflows a b n) ->
+      is_neg_bit (uview (a - b) n) n
+
+  lemma uview_diff_neg_pos_underflow:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      a < 0 -> b >= 0 -> sub_underflows a b n ->
+      not (is_neg_bit (uview (a - b) n) n)
+
+  (* ---- Main Theorems ---- *)
+
+  lemma sub_soundness:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      (sub_overflows a b n \/ sub_underflows a b n) ->
+      sub_detected a b n
+
+  lemma sub_no_false_positives:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      not (sub_overflows a b n) -> not (sub_underflows a b n) ->
+      not (sub_detected a b n)
+
+  lemma sub_correctness:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      not (sub_overflows a b n) -> not (sub_underflows a b n) ->
+      wrap_sub_s a b n = a - b
+
+  lemma sub_biconditional:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      (sub_detected a b n <-> (sub_overflows a b n \/ sub_underflows a b n))
+
+  (* Direction classification for subtraction uses lhs's sign. *)
+  lemma sub_classify_overflow:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      sub_overflows a b n -> a >= 0
+
+  lemma sub_classify_underflow:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      sub_underflows a b n -> a < 0
+
+end
+
+(* ================================================================
+ * Theory: SignedMulOverflow
+ *
+ * Signed N-bit multiplication. Two detection strategies are used in
+ * the C++ code (both proved correct here):
+ *
+ * 1. Wide multiplication (i8, i16, i32, i64) -- lines 1609-1656:
+ *    Promote to a wider signed type that can hold a*b exactly, then
+ *    check temp > max() or temp < min(). Justified by wide_mul_safe_s
+ *    (the product fits in 2N bits).
+ *
+ * 2. Absolute-value division check (i128) -- lines 1573-1608:
+ *    abs_lhs = |a|, abs_rhs = |b| (computed via two's complement in
+ *    the C++ code, modeled as abs_s in Why3); max_magnitude is max()
+ *    when signs agree and |min()| when signs differ; overflow iff
+ *    abs_rhs != 0 && abs_lhs > max_magnitude / abs_rhs.
+ * ================================================================ *)
+theory SignedMulOverflow
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+  use SignedBounds
+  use SignedWrap
+
+  function wrap_mul_s (a b n: int) : int = s_wrap (a * b) n
+
+  predicate mul_overflows_s (a b n: int) =
+    a * b > max_s n \/ a * b < min_s n
+
+  (* Max representable magnitude depending on the expected sign of a*b.
+   * signs agree (product positive): bounded by max_s n.
+   * signs differ (product negative): bounded by |min_s n| = 2^(n-1).
+   * Reference: signed_integer_basis.hpp lines 1595-1597 *)
+  function max_magnitude (a b n: int) : int =
+    if (a >= 0) = (b >= 0) then max_s n else power 2 (n - 1)
+
+  (* The C++ division check for i128 multiplication.
+   * Reference: signed_integer_basis.hpp line 1602 *)
+  predicate signed_div_check (a b n: int) =
+    b <> 0 /\ abs_s a > div (max_magnitude a b n) (abs_s b)
+
+  (* ---- Helper lemmas for multiplication bounds ---- *)
+
+  lemma mul_by_zero_l:
+    forall b: int. 0 * b = 0
+
+  lemma mul_by_zero_r:
+    forall a: int. a * 0 = 0
+
+  lemma mul_zero_no_overflow:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      (a = 0 \/ b = 0) -> not (mul_overflows_s a b n)
+
+  (* Monotonicity of multiplication on non-negative operands. The
+   * two-sided form is nonlinear and requires Z3 to close. *)
+  lemma mul_mono_left_nonneg:
+    forall u uu v: int. 0 <= u -> u <= uu -> 0 <= v -> u * v <= uu * v
+
+  lemma mul_mono_right_nonneg:
+    forall u v vv: int. 0 <= u -> 0 <= v -> v <= vv -> u * v <= u * vv
+
+  lemma mul_monotone_bounds:
+    forall u v uu vv: int.
+      0 <= u -> u <= uu -> 0 <= v -> v <= vv -> u * v <= uu * vv
+
+  (* Product magnitude bound: |a*b| <= 2^(n-1) * 2^(n-1) = 2^(2n-2). *)
+  lemma product_magnitude_bound:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      abs_s (a * b) <= power 2 (n - 1) * power 2 (n - 1)
+
+  (* Wide-mul safety: a*b fits in a signed 2N-bit type.
+   * This justifies the i8/i16/i32/i64 C++ path (promote to 2x width). *)
+  lemma wide_mul_safe_s:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      min_s (2 * n) <= a * b /\ a * b <= max_s (2 * n)
+
+  (* ---- Helpers tying mul_overflows_s to the absolute product ---- *)
+
+  (* When signs agree, a*b >= 0 and overflow iff a*b > max_s n.
+   * When signs differ, a*b <= 0 and overflow iff -(a*b) > 2^(n-1),
+   * equivalently a*b < min_s n. *)
+  lemma mul_overflows_signs_agree:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      (a >= 0) = (b >= 0) ->
+      (mul_overflows_s a b n <-> a * b > max_s n)
+
+  lemma mul_overflows_signs_differ:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      (a >= 0) <> (b >= 0) ->
+      (mul_overflows_s a b n <-> a * b < min_s n)
+
+  (* Key equivalence: overflow iff |a*b| > max_magnitude. *)
+  lemma mul_overflows_iff_abs_product:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n -> a <> 0 -> b <> 0 ->
+      (mul_overflows_s a b n <-> abs_s a * abs_s b > max_magnitude a b n)
+
+  (* ---- Division-check correctness (i128 path) ---- *)
+
+  lemma div_check_zero_rhs:
+    forall a n: int. n >= 1 -> valid_s a n ->
+      not (signed_div_check a 0 n)
+
+  (* Step 1: abs_s a > q implies abs_s a * abs_s b >= (q+1) * abs_s b *)
+  lemma div_check_step1:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      b <> 0 -> abs_s a > div (max_magnitude a b n) (abs_s b) ->
+      abs_s a * abs_s b >= (div (max_magnitude a b n) (abs_s b) + 1) * abs_s b
+
+  (* Hints for div_check_step2 / no_false_positives: Euclidean identity
+   * M = y*q + r with 0 <= r < y gives both (q+1)*y > M and q*y <= M. *)
+  lemma div_q_plus_one_strict:
+    forall m y: int. y > 0 -> (div m y + 1) * y > m
+
+  lemma div_q_times_y_le:
+    forall m y: int. y > 0 -> m >= 0 -> div m y * y <= m
+
+  (* Step 2: (q+1)*|b| > max_magnitude, by Euclidean division. *)
+  lemma div_check_step2:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      b <> 0 ->
+      (div (max_magnitude a b n) (abs_s b) + 1) * abs_s b > max_magnitude a b n
+
+  (* Soundness: div-check fires => true overflow. *)
+  lemma div_check_soundness:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      b <> 0 -> abs_s a > div (max_magnitude a b n) (abs_s b) ->
+      mul_overflows_s a b n
+
+  (* No false positives: div-check does not fire => no overflow. *)
+  lemma div_check_no_false_positives:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      b <> 0 -> abs_s a <= div (max_magnitude a b n) (abs_s b) ->
+      not (mul_overflows_s a b n)
+
+  (* ---- Main Theorems ---- *)
+
+  lemma mul_correctness:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      not (mul_overflows_s a b n) ->
+      wrap_mul_s a b n = a * b
+
+  lemma signed_div_check_biconditional:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      (signed_div_check a b n <-> mul_overflows_s a b n)
+
+  (* Direction classification: which of the two overflow cases fires. *)
+  lemma mul_overflows_is_pos:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      a * b > max_s n -> (a >= 0) = (b >= 0) \/ a = 0 \/ b = 0
+
+  lemma mul_underflows_needs_opp_signs:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      a * b < min_s n -> (a >= 0) <> (b >= 0)
+
+end
+
+(* ================================================================
+ * Theory: SignedDivSafety
+ *
+ * Signed integer division. Uses C-style truncated division
+ * (int.ComputerDivision) to match C++ operator/ semantics.
+ *
+ * The two error conditions are:
+ *   - rhs == 0   -> std::domain_error
+ *   - lhs == min && rhs == -1 -> std::overflow_error
+ *
+ * For all other valid operand pairs, the truncated quotient is a
+ * valid signed N-bit value.
+ * Reference: signed_integer_basis.hpp lines 2040-2149
+ * ================================================================ *)
+theory SignedDivSafety
+
+  use int.Int
+  use int.Power
+  use int.ComputerDivision
+  use SignedBounds
+
+  (* Truncated-toward-zero division / modulo. Matches C++ semantics. *)
+  function sdiv (a b: int) : int = div a b
+
+  (* The complete error predicate for signed division. *)
+  predicate div_error_s (a b n: int) =
+    b = 0 \/ (a = min_s n /\ b = -1)
+
+  (* ---- Helper lemmas about truncated division ---- *)
+
+  (* For b != 0, |a/b| <= |a|, except in the min/-1 case where the
+   * result overflows (|min/-1| = |min| = max + 1). *)
+  lemma sdiv_abs_le:
+    forall a b: int. b <> 0 -> abs_s (div a b) <= abs_s a
+
+  lemma sdiv_nonneg_when_same_sign:
+    forall a b: int. b <> 0 -> (a >= 0) = (b >= 0) -> div a b >= 0
+
+  lemma sdiv_nonpos_when_diff_sign:
+    forall a b: int. b <> 0 -> (a >= 0) <> (b >= 0) -> div a b <= 0
+
+  lemma sdiv_by_one:
+    forall a: int. div a 1 = a
+
+  lemma sdiv_by_neg_one:
+    forall a: int. div a (-1) = - a
+
+  (* Special case: min / -1 = -min = 2^(n-1) = max + 1 > max. *)
+  lemma sdiv_min_neg_one_equals_neg_min:
+    forall n: int. n >= 1 -> div (min_s n) (-1) = - min_s n
+
+  lemma sdiv_min_neg_one_equals_half:
+    forall n: int. n >= 1 -> div (min_s n) (-1) = power 2 (n - 1)
+
+  lemma sdiv_min_neg_one_overflows:
+    forall n: int. n >= 1 -> div (min_s n) (-1) > max_s n
+
+  (* Abs bound when not in the min/-1 case: |a/b| <= 2^(n-1).
+   * The tight bound is |min_s / 1| = 2^(n-1) = max_s + 1, so we
+   * cannot strengthen to max_s without excluding that boundary. *)
+  lemma sdiv_abs_bounded:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      b <> 0 -> not (a = min_s n /\ b = -1) ->
+      abs_s (div a b) <= power 2 (n - 1)
+
+  (* ---- Main Theorems ---- *)
+
+  (* Theorem 1 (Result validity): for non-error inputs, sdiv is valid. *)
+  lemma sdiv_result_valid:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      not (div_error_s a b n) ->
+      valid_s (sdiv a b) n
+
+  (* Theorem 2 (Correctness): sdiv is the true truncated quotient. *)
+  lemma sdiv_correctness:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      not (div_error_s a b n) ->
+      sdiv a b = div a b
+
+  (* Theorem 3 (Error completeness): the C++ checks (rhs==0 OR min/-1)
+   * catch exactly the cases where no valid result exists. *)
+  lemma sdiv_error_complete:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      div_error_s a b n <->
+        (b = 0 \/ (b <> 0 /\ not (valid_s (div a b) n)))
+
+  (* Theorem 4 (Min/-1 is the only overflowing division). *)
+  lemma sdiv_unique_overflow:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      b <> 0 -> not (valid_s (div a b) n) ->
+      a = min_s n /\ b = -1
+
+end
+
+(* ================================================================
+ * Theory: SignedModSafety
+ *
+ * Signed integer modulo with C-style truncated remainder (same sign
+ * as dividend, |a%b| < |b|). The error conditions match those of
+ * division: rhs==0 (domain_error) and min%-1 (treated as overflow
+ * even though the mathematical remainder is 0, to match C++ UB).
+ * Reference: signed_integer_basis.hpp lines 2305-2500
+ * ================================================================ *)
+theory SignedModSafety
+
+  use int.Int
+  use int.Power
+  use int.ComputerDivision
+  use SignedBounds
+
+  function smod (a b: int) : int = mod a b
+
+  predicate mod_error_s (a b n: int) =
+    b = 0 \/ (a = min_s n /\ b = -1)
+
+  (* ---- Helper lemmas: ComputerDivision properties ---- *)
+
+  lemma smod_abs_lt_divisor:
+    forall a b: int. b <> 0 -> abs_s (mod a b) < abs_s b
+
+  lemma smod_sign_matches_dividend:
+    forall a b: int. b <> 0 ->
+      (a >= 0 -> mod a b >= 0) /\ (a < 0 -> mod a b <= 0)
+
+  (* Mathematically min % -1 = 0, but the library rejects this case
+   * to stay consistent with min / -1 being rejected. *)
+  lemma smod_min_neg_one_is_zero_math:
+    forall n: int. n >= 1 -> mod (min_s n) (-1) = 0
+
+  lemma smod_div_mod_relation:
+    forall a b: int. b <> 0 -> a = div a b * b + mod a b
+
+  (* Abs bound: |a%b| <= max_s n when b is a valid signed value. *)
+  lemma smod_abs_bounded:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      b <> 0 ->
+      abs_s (mod a b) <= max_s n
+
+  (* ---- Main Theorems ---- *)
+
+  lemma smod_result_valid:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      not (mod_error_s a b n) ->
+      valid_s (smod a b) n
+
+  lemma smod_correctness:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      not (mod_error_s a b n) ->
+      smod a b = mod a b
+
+  lemma smod_result_always_valid_when_b_nonzero:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      b <> 0 ->
+      valid_s (mod a b) n
+
+  lemma smod_error_complete:
+    forall a b n: int. n >= 1 -> valid_s a n -> valid_s b n ->
+      (mod_error_s a b n -> b = 0 \/ (a = min_s n /\ b = -1))
+
+end
+
+(* ================================================================
+ * Theory: SignedUnaryMinus
+ *
+ * Unary negation for signed N-bit integers. The only overflow case
+ * is -min_s = 2^(n-1) = max_s + 1, which is unrepresentable.
+ * Reference: signed_integer_basis.hpp lines 348-356
+ * ================================================================ *)
+theory SignedUnaryMinus
+
+  use int.Int
+  use int.Power
+  use SignedBounds
+
+  predicate unary_minus_error (a n: int) = a = min_s n
+
+  lemma neg_valid_when_not_min:
+    forall a n: int. n >= 1 -> valid_s a n -> a <> min_s n ->
+      valid_s (- a) n
+
+  lemma neg_min_unrepresentable:
+    forall n: int. n >= 1 -> - min_s n = max_s n + 1 /\ max_s n + 1 > max_s n
+
+  lemma unary_minus_error_iff:
+    forall a n: int. n >= 1 -> valid_s a n ->
+      (unary_minus_error a n <-> not (valid_s (- a) n))
+
+  lemma neg_correctness_when_not_min:
+    forall a n: int. n >= 1 -> valid_s a n -> a <> min_s n ->
+      - (- a) = a
+
+end
+
+(* ================================================================
+ * Theory: SignedIncDec
+ *
+ * Increment overflows at max_s; decrement underflows at min_s.
+ * Reference: signed_integer_basis.hpp lines 2578-2636
+ * ================================================================ *)
+theory SignedIncDec
+
+  use int.Int
+  use int.Power
+  use SignedBounds
+
+  predicate inc_error (a n: int) = a = max_s n
+  predicate dec_error (a n: int) = a = min_s n
+
+  lemma inc_valid_iff_not_max:
+    forall a n: int. n >= 1 -> valid_s a n ->
+      (valid_s (a + 1) n <-> a <> max_s n)
+
+  lemma dec_valid_iff_not_min:
+    forall a n: int. n >= 1 -> valid_s a n ->
+      (valid_s (a - 1) n <-> a <> min_s n)
+
+  lemma inc_overflows_only_at_max:
+    forall a n: int. n >= 1 -> valid_s a n ->
+      a + 1 > max_s n <-> a = max_s n
+
+  lemma dec_underflows_only_at_min:
+    forall a n: int. n >= 1 -> valid_s a n ->
+      a - 1 < min_s n <-> a = min_s n
+
+end
+
+(* ================================================================
+ * Theory: SignedI8
+ *
+ * Concrete instantiation for int8_t (N = 8, range [-128, 127]).
+ * Models: boost::safe_numbers::i8
+ *         = detail::signed_integer_basis<std::int8_t>
+ * Reference: signed_integers.hpp line 21
+ * ================================================================ *)
+theory SignedI8
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+  use PowerOfTwo
+  use SignedBounds
+  use SignedWrap
+  use SignedAddOverflow
+  use SignedSubOverflow
+  use SignedMulOverflow
+  use SignedDivSafety
+  use SignedModSafety
+  use SignedUnaryMinus
+  use SignedIncDec
+
+  constant n8 : int = 8
+
+  lemma n8_valid: n8 >= 1
+
+  lemma i8_max: max_s n8 = 127
+  lemma i8_min: min_s n8 = -128
+
+  (* ---- Addition ---- *)
+
+  lemma i8_add_soundness:
+    forall a b: int. valid_s a n8 -> valid_s b n8 ->
+      (add_overflows a b n8 \/ add_underflows a b n8) ->
+      add_detected a b n8
+
+  lemma i8_add_no_false_positives:
+    forall a b: int. valid_s a n8 -> valid_s b n8 ->
+      not (add_overflows a b n8) -> not (add_underflows a b n8) ->
+      not (add_detected a b n8)
+
+  lemma i8_add_correctness:
+    forall a b: int. valid_s a n8 -> valid_s b n8 ->
+      not (add_overflows a b n8) -> not (add_underflows a b n8) ->
+      wrap_add_s a b n8 = a + b
+
+  lemma i8_add_biconditional:
+    forall a b: int. valid_s a n8 -> valid_s b n8 ->
+      (add_detected a b n8 <-> (add_overflows a b n8 \/ add_underflows a b n8))
+
+  (* Addition boundary tests *)
+  lemma i8_add_max_plus_one:          add_overflows 127 1 n8
+  lemma i8_add_max_plus_zero:         not (add_overflows 127 0 n8)
+  lemma i8_add_min_plus_neg_one:      add_underflows (-128) (-1) n8
+  lemma i8_add_min_plus_zero:         not (add_underflows (-128) 0 n8)
+  lemma i8_add_half_plus_half:        add_overflows 64 64 n8
+  lemma i8_add_half_plus_half_valid:  not (add_overflows 64 63 n8)
+
+  (* ---- Subtraction ---- *)
+
+  lemma i8_sub_soundness:
+    forall a b: int. valid_s a n8 -> valid_s b n8 ->
+      (sub_overflows a b n8 \/ sub_underflows a b n8) ->
+      sub_detected a b n8
+
+  lemma i8_sub_no_false_positives:
+    forall a b: int. valid_s a n8 -> valid_s b n8 ->
+      not (sub_overflows a b n8) -> not (sub_underflows a b n8) ->
+      not (sub_detected a b n8)
+
+  lemma i8_sub_correctness:
+    forall a b: int. valid_s a n8 -> valid_s b n8 ->
+      not (sub_overflows a b n8) -> not (sub_underflows a b n8) ->
+      wrap_sub_s a b n8 = a - b
+
+  lemma i8_sub_biconditional:
+    forall a b: int. valid_s a n8 -> valid_s b n8 ->
+      (sub_detected a b n8 <-> (sub_overflows a b n8 \/ sub_underflows a b n8))
+
+  (* Subtraction boundary tests *)
+  lemma i8_sub_min_minus_one:     sub_underflows (-128) 1 n8
+  lemma i8_sub_min_minus_zero:    not (sub_underflows (-128) 0 n8)
+  lemma i8_sub_max_minus_neg_one: sub_overflows 127 (-1) n8
+  lemma i8_sub_zero_minus_min:    sub_overflows 0 (-128) n8
+
+  (* ---- Multiplication ---- *)
+
+  lemma i8_mul_correctness:
+    forall a b: int. valid_s a n8 -> valid_s b n8 ->
+      not (mul_overflows_s a b n8) ->
+      wrap_mul_s a b n8 = a * b
+
+  lemma i8_mul_wide_safe:
+    forall a b: int. valid_s a n8 -> valid_s b n8 ->
+      min_s (2 * n8) <= a * b /\ a * b <= max_s (2 * n8)
+
+  lemma i8_mul_div_check:
+    forall a b: int. valid_s a n8 -> valid_s b n8 ->
+      (signed_div_check a b n8 <-> mul_overflows_s a b n8)
+
+  (* Multiplication boundary tests *)
+  lemma i8_mul_half_squared:        mul_overflows_s 12 12 n8   (* 144 > 127 *)
+  lemma i8_mul_half_squared_pos:    not (mul_overflows_s 11 11 n8) (* 121 valid *)
+  lemma i8_mul_neg_half_squared:    mul_overflows_s (-12) (-12) n8
+  lemma i8_mul_min_by_neg_one:      mul_overflows_s (-128) (-1) n8
+  lemma i8_mul_min_by_two:          mul_overflows_s (-128) 2 n8
+  lemma i8_mul_by_zero:             not (mul_overflows_s 127 0 n8)
+  lemma i8_mul_min_by_zero:         not (mul_overflows_s (-128) 0 n8)
+
+  (* ---- Division ---- *)
+
+  lemma i8_div_result_valid:
+    forall a b: int. valid_s a n8 -> valid_s b n8 ->
+      not (div_error_s a b n8) ->
+      valid_s (sdiv a b) n8
+
+  lemma i8_div_error_complete:
+    forall a b: int. valid_s a n8 -> valid_s b n8 ->
+      div_error_s a b n8 <->
+        (b = 0 \/ (b <> 0 /\ not (valid_s (sdiv a b) n8)))
+
+  (* Division boundary tests *)
+  lemma i8_div_min_by_neg_one_is_error:  div_error_s (-128) (-1) n8
+  lemma i8_div_min_by_one:               not (div_error_s (-128) 1 n8)
+  lemma i8_div_max_by_neg_one:           not (div_error_s 127 (-1) n8)
+  lemma i8_div_by_zero:                  div_error_s 5 0 n8
+
+  (* ---- Modulo ---- *)
+
+  lemma i8_mod_result_valid:
+    forall a b: int. valid_s a n8 -> valid_s b n8 ->
+      not (mod_error_s a b n8) ->
+      valid_s (smod a b) n8
+
+  (* Modulo boundary tests *)
+  lemma i8_mod_min_by_neg_one_is_error: mod_error_s (-128) (-1) n8
+  lemma i8_mod_by_zero:                 mod_error_s 5 0 n8
+
+  (* ---- Unary Minus ---- *)
+
+  lemma i8_neg_min_is_error: unary_minus_error (-128) n8
+
+  lemma i8_neg_min_unrepresentable:
+    - min_s n8 = max_s n8 + 1
+
+  lemma i8_neg_max_valid:   valid_s (-(127)) n8
+  lemma i8_neg_zero_valid:  valid_s (-0) n8
+
+  (* ---- Increment / Decrement ---- *)
+
+  lemma i8_inc_max_errors: inc_error (max_s n8) n8
+  lemma i8_dec_min_errors: dec_error (min_s n8) n8
+
+  lemma i8_inc_max_overflows:    127 + 1 > max_s n8
+  lemma i8_dec_min_underflows:   -128 - 1 < min_s n8
+
+end
+
+(* ================================================================
+ * Theory: SignedI16
+ *
+ * Concrete instantiation for int16_t (N = 16, range [-32768, 32767]).
+ * Models: boost::safe_numbers::i16
+ * Reference: signed_integers.hpp line 23
+ * ================================================================ *)
+theory SignedI16
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+  use PowerOfTwo
+  use SignedBounds
+  use SignedWrap
+  use SignedAddOverflow
+  use SignedSubOverflow
+  use SignedMulOverflow
+  use SignedDivSafety
+  use SignedModSafety
+  use SignedUnaryMinus
+  use SignedIncDec
+
+  constant n16 : int = 16
+
+  lemma n16_valid: n16 >= 1
+  lemma i16_max: max_s n16 = 32767
+  lemma i16_min: min_s n16 = -32768
+
+  (* ---- Addition ---- *)
+
+  lemma i16_add_soundness:
+    forall a b: int. valid_s a n16 -> valid_s b n16 ->
+      (add_overflows a b n16 \/ add_underflows a b n16) ->
+      add_detected a b n16
+
+  lemma i16_add_no_false_positives:
+    forall a b: int. valid_s a n16 -> valid_s b n16 ->
+      not (add_overflows a b n16) -> not (add_underflows a b n16) ->
+      not (add_detected a b n16)
+
+  lemma i16_add_correctness:
+    forall a b: int. valid_s a n16 -> valid_s b n16 ->
+      not (add_overflows a b n16) -> not (add_underflows a b n16) ->
+      wrap_add_s a b n16 = a + b
+
+  lemma i16_add_biconditional:
+    forall a b: int. valid_s a n16 -> valid_s b n16 ->
+      (add_detected a b n16 <-> (add_overflows a b n16 \/ add_underflows a b n16))
+
+  lemma i16_add_max_plus_one:     add_overflows 32767 1 n16
+  lemma i16_add_min_plus_neg_one: add_underflows (-32768) (-1) n16
+
+  (* ---- Subtraction ---- *)
+
+  lemma i16_sub_soundness:
+    forall a b: int. valid_s a n16 -> valid_s b n16 ->
+      (sub_overflows a b n16 \/ sub_underflows a b n16) ->
+      sub_detected a b n16
+
+  lemma i16_sub_no_false_positives:
+    forall a b: int. valid_s a n16 -> valid_s b n16 ->
+      not (sub_overflows a b n16) -> not (sub_underflows a b n16) ->
+      not (sub_detected a b n16)
+
+  lemma i16_sub_correctness:
+    forall a b: int. valid_s a n16 -> valid_s b n16 ->
+      not (sub_overflows a b n16) -> not (sub_underflows a b n16) ->
+      wrap_sub_s a b n16 = a - b
+
+  lemma i16_sub_biconditional:
+    forall a b: int. valid_s a n16 -> valid_s b n16 ->
+      (sub_detected a b n16 <-> (sub_overflows a b n16 \/ sub_underflows a b n16))
+
+  lemma i16_sub_min_minus_one:     sub_underflows (-32768) 1 n16
+  lemma i16_sub_max_minus_neg_one: sub_overflows 32767 (-1) n16
+
+  (* ---- Multiplication ---- *)
+
+  lemma i16_mul_correctness:
+    forall a b: int. valid_s a n16 -> valid_s b n16 ->
+      not (mul_overflows_s a b n16) ->
+      wrap_mul_s a b n16 = a * b
+
+  lemma i16_mul_wide_safe:
+    forall a b: int. valid_s a n16 -> valid_s b n16 ->
+      min_s (2 * n16) <= a * b /\ a * b <= max_s (2 * n16)
+
+  lemma i16_mul_div_check:
+    forall a b: int. valid_s a n16 -> valid_s b n16 ->
+      (signed_div_check a b n16 <-> mul_overflows_s a b n16)
+
+  lemma i16_mul_min_by_neg_one:  mul_overflows_s (-32768) (-1) n16
+  lemma i16_mul_half_overflow:   mul_overflows_s 256 128 n16
+  lemma i16_mul_by_zero:         not (mul_overflows_s 32767 0 n16)
+
+  (* ---- Division ---- *)
+
+  lemma i16_div_result_valid:
+    forall a b: int. valid_s a n16 -> valid_s b n16 ->
+      not (div_error_s a b n16) ->
+      valid_s (sdiv a b) n16
+
+  lemma i16_div_min_by_neg_one_is_error: div_error_s (-32768) (-1) n16
+
+  (* ---- Modulo ---- *)
+
+  lemma i16_mod_result_valid:
+    forall a b: int. valid_s a n16 -> valid_s b n16 ->
+      not (mod_error_s a b n16) ->
+      valid_s (smod a b) n16
+
+  lemma i16_mod_min_by_neg_one_is_error: mod_error_s (-32768) (-1) n16
+
+  (* ---- Unary Minus / Inc / Dec ---- *)
+
+  lemma i16_neg_min_is_error:    unary_minus_error (-32768) n16
+  lemma i16_inc_max_errors:      inc_error (max_s n16) n16
+  lemma i16_dec_min_errors:      dec_error (min_s n16) n16
+
+end
+
+(* ================================================================
+ * Theory: SignedI32
+ *
+ * Concrete instantiation for int32_t (N = 32).
+ * Models: boost::safe_numbers::i32
+ * Reference: signed_integers.hpp line 25
+ * ================================================================ *)
+theory SignedI32
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+  use PowerOfTwo
+  use SignedBounds
+  use SignedWrap
+  use SignedAddOverflow
+  use SignedSubOverflow
+  use SignedMulOverflow
+  use SignedDivSafety
+  use SignedModSafety
+  use SignedUnaryMinus
+  use SignedIncDec
+
+  constant n32 : int = 32
+
+  lemma n32_valid: n32 >= 1
+  lemma i32_max: max_s n32 = 2147483647
+  lemma i32_min: min_s n32 = -2147483648
+
+  (* ---- Addition ---- *)
+
+  lemma i32_add_soundness:
+    forall a b: int. valid_s a n32 -> valid_s b n32 ->
+      (add_overflows a b n32 \/ add_underflows a b n32) ->
+      add_detected a b n32
+
+  lemma i32_add_no_false_positives:
+    forall a b: int. valid_s a n32 -> valid_s b n32 ->
+      not (add_overflows a b n32) -> not (add_underflows a b n32) ->
+      not (add_detected a b n32)
+
+  lemma i32_add_correctness:
+    forall a b: int. valid_s a n32 -> valid_s b n32 ->
+      not (add_overflows a b n32) -> not (add_underflows a b n32) ->
+      wrap_add_s a b n32 = a + b
+
+  lemma i32_add_biconditional:
+    forall a b: int. valid_s a n32 -> valid_s b n32 ->
+      (add_detected a b n32 <-> (add_overflows a b n32 \/ add_underflows a b n32))
+
+  lemma i32_add_max_plus_one:     add_overflows 2147483647 1 n32
+  lemma i32_add_min_plus_neg_one: add_underflows (-2147483648) (-1) n32
+
+  (* ---- Subtraction ---- *)
+
+  lemma i32_sub_soundness:
+    forall a b: int. valid_s a n32 -> valid_s b n32 ->
+      (sub_overflows a b n32 \/ sub_underflows a b n32) ->
+      sub_detected a b n32
+
+  lemma i32_sub_no_false_positives:
+    forall a b: int. valid_s a n32 -> valid_s b n32 ->
+      not (sub_overflows a b n32) -> not (sub_underflows a b n32) ->
+      not (sub_detected a b n32)
+
+  lemma i32_sub_correctness:
+    forall a b: int. valid_s a n32 -> valid_s b n32 ->
+      not (sub_overflows a b n32) -> not (sub_underflows a b n32) ->
+      wrap_sub_s a b n32 = a - b
+
+  lemma i32_sub_biconditional:
+    forall a b: int. valid_s a n32 -> valid_s b n32 ->
+      (sub_detected a b n32 <-> (sub_overflows a b n32 \/ sub_underflows a b n32))
+
+  (* ---- Multiplication ---- *)
+
+  lemma i32_mul_correctness:
+    forall a b: int. valid_s a n32 -> valid_s b n32 ->
+      not (mul_overflows_s a b n32) ->
+      wrap_mul_s a b n32 = a * b
+
+  lemma i32_mul_wide_safe:
+    forall a b: int. valid_s a n32 -> valid_s b n32 ->
+      min_s (2 * n32) <= a * b /\ a * b <= max_s (2 * n32)
+
+  lemma i32_mul_div_check:
+    forall a b: int. valid_s a n32 -> valid_s b n32 ->
+      (signed_div_check a b n32 <-> mul_overflows_s a b n32)
+
+  lemma i32_mul_min_by_neg_one:  mul_overflows_s (-2147483648) (-1) n32
+  lemma i32_mul_by_zero:         not (mul_overflows_s 2147483647 0 n32)
+
+  (* ---- Division ---- *)
+
+  lemma i32_div_result_valid:
+    forall a b: int. valid_s a n32 -> valid_s b n32 ->
+      not (div_error_s a b n32) ->
+      valid_s (sdiv a b) n32
+
+  lemma i32_div_min_by_neg_one_is_error: div_error_s (-2147483648) (-1) n32
+
+  (* ---- Modulo ---- *)
+
+  lemma i32_mod_result_valid:
+    forall a b: int. valid_s a n32 -> valid_s b n32 ->
+      not (mod_error_s a b n32) ->
+      valid_s (smod a b) n32
+
+  lemma i32_mod_min_by_neg_one_is_error: mod_error_s (-2147483648) (-1) n32
+
+  (* ---- Unary Minus / Inc / Dec ---- *)
+
+  lemma i32_neg_min_is_error:    unary_minus_error (-2147483648) n32
+  lemma i32_inc_max_errors:      inc_error (max_s n32) n32
+  lemma i32_dec_min_errors:      dec_error (min_s n32) n32
+
+end
+
+(* ================================================================
+ * Theory: SignedI64
+ *
+ * Concrete instantiation for int64_t (N = 64).
+ * Models: boost::safe_numbers::i64
+ * Reference: signed_integers.hpp line 27
+ * ================================================================ *)
+theory SignedI64
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+  use PowerOfTwo
+  use SignedBounds
+  use SignedWrap
+  use SignedAddOverflow
+  use SignedSubOverflow
+  use SignedMulOverflow
+  use SignedDivSafety
+  use SignedModSafety
+  use SignedUnaryMinus
+  use SignedIncDec
+
+  constant n64 : int = 64
+
+  lemma n64_valid: n64 >= 1
+  lemma i64_max: max_s n64 = 9223372036854775807
+  lemma i64_min: min_s n64 = -9223372036854775808
+
+  (* ---- Addition ---- *)
+
+  lemma i64_add_soundness:
+    forall a b: int. valid_s a n64 -> valid_s b n64 ->
+      (add_overflows a b n64 \/ add_underflows a b n64) ->
+      add_detected a b n64
+
+  lemma i64_add_no_false_positives:
+    forall a b: int. valid_s a n64 -> valid_s b n64 ->
+      not (add_overflows a b n64) -> not (add_underflows a b n64) ->
+      not (add_detected a b n64)
+
+  lemma i64_add_correctness:
+    forall a b: int. valid_s a n64 -> valid_s b n64 ->
+      not (add_overflows a b n64) -> not (add_underflows a b n64) ->
+      wrap_add_s a b n64 = a + b
+
+  lemma i64_add_biconditional:
+    forall a b: int. valid_s a n64 -> valid_s b n64 ->
+      (add_detected a b n64 <-> (add_overflows a b n64 \/ add_underflows a b n64))
+
+  lemma i64_add_max_plus_one:     add_overflows 9223372036854775807 1 n64
+  lemma i64_add_min_plus_neg_one: add_underflows (-9223372036854775808) (-1) n64
+
+  (* ---- Subtraction ---- *)
+
+  lemma i64_sub_soundness:
+    forall a b: int. valid_s a n64 -> valid_s b n64 ->
+      (sub_overflows a b n64 \/ sub_underflows a b n64) ->
+      sub_detected a b n64
+
+  lemma i64_sub_no_false_positives:
+    forall a b: int. valid_s a n64 -> valid_s b n64 ->
+      not (sub_overflows a b n64) -> not (sub_underflows a b n64) ->
+      not (sub_detected a b n64)
+
+  lemma i64_sub_correctness:
+    forall a b: int. valid_s a n64 -> valid_s b n64 ->
+      not (sub_overflows a b n64) -> not (sub_underflows a b n64) ->
+      wrap_sub_s a b n64 = a - b
+
+  lemma i64_sub_biconditional:
+    forall a b: int. valid_s a n64 -> valid_s b n64 ->
+      (sub_detected a b n64 <-> (sub_overflows a b n64 \/ sub_underflows a b n64))
+
+  (* ---- Multiplication ---- *)
+
+  lemma i64_mul_correctness:
+    forall a b: int. valid_s a n64 -> valid_s b n64 ->
+      not (mul_overflows_s a b n64) ->
+      wrap_mul_s a b n64 = a * b
+
+  lemma i64_mul_wide_safe:
+    forall a b: int. valid_s a n64 -> valid_s b n64 ->
+      min_s (2 * n64) <= a * b /\ a * b <= max_s (2 * n64)
+
+  lemma i64_mul_div_check:
+    forall a b: int. valid_s a n64 -> valid_s b n64 ->
+      (signed_div_check a b n64 <-> mul_overflows_s a b n64)
+
+  lemma i64_mul_min_by_neg_one:  mul_overflows_s (-9223372036854775808) (-1) n64
+  lemma i64_mul_by_zero:         not (mul_overflows_s 9223372036854775807 0 n64)
+
+  (* ---- Division ---- *)
+
+  lemma i64_div_result_valid:
+    forall a b: int. valid_s a n64 -> valid_s b n64 ->
+      not (div_error_s a b n64) ->
+      valid_s (sdiv a b) n64
+
+  lemma i64_div_min_by_neg_one_is_error: div_error_s (-9223372036854775808) (-1) n64
+
+  (* ---- Modulo ---- *)
+
+  lemma i64_mod_result_valid:
+    forall a b: int. valid_s a n64 -> valid_s b n64 ->
+      not (mod_error_s a b n64) ->
+      valid_s (smod a b) n64
+
+  lemma i64_mod_min_by_neg_one_is_error: mod_error_s (-9223372036854775808) (-1) n64
+
+  (* ---- Unary Minus / Inc / Dec ---- *)
+
+  lemma i64_neg_min_is_error:    unary_minus_error (-9223372036854775808) n64
+  lemma i64_inc_max_errors:      inc_error (max_s n64) n64
+  lemma i64_dec_min_errors:      dec_error (min_s n64) n64
+
+end
+
+(* ================================================================
+ * Theory: SignedI128
+ *
+ * Concrete instantiation for int128_t (N = 128).
+ * Models: boost::safe_numbers::i128
+ *         = detail::signed_integer_basis<int128::int128_t>
+ * Reference: signed_integers.hpp line 29
+ *
+ * Note: multiplication uses the division-check path exclusively
+ * (no wider type available). Reference: signed_integer_basis.hpp
+ * lines 1573-1608.
+ * ================================================================ *)
+theory SignedI128
+
+  use int.Int
+  use int.Power
+  use int.EuclideanDivision
+  use PowerOfTwo
+  use SignedBounds
+  use SignedWrap
+  use SignedAddOverflow
+  use SignedSubOverflow
+  use SignedMulOverflow
+  use SignedDivSafety
+  use SignedModSafety
+  use SignedUnaryMinus
+  use SignedIncDec
+
+  constant n128 : int = 128
+
+  lemma n128_valid: n128 >= 1
+  lemma i128_max: max_s n128 = 170141183460469231731687303715884105727
+  lemma i128_min: min_s n128 = -170141183460469231731687303715884105728
+
+  (* ---- Addition ---- *)
+
+  lemma i128_add_soundness:
+    forall a b: int. valid_s a n128 -> valid_s b n128 ->
+      (add_overflows a b n128 \/ add_underflows a b n128) ->
+      add_detected a b n128
+
+  lemma i128_add_no_false_positives:
+    forall a b: int. valid_s a n128 -> valid_s b n128 ->
+      not (add_overflows a b n128) -> not (add_underflows a b n128) ->
+      not (add_detected a b n128)
+
+  lemma i128_add_correctness:
+    forall a b: int. valid_s a n128 -> valid_s b n128 ->
+      not (add_overflows a b n128) -> not (add_underflows a b n128) ->
+      wrap_add_s a b n128 = a + b
+
+  lemma i128_add_biconditional:
+    forall a b: int. valid_s a n128 -> valid_s b n128 ->
+      (add_detected a b n128 <-> (add_overflows a b n128 \/ add_underflows a b n128))
+
+  lemma i128_add_max_plus_one:
+    add_overflows 170141183460469231731687303715884105727 1 n128
+  lemma i128_add_min_plus_neg_one:
+    add_underflows (-170141183460469231731687303715884105728) (-1) n128
+
+  (* ---- Subtraction ---- *)
+
+  lemma i128_sub_soundness:
+    forall a b: int. valid_s a n128 -> valid_s b n128 ->
+      (sub_overflows a b n128 \/ sub_underflows a b n128) ->
+      sub_detected a b n128
+
+  lemma i128_sub_no_false_positives:
+    forall a b: int. valid_s a n128 -> valid_s b n128 ->
+      not (sub_overflows a b n128) -> not (sub_underflows a b n128) ->
+      not (sub_detected a b n128)
+
+  lemma i128_sub_correctness:
+    forall a b: int. valid_s a n128 -> valid_s b n128 ->
+      not (sub_overflows a b n128) -> not (sub_underflows a b n128) ->
+      wrap_sub_s a b n128 = a - b
+
+  lemma i128_sub_biconditional:
+    forall a b: int. valid_s a n128 -> valid_s b n128 ->
+      (sub_detected a b n128 <-> (sub_overflows a b n128 \/ sub_underflows a b n128))
+
+  (* ---- Multiplication (division-check path only for i128) ---- *)
+
+  lemma i128_mul_correctness:
+    forall a b: int. valid_s a n128 -> valid_s b n128 ->
+      not (mul_overflows_s a b n128) ->
+      wrap_mul_s a b n128 = a * b
+
+  lemma i128_mul_div_check:
+    forall a b: int. valid_s a n128 -> valid_s b n128 ->
+      (signed_div_check a b n128 <-> mul_overflows_s a b n128)
+
+  lemma i128_mul_min_by_neg_one:
+    mul_overflows_s (-170141183460469231731687303715884105728) (-1) n128
+  lemma i128_mul_by_zero:
+    not (mul_overflows_s 170141183460469231731687303715884105727 0 n128)
+
+  (* ---- Division ---- *)
+
+  lemma i128_div_result_valid:
+    forall a b: int. valid_s a n128 -> valid_s b n128 ->
+      not (div_error_s a b n128) ->
+      valid_s (sdiv a b) n128
+
+
+  lemma i128_div_min_by_neg_one_is_error:
+    div_error_s (-170141183460469231731687303715884105728) (-1) n128
+
+  (* ---- Modulo ---- *)
+
+  lemma i128_mod_result_valid:
+    forall a b: int. valid_s a n128 -> valid_s b n128 ->
+      not (mod_error_s a b n128) ->
+      valid_s (smod a b) n128
+
+  lemma i128_mod_min_by_neg_one_is_error:
+    mod_error_s (-170141183460469231731687303715884105728) (-1) n128
+
+  (* ---- Unary Minus / Inc / Dec ---- *)
+
+  lemma i128_neg_min_is_error:
+    unary_minus_error (-170141183460469231731687303715884105728) n128
+  lemma i128_inc_max_errors:      inc_error (max_s n128) n128
+  lemma i128_dec_min_errors:      dec_error (min_s n128) n128
+
+end
