@@ -249,6 +249,37 @@ add<saturate>(max, 1)          = 4294967295
 ----
 ====
 
+[#examples_safety_profile]
+== Integer Safety Profile
+
+This example demonstrates how Boost.SafeNumbers can emulate an integer safety profile, analogous to the memory safety profiles being proposed for C++.
+Under such a profile, a conforming implementation could transparently replace the fundamental integer types with checked equivalents, so that overflow and underflow become diagnosable errors instead of silent wrap-around (for unsigned types) or undefined behavior (for signed types).
+
+The canonical substitution would look like `#define std::uint32_t boost::safe_numbers::u32`.
+This is not legal C++ -- macro names cannot be qualified identifiers -- but it illustrates what a compiler driving the profile could do automatically when `BOOST_SAFE_NUMBERS_INTEGER_SAFETY_PROFILE` is set.
+The example approximates the same effect with a type alias so it compiles either way.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/safety_profile.cpp[example] demonstrates emulating an integer safety profile to turn a silent unsigned-overflow allocation bug into a diagnosable error.
+====
+[source, c++]
+----
+include::example$safety_profile.cpp[]
+----
+
+Output without `BOOST_SAFE_NUMBERS_INTEGER_SAFETY_PROFILE` (silent wrap-around):
+----
+element_count = 2147483657
+element_size  = 4
+total_bytes   = 36
+Manual post-hoc overflow check fired
+----
+
+Output with `BOOST_SAFE_NUMBERS_INTEGER_SAFETY_PROFILE` defined (overflow diagnosed at its source):
+----
+Safety profile caught overflow: Overflow detected in u32 multiplication
+----
+====
+
 [#examples_literals]
 == Literals
 
