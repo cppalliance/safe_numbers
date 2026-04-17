@@ -233,3 +233,5 @@ run ../examples/std_numeric_usage.cpp ;
 run ../examples/random.cpp ;
 run ../examples/basic_bounded_usage.cpp ;
 compile-fail ../examples/compile_fail_basic_bounded_usage_constexpr.cpp ;
+run ../examples/safety_profile.cpp : : : : safety_profile_off ;
+run ../examples/safety_profile.cpp : : : <define>BOOST_SAFE_NUMBERS_INTEGER_SAFETY_PROFILE : safety_profile_on ;
