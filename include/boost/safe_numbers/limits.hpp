@@ -112,6 +112,14 @@ template <>
 class numeric_limits<boost::safe_numbers::i128> :
     public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::i128> {};
 
+template <>
+class numeric_limits<boost::safe_numbers::f32> :
+    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::f32> {};
+
+template <>
+class numeric_limits<boost::safe_numbers::f64> :
+    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::f64> {};
+
 template <auto Min, auto Max>
 class numeric_limits<boost::safe_numbers::bounded_uint<Min, Max>>
 {
