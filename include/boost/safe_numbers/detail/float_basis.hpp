@@ -49,6 +49,8 @@ public:
     template <typename T>
         requires (!std::is_same_v<T, BasisType>)
     BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr float_basis(T) noexcept = delete;
+
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator BasisType() const noexcept { return basis_; }
 };
 
 } // namespace boost::safe_numbers::detail
