@@ -29,7 +29,26 @@ namespace boost::safe_numbers::detail {
 template <compatible_float_type BasisType>
 class float_basis
 {
+public:
 
+    // This is exposed to the user so that they can convert back to built-in
+    using basis_type = BasisType;
+
+private:
+
+    BasisType basis_ {};
+
+public:
+
+    constexpr float_basis() noexcept = default;
+
+    BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr float_basis(const BasisType val) noexcept : basis_{val} {}
+
+    // Reject construction from any non-basis type
+    // This eliminates any potential narrowing
+    template <typename T>
+        requires (!std::is_same_v<T, BasisType>)
+    BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr float_basis(T) noexcept = delete;
 };
 
 } // namespace boost::safe_numbers::detail
