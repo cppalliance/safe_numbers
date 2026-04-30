@@ -104,6 +104,12 @@ struct underlying<signed_integer_basis<T>>
     using type = T;
 };
 
+template <typename T>
+struct underlying<float_basis<T>>
+{
+    using type = T;
+};
+
 } // namespace impl
 
 template <typename T>
@@ -222,6 +228,9 @@ struct is_library_type<unsigned_integer_basis<T>> : std::true_type {};
 
 template <typename T>
 struct is_library_type<signed_integer_basis<T>> : std::true_type {};
+
+template <typename T>
+struct is_library_type<float_basis<T>> : std::true_type {};
 
 template <auto Min, auto Max>
 struct is_library_type<bounded_uint<Min, Max>> : std::true_type {};
