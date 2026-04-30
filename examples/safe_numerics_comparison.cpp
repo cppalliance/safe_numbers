@@ -31,6 +31,9 @@
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wold-style-cast"
 #  pragma GCC diagnostic ignored "-Wundef"
+#  if __GNUC__ >= 16
+#    pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#  endif
 #elif defined(_MSC_VER)
 #  pragma warning(push)
 #  pragma warning(disable : 4804) // Unsafe use of type bool in operation
