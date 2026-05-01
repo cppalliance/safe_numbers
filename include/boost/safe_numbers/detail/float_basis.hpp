@@ -370,11 +370,11 @@ struct float_add_helper
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::underflow_error("Overflow detected in f32 addition");
+                    throw std::underflow_error("Underflow detected in f32 addition");
                 }
                 else
                 {
-                    throw std::underflow_error("Overflow detected in f64 addition");
+                    throw std::underflow_error("Underflow detected in f64 addition");
                 }
             }
             else
@@ -430,7 +430,7 @@ struct float_add_helper
                 }
                 else
                 {
-                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f65 addition");
+                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 addition");
                 }
             }
             else
@@ -460,7 +460,7 @@ struct float_add_helper
             case impl::error_category::nan_op:
                 handle_nan();
                 break;
-            case impl::error_category::overflow:
+            case impl::error_category::invalid_op:
                 handle_invalid();
                 break;
             case impl::error_category::divide_by_zero:
@@ -480,7 +480,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator+(const float_basis<BasisType> lhs,
                                        const float_basis<BasisType> rhs) -> float_basis<BasisType>
 {
-    return add_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
+    return float_add_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
 }
 
 } // namespace boost::safe_numbers::detail
