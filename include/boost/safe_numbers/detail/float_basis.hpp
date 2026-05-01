@@ -135,6 +135,19 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto nan_add_msg() noexce
 }
 
 template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto invalid_add_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, float>)
+    {
+        return "Invalid operation (IEEE 754-2008 section 7.2) detected in f32 addition";
+    }
+    else
+    {
+        return "Invalid operation (IEEE 754-2008 section 7.2) detected in f64 addition";
+    }
+}
+
+template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto overflow_sub_msg() noexcept -> const char*
 {
     if constexpr (std::is_same_v<BasisType, float>)
@@ -222,6 +235,7 @@ enum class error_category
     underflow,
     divide_by_zero,
     nan_op,
+    invalid_op
 };
 
 } // namespace impl
