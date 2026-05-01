@@ -74,6 +74,7 @@ compile-fail compile_fail_signed_bitwise.cpp ;
 run test_unsigned_addition.cpp ;
 compile-fail compile_fail_unsigned_addition.cpp ;
 run-fail benchmarks/benchmark_unsigned_operations.cpp ;
+run-fail benchmarks/benchmark_float_operations.cpp ;
 run-fail benchmarks/benchmark_boost.cpp ;
 run test_limits.cpp ;
 run limits_link_1.cpp limits_link_2.cpp limits_link_3.cpp ;
