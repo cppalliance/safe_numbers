@@ -213,10 +213,17 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_issignalin
         }
         else
         {
-            const auto val_bits {std::bit_cast<bit_type>(val)};
+            // SNAN bit patterns sit in the range (inf, QNAN) once the sign bit is stripped.
+            // Stripping the sign covers SNANs of either sign,
+            // and the range covers any payload value.
+            constexpr bit_type sign_mask {bit_type{1} << (std::numeric_limits<bit_type>::digits - 1)};
+            constexpr auto inf_abs {std::bit_cast<bit_type>(std::numeric_limits<T>::infinity()) & ~sign_mask};
+            constexpr auto quiet_abs {static_cast<bit_type>(quiet_bits & ~sign_mask)};
 
-            // TODO(mborland) : This doesn't handle payloads
-            return signal_bits == val_bits;
+            const auto val_bits {std::bit_cast<bit_type>(val)};
+            const auto val_abs {static_cast<bit_type>(val_bits & ~sign_mask)};
+
+            return val_abs > inf_abs && val_abs < quiet_abs;
         }
     }
     else
