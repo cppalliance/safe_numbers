@@ -198,6 +198,34 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_isnan(cons
 }
 
 template <compatible_float_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_issignaling([[maybe_unused]] const T val) noexcept -> bool
+{
+    if constexpr (std::numeric_limits<T>::has_signaling_NaN)
+    {
+        using bit_type = std::conditional_t<std::is_same_v<T, float>, std::uint32_t, std::uint64_t>;
+
+        constexpr auto signal_bits {std::bit_cast<bit_type>(std::numeric_limits<T>::signaling_NaN())};
+        constexpr auto quiet_bits {std::bit_cast<bit_type>(std::numeric_limits<T>::quiet_NaN())};
+
+        if constexpr (signal_bits == quiet_bits)
+        {
+            return false;
+        }
+        else
+        {
+            const auto val_bits {std::bit_cast<bit_type>(val)};
+
+            // TODO(mborland) : This doesn't handle payloads
+            return signal_bits == val_bits;
+        }
+    }
+    else
+    {
+        return false;
+    }
+}
+
+template <compatible_float_type T>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_isnormal(const T val) noexcept -> bool
 {
     return !(val == T{} || constexpr_isinf(val) || constexpr_isnan(val) || constexpr_abs(val) < std::numeric_limits<T>::min());
