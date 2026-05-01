@@ -80,7 +80,7 @@ public:
 
 // Helper to map BasisType to a short name for diagnostic messages.
 template <compatible_float_type BasisType>
-BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto float_type_name() noexcept -> const char*
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto float_type_name() noexcept -> const char*
 {
     if constexpr (std::is_same_v<BasisType, float>)
     {
@@ -96,7 +96,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto float_type_name() noexcept -> cons
 // These avoid std::string concatenation which is not available on CUDA device
 
 template <compatible_float_type BasisType>
-BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto overflow_add_msg() noexcept -> const char*
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto overflow_add_msg() noexcept -> const char*
 {
     if constexpr (std::is_same_v<BasisType, float>)
     {
@@ -109,7 +109,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto overflow_add_msg() noexcept -> con
 }
 
 template <compatible_float_type BasisType>
-BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto underflow_add_msg() noexcept -> const char*
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto underflow_add_msg() noexcept -> const char*
 {
     if constexpr (std::is_same_v<BasisType, float>)
     {
@@ -122,7 +122,20 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto underflow_add_msg() noexcept -> co
 }
 
 template <compatible_float_type BasisType>
-BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto overflow_sub_msg() noexcept -> const char*
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto nan_add_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, float>)
+    {
+        return "Operation with NAN detected in f32 addition";
+    }
+    else
+    {
+        return "Operation with NAN detected in f64 addition";
+    }
+}
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto overflow_sub_msg() noexcept -> const char*
 {
     if constexpr (std::is_same_v<BasisType, float>)
     {
@@ -135,7 +148,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto overflow_sub_msg() noexcept -> con
 }
 
 template <compatible_float_type BasisType>
-BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto underflow_sub_msg() noexcept -> const char*
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto underflow_sub_msg() noexcept -> const char*
 {
     if constexpr (std::is_same_v<BasisType, float>)
     {
@@ -154,31 +167,31 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto underflow_sub_msg() noexcept -> co
 namespace impl {
 
 template <compatible_float_type T>
-BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto constexpr_abs(const T val) noexcept -> T
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_abs(const T val) noexcept -> T
 {
     return val < 0 ? -val : val;
 }
 
 template <compatible_float_type T>
-BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto constexpr_isinf(const T val) noexcept -> bool
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_isinf(const T val) noexcept -> bool
 {
     return val > std::numeric_limits<T>::max();
 }
 
 template <compatible_float_type T>
-BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto constexpr_isnan(const T val) noexcept -> bool
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_isnan(const T val) noexcept -> bool
 {
     return val != val;
 }
 
 template <compatible_float_type T>
-BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto constexpr_isnormal(const T val) noexcept -> bool
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_isnormal(const T val) noexcept -> bool
 {
     return !(val == T{} || constexpr_isinf(val) || constexpr_isnan(val) || constexpr_abs(val) < std::numeric_limits<T>::min());
 }
 
 template <compatible_float_type T>
-BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto constexpr_fpclassify(const T val) noexcept -> int
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_fpclassify(const T val) noexcept -> int
 {
     if (constexpr_isnormal(val))
     {
