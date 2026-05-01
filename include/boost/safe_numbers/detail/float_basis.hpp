@@ -147,6 +147,67 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto underflow_sub_msg() noexcept -> co
     }
 }
 
+// ------------------------------
+// Helper <cmath> functions
+// ------------------------------
+
+namespace impl {
+
+template <compatible_float_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto constexpr_abs(const T val) noexcept -> T
+{
+    return val < 0 ? -val : val;
+}
+
+template <compatible_float_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto constexpr_isinf(const T val) noexcept -> bool
+{
+    return val > std::numeric_limits<T>::max();
+}
+
+template <compatible_float_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto constexpr_isnan(const T val) noexcept -> bool
+{
+    return val != val;
+}
+
+template <compatible_float_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto constexpr_isnormal(const T val) noexcept -> bool
+{
+    return !(val == T{} || constexpr_isinf(val) || constexpr_isnan(val) || constexpr_abs(val) < std::numeric_limits<T>::min());
+}
+
+template <compatible_float_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto constexpr_fpclassify(const T val) noexcept -> int
+{
+    if (constexpr_isnormal(val))
+    {
+        return FP_NAN;
+    }
+    else if (constexpr_isinf(val))
+    {
+        return FP_INFINITE;
+    }
+    else if (val == T{})
+    {
+        return FP_ZERO;
+    }
+    else if (constexpr_abs(val) < std::numeric_limits<T>::min())
+    {
+        return FP_SUBNORMAL;
+    }
+    else
+    {
+        return FP_NORMAL;
+    }
+}
+
+} // namespace impl
+
+// ------------------------------
+// Addition
+// ------------------------------
+
 } // namespace boost::safe_numbers::detail
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_FLOAT_BASIS_HPP
