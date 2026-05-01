@@ -224,6 +224,35 @@ void test_snan_operand()
             // SNaN + zero
             BOOST_TEST_THROWS(snan + zero, std::domain_error);
             BOOST_TEST_THROWS(zero + snan, std::domain_error);
+
+            // Negative-sign SNaN: flip the sign bit on the canonical SNaN
+            // pattern. Detection must work for both signs.
+            constexpr bit_type sign_mask {bit_type{1} << (std::numeric_limits<bit_type>::digits - 1)};
+            const auto neg_snan_bits {static_cast<bit_type>(snan_bits ^ sign_mask)};
+            const auto neg_snan_val {std::bit_cast<basis_type>(neg_snan_bits)};
+            const T neg_snan {neg_snan_val};
+            BOOST_TEST_THROWS(neg_snan + finite, std::domain_error);
+            BOOST_TEST_THROWS(finite + neg_snan, std::domain_error);
+
+            // SNaN with a non-default payload. The lowest SNaN bit pattern is
+            // inf_bits + 1 (any payload, mantissa MSB still 0), and the highest
+            // is one below the canonical quiet_NaN(). Both must be detected.
+            constexpr auto inf_bits {std::bit_cast<bit_type>(std::numeric_limits<basis_type>::infinity())};
+            const auto low_snan_val {std::bit_cast<basis_type>(static_cast<bit_type>(inf_bits + bit_type{1}))};
+            const T low_snan {low_snan_val};
+            BOOST_TEST_THROWS(low_snan + finite, std::domain_error);
+
+            const auto high_snan_val {std::bit_cast<basis_type>(static_cast<bit_type>(qnan_bits - bit_type{1}))};
+            const T high_snan {high_snan_val};
+            BOOST_TEST_THROWS(high_snan + finite, std::domain_error);
+
+            // QNaN (not SNaN) at the boundary should still be reported as
+            // nan_op rather than invalid_op. The exception type is the same
+            // (std::domain_error) but this exercises that the upper bound of
+            // the SNaN range is exclusive.
+            const auto qnan_boundary {std::bit_cast<basis_type>(qnan_bits)};
+            const T qnan_b {qnan_boundary};
+            BOOST_TEST_THROWS(qnan_b + finite, std::domain_error);
         }
     }
 }
