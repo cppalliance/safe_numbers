@@ -53,6 +53,7 @@ run test_unsigned_construction.cpp ;
 run test_signed_construction.cpp ;
 run test_float_construction.cpp ;
 run test_float_addition.cpp ;
+run test_float_subtraction.cpp ;
 run test_float_streaming.cpp ;
 run test_float_std_format.cpp ;
 run test_float_fmt_format.cpp ;
