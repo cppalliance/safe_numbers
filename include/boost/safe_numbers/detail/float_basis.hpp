@@ -79,7 +79,7 @@ public:
 };
 
 // Helper to map BasisType to a short name for diagnostic messages.
-template <typename BasisType>
+template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto float_type_name() noexcept -> const char*
 {
     if constexpr (std::is_same_v<BasisType, float>)
@@ -89,6 +89,61 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto float_type_name() noexcept -> cons
     else
     {
         return "f64";
+    }
+}
+
+// Device-friendly error message helpers returning const char* string literals
+// These avoid std::string concatenation which is not available on CUDA device
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto overflow_add_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, float>)
+    {
+        return "Overflow detected in f32 addition";
+    }
+    else
+    {
+        return "Overflow detected in f64 addition";
+    }
+}
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto underflow_add_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, float>)
+    {
+        return "Underflow detected in f32 addition";
+    }
+    else
+    {
+        return "Underflow detected in f64 addition";
+    }
+}
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto overflow_sub_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, float>)
+    {
+        return "Overflow detected in f32 subtraction";
+    }
+    else
+    {
+        return "Overflow detected in f64 subtraction";
+    }
+}
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto underflow_sub_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, float>)
+    {
+        return "Underflow detected in f32 subtraction";
+    }
+    else
+    {
+        return "Underflow detected in f64 subtraction";
     }
 }
 
