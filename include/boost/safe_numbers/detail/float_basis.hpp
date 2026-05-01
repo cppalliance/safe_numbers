@@ -22,6 +22,7 @@
 #include <cstdlib>
 #include <utility>
 #include <optional>
+#include <cmath>
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
