@@ -326,24 +326,112 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_addition(const T
     BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
 }
 
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_add() -> void
+{
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    if (std::is_constant_evaluated())
+    {
+        if constexpr (std::is_same_v<BasisType, float>)
+        {
+            throw std::overflow_error("Overflow detected in f32 addition");
+        }
+        else
+        {
+            throw std::overflow_error("Overflow detected in f64 addition");
+        }
+    }
+    else
+    #endif
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, overflow_add_msg<BasisType>());
+    }
 }
 
-template <overflow_policy Policy, compatible_float_type BasisType>
-struct float_add_helper
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_underflow_add() -> void
 {
-    BOOST_SAFE_NUMBERS_HOST_DEVICE
-    [[nodiscard]] static constexpr auto apply(const float_basis<BasisType> lhs,
-                                              const float_basis<BasisType> rhs)
-        noexcept(Policy != overflow_policy::throw_exception) -> float_basis<BasisType>
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    if (std::is_constant_evaluated())
     {
-        using result_type = float_basis<BasisType>;
-
-        const auto lhs_basis {static_cast<BasisType>(lhs)};
-        const auto rhs_basis {static_cast<BasisType>(rhs)};
-        [[maybe_unused]] BasisType res {};
-
-        const auto handle_overflow = []
+        if constexpr (std::is_same_v<BasisType, float>)
         {
+            throw std::underflow_error("Underflow detected in f32 addition");
+        }
+        else
+        {
+            throw std::underflow_error("Underflow detected in f64 addition");
+        }
+    }
+    else
+    #endif
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, underflow_add_msg<BasisType>());
+    }
+}
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_nan_add() -> void
+{
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    if (std::is_constant_evaluated())
+    {
+        if constexpr (std::is_same_v<BasisType, float>)
+        {
+            throw std::domain_error("Operation with NAN detected in f32 addition");
+        }
+        else
+        {
+            throw std::domain_error("Operation with NAN detected in f64 addition");
+        }
+    }
+    else
+    #endif
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, nan_add_msg<BasisType>());
+    }
+}
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_invalid_add() -> void
+{
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    if (std::is_constant_evaluated())
+    {
+        if constexpr (std::is_same_v<BasisType, float>)
+        {
+            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 addition");
+        }
+        else
+        {
+            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 addition");
+        }
+    }
+    else
+    #endif
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, invalid_add_msg<BasisType>());
+    }
+}
+
+} // namespace impl
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
+[[nodiscard]] constexpr auto operator+(const float_basis<BasisType> lhs,
+                                       const float_basis<BasisType> rhs) -> float_basis<BasisType>
+{
+    const auto lhs_basis {static_cast<BasisType>(lhs)};
+    const auto rhs_basis {static_cast<BasisType>(rhs)};
+    [[maybe_unused]] BasisType res {};
+
+    // The throw branches are inlined here (rather than calling impl::throw_*_add)
+    // so BOOST_THROW_EXCEPTION captures operator+ as the source location of the throw.
+    switch (impl::checked_float_addition(lhs_basis, rhs_basis, res))
+    {
+        case impl::error_category::no_error:
+            break;
+        case impl::error_category::overflow:
             #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
             if (std::is_constant_evaluated())
             {
@@ -359,19 +447,10 @@ struct float_add_helper
             else
             #endif
             {
-                if constexpr (Policy == overflow_policy::throw_exception)
-                {
-                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, overflow_add_msg<BasisType>());
-                }
-                else
-                {
-                    BOOST_SAFE_NUMBERS_UNREACHABLE;
-                }
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, overflow_add_msg<BasisType>());
             }
-        };
-
-        const auto handle_underflow = []
-        {
+            break;
+        case impl::error_category::underflow:
             #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
             if (std::is_constant_evaluated())
             {
@@ -387,19 +466,10 @@ struct float_add_helper
             else
             #endif
             {
-                if constexpr (Policy == overflow_policy::throw_exception)
-                {
-                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, underflow_add_msg<BasisType>());
-                }
-                else
-                {
-                    BOOST_SAFE_NUMBERS_UNREACHABLE;
-                }
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, underflow_add_msg<BasisType>());
             }
-        };
-
-        const auto handle_nan = []
-        {
+            break;
+        case impl::error_category::nan_op:
             #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
             if (std::is_constant_evaluated())
             {
@@ -415,19 +485,10 @@ struct float_add_helper
             else
             #endif
             {
-                if constexpr (Policy == overflow_policy::throw_exception)
-                {
-                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, nan_add_msg<BasisType>());
-                }
-                else
-                {
-                    BOOST_SAFE_NUMBERS_UNREACHABLE;
-                }
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, nan_add_msg<BasisType>());
             }
-        };
-
-        const auto handle_invalid = []
-        {
+            break;
+        case impl::error_category::invalid_op:
             #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
             if (std::is_constant_evaluated())
             {
@@ -441,53 +502,20 @@ struct float_add_helper
                 }
             }
             else
-                #endif
+            #endif
             {
-                if constexpr (Policy == overflow_policy::throw_exception)
-                {
-                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, invalid_add_msg<BasisType>());
-                }
-                else
-                {
-                    BOOST_SAFE_NUMBERS_UNREACHABLE;
-                }
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, invalid_add_msg<BasisType>());
             }
-        };
-
-        switch (impl::checked_float_addition(lhs_basis, rhs_basis, res))
-        {
-            case impl::error_category::no_error:
-                break;
-            case impl::error_category::overflow:
-                handle_overflow();
-                break;
-            case impl::error_category::underflow:
-                handle_underflow();
-                break;
-            case impl::error_category::nan_op:
-                handle_nan();
-                break;
-            case impl::error_category::invalid_op:
-                handle_invalid();
-                break;
-            case impl::error_category::divide_by_zero:
-                BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
-                break;                          // LCOV_EXCL_LINE
-            default:
-                BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
-                break;                          // LCOV_EXCL_LINE
-        }
-
-        return result_type{res};
+            break;
+        case impl::error_category::divide_by_zero:
+            BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
+            break;                          // LCOV_EXCL_LINE
+        default:
+            BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
+            break;                          // LCOV_EXCL_LINE
     }
-};
 
-template <compatible_float_type BasisType>
-BOOST_SAFE_NUMBERS_HOST_DEVICE
-[[nodiscard]] constexpr auto operator+(const float_basis<BasisType> lhs,
-                                       const float_basis<BasisType> rhs) -> float_basis<BasisType>
-{
-    return float_add_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
+    return float_basis<BasisType>{res};
 }
 
 } // namespace boost::safe_numbers::detail
