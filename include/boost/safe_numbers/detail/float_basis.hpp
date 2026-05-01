@@ -13,6 +13,7 @@
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 #include <boost/core/bit.hpp>
+#include <bit>
 #include <concepts>
 #include <compare>
 #include <limits>
