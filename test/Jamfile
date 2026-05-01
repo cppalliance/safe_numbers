@@ -215,6 +215,7 @@ compile compile_tests/compile_test_limits.cpp ;
 compile compile_tests/compile_test_literals.cpp ;
 compile compile_tests/compile_test_charconv.cpp ;
 compile compile_tests/compile_test_signed_integers.cpp ;
+compile compile_tests/compile_test_floats.cpp ;
 
 # Run the examples
 run ../examples/basic_usage.cpp ;
