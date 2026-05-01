@@ -475,6 +475,14 @@ struct float_add_helper
     }
 };
 
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
+[[nodiscard]] constexpr auto operator+(const float_basis<BasisType> lhs,
+                                       const float_basis<BasisType> rhs) -> float_basis<BasisType>
+{
+    return add_helper<overflow_policy::throw_exception, BasisType>::apply(lhs, rhs);
+}
+
 } // namespace boost::safe_numbers::detail
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_FLOAT_BASIS_HPP
