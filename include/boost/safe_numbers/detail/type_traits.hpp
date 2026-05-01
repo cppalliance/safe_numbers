@@ -26,6 +26,9 @@ struct is_fundamental_unsigned_integral : std::bool_constant<std::is_unsigned_v<
 template <typename T>
 struct is_fundamental_signed_integral : std::bool_constant<std::is_signed_v<T> || std::is_same_v<std::remove_cv_t<T>, int128::int128_t>> {};
 
+template <typename T>
+struct is_compatible_float_type : std::bool_constant<std::is_same_v<float, std::remove_cv_t<T>> || std::is_same_v<double, std::remove_cv_t<T>>> {};
+
 } // namespace impl
 
 template <typename T>
@@ -40,11 +43,20 @@ inline constexpr bool is_fundamental_signed_integral_v = impl::is_fundamental_si
 template <typename T>
 concept fundamental_signed_integral = is_fundamental_signed_integral_v<T>;
 
+template <typename T>
+inline constexpr bool is_compatible_float_type = impl::is_compatible_float_type<T>::value;
+
+template <typename T>
+concept compatible_float_type = is_compatible_float_type<T>;
+
 template <fundamental_unsigned_integral BasisType>
 class unsigned_integer_basis;
 
 template <fundamental_signed_integral BasisType>
 class signed_integer_basis;
+
+template <compatible_float_type BasisType>
+class float_basis;
 
 // is_unsigned_library_type (base + unsigned_integer_basis specialization)
 
