@@ -52,6 +52,7 @@ run quick.cpp ;
 run test_unsigned_construction.cpp ;
 run test_signed_construction.cpp ;
 run test_float_construction.cpp ;
+run test_float_addition.cpp ;
 run test_float_streaming.cpp ;
 run test_float_std_format.cpp ;
 run test_float_fmt_format.cpp ;
@@ -213,6 +214,8 @@ compile compile_tests/compile_test_format.cpp ;
 compile compile_tests/compile_test_limits.cpp ;
 compile compile_tests/compile_test_literals.cpp ;
 compile compile_tests/compile_test_charconv.cpp ;
+compile compile_tests/compile_test_signed_integers.cpp ;
+compile compile_tests/compile_test_floats.cpp ;
 
 # Run the examples
 run ../examples/basic_usage.cpp ;
