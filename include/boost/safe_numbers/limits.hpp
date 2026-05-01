@@ -10,6 +10,7 @@
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/signed_integers.hpp>
 #include <boost/safe_numbers/bounded_integers.hpp>
+#include <boost/safe_numbers/floats.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -111,6 +112,14 @@ class numeric_limits<boost::safe_numbers::i64> :
 template <>
 class numeric_limits<boost::safe_numbers::i128> :
     public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::i128> {};
+
+template <>
+class numeric_limits<boost::safe_numbers::f32> :
+    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::f32> {};
+
+template <>
+class numeric_limits<boost::safe_numbers::f64> :
+    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::f64> {};
 
 template <auto Min, auto Max>
 class numeric_limits<boost::safe_numbers::bounded_uint<Min, Max>>

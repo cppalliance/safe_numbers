@@ -51,6 +51,31 @@ public:
     BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr float_basis(T) noexcept = delete;
 
     BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator BasisType() const noexcept { return basis_; }
+
+    // Defined manually so -Wfloat-equal stays contained here rather than
+    // leaking into user code through a defaulted operator==.
+    // We want the behavior to generally match the built-ins,
+    // outside of the exceptional cases
+    #ifdef __clang__
+    #  pragma clang diagnostic push
+    #  pragma clang diagnostic ignored "-Wfloat-equal"
+    #elif defined(__GNUC__)
+    #  pragma GCC diagnostic push
+    #  pragma GCC diagnostic ignored "-Wfloat-equal"
+    #endif
+
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] friend constexpr auto operator==(float_basis lhs, float_basis rhs) noexcept -> bool
+    {
+        return lhs.basis_ == rhs.basis_;
+    }
+
+    #ifdef __clang__
+    #  pragma clang diagnostic pop
+    #elif defined(__GNUC__)
+    #  pragma GCC diagnostic pop
+    #endif
+
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] friend constexpr auto operator<=>(float_basis lhs, float_basis rhs) noexcept -> std::partial_ordering = default;
 };
 
 } // namespace boost::safe_numbers::detail
