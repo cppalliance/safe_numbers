@@ -175,6 +175,32 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto underflow_sub_msg() 
     }
 }
 
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto nan_sub_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, float>)
+    {
+        return "Operation with NAN detected in f32 subtraction";
+    }
+    else
+    {
+        return "Operation with NAN detected in f64 subtraction";
+    }
+}
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto invalid_sub_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, float>)
+    {
+        return "Invalid operation (IEEE 754-2008 section 7.2) detected in f32 subtraction";
+    }
+    else
+    {
+        return "Invalid operation (IEEE 754-2008 section 7.2) detected in f64 subtraction";
+    }
+}
+
 // ------------------------------
 // Helper <cmath> functions
 // ------------------------------
@@ -522,6 +548,244 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             #endif
             {
                 BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, invalid_add_msg<BasisType>());
+            }
+            break;
+        case impl::error_category::divide_by_zero:
+            BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
+            break;                          // LCOV_EXCL_LINE
+        default:
+            BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
+            break;                          // LCOV_EXCL_LINE
+    }
+
+    return float_basis<BasisType>{res};
+}
+
+// ------------------------------
+// Subtraction
+// ------------------------------
+
+namespace impl {
+
+// See comment above on checked_float_add
+template <compatible_float_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_subtraction(const T lhs, const T rhs, T& res) -> error_category
+{
+    res = lhs - rhs;
+
+    // The hot path is that our subtraction has nothing funny happening
+    if (!constexpr_isinf(res) && !constexpr_isnan(res)) [[likely]]
+    {
+        return error_category::no_error;
+    }
+
+    // If the result is not normal, now we have to figure out why
+    // Start with section 7.2 invalid ops
+    // 7.2.a: any general computation on a signaling NAN
+    if (constexpr_issignaling(lhs) || constexpr_issignaling(rhs))
+    {
+        return error_category::invalid_op;
+    }
+    // 7.2.d: subtraction of same-sign infinities cancels to NaN
+    if (constexpr_isinf(lhs) && constexpr_isinf(rhs) && (lhs < 0) == (rhs < 0))
+    {
+        return error_category::invalid_op;
+    }
+
+    // Now the regular cases from chapter 6.
+    // Section 6.2: Operations with NAN yield NAN
+    if (constexpr_isnan(lhs) || constexpr_isnan(rhs))
+    {
+        return error_category::nan_op;
+    }
+    // Section 6.1: Infinity Arithmetic
+    else if (constexpr_isinf(res))
+    {
+        return res > 0 ? error_category::overflow : error_category::underflow;
+    }
+
+    BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
+}
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_sub() -> void
+{
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    if (std::is_constant_evaluated())
+    {
+        if constexpr (std::is_same_v<BasisType, float>)
+        {
+            throw std::overflow_error("Overflow detected in f32 subtraction");
+        }
+        else
+        {
+            throw std::overflow_error("Overflow detected in f64 subtraction");
+        }
+    }
+    else
+    #endif
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, overflow_sub_msg<BasisType>());
+    }
+}
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_underflow_sub() -> void
+{
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    if (std::is_constant_evaluated())
+    {
+        if constexpr (std::is_same_v<BasisType, float>)
+        {
+            throw std::underflow_error("Underflow detected in f32 subtraction");
+        }
+        else
+        {
+            throw std::underflow_error("Underflow detected in f64 subtraction");
+        }
+    }
+    else
+    #endif
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, underflow_sub_msg<BasisType>());
+    }
+}
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_nan_sub() -> void
+{
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    if (std::is_constant_evaluated())
+    {
+        if constexpr (std::is_same_v<BasisType, float>)
+        {
+            throw std::domain_error("Operation with NAN detected in f32 subtraction");
+        }
+        else
+        {
+            throw std::domain_error("Operation with NAN detected in f64 subtraction");
+        }
+    }
+    else
+    #endif
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, nan_sub_msg<BasisType>());
+    }
+}
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_invalid_sub() -> void
+{
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    if (std::is_constant_evaluated())
+    {
+        if constexpr (std::is_same_v<BasisType, float>)
+        {
+            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 subtraction");
+        }
+        else
+        {
+            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 subtraction");
+        }
+    }
+    else
+    #endif
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, invalid_sub_msg<BasisType>());
+    }
+}
+
+} // namespace impl
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
+[[nodiscard]] constexpr auto operator-(const float_basis<BasisType> lhs,
+                                       const float_basis<BasisType> rhs) -> float_basis<BasisType>
+{
+    const auto lhs_basis {static_cast<BasisType>(lhs)};
+    const auto rhs_basis {static_cast<BasisType>(rhs)};
+    [[maybe_unused]] BasisType res {};
+
+    // The throw branches are inlined here (rather than calling impl::throw_*_sub)
+    // so BOOST_THROW_EXCEPTION captures operator- as the source location of the throw.
+    switch (impl::checked_float_subtraction(lhs_basis, rhs_basis, res))
+    {
+        case impl::error_category::no_error:
+            break;
+        case impl::error_category::overflow:
+            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            if (std::is_constant_evaluated())
+            {
+                if constexpr (std::is_same_v<BasisType, float>)
+                {
+                    throw std::overflow_error("Overflow detected in f32 subtraction");
+                }
+                else
+                {
+                    throw std::overflow_error("Overflow detected in f64 subtraction");
+                }
+            }
+            else
+            #endif
+            {
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, overflow_sub_msg<BasisType>());
+            }
+            break;
+        case impl::error_category::underflow:
+            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            if (std::is_constant_evaluated())
+            {
+                if constexpr (std::is_same_v<BasisType, float>)
+                {
+                    throw std::underflow_error("Underflow detected in f32 subtraction");
+                }
+                else
+                {
+                    throw std::underflow_error("Underflow detected in f64 subtraction");
+                }
+            }
+            else
+            #endif
+            {
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, underflow_sub_msg<BasisType>());
+            }
+            break;
+        case impl::error_category::nan_op:
+            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            if (std::is_constant_evaluated())
+            {
+                if constexpr (std::is_same_v<BasisType, float>)
+                {
+                    throw std::domain_error("Operation with NAN detected in f32 subtraction");
+                }
+                else
+                {
+                    throw std::domain_error("Operation with NAN detected in f64 subtraction");
+                }
+            }
+            else
+            #endif
+            {
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, nan_sub_msg<BasisType>());
+            }
+            break;
+        case impl::error_category::invalid_op:
+            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            if (std::is_constant_evaluated())
+            {
+                if constexpr (std::is_same_v<BasisType, float>)
+                {
+                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 subtraction");
+                }
+                else
+                {
+                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 subtraction");
+                }
+            }
+            else
+            #endif
+            {
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, invalid_sub_msg<BasisType>());
             }
             break;
         case impl::error_category::divide_by_zero:
