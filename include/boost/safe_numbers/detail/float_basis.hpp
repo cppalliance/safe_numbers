@@ -78,6 +78,20 @@ public:
     BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] friend constexpr auto operator<=>(float_basis lhs, float_basis rhs) noexcept -> std::partial_ordering = default;
 };
 
+// Helper to map BasisType to a short name for diagnostic messages.
+template <typename BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto float_type_name() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, float>)
+    {
+        return "f32";
+    }
+    else
+    {
+        return "f64";
+    }
+}
+
 } // namespace boost::safe_numbers::detail
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_FLOAT_BASIS_HPP
