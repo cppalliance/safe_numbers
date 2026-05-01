@@ -56,7 +56,10 @@ public:
     // leaking into user code through a defaulted operator==.
     // We want the behavior to generally match the built-ins,
     // outside of the exceptional cases
-    #ifdef __GNUC__
+    #ifdef __clang__
+    #  pragma clang diagnostic push
+    #  pragma clang diagnostic ignored "-Wfloat-equal"
+    #elif defined(__GNUC__)
     #  pragma GCC diagnostic push
     #  pragma GCC diagnostic ignored "-Wfloat-equal"
     #endif
@@ -66,7 +69,9 @@ public:
         return lhs.basis_ == rhs.basis_;
     }
 
-    #ifdef __GNUC__
+    #ifdef __clang__
+    #  pragma clang diagnostic pop
+    #elif defined(__GNUC__)
     #  pragma GCC diagnostic pop
     #endif
 
