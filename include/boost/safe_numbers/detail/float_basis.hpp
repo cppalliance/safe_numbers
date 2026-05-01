@@ -323,7 +323,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_addition(const T
         return error_category::invalid_op;
     }
     // 7.2.d: addition or subtraction or FMA: magnitude subtraction of infinities
-    if (constexpr_isinf(lhs) && constexpr_isinf(rhs) && (lhs < 0 != rhs < 0))
+    if (constexpr_isinf(lhs) && constexpr_isinf(rhs) && ((lhs < 0) != (rhs < 0)))
     {
         return error_category::invalid_op;
     }
