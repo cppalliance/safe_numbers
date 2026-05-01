@@ -274,23 +274,49 @@ enum class error_category
 
 namespace impl {
 
-// Follows the conventions from IEEE 754 on what should happen with mixed non-finite operations
-// We make the following deviations:
+// Follows the conventions from IEEE 754 section 6 and 7 on what should happen with mixed non-finite operation:
 //   1) Saturation to positive infinity -> Overflow
 //   2) Saturation to negative infinity -> Underflow
-//   3) Any operation with a NAN        -> Domain Error
+//   3) Any operation with a QNAN       -> Nan Op
+//   4) Add infs of differing sign      -> Invalid Op
+//   5) Any operations with an SNAN     -> Invalid Op
 template <compatible_float_type T>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_addition(const T lhs, const T rhs, T& res) -> error_category
 {
     res = lhs + rhs;
 
     // The hot path is that our addition has nothing funny happening
-    if (constexpr_isnormal(res)) [[likely]]
+    if (!constexpr_isinf(res) && !constexpr_isnan(res)) [[likely]]
     {
         return error_category::no_error;
     }
 
     // If the result is not normal, now we have to figure out why
+    // Start with section 7.2 invalid ops
+    // 7.2.a: any general computation on a signaling NAN
+    if (constexpr_issignaling(lhs) || constexpr_issignaling(rhs))
+    {
+        return error_category::invalid_op;
+    }
+    // 7.2.d: addition or subtraction or FMA: magnitude subtraction of infinities
+    if (constexpr_isinf(lhs) && constexpr_isinf(rhs) && (lhs < 0 != rhs < 0))
+    {
+        return error_category::invalid_op;
+    }
+
+    // Now the regular cases from chapter 6.
+    // Section 6.2: Operations with NAN yield NAN
+    if (constexpr_isnan(lhs) || constexpr_isnan(rhs))
+    {
+        return error_category::nan_op;
+    }
+    // Section 6.1: Infinity Arithmetic
+    else if (constexpr_isinf(res))
+    {
+        return res > 0 ? error_category::overflow : error_category::underflow;
+    }
+
+    BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
 }
 
 }
@@ -372,11 +398,11 @@ struct float_add_helper
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::overflow_error("Operation with NAN detected in f32 addition");
+                    throw std::domain_error("Operation with NAN detected in f32 addition");
                 }
                 else
                 {
-                    throw std::overflow_error("Operation with NAN detected in f64 addition");
+                    throw std::domain_error("Operation with NAN detected in f64 addition");
                 }
             }
             else
@@ -385,6 +411,34 @@ struct float_add_helper
                 if constexpr (Policy == overflow_policy::throw_exception)
                 {
                     BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, nan_add_msg<BasisType>());
+                }
+                else
+                {
+                    BOOST_SAFE_NUMBERS_UNREACHABLE;
+                }
+            }
+        };
+
+        const auto handle_invalid = []
+        {
+            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            if (std::is_constant_evaluated())
+            {
+                if constexpr (std::is_same_v<BasisType, float>)
+                {
+                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 addition");
+                }
+                else
+                {
+                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f65 addition");
+                }
+            }
+            else
+                #endif
+            {
+                if constexpr (Policy == overflow_policy::throw_exception)
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, invalid_add_msg<BasisType>());
                 }
                 else
                 {
@@ -405,6 +459,9 @@ struct float_add_helper
                 break;
             case impl::error_category::nan_op:
                 handle_nan();
+                break;
+            case impl::error_category::overflow:
+                handle_invalid();
                 break;
             case impl::error_category::divide_by_zero:
                 BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
