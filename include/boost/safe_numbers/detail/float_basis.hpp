@@ -188,7 +188,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_abs(const 
 template <compatible_float_type T>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_isinf(const T val) noexcept -> bool
 {
-    return val > std::numeric_limits<T>::max();
+    return constexpr_abs(val) > std::numeric_limits<T>::max();
 }
 
 template <compatible_float_type T>
@@ -234,7 +234,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_isnormal(c
 template <compatible_float_type T>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_fpclassify(const T val) noexcept -> int
 {
-    if (constexpr_isnormal(val))
+    if (constexpr_isnan(val))
     {
         return FP_NAN;
     }
