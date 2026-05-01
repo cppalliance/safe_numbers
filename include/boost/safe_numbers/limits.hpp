@@ -10,6 +10,7 @@
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/signed_integers.hpp>
 #include <boost/safe_numbers/bounded_integers.hpp>
+#include <boost/safe_numbers/floats.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
