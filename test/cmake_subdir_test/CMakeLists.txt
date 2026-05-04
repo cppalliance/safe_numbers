@@ -23,6 +23,7 @@ throw_exception
 # Secondary dependencies
 
 assert # (from charconv)
+compat # (from random)
 integer # (from multiprecision)
 lexical_cast # (from multiprecision)
 math # (from multiprecision)
