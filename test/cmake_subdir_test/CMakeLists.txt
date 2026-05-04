@@ -12,14 +12,38 @@ set(deps
 
 # Primary dependencies
 
-assert
-config
-throw_exception
 charconv
+config
+core
+multiprecision
+random
+safe_numerics
+throw_exception
 
 # Secondary dependencies
 
-core
+assert # (from charconv)
+static_assert # (from core)
+integer # (from multiprecision)
+lexical_cast # (from multiprecision)
+math # (from multiprecision)
+predef # (from multiprecision)
+dynamic_bitset # (from random)
+io # (from random)
+system # (from random)
+type_traits # (from random)
+utility # (from random)
+concept_check # (from safe_numerics)
+logic # (from safe_numerics)
+mp11 # (from safe_numerics)
+preprocessor # (from concept_check)
+container_hash # (from dynamic_bitset)
+move # (from dynamic_bitset)
+container # (from lexical_cast)
+variant2 # (from system)
+winapi # (from system)
+intrusive # (from container)
+describe # (from container_hash)
         
 )
 

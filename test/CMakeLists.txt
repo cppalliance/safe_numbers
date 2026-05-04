@@ -23,9 +23,9 @@ if(HAVE_BOOST_TEST)
     else()
 
         if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64|i386|i686|x86" AND NOT MINGW)
-            boost_test_jamfile(FILE Jamfile LINK_LIBRARIES Boost::safe_numbers Boost::charconv Boost::core Boost::random Boost::safe_numerics Boost::multiprecision Boost::exception Boost::stacktrace_from_exception)
+            boost_test_jamfile(FILE Jamfile LINK_LIBRARIES Boost::safe_numbers Boost::charconv Boost::config Boost::multiprecision Boost::random Boost::safe_numerics Boost::throw_exception Boost::exception Boost::stacktrace_from_exception)
         else()
-            boost_test_jamfile(FILE Jamfile LINK_LIBRARIES Boost::safe_numbers Boost::charconv Boost::core Boost::random Boost::safe_numerics Boost::multiprecision Boost::exception)
+            boost_test_jamfile(FILE Jamfile LINK_LIBRARIES Boost::safe_numbers Boost::charconv Boost::config Boost::multiprecision Boost::random Boost::safe_numerics Boost::throw_exception Boost::exception)
         endif()
 
     endif()
