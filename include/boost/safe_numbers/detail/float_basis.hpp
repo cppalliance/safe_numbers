@@ -318,6 +318,45 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto divbyzero_div_msg() 
     }
 }
 
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto nan_mod_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, float>)
+    {
+        return "Operation with NAN detected in f32 modulo";
+    }
+    else
+    {
+        return "Operation with NAN detected in f64 modulo";
+    }
+}
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto invalid_mod_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, float>)
+    {
+        return "Invalid operation (IEEE 754-2008 section 7.2) detected in f32 modulo";
+    }
+    else
+    {
+        return "Invalid operation (IEEE 754-2008 section 7.2) detected in f64 modulo";
+    }
+}
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto modbyzero_mod_msg() noexcept -> const char*
+{
+    if constexpr (std::is_same_v<BasisType, float>)
+    {
+        return "Modulo by zero detected in f32 modulo";
+    }
+    else
+    {
+        return "Modulo by zero detected in f64 modulo";
+    }
+}
+
 // ------------------------------
 // Helper <cmath> functions
 // ------------------------------
@@ -1435,6 +1474,215 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
                 BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, divbyzero_div_msg<BasisType>());
             }
             break;
+        default:
+            BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
+            break;                          // LCOV_EXCL_LINE
+    }
+
+    return float_basis<BasisType>{res};
+}
+
+// ------------------------------
+// Modulo
+// ------------------------------
+
+namespace impl {
+
+// std::fmod produces either a finite value with |result| < |rhs| or NaN.
+// It cannot produce a true infinity, so overflow/underflow categories are not reachable.
+// IEEE 754 7.2.f: remainder is invalid when the divisor is zero or the dividend
+// is infinite (and neither operand is NaN). For consistency with operator/, we
+// peel off the finite_nonzero / 0 case as divide_by_zero.
+template <compatible_float_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_modulo(const T lhs, const T rhs, T& res) -> error_category
+{
+    res = std::fmod(lhs, rhs);
+
+    // The hot path is that our modulo has nothing funny happening
+    if (!constexpr_isinf(res) && !constexpr_isnan(res)) [[likely]]
+    {
+        return error_category::no_error;
+    }
+
+    // Start with section 7.2 invalid ops
+    // 7.2.a: any general computation on a signaling NAN
+    if (constexpr_issignaling(lhs) || constexpr_issignaling(rhs))
+    {
+        return error_category::invalid_op;
+    }
+    // 7.2.f sub-case 1: zero modulo zero (matches operator/ treatment of 0/0)
+    if (lhs == T{} && rhs == T{})
+    {
+        return error_category::invalid_op;
+    }
+    // Modulo by zero with a finite non-zero dividend. Strict IEEE 7.2.f
+    // classifies this as invalid_op, but we surface it separately to mirror
+    // operator/'s divide-by-zero behavior.
+    if (rhs == T{} && !constexpr_isinf(lhs) && !constexpr_isnan(lhs))
+    {
+        return error_category::divide_by_zero;
+    }
+    // 7.2.f sub-case 2: dividend is infinite, divisor is not NaN
+    if (constexpr_isinf(lhs) && !constexpr_isnan(rhs))
+    {
+        return error_category::invalid_op;
+    }
+
+    // Section 6.2: Operations with NAN yield NAN
+    if (constexpr_isnan(lhs) || constexpr_isnan(rhs))
+    {
+        return error_category::nan_op;
+    }
+
+    BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
+}
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_nan_mod() -> void
+{
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    if (std::is_constant_evaluated())
+    {
+        if constexpr (std::is_same_v<BasisType, float>)
+        {
+            throw std::domain_error("Operation with NAN detected in f32 modulo");
+        }
+        else
+        {
+            throw std::domain_error("Operation with NAN detected in f64 modulo");
+        }
+    }
+    else
+    #endif
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, nan_mod_msg<BasisType>());
+    }
+}
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_invalid_mod() -> void
+{
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    if (std::is_constant_evaluated())
+    {
+        if constexpr (std::is_same_v<BasisType, float>)
+        {
+            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 modulo");
+        }
+        else
+        {
+            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 modulo");
+        }
+    }
+    else
+    #endif
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, invalid_mod_msg<BasisType>());
+    }
+}
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_modbyzero_mod() -> void
+{
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    if (std::is_constant_evaluated())
+    {
+        if constexpr (std::is_same_v<BasisType, float>)
+        {
+            throw std::domain_error("Modulo by zero detected in f32 modulo");
+        }
+        else
+        {
+            throw std::domain_error("Modulo by zero detected in f64 modulo");
+        }
+    }
+    else
+    #endif
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, modbyzero_mod_msg<BasisType>());
+    }
+}
+
+} // namespace impl
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
+[[nodiscard]] constexpr auto operator%(const float_basis<BasisType> lhs,
+                                       const float_basis<BasisType> rhs) -> float_basis<BasisType>
+{
+    const auto lhs_basis {static_cast<BasisType>(lhs)};
+    const auto rhs_basis {static_cast<BasisType>(rhs)};
+    [[maybe_unused]] BasisType res {};
+
+    // The throw branches are inlined here (rather than calling impl::throw_*_mod)
+    // so BOOST_THROW_EXCEPTION captures operator% as the source location of the throw.
+    switch (impl::checked_float_modulo(lhs_basis, rhs_basis, res))
+    {
+        case impl::error_category::no_error:
+            break;
+        case impl::error_category::nan_op:
+            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            if (std::is_constant_evaluated())
+            {
+                if constexpr (std::is_same_v<BasisType, float>)
+                {
+                    throw std::domain_error("Operation with NAN detected in f32 modulo");
+                }
+                else
+                {
+                    throw std::domain_error("Operation with NAN detected in f64 modulo");
+                }
+            }
+            else
+            #endif
+            {
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, nan_mod_msg<BasisType>());
+            }
+            break;
+        case impl::error_category::invalid_op:
+            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            if (std::is_constant_evaluated())
+            {
+                if constexpr (std::is_same_v<BasisType, float>)
+                {
+                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 modulo");
+                }
+                else
+                {
+                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 modulo");
+                }
+            }
+            else
+            #endif
+            {
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, invalid_mod_msg<BasisType>());
+            }
+            break;
+        case impl::error_category::divide_by_zero:
+            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            if (std::is_constant_evaluated())
+            {
+                if constexpr (std::is_same_v<BasisType, float>)
+                {
+                    throw std::domain_error("Modulo by zero detected in f32 modulo");
+                }
+                else
+                {
+                    throw std::domain_error("Modulo by zero detected in f64 modulo");
+                }
+            }
+            else
+            #endif
+            {
+                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, modbyzero_mod_msg<BasisType>());
+            }
+            break;
+        case impl::error_category::overflow:
+            BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
+            break;                          // LCOV_EXCL_LINE
+        case impl::error_category::underflow:
+            BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
+            break;                          // LCOV_EXCL_LINE
         default:
             BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
             break;                          // LCOV_EXCL_LINE
