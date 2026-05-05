@@ -437,6 +437,35 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_isnormal(c
     return !(val == T{} || constexpr_isinf(val) || constexpr_isnan(val) || constexpr_abs(val) < std::numeric_limits<T>::min());
 }
 
+// Bit-pattern test for true zero, used in IEEE 754 error classification where
+// a subnormal must not be confused with zero, such as with optimized builds on the Intel Compiler
+#ifdef __clang__
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+template <compatible_float_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto is_true_zero(const T val) noexcept -> bool
+{
+#if defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)
+    using bit_type = std::conditional_t<std::is_same_v<T, float>, std::uint32_t, std::uint64_t>;
+    constexpr bit_type sign_mask {bit_type{1} << (std::numeric_limits<bit_type>::digits - 1)};
+    const auto bits {std::bit_cast<bit_type>(val)};
+    return static_cast<bit_type>(bits & ~sign_mask) == bit_type{0};
+#else
+    return val == T{};
+#endif
+}
+
+#ifdef __clang__
+#  pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic pop
+#endif
+
 template <compatible_float_type T>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_fpclassify(const T val) noexcept -> int
 {
@@ -990,7 +1019,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_multiplication(c
         return error_category::invalid_op;
     }
     // 7.2.c: multiplication of zero by an infinity, in either order
-    if ((lhs == T{} && constexpr_isinf(rhs)) || (constexpr_isinf(lhs) && rhs == T{}))
+    if ((is_true_zero(lhs) && constexpr_isinf(rhs)) || (constexpr_isinf(lhs) && is_true_zero(rhs)))
     {
         return error_category::invalid_op;
     }
@@ -1243,8 +1272,10 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_division(const T
     {
         return error_category::invalid_op;
     }
-    // 7.2.b: division of zero by zero
-    if (lhs == T{} && rhs == T{})
+    // 7.2.b: division of zero by zero. Use is_true_zero so a denormal divisor
+    // flushed to zero by DAZ (Intel C++ optimized builds, etc.) does not get
+    // misclassified as a true zero here.
+    if (is_true_zero(lhs) && is_true_zero(rhs))
     {
         return error_category::invalid_op;
     }
@@ -1255,9 +1286,10 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_division(const T
     }
 
     // Section 7.3: divideByZero is signaled when a finite non-zero dividend
-    // is divided by zero. The 0/0 case was already handled above as invalid_op,
+    // is divided by zero.
+    // The 0/0 case was already handled above as invalid_op,
     // and inf/0 falls through to the section 6.1 infinity classification below.
-    if (rhs == T{} && !constexpr_isinf(lhs) && !constexpr_isnan(lhs))
+    if (is_true_zero(rhs) && !constexpr_isinf(lhs) && !constexpr_isnan(lhs))
     {
         return error_category::divide_by_zero;
     }
@@ -1552,15 +1584,16 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_modulo(const T l
     {
         return error_category::invalid_op;
     }
-    // 7.2.f sub-case 1: zero modulo zero (matches operator/ treatment of 0/0)
-    if (lhs == T{} && rhs == T{})
+    // 7.2.f sub-case 1: zero modulo zero (matches operator/ treatment of 0/0).
+    // is_true_zero so a denormal flushed to zero by DAZ does not match here.
+    if (is_true_zero(lhs) && is_true_zero(rhs))
     {
         return error_category::invalid_op;
     }
     // Modulo by zero with a finite non-zero dividend. Strict IEEE 7.2.f
     // classifies this as invalid_op, but we surface it separately to mirror
     // operator/'s divide-by-zero behavior.
-    if (rhs == T{} && !constexpr_isinf(lhs) && !constexpr_isnan(lhs))
+    if (is_true_zero(rhs) && !constexpr_isinf(lhs) && !constexpr_isnan(lhs))
     {
         return error_category::divide_by_zero;
     }
