@@ -961,6 +961,15 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 
 namespace impl {
 
+// Our comparison to zero is fine
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
 // See comment above on checked_float_addition
 template <compatible_float_type T>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_multiplication(const T lhs, const T rhs, T& res) -> error_category
@@ -1000,6 +1009,12 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_multiplication(c
 
     BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_mul() -> void
