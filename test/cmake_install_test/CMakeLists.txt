@@ -4,11 +4,10 @@
 
 cmake_minimum_required(VERSION 3.5...3.16)
 
-project(cmake_install_test LANGUAGES CXX)
+project(cmake_test LANGUAGES CXX)
 
 if(BOOST_CI_INSTALL_TEST)
-    # find_package(Boost COMPONENTS boost_safe_numbers has been removed
-    find_package(boost_safe_numbers REQUIRED)
+    find_package(Boost COMPONENTS boost_safe_numbers REQUIRED)
 else()
 
     add_subdirectory(../.. boostorg/safe_numbers)
