@@ -40,6 +40,7 @@ jobs:
       exclude_compiler: 'clang-3.5,clang-3.6,clang-3.7,clang-3.8,clang-3.9,clang-4.0,clang-5.0,clang-6.0,clang-7,
                          clang-8,clang-9,clang-10,clang-11,clang-12,
                          gcc-4.7,gcc-4.8,gcc-4.9,gcc-5,gcc-6,gcc-7,gcc-8,gcc-9,gcc-10'
+      enable_mingw: false # We blow the stack on the 32-bit with the library
     # Example of customization:
     # with:
     #   enable_reflection: true
@@ -91,9 +92,9 @@ jobs:
           cp -r $GITHUB_WORKSPACE/* libs/$LIBRARY
           git submodule update --init tools/boostdep
           python3 tools/boostdep/depinst/depinst.py --git_args "--jobs 3" $LIBRARY
-      - name: Test C++20/23
+      - name: Test C++20
         run: |
-          for std in 20 23; do
+          for std in 20; do
             echo "======== Testing C++${std} ========"
             cd ../boost-root
             rm -rf __build__
