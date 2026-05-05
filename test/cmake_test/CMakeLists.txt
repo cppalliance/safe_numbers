@@ -11,6 +11,7 @@ if(BOOST_CI_INSTALL_TEST)
     # Workaround until B2 also installs targets for header-only libs
     if(BOOST_CI_INSTALLED_BY STREQUAL "B2")
         add_library(boost_safe_numbers INTERFACE IMPORTED)
+        find_package(Boost COMPONENTS headers charconv random REQUIRED)
         target_link_libraries(boost_safe_numbers INTERFACE Boost::headers Boost::charconv Boost::random)
         add_library(Boost::safe_numbers ALIAS boost_safe_numbers)
     else()
