@@ -75,6 +75,6 @@ target_link_libraries(quick Boost::safe_numbers)
 target_compile_features(quick PRIVATE cxx_std_20)
 
 enable_testing()
-add_test(quick quick)
+add_test(NAME quick COMMAND quick)
 
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -C $<CONFIG>)
