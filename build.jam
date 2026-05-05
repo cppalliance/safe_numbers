@@ -19,4 +19,5 @@ explicit
     ;
 
 call-if : boost-library safe_numbers
+    : install boost_safe_numbers
     ;
