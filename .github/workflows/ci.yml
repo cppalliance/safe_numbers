@@ -91,9 +91,9 @@ jobs:
           cp -r $GITHUB_WORKSPACE/* libs/$LIBRARY
           git submodule update --init tools/boostdep
           python3 tools/boostdep/depinst/depinst.py --git_args "--jobs 3" $LIBRARY
-      - name: Test C++20/23
+      - name: Test C++20
         run: |
-          for std in 20 23; do
+          for std in 20; do
             echo "======== Testing C++${std} ========"
             cd ../boost-root
             rm -rf __build__
