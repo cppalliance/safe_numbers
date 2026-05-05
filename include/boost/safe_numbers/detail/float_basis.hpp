@@ -509,6 +509,12 @@ enum class error_category
 
 namespace impl {
 
+// It's ok that we overflow since we will check post-op
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable:4756)
+#endif
+
 // Follows the conventions from IEEE 754 section 6 and 7 on what should happen with mixed non-finite operation:
 //   1) Saturation to positive infinity -> Overflow
 //   2) Saturation to negative infinity -> Underflow
@@ -553,6 +559,10 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_addition(const T
 
     BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
 }
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_add() -> void
@@ -752,6 +762,12 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 
 namespace impl {
 
+// It's ok that we overflow since we will check post-op
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable:4756)
+#endif
+
 // See comment above on checked_float_add
 template <compatible_float_type T>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_subtraction(const T lhs, const T rhs, T& res) -> error_category
@@ -791,6 +807,10 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_subtraction(cons
 
     BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
 }
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_sub() -> void
@@ -992,11 +1012,14 @@ namespace impl {
 
 // Our comparison to zero is fine
 #ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wfloat-equal"
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wfloat-equal"
 #elif defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+#elif defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable:4756)
 #endif
 
 // See comment above on checked_float_addition
@@ -1040,9 +1063,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_multiplication(c
 }
 
 #ifdef __clang__
-#pragma clang diagnostic pop
+#  pragma clang diagnostic pop
 #elif defined(__GNUC__)
-#pragma GCC diagnostic pop
+#  pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#  pragma warning(pop)
 #endif
 
 template <compatible_float_type BasisType>
@@ -1245,13 +1270,15 @@ namespace impl {
 
 // Our comparison to zero is fine
 #ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wfloat-equal"
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wfloat-equal"
 #elif defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+#elif defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable:4756)
 #endif
-
 
 // See comment above on checked_float_addition
 template <compatible_float_type T>
@@ -1313,8 +1340,9 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_division(const T
 #pragma clang diagnostic pop
 #elif defined(__GNUC__)
 #pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning(pop)
 #endif
-
 
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_div() -> void
