@@ -1214,6 +1214,16 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 
 namespace impl {
 
+// Our comparison to zero is fine
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
 // See comment above on checked_float_addition
 template <compatible_float_type T>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_division(const T lhs, const T rhs, T& res) -> error_category
@@ -1266,6 +1276,13 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_division(const T
 
     BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+
 
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_div() -> void
@@ -1503,6 +1520,16 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 
 namespace impl {
 
+// Our comparison to zero is fine
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
 // std::fmod produces either a finite value with |result| < |rhs| or NaN.
 // It cannot produce a true infinity, so overflow/underflow categories are not reachable.
 // IEEE 754 7.2.f: remainder is invalid when the divisor is zero or the dividend
@@ -1551,6 +1578,12 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_modulo(const T l
 
     BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_nan_mod() -> void
