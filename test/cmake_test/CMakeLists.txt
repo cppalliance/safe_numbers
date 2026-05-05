@@ -13,8 +13,6 @@ if(BOOST_CI_INSTALL_TEST)
         find_package(Boost COMPONENTS headers charconv random REQUIRED)
         add_library(boost_safe_numbers INTERFACE IMPORTED GLOBAL)
         target_link_libraries(boost_safe_numbers INTERFACE Boost::headers Boost::charconv Boost::random)
-        # B2-installed config does not propagate the C++20 requirement, so set it explicitly here.
-        target_compile_features(boost_safe_numbers INTERFACE cxx_std_20)
         add_library(Boost::safe_numbers ALIAS boost_safe_numbers)
     else()
         find_package(Boost COMPONENTS safe_numbers REQUIRED)
@@ -73,6 +71,8 @@ endif()
     
 add_executable(quick ../quick.cpp)
 target_link_libraries(quick Boost::safe_numbers)
+# B2-installed config does not propagate the C++20 requirement, so set it explicitly here.
+target_compile_features(quick PRIVATE cxx_std_20)
 
 enable_testing()
 add_test(quick quick)
