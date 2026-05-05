@@ -7,7 +7,16 @@ cmake_minimum_required(VERSION 3.5...3.16)
 project(cmake_test LANGUAGES CXX)
 
 if(BOOST_CI_INSTALL_TEST)
-    find_package(Boost COMPONENTS safe_numbers REQUIRED)
+
+    # Workaround until B2 also installs targets for header-only libs
+    if(BOOST_CI_INSTALLED_BY STREQUAL "B2")
+        add_library(boost_safe_numbers INTERFACE IMPORTED)
+        target_link_libraries(boost_safe_numbers INTERFACE Boost::headers Boost::charconv Boost::random)
+        add_library(Boost::safe_numbers ALIAS boost_safe_numbers)
+    else()
+        find_package(Boost COMPONENTS safe_numbers REQUIRED)
+    endif()
+
 else()
 
     add_subdirectory(../.. boostorg/safe_numbers)
