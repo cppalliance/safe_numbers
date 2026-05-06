@@ -8,6 +8,7 @@
 #include <boost/safe_numbers/detail/int128/literals.hpp>
 #include <boost/safe_numbers/detail/throw_exception.hpp>
 #include <boost/safe_numbers/unsigned_integers.hpp>
+#include <boost/safe_numbers/floats.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -79,6 +80,26 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u128(const char* str) -> u1
     }
 
     return u128{result};
+}
+
+BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_f32(const long double val) -> f32
+{
+    if (constexpr long double max_value {std::numeric_limits<float>::max()}; val > max_value)
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "Overflow detected in literal construction");
+    }
+
+    return static_cast<f32>(static_cast<float>(val));
+}
+
+BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_f64(const long double val) -> f64
+{
+    if (constexpr long double max_value {std::numeric_limits<double>::max()}; val > max_value)
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "Overflow detected in literal construction");
+    }
+
+    return static_cast<f64>(static_cast<double>(val));
 }
 
 }  // boost::safe_numbers::literals
