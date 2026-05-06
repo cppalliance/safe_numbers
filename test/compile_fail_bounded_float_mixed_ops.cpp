@@ -17,7 +17,7 @@ int main()
     bounded_float<-2.0f, 2.0f> b {f32{0.5f}};
 
     auto c = a + b;
-    (void)c;
+    static_cast<void>(c);
 
     return 0;
 }
