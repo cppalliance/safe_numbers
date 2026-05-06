@@ -5,6 +5,7 @@
 #ifndef BOOST_SAFE_NUMBERS_DETAIL_TYPE_TRAITS_HPP
 #define BOOST_SAFE_NUMBERS_DETAIL_TYPE_TRAITS_HPP
 
+#include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/int128/int128.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
@@ -211,7 +212,9 @@ class bounded_int;
 
 } // namespace boost::safe_numbers
 
-// Constrained forward declaration of bounded_float
+// Constrained forward declaration of bounded_float (requires float NTTP support)
+#if BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
+
 namespace boost::safe_numbers {
 
 template <auto Min, auto Max>
@@ -224,6 +227,8 @@ template <auto Min, auto Max>
 class bounded_float;
 
 } // namespace boost::safe_numbers
+
+#endif // BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
 
 // bounded_uint specialization of is_unsigned_library_type
 namespace boost::safe_numbers::detail::impl {
@@ -242,12 +247,16 @@ struct is_signed_library_type<bounded_int<Min, Max>> : std::true_type {};
 } // namespace boost::safe_numbers::detail::impl
 
 // bounded_float specialization of is_float_library_type
+#if BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
+
 namespace boost::safe_numbers::detail::impl {
 
 template <auto Min, auto Max>
 struct is_float_library_type<bounded_float<Min, Max>> : std::true_type {};
 
 } // namespace boost::safe_numbers::detail::impl
+
+#endif // BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
 
 // is_bounded_type trait
 namespace boost::safe_numbers::detail {
@@ -263,8 +272,10 @@ struct is_bounded_type<bounded_uint<Min, Max>> : std::true_type {};
 template <auto Min, auto Max>
 struct is_bounded_type<bounded_int<Min, Max>> : std::true_type {};
 
+#if BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
 template <auto Min, auto Max>
 struct is_bounded_type<bounded_float<Min, Max>> : std::true_type {};
+#endif
 
 } // namespace impl
 
@@ -293,8 +304,10 @@ struct is_library_type<bounded_uint<Min, Max>> : std::true_type {};
 template <auto Min, auto Max>
 struct is_library_type<bounded_int<Min, Max>> : std::true_type {};
 
+#if BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
 template <auto Min, auto Max>
 struct is_library_type<bounded_float<Min, Max>> : std::true_type {};
+#endif
 
 template <typename>
 struct is_integral_library_type : std::false_type {};
@@ -350,11 +363,13 @@ struct underlying<bounded_int<Min, Max>>
     using type = typename underlying<typename bounded_int<Min, Max>::basis_type>::type;
 };
 
+#if BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
 template <auto Min, auto Max>
 struct underlying<bounded_float<Min, Max>>
 {
     using type = typename underlying<typename bounded_float<Min, Max>::basis_type>::type;
 };
+#endif
 
 } // namespace impl
 

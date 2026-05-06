@@ -8,6 +8,25 @@ https://www.boost.org/LICENSE_1_0.txt
 
 = Bounded Floating-Point Types
 
+[IMPORTANT]
+.Compiler Requirements
+====
+`bounded_float` uses floating-point values as non-type template parameters, a feature added in C++20 (P1907R1). Compilers that have not yet implemented this paper -- notably *Clang 13, 14, and 15* -- cannot use `bounded_float` and the type is unavailable on those toolchains. Known-good versions are *GCC 10+*, *Clang 16+*, and *MSVC 19.30+*.
+
+The header `<boost/safe_numbers/bounded_floats.hpp>` defines the macro `BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT` to `1` when the feature is available and `0` otherwise. Code that needs to be portable across compilers should guard `bounded_float` usage with this macro:
+
+[source,c++]
+----
+#include <boost/safe_numbers/bounded_floats.hpp>
+
+#if BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
+boost::safe_numbers::bounded_float<-1.0f, 1.0f> x {boost::safe_numbers::f32{0.5f}};
+#endif
+----
+
+When `BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT` is `0`, including the header is still safe -- it simply does not expand any declarations, and the trait specializations and `numeric_limits` partial specialization for `bounded_float` are also elided.
+====
+
 == Description
 
 `bounded_float<Min, Max>` is a compile-time bounded floating-point type that enforces value constraints at both compile time and runtime.

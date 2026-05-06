@@ -56,6 +56,15 @@
 #  define BOOST_SAFE_NUMBERS_UNREACHABLE std::abort()
 #endif
 
+// bounded_float requires floating-point non-type template parameters
+// Checking defined(__cpp_nontype_template_args) && __cpp_nontype_template_args >= 201911L
+// ends up removing compilers that have support, such as clang 18
+#if (defined(__clang__) && __clang_major__ >= 18) || (defined(__GNUC__) && __GNUC__ >= 11) || (defined(_MSC_VER) && _MSC_VER >= 1943) || (defined(__cpp_nontype_template_args) && __cpp_nontype_template_args >= 201911L)
+#  define BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT 1
+#else
+#  define BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT 0
+#endif
+
 namespace boost::safe_numbers::detail {
 
 // Workaround for static_assert(false, ...) in if constexpr branches.

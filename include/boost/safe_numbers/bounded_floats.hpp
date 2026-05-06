@@ -22,6 +22,12 @@
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
+// bounded_float requires C++20 floating-point non-type template parameters (P1907R1).
+// On compilers without that support (notably Clang 13-15) this header expands to
+// nothing, and any reference to bounded_float will fail with a "no such type" error.
+// Users can test for availability with BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT.
+#if BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
+
 namespace boost::safe_numbers {
 
 template <auto Min, auto Max>
@@ -307,5 +313,7 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_FLOAT_OP("modulo", operator%)
 } // namespace boost::safe_numbers
 
 #undef BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_FLOAT_OP
+
+#endif // BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
 
 #endif // BOOST_SAFE_NUMBERS_BOUNDED_FLOATS_HPP
