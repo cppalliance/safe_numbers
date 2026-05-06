@@ -127,7 +127,6 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE constexpr int from_chars_integer_im
 
 
     overflow_value /= unsigned_base;
-    overflow_value <<= 1;
     max_digit %= unsigned_base;
 
     // If the only character was a sign abort now
