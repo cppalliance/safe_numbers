@@ -10,13 +10,17 @@ https://www.boost.org/LICENSE_1_0.txt
 
 == Description
 
-The library provides user-defined literal suffixes for concise construction of safe integer types.
+The library provides user-defined literal suffixes for concise construction of safe numeric types.
 The literals are defined in the `boost::safe_numbers::literals` namespace.
-The behavior of the literals depends on the type:
+The behavior of each literal depends on the target type:
 
 - For `_u8`, `_u16`, and `_u32`, the literal value is range-checked and throws `std::overflow_error` if the value exceeds the target type's maximum.
 - The `_u64` literal performs no range check since `unsigned long long` maps directly to `std::uint64_t` (statically verified).
-- The `_u128` literal parses a string representation and throws `std::overflow_error` on overflow or `std::invalid_argument` on invalid input.
+- The `_u128` literal accepts an integer-form token, parses the digit string, and throws `std::overflow_error` on overflow or `std::invalid_argument` on invalid input.
+- For `_i8`, `_i16`, `_i32`, and `_i64`, the literal magnitude is range-checked against the signed maximum and throws `std::overflow_error` if it exceeds it.
+  Negative values are formed by applying the wrapper's unary `operator-` to the positive literal: the expression `-42_i32` parses as `-(42_i32)`.
+- The `_i128` literal mirrors `_u128`: it parses an integer-form digit string into `int128_t` and throws on overflow or invalid input.
+- For `_f32` and `_f64`, the literal is taken as `long double` and range-checked against the target's maximum, throwing `std::overflow_error` on overflow.
 
 [source,c++]
 ----
@@ -29,6 +33,15 @@ constexpr auto operator ""_u16(unsigned long long int val) -> u16;
 constexpr auto operator ""_u32(unsigned long long int val) -> u32;
 constexpr auto operator ""_u64(unsigned long long int val) noexcept -> u64;
 constexpr auto operator ""_u128(const char* str) -> u128;
+
+constexpr auto operator ""_i8(unsigned long long int val) -> i8;
+constexpr auto operator ""_i16(unsigned long long int val) -> i16;
+constexpr auto operator ""_i32(unsigned long long int val) -> i32;
+constexpr auto operator ""_i64(unsigned long long int val) -> i64;
+constexpr auto operator ""_i128(const char* str) -> i128;
+
+constexpr auto operator ""_f32(long double val) -> f32;
+constexpr auto operator ""_f64(long double val) -> f64;
 
 } // namespace boost::safe_numbers::literals
 ----
@@ -56,7 +69,35 @@ constexpr auto operator ""_u128(const char* str) -> u128;
 
 | `_u128`
 | `u128`
-| Parses string; throws `std::overflow_error` on overflow, `std::invalid_argument` on invalid input
+| Parses digit string; throws `std::overflow_error` on overflow, `std::invalid_argument` on invalid input
+
+| `_i8`
+| `i8`
+| Throws `std::overflow_error` if magnitude > 127
+
+| `_i16`
+| `i16`
+| Throws `std::overflow_error` if magnitude > 32,767
+
+| `_i32`
+| `i32`
+| Throws `std::overflow_error` if magnitude > 2,147,483,647
+
+| `_i64`
+| `i64`
+| Throws `std::overflow_error` if magnitude > 9,223,372,036,854,775,807
+
+| `_i128`
+| `i128`
+| Parses digit string; throws `std::overflow_error` on overflow, `std::invalid_argument` on invalid input
+
+| `_f32`
+| `f32`
+| Throws `std::overflow_error` if value > `std::numeric_limits<float>::max()`
+
+| `_f64`
+| `f64`
+| Throws `std::overflow_error` if value > `std::numeric_limits<double>::max()`
 |===
 
 == Usage
@@ -72,10 +113,33 @@ constexpr auto b {1000_u16};
 constexpr auto c {100000_u32};
 constexpr auto d {9999999999_u64};
 constexpr auto e {340282366920938463463374607431768211455_u128};
+
+constexpr auto f {-42_i8};
+constexpr auto g {32767_i16};
+constexpr auto h {-2147483647_i32};
+constexpr auto i {9223372036854775807_i64};
+constexpr auto j {-170141183460469231731687303715884105727_i128};
+
+constexpr auto k {3.14_f32};
+constexpr auto l {2.718281828459045_f64};
 ----
 
 Literals are `constexpr` and can be used in compile-time contexts.
 When used in a `constexpr` context, an out-of-range value produces a compile error rather than a runtime exception.
+
+== Negative Signed Literals
+
+C++ user-defined literal operators never see a leading minus sign as part of their input.
+The expression `-42_i32` is parsed as `-(42_i32)`: the literal returns a positive `i32` and unary `operator-` on the wrapper produces the negative result.
+Because the literal's range check is against the positive maximum (`INT_MAX`), the asymmetric `INT_MIN` value is not directly expressible through the literal: writing `-128_i8` parses as `-(128_i8)`, and the inner literal throws because `128 > INT8_MAX`.
+Use direct construction for that one value:
+
+[source,c++]
+----
+constexpr auto min_i8 {i8{std::numeric_limits<std::int8_t>::min()}};
+----
+
+The same asymmetry applies to `_i16`, `_i32`, `_i64`, and `_i128`.
 
 == Examples
 
