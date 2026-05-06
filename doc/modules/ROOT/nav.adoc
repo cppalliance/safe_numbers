@@ -31,6 +31,7 @@
 * xref:signed_integers.adoc[]
 * xref:bounded_uint.adoc[]
 * xref:bounded_int.adoc[]
+* xref:bounded_float.adoc[]
 * xref:cuda.adoc[]
 * xref:literals.adoc[]
 * xref:limits.adoc[]

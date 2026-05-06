@@ -1,0 +1,133 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#bounded_float]
+
+= Bounded Floating-Point Types
+
+== Description
+
+`bounded_float<Min, Max>` is a compile-time bounded floating-point type that enforces value constraints at both compile time and runtime.
+The bounds `Min` and `Max` are non-type template parameters of type `float` or `double`.
+
+The underlying storage type (`basis_type`) follows the type of the bounds:
+
+|===
+| Bound Type | Basis Type
+
+| `float` | `f32`
+| `double` | `f64`
+|===
+
+This differs from `bounded_int` / `bounded_uint`, which select the smallest integer type that fits the range. For floating-point bounds the bound type expresses precision intent, so `bounded_float<0.0, 1.0>` (double bounds) is stored as `f64` rather than being silently downgraded to `f32`. Users wanting `f32` storage should write `bounded_float<0.0f, 1.0f>`.
+
+NaN bounds are rejected at the concept level via `Min == Min` (which is false for NaN). Infinity bounds are accepted, but defeat the post-arithmetic bounds check, so they are typically not useful.
+
+== Synopsis
+
+[source,c++]
+----
+#include <boost/safe_numbers/bounded_floats.hpp>
+
+namespace boost::safe_numbers {
+
+template <auto Min, auto Max>
+    requires (valid_float_bound<decltype(Min)> &&
+              valid_float_bound<decltype(Max)> &&
+              std::is_same_v<decltype(Min), decltype(Max)> &&
+              float_raw_value(Min) == float_raw_value(Min) &&    // not NaN
+              float_raw_value(Max) == float_raw_value(Max) &&    // not NaN
+              float_raw_value(Max) > float_raw_value(Min))
+class bounded_float {
+public:
+    using basis_type = /* f32 if decltype(Min) == float, else f64 */;
+
+    // Construction (throws std::domain_error if NaN, signaling-NaN, or out of range)
+    explicit constexpr bounded_float(basis_type val);
+    explicit constexpr bounded_float(underlying_type val);
+
+    // Conversions to fundamental float / double
+    template <CompatibleFloat T>
+    explicit constexpr operator T() const;
+
+    template <auto Min2, auto Max2>
+    explicit constexpr operator bounded_float<Min2, Max2>() const;
+
+    // Direct accessor for the basis type (since static_cast<basis_type>(...) cannot
+    // be used: float_basis has a deleted catch-all constructor that intercepts it).
+    constexpr auto to_basis() const noexcept -> basis_type;
+
+    // Comparison (defaulted)
+    friend constexpr auto operator==(bounded_float, bounded_float) noexcept -> bool = default;
+    friend constexpr auto operator<=>(bounded_float, bounded_float) noexcept -> std::partial_ordering = default;
+
+    // Arithmetic (throw on IEEE 754 issues or out-of-range result)
+    friend constexpr auto operator+(bounded_float, bounded_float) -> bounded_float;
+    friend constexpr auto operator-(bounded_float, bounded_float) -> bounded_float;
+    friend constexpr auto operator*(bounded_float, bounded_float) -> bounded_float;
+    friend constexpr auto operator/(bounded_float, bounded_float) -> bounded_float;
+    friend constexpr auto operator%(bounded_float, bounded_float) -> bounded_float;
+
+    // Compound assignment
+    constexpr auto operator+=(bounded_float) -> bounded_float&;
+    constexpr auto operator-=(bounded_float) -> bounded_float&;
+    constexpr auto operator*=(bounded_float) -> bounded_float&;
+    constexpr auto operator/=(bounded_float) -> bounded_float&;
+    constexpr auto operator%=(bounded_float) -> bounded_float&;
+};
+
+} // namespace boost::safe_numbers
+----
+
+`bounded_float` does not provide unary `+`, unary `-`, `++`, `--`, or any bitwise operators because the underlying `float_basis` does not provide them either; the design rule is that `bounded_float` exposes only what `floats.hpp` already supports.
+
+== Exception Behavior
+
+|===
+| Condition | Exception Type
+
+| Value outside `[Min, Max]` at construction or after arithmetic | `std::domain_error`
+| NaN at construction | `std::domain_error`
+| Signaling NaN at construction | `std::domain_error`
+| Addition / subtraction overflow to +infinity | `std::overflow_error`
+| Addition / subtraction underflow to -infinity | `std::underflow_error`
+| Multiplication overflow | `std::overflow_error`
+| Multiplication underflow | `std::underflow_error`
+| Division producing NaN (e.g., 0/0, inf/inf) | `std::domain_error`
+| Division by zero (finite numerator) | `std::domain_error`
+| Modulo with zero divisor | `std::domain_error`
+| Modulo with infinite numerator | `std::domain_error`
+| Narrowing conversion (e.g., f64 -> f32) overflowing to infinity | `std::overflow_error`
+|===
+
+The IEEE 754 error handling for arithmetic is delegated to `float_basis`, which categorizes results as `overflow`, `underflow`, `nan_op`, `invalid_op`, or `divide_by_zero` and throws the corresponding `std::*_error`. After the arithmetic succeeds, `bounded_float` re-validates the result against `[Min, Max]` via its constructor.
+
+== Mixed-Width Operations
+
+Operations between `bounded_float` types with different bounds are compile-time errors:
+
+[source,c++]
+----
+bounded_float<-1.0f, 1.0f> a {f32{0.5f}};
+bounded_float<-2.0f, 2.0f> b {f32{0.5f}};
+
+// auto c = a + b;  // Compile error: different bounds
+----
+
+== Notes on `static_cast` to the basis type
+
+`float_basis` (the implementation of `f32` / `f64`) declares an explicitly-deleted catch-all constructor that intercepts any `static_cast<f32>(other)` where `other` is not already a `float`. As a result, `static_cast<f32>(my_bounded_float)` will fail to compile with a "uses deleted function" error, even though a conversion operator exists. Use one of:
+
+[source,c++]
+----
+auto raw {static_cast<float>(my_bounded_float)};   // converts to fundamental float
+auto basis {my_bounded_float.to_basis()};          // returns f32 directly
+auto built {f32{static_cast<float>(my_bounded_float)}}; // explicit f32 build
+----
+
+== Standard Library Support
+
+`bounded_float` participates in the same `library_type` concept as the integer bounded types, so the existing `iostream` operators, `std::formatter`, and `fmt::formatter` specializations work transparently. `std::numeric_limits<bounded_float<Min, Max>>` is also specialized in `<boost/safe_numbers/limits.hpp>`, with `is_iec559`, `has_infinity`, `has_quiet_NaN`, and `has_signaling_NaN` set to `false` to reflect that the type rejects those values.
