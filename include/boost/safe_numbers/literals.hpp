@@ -70,14 +70,13 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u128(const char* str) -> u1
     int128::uint128_t result;
     const auto r {int128::detail::from_chars(str, str + int128::detail::strlen(str), result)};
 
-    switch (r)
+    if (r == EDOM)
     {
-        case EDOM:
-            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "Overflow detected in literal construction");
-        case EINVAL:
-            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::invalid_argument, "Invalid conversion from literal");
-        default:
-            static_cast<void>(r);
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "Overflow detected in literal construction");
+    }
+    else if (r == EINVAL)
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::invalid_argument, "Invalid conversion from literal");
     }
 
     return u128{result};
@@ -128,14 +127,13 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_i128(const char* str) -> i1
     int128::int128_t result;
     const auto r {int128::detail::from_chars(str, str + int128::detail::strlen(str), result)};
 
-    switch (r)
+    if (r == EDOM)
     {
-        case EDOM:
-            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "Overflow detected in literal construction");
-        case EINVAL:
-            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::invalid_argument, "Invalid conversion from literal");
-        default:
-            static_cast<void>(r);
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "Overflow detected in literal construction");
+    }
+    else if (r == EINVAL)
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::invalid_argument, "Invalid conversion from literal");
     }
 
     return i128{result};
