@@ -162,6 +162,18 @@ run test_signed_bounded_modulo.cpp ;
 run test_signed_bounded_conversions.cpp ;
 run test_signed_bounded_unary.cpp ;
 compile-fail compile_fail_bounded_int_mixed_ops.cpp ;
+run test_bounded_float_construction.cpp ;
+run test_bounded_float_addition.cpp ;
+run test_bounded_float_subtraction.cpp ;
+run test_bounded_float_multiplication.cpp ;
+run test_bounded_float_division.cpp ;
+run test_bounded_float_modulo.cpp ;
+run test_bounded_float_conversions.cpp ;
+run test_bounded_float_streaming.cpp ;
+run test_bounded_float_std_format.cpp ;
+run test_bounded_float_fmt_format.cpp ;
+run test_bounded_float_limits.cpp ;
+compile-fail compile_fail_bounded_float_mixed_ops.cpp ;
 
 # Signed free function tests
 run test_signed_charconv.cpp ;
