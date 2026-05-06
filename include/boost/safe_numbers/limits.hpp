@@ -214,6 +214,8 @@ public:
     static constexpr type denorm_min() { return min(); }
 };
 
+#if BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
+
 template <auto Min, auto Max>
 class numeric_limits<boost::safe_numbers::bounded_float<Min, Max>>
 {
@@ -259,6 +261,8 @@ public:
     static constexpr type signaling_NaN() { return min(); }
     static constexpr type denorm_min() { return min(); }
 };
+
+#endif // BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
 
 #ifdef __clang__
 #  pragma clang diagnostic pop

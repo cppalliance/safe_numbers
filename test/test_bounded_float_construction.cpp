@@ -2,7 +2,10 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
+#include <boost/safe_numbers/detail/config.hpp>
 #include <boost/core/lightweight_test.hpp>
+
+#if BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
 
 #ifdef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -192,3 +195,9 @@ int main()
 
     return boost::report_errors();
 }
+
+#else // BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
+
+int main() { return 0; }
+
+#endif

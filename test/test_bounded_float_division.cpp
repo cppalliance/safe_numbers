@@ -2,7 +2,10 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
+#include <boost/safe_numbers/detail/config.hpp>
 #include <boost/core/lightweight_test.hpp>
+
+#if BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
 
 #ifdef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -24,7 +27,8 @@ void test_division_in_bounds()
     const bounded_float<-100.0f, 100.0f> a {f32{20.0f}};
     const bounded_float<-100.0f, 100.0f> b {f32{4.0f}};
     const auto r {a / b};
-    BOOST_TEST_EQ(static_cast<float>(r), 5.0f);
+    const bounded_float<-100.0f, 100.0f> expected {f32{5.0f}};
+    BOOST_TEST(r == expected);
 }
 
 void test_division_by_zero()
@@ -46,7 +50,8 @@ void test_division_compound_assignment()
     bounded_float<-100.0f, 100.0f> a {f32{20.0f}};
     const bounded_float<-100.0f, 100.0f> b {f32{4.0f}};
     a /= b;
-    BOOST_TEST_EQ(static_cast<float>(a), 5.0f);
+    const bounded_float<-100.0f, 100.0f> expected {f32{5.0f}};
+    BOOST_TEST(a == expected);
 }
 
 int main()
@@ -58,3 +63,9 @@ int main()
 
     return boost::report_errors();
 }
+
+#else // BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
+
+int main() { return 0; }
+
+#endif

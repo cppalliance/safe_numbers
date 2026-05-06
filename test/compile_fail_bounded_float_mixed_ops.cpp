@@ -2,6 +2,10 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
+#include <boost/safe_numbers/detail/config.hpp>
+
+#if BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
+
 #include <boost/safe_numbers/bounded_floats.hpp>
 #include <boost/safe_numbers/floats.hpp>
 
@@ -17,3 +21,14 @@ int main()
 
     return 0;
 }
+
+#else
+
+// Force a compile failure on compilers without float NTTP support
+int main()
+{
+    static_assert(boost::safe_numbers::detail::dependent_false<float>, "bounded_float requires float NTTP support");
+    return 1;
+}
+
+#endif

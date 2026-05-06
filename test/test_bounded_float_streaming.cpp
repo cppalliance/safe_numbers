@@ -2,8 +2,12 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-#include <boost/safe_numbers.hpp>
+#include <boost/safe_numbers/detail/config.hpp>
 #include <boost/core/lightweight_test.hpp>
+
+#if BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
+
+#include <boost/safe_numbers.hpp>
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
@@ -18,7 +22,8 @@ void test_round_trip()
     in.str("42.5");
     in >> val;
 
-    BOOST_TEST_EQ(static_cast<float>(val), 42.5f);
+    const bounded_float<-100.0f, 100.0f> expected {f32{42.5f}};
+    BOOST_TEST(val == expected);
 
     std::stringstream out;
     out << val;
@@ -34,7 +39,8 @@ void test_negative_round_trip()
     in.str("-42.5");
     in >> val;
 
-    BOOST_TEST_EQ(static_cast<double>(val), -42.5);
+    const bounded_float<-100.0, 100.0> expected {f64{-42.5}};
+    BOOST_TEST(val == expected);
 
     std::stringstream out;
     out << val;
@@ -68,3 +74,9 @@ int main()
 
     return boost::report_errors();
 }
+
+#else // BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
+
+int main() { return 0; }
+
+#endif

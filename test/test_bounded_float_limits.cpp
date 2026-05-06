@@ -2,7 +2,10 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
+#include <boost/safe_numbers/detail/config.hpp>
 #include <boost/core/lightweight_test.hpp>
+
+#if BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
 
 #ifdef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -55,9 +58,12 @@ void test_min_max()
     constexpr auto max_val {std::numeric_limits<BFLow>::max()};
     constexpr auto lowest_val {std::numeric_limits<BFLow>::lowest()};
 
-    BOOST_TEST_EQ(static_cast<float>(min_val), -1.0f);
-    BOOST_TEST_EQ(static_cast<float>(max_val), 1.0f);
-    BOOST_TEST_EQ(static_cast<float>(lowest_val), -1.0f);
+    const BFLow expected_min {f32{-1.0f}};
+    const BFLow expected_max {f32{1.0f}};
+
+    BOOST_TEST(min_val == expected_min);
+    BOOST_TEST(max_val == expected_max);
+    BOOST_TEST(lowest_val == expected_min);
 }
 
 int main()
@@ -66,3 +72,9 @@ int main()
 
     return boost::report_errors();
 }
+
+#else // BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
+
+int main() { return 0; }
+
+#endif

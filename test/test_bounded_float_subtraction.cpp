@@ -2,7 +2,10 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
+#include <boost/safe_numbers/detail/config.hpp>
 #include <boost/core/lightweight_test.hpp>
+
+#if BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
 
 #ifdef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -24,7 +27,8 @@ void test_subtraction_in_bounds()
     const bounded_float<-10.0f, 10.0f> a {f32{5.0f}};
     const bounded_float<-10.0f, 10.0f> b {f32{2.0f}};
     const auto r {a - b};
-    BOOST_TEST_EQ(static_cast<float>(r), 3.0f);
+    const bounded_float<-10.0f, 10.0f> expected {f32{3.0f}};
+    BOOST_TEST(r == expected);
 }
 
 void test_subtraction_post_op_out_of_range()
@@ -43,7 +47,8 @@ void test_subtraction_compound_assignment()
     bounded_float<-10.0f, 10.0f> a {f32{5.0f}};
     const bounded_float<-10.0f, 10.0f> b {f32{2.0f}};
     a -= b;
-    BOOST_TEST_EQ(static_cast<float>(a), 3.0f);
+    const bounded_float<-10.0f, 10.0f> expected {f32{3.0f}};
+    BOOST_TEST(a == expected);
 }
 
 int main()
@@ -54,3 +59,9 @@ int main()
 
     return boost::report_errors();
 }
+
+#else // BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT
+
+int main() { return 0; }
+
+#endif

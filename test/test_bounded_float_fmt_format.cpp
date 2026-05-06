@@ -14,7 +14,9 @@
 
 #define FMT_HEADER_ONLY
 
-#if __has_include(<fmt/format.h>)
+#include <boost/safe_numbers/detail/config.hpp>
+
+#if BOOST_SAFE_NUMBERS_HAS_BOUNDED_FLOAT && __has_include(<fmt/format.h>)
 
 #include <boost/core/lightweight_test.hpp>
 #include <boost/safe_numbers.hpp>
@@ -62,9 +64,6 @@ int main()
 
 #else
 
-int main()
-{
-    return 0;
-}
+int main() { return 0; }
 
 #endif
