@@ -143,7 +143,7 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_i128(const char* str) -> i1
 
 BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_f32(const long double val) -> f32
 {
-    if (constexpr long double max_value {std::numeric_limits<float>::max()}; val > max_value)
+    if (constexpr auto max_value {static_cast<long double>(std::numeric_limits<float>::max())}; val > max_value)
     {
         BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "Overflow detected in literal construction");
     }
@@ -153,7 +153,7 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_f32(const long double val) 
 
 BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_f64(const long double val) -> f64
 {
-    if (constexpr long double max_value {std::numeric_limits<double>::max()}; val > max_value)
+    if (constexpr auto max_value {static_cast<long double>(std::numeric_limits<double>::max())}; val > max_value)
     {
         BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "Overflow detected in literal construction");
     }
