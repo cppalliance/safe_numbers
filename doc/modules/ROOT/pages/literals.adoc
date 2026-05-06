@@ -143,7 +143,7 @@ The same asymmetry applies to `_i16`, `_i32`, `_i64`, and `_i128`.
 
 == Examples
 
-.This https://github.com/boostorg/safe_numbers/blob/develop/examples/literals.cpp[example] demonstrates how to use user-defined literals with safe integer types.
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/literals.cpp[example] demonstrates how to use user-defined literals with safe numeric types.
 ====
 [source, c++]
 ----
@@ -157,6 +157,13 @@ Output:
 100000_u32 = 100000
 9999999999_u64 = 9999999999
 max_u128 = 340282366920938463463374607431768211455
+-42_i8  = -42
+max_i16 = 32767
+min+1_i32 = -2147483647
+max_i64 = 9223372036854775807
+min+1_i128 = -170141183460469231731687303715884105727
+pi_f32 = 3.14
+e_f64  = 2.71828
 100_u32 + 50_u32 = 150
 6_u32 * 7_u32    = 42
 constexpr 255_u8 = 255
