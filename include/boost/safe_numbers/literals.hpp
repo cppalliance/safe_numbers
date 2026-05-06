@@ -8,6 +8,7 @@
 #include <boost/safe_numbers/detail/int128/literals.hpp>
 #include <boost/safe_numbers/detail/throw_exception.hpp>
 #include <boost/safe_numbers/unsigned_integers.hpp>
+#include <boost/safe_numbers/signed_integers.hpp>
 #include <boost/safe_numbers/floats.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
@@ -80,6 +81,64 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u128(const char* str) -> u1
     }
 
     return u128{result};
+}
+
+BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_i8(const unsigned long long int val) -> i8
+{
+    if (constexpr unsigned long long int max_value {std::numeric_limits<std::int8_t>::max()}; val > max_value)
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "Overflow detected in literal construction");
+    }
+
+    return static_cast<i8>(static_cast<std::int8_t>(val));
+}
+
+BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_i16(const unsigned long long int val) -> i16
+{
+    if (constexpr unsigned long long int max_value {std::numeric_limits<std::int16_t>::max()}; val > max_value)
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "Overflow detected in literal construction");
+    }
+
+    return static_cast<i16>(static_cast<std::int16_t>(val));
+}
+
+BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_i32(const unsigned long long int val) -> i32
+{
+    if (constexpr unsigned long long int max_value {std::numeric_limits<std::int32_t>::max()}; val > max_value)
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "Overflow detected in literal construction");
+    }
+
+    return static_cast<i32>(static_cast<std::int32_t>(val));
+}
+
+BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_i64(const unsigned long long int val) -> i64
+{
+    if (constexpr unsigned long long int max_value {std::numeric_limits<std::int64_t>::max()}; val > max_value)
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "Overflow detected in literal construction");
+    }
+
+    return static_cast<i64>(static_cast<std::int64_t>(val));
+}
+
+BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_i128(const char* str) -> i128
+{
+    int128::int128_t result;
+    const auto r {int128::detail::from_chars(str, str + int128::detail::strlen(str), result)};
+
+    switch (r)
+    {
+        case EDOM:
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "Overflow detected in literal construction");
+        case EINVAL:
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::invalid_argument, "Invalid conversion from literal");
+        default:
+            static_cast<void>(r);
+    }
+
+    return i128{result};
 }
 
 BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_f32(const long double val) -> f32
