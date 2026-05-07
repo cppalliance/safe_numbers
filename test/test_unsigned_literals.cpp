@@ -57,6 +57,14 @@ void test<u128>()
 {
     constexpr auto good_value {42_u128};
     BOOST_TEST_EQ(good_value, u128{42u});
+
+    // UINT128_MAX itself is representable.
+    constexpr auto max_value {340282366920938463463374607431768211455_u128};
+    static_cast<void>(max_value);
+
+    // UINT128_MAX+1 (2^128) must overflow. Regression test for from_chars
+    // overflow detection at the exact boundary.
+    BOOST_TEST_THROWS(340282366920938463463374607431768211456_u128, std::overflow_error);
     BOOST_TEST_THROWS(18446744073709551615184467440737095516151844674407370955161518446744073709551615_u128, std::overflow_error);
 }
 

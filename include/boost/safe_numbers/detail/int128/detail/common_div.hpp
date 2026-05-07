@@ -447,7 +447,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE BOOST_SAFE_NUMBERS_DETAIL_INT128_FO
         return;
     }
 
-    #else
+    #endif
 
     if (rhs <= UINT32_MAX)
     {
@@ -467,8 +467,6 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE BOOST_SAFE_NUMBERS_DETAIL_INT128_FO
         quotient = impl::from_words<T>(q);
         remainder = impl::from_words<T>(u);
     }
-
-    #endif
 }
 
 template <typename T>
