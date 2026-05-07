@@ -141,6 +141,11 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_i128(const char* str) -> i1
     return i128{result};
 }
 
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4756)
+#endif
+
 BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_f32(const long double val) -> f32
 {
     if (constexpr auto max_value {static_cast<long double>(std::numeric_limits<float>::max())}; val > max_value)
@@ -160,6 +165,10 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_f64(const long double val) 
 
     return static_cast<f64>(static_cast<double>(val));
 }
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 
 }  // boost::safe_numbers::literals
 
