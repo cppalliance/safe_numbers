@@ -193,17 +193,45 @@ local windows_pipeline(name, image, environment, arch = "amd64") =
     ),
 
     linux_pipeline(
-        "Linux 24.04 GCC 14 32 ASAN",
-        "cppalliance/droneubuntu2404:1",
-        { TOOLSET: 'gcc', COMPILER: 'g++-14', CXXSTD: '03,11,14,17,20,23', ADDRMD: '32', CXXFLAGS: "-fexcess-precision=fast" } + asan,
-        "g++-14-multilib",
+        "Linux 26.04 GCC 15 32",
+        "cppalliance/droneubuntu2604:1",
+        { TOOLSET: 'gcc', COMPILER: 'g++-15', CXXSTD: '03,11,14,17,20,23,2c', ADDRMD: '32', CXXFLAGS: "-fexcess-precision=fast" },
+        "g++-15-multilib",
     ),
 
     linux_pipeline(
-        "Linux 24.04 GCC 14 64 ASAN",
-        "cppalliance/droneubuntu2404:1",
-        { TOOLSET: 'gcc', COMPILER: 'g++-14', CXXSTD: '03,11,14,17,20,23', ADDRMD: '64', CXXFLAGS: "-fexcess-precision=fast" } + asan,
-        "g++-14-multilib",
+        "Linux 26.04 GCC 15 64",
+        "cppalliance/droneubuntu2604:1",
+        { TOOLSET: 'gcc', COMPILER: 'g++-15', CXXSTD: '03,11,14,17,20,23,2c', ADDRMD: '64', CXXFLAGS: "-fexcess-precision=fast" },
+        "g++-15-multilib",
+    ),
+
+    linux_pipeline(
+        "Linux 26.04 GCC 16 32",
+        "cppalliance/droneubuntu2604:1",
+        { TOOLSET: 'gcc', COMPILER: 'g++-16', CXXSTD: '03,11,14,17,20,23,2c', ADDRMD: '32', CXXFLAGS: "-fexcess-precision=fast" },
+        "g++-16-multilib",
+    ),
+
+    linux_pipeline(
+        "Linux 26.04 GCC 16 64",
+        "cppalliance/droneubuntu2604:1",
+        { TOOLSET: 'gcc', COMPILER: 'g++-16', CXXSTD: '03,11,14,17,20,23,2c', ADDRMD: '64', CXXFLAGS: "-fexcess-precision=fast" },
+        "g++-16-multilib",
+    ),
+
+    linux_pipeline(
+        "Linux 26.04 GCC 16 32 ASAN",
+        "cppalliance/droneubuntu2604:1",
+        { TOOLSET: 'gcc', COMPILER: 'g++-16', CXXSTD: '03,11,14,17,20,23,2c', ADDRMD: '32', CXXFLAGS: "-fexcess-precision=fast" } + asan,
+        "g++-16-multilib",
+    ),
+
+    linux_pipeline(
+        "Linux 26.04 GCC 16 64 ASAN",
+        "cppalliance/droneubuntu2604:1",
+        { TOOLSET: 'gcc', COMPILER: 'g++-16', CXXSTD: '03,11,14,17,20,23,2c', ADDRMD: '64', CXXFLAGS: "-fexcess-precision=fast" } + asan,
+        "g++-16-multilib",
     ),
 
     linux_pipeline(
@@ -274,6 +302,13 @@ local windows_pipeline(name, image, environment, arch = "amd64") =
         { TOOLSET: 'clang', COMPILER: 'clang++-20', CXXSTD: '03,11,14,17,20,23,2c' } + asan,
         "clang-20",
         ["deb http://apt.llvm.org/noble/ llvm-toolchain-noble-20 main"],
+    ),
+
+    linux_pipeline(
+        "Linux 26.04 Clang 21",
+        "cppalliance/droneubuntu2604:1",
+        { TOOLSET: 'clang', COMPILER: 'clang++-21', CXXSTD: '03,11,14,17,20,23,2c' },
+        "clang-21",
     ),
 
     windows_pipeline(
