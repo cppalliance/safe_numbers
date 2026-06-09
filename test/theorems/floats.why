@@ -1,0 +1,743 @@
+(*
+ * Formal Verification of Floating-Point Error Classification
+ * for Boost.SafeNumbers
+ *
+ * Copyright 2026 Matt Borland
+ * Distributed under the Boost Software License, Version 1.0.
+ * https://www.boost.org/LICENSE_1_0.txt
+ *
+ * This file formally proves the correctness of the error classification
+ * performed by the floating-point operations (+, -, *, /) and the
+ * comparison operators of Boost.SafeNumbers. The C++ implementation is in:
+ *
+ *   include/boost/safe_numbers/detail/float_basis.hpp
+ *
+ * with f32 = detail::float_basis<float> and f64 = detail::float_basis<double>
+ * (floats.hpp lines 10-17).
+ *
+ * Each checked operation runs the native IEEE-754 operation and then
+ * classifies the result and operands into error_category
+ * (float_basis.hpp lines 494-502):
+ *
+ *   no_error, overflow, underflow, divide_by_zero, nan_op, invalid_op
+ *
+ * We model the control flow of these classifiers branch for branch:
+ *
+ *   checked_float_addition       lines 525-561
+ *   checked_float_subtraction    lines 773-809
+ *   checked_float_multiplication lines 1027-1063
+ *   checked_float_division       lines 1285-1337
+ *
+ * following IEEE-754-2008 sections 6.1 (infinity arithmetic), 6.2 (NaN
+ * operands), 7.2 (invalid operations) and 7.3 (divideByZero). The native
+ * result res is modeled by the Why3 standard library operation
+ * add/sub/mul/div in mode RNE, because the C++ uses the default
+ * round-to-nearest rounding. The IEEE special-value behavior is supplied
+ * by the ieee_float standard library axioms (add_special, add_finite, ...).
+ * We therefore prove the classifier against the standard library and, for
+ * the native float types < float 8 24 > and < float 11 53 >, against the
+ * SMT-LIB floating-point theory used by Z3 and Alt-Ergo, rather than against
+ * a hand-written specification.
+ *
+ * Modeling notes (the bridge to the C++ is established by inspection, the
+ * same way the integer proofs connect to their basis headers):
+ *   - constexpr_isinf v  corresponds to  is_infinite v
+ *   - constexpr_isnan v  corresponds to  is_nan v
+ *   - is_true_zero v     corresponds to  is_zero v   (this assumes the
+ *     platform does not flush denormals to zero; the C++ is_true_zero
+ *     handles DAZ by bit inspection, which is outside this real-number model)
+ *   - the C++ test res > 0 on an infinite res corresponds to is_positive res
+ *   - signaling NaN: ieee_float has no signaling concept, so is_signaling is
+ *     an abstract predicate refining is_nan (axiom is_signaling x -> is_nan
+ *     x). The faithfulness of the bit-level constexpr_issignaling to this
+ *     abstraction is checked by the C++ unit tests, not here.
+ *
+ * Naming: the library category "underflow" means the result saturates to
+ * negative infinity (negative overflow); it is NOT IEEE-754 tininess.
+ * Gradual underflow to a subnormal or zero is finite and classifies as
+ * no_error.
+ *
+ * Because ieee_float.Float32 and ieee_float.Float64 are both instances of
+ * GenericFloat, the two theories below (Float32Checks and Float64Checks) are
+ * textually identical apart from the imported format, and cover f32 and f64
+ * respectively.
+ *
+ * Verification: all 86 lemmas (43 for each of f32 and f64) are proved using
+ * two complementary provers:
+ *   - Alt-Ergo 2.4.3: proves 86/86 (slowest goal about 4.4s)
+ *   - Z3 4.15.4:      proves 60/86
+ * Alt-Ergo discharges every goal. Z3 proves all of the floating-point
+ * classification goals natively but times out on the real-number bridge
+ * lemmas (the soundness and correctness lemmas), whose round / no_overflow
+ * reasoning lies outside the SMT-LIB float theory. Every lemma is proved by
+ * at least one prover (zero gaps).
+ *
+ *   why3 prove -P alt-ergo -t 10 -L theorems theorems/floats.why
+ *   why3 prove -P z3 -t 30 -L theorems theorems/floats.why
+ *)
+
+(* ================================================================
+ * Theory: Defs
+ *
+ * The result categories shared by every operation. category mirrors the
+ * C++ enum class error_category; ordering mirrors the four possible
+ * results of operator<=> (std::partial_ordering).
+ * ================================================================ *)
+theory Defs
+
+  type category = NoError | Overflow | Underflow | DivByZero | NanOp | InvalidOp
+
+  type ordering = Less | Greater | Equivalent | Unordered
+
+end
+
+(* ================================================================
+ * Theory: Float32Checks
+ *
+ * Classification proofs for f32 = float_basis<float>, modeled on
+ * ieee_float.Float32 (the IEEE-754 binary32 format, < float 8 24 >).
+ * ================================================================ *)
+theory Float32Checks
+
+  use Defs
+  use real.RealInfix
+  use ieee_float.Float32
+
+  (* Float32 substitutes is_finite and to_real by the built-in projections of
+   * the < float 8 24 > type when it clones GenericFloat, so those two names
+   * are not exposed (unlike is_nan, is_zero, ...). Reintroduce them. *)
+  function to_real (x : t) : real = t'real x
+  predicate is_finite (x : t) = t'isFinite x
+
+  (* ---- Signaling NaN abstraction ----
+   * ieee_float does not model signaling NaNs. is_signaling is an abstract
+   * predicate that refines is_nan; this is all the classifier needs. *)
+  predicate is_signaling (x : t)
+  axiom signaling_is_nan : forall x : t. is_signaling x -> is_nan x
+
+  (* ---- Classifiers modeling the C++ control flow ---- *)
+
+  (* checked_float_addition, float_basis.hpp lines 525-561.
+   * 7.2.a signaling, 7.2.d addition of infinities of differing sign,
+   * 6.2 NaN operand, 6.1 saturation to +/- infinity. *)
+  function classify_add (x y : t) : category =
+    let r = add RNE x y in
+    if is_finite r then NoError
+    else if is_signaling x \/ is_signaling y then InvalidOp
+    else if is_infinite x /\ is_infinite y /\ diff_sign x y then InvalidOp
+    else if is_nan x \/ is_nan y then NanOp
+    else if is_positive r then Overflow
+    else Underflow
+
+  (* checked_float_subtraction, float_basis.hpp lines 773-809.
+   * Differs from addition only in the infinity invalid case: subtraction
+   * of infinities of the SAME sign cancels to NaN. *)
+  function classify_sub (x y : t) : category =
+    let r = sub RNE x y in
+    if is_finite r then NoError
+    else if is_signaling x \/ is_signaling y then InvalidOp
+    else if is_infinite x /\ is_infinite y /\ same_sign x y then InvalidOp
+    else if is_nan x \/ is_nan y then NanOp
+    else if is_positive r then Overflow
+    else Underflow
+
+  (* checked_float_multiplication, float_basis.hpp lines 1027-1063.
+   * 7.2.c multiplication of zero by an infinity in either order. *)
+  function classify_mul (x y : t) : category =
+    let r = mul RNE x y in
+    if is_finite r then NoError
+    else if is_signaling x \/ is_signaling y then InvalidOp
+    else if (is_zero x /\ is_infinite y) \/ (is_infinite x /\ is_zero y) then InvalidOp
+    else if is_nan x \/ is_nan y then NanOp
+    else if is_positive r then Overflow
+    else Underflow
+
+  (* checked_float_division, float_basis.hpp lines 1285-1337.
+   * 7.2.b 0/0 and inf/inf, then 7.3 finite-nonzero / zero. *)
+  function classify_div (x y : t) : category =
+    let r = div RNE x y in
+    if is_finite r then NoError
+    else if is_signaling x \/ is_signaling y then InvalidOp
+    else if is_zero x /\ is_zero y then InvalidOp
+    else if is_infinite x /\ is_infinite y then InvalidOp
+    else if is_zero y /\ not (is_infinite x) /\ not (is_nan x) then DivByZero
+    else if is_nan x \/ is_nan y then NanOp
+    else if is_positive r then Overflow
+    else Underflow
+
+  (* ---- Comparison modeling operator<=> ---- *)
+
+  function compare (x y : t) : ordering =
+    if is_nan x \/ is_nan y then Unordered
+    else if lt x y then Less
+    else if gt x y then Greater
+    else Equivalent
+
+  (* ================= Addition ================= *)
+
+  (* The hot path fires exactly on a finite result. *)
+  lemma add_no_error_iff :
+    forall x y : t. classify_add x y = NoError <-> is_finite (add RNE x y)
+
+  (* Saturation to +infinity is flagged as overflow, and only then. *)
+  lemma add_overflow_iff :
+    forall x y : t. classify_add x y = Overflow <-> is_plus_infinity (add RNE x y)
+
+  (* Saturation to -infinity is flagged as underflow (negative overflow). *)
+  lemma add_underflow_iff :
+    forall x y : t. classify_add x y = Underflow <-> is_minus_infinity (add RNE x y)
+
+  (* invalid_op fires exactly on a signaling operand or inf + (-inf). *)
+  lemma add_invalid_iff :
+    forall x y : t.
+      classify_add x y = InvalidOp <->
+        (is_signaling x \/ is_signaling y \/
+         (is_infinite x /\ is_infinite y /\ diff_sign x y))
+
+  (* nan_op fires exactly on a (quiet) NaN operand with no signaling. *)
+  lemma add_nan_op_iff :
+    forall x y : t.
+      classify_add x y = NanOp <->
+        ((is_nan x \/ is_nan y) /\ not (is_signaling x) /\ not (is_signaling y))
+
+  (* Soundness against the reals: a genuine positive overflow of two finite
+   * operands is flagged as overflow. *)
+  lemma add_overflow_sound :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      not (no_overflow RNE (to_real x +. to_real y)) ->
+      (to_real x +. to_real y) >. 0.0 ->
+      classify_add x y = Overflow
+
+  lemma add_underflow_sound :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      not (no_overflow RNE (to_real x +. to_real y)) ->
+      (to_real x +. to_real y) <. 0.0 ->
+      classify_add x y = Underflow
+
+  (* No false positive: finite operands whose exact sum is representable
+   * are not flagged. *)
+  lemma add_finite_no_error :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      no_overflow RNE (to_real x +. to_real y) ->
+      classify_add x y = NoError
+
+  (* Correctness: when not flagged, the result is the correctly rounded sum. *)
+  lemma add_correctness :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      no_overflow RNE (to_real x +. to_real y) ->
+      to_real (add RNE x y) = round RNE (to_real x +. to_real y)
+
+  (* ================= Subtraction ================= *)
+
+  lemma sub_no_error_iff :
+    forall x y : t. classify_sub x y = NoError <-> is_finite (sub RNE x y)
+
+  lemma sub_overflow_iff :
+    forall x y : t. classify_sub x y = Overflow <-> is_plus_infinity (sub RNE x y)
+
+  lemma sub_underflow_iff :
+    forall x y : t. classify_sub x y = Underflow <-> is_minus_infinity (sub RNE x y)
+
+  lemma sub_invalid_iff :
+    forall x y : t.
+      classify_sub x y = InvalidOp <->
+        (is_signaling x \/ is_signaling y \/
+         (is_infinite x /\ is_infinite y /\ same_sign x y))
+
+  lemma sub_nan_op_iff :
+    forall x y : t.
+      classify_sub x y = NanOp <->
+        ((is_nan x \/ is_nan y) /\ not (is_signaling x) /\ not (is_signaling y))
+
+  lemma sub_overflow_sound :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      not (no_overflow RNE (to_real x -. to_real y)) ->
+      (to_real x -. to_real y) >. 0.0 ->
+      classify_sub x y = Overflow
+
+  lemma sub_underflow_sound :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      not (no_overflow RNE (to_real x -. to_real y)) ->
+      (to_real x -. to_real y) <. 0.0 ->
+      classify_sub x y = Underflow
+
+  lemma sub_correctness :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      no_overflow RNE (to_real x -. to_real y) ->
+      to_real (sub RNE x y) = round RNE (to_real x -. to_real y)
+
+  (* ================= Multiplication ================= *)
+
+  lemma mul_no_error_iff :
+    forall x y : t. classify_mul x y = NoError <-> is_finite (mul RNE x y)
+
+  lemma mul_overflow_iff :
+    forall x y : t. classify_mul x y = Overflow <-> is_plus_infinity (mul RNE x y)
+
+  lemma mul_underflow_iff :
+    forall x y : t. classify_mul x y = Underflow <-> is_minus_infinity (mul RNE x y)
+
+  lemma mul_invalid_iff :
+    forall x y : t.
+      classify_mul x y = InvalidOp <->
+        (is_signaling x \/ is_signaling y \/
+         (is_zero x /\ is_infinite y) \/ (is_infinite x /\ is_zero y))
+
+  lemma mul_nan_op_iff :
+    forall x y : t.
+      classify_mul x y = NanOp <->
+        ((is_nan x \/ is_nan y) /\ not (is_signaling x) /\ not (is_signaling y))
+
+  (* For multiplication the sign of the result follows the operand signs
+   * (product_sign), so the sound lemmas take same_sign / diff_sign as the
+   * sign condition. The bridge to the real product sign is the stdlib's
+   * same_sign_product and diff_sign_product. *)
+  lemma mul_overflow_sound :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      not (no_overflow RNE (to_real x *. to_real y)) ->
+      same_sign x y ->
+      classify_mul x y = Overflow
+
+  lemma mul_underflow_sound :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      not (no_overflow RNE (to_real x *. to_real y)) ->
+      diff_sign x y ->
+      classify_mul x y = Underflow
+
+  lemma mul_correctness :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      no_overflow RNE (to_real x *. to_real y) ->
+      to_real (mul RNE x y) = round RNE (to_real x *. to_real y)
+
+  (* ================= Division ================= *)
+
+  lemma div_no_error_iff :
+    forall x y : t. classify_div x y = NoError <-> is_finite (div RNE x y)
+
+  lemma div_invalid_iff :
+    forall x y : t.
+      classify_div x y = InvalidOp <->
+        (is_signaling x \/ is_signaling y \/
+         (is_zero x /\ is_zero y) \/ (is_infinite x /\ is_infinite y))
+
+  (* divide_by_zero fires exactly on finite-nonzero / zero. *)
+  lemma div_divbyzero_iff :
+    forall x y : t.
+      classify_div x y = DivByZero <->
+        (not (is_signaling x) /\ not (is_signaling y) /\
+         is_finite x /\ not (is_zero x) /\ is_zero y)
+
+  (* and that case produces an infinity. *)
+  lemma div_divbyzero_inf :
+    forall x y : t.
+      is_finite x -> not (is_zero x) -> is_zero y ->
+      is_infinite (div RNE x y)
+
+  lemma div_nan_op_iff :
+    forall x y : t.
+      classify_div x y = NanOp <->
+        ((is_nan x \/ is_nan y) /\ not (is_signaling x) /\ not (is_signaling y))
+
+  (* Overflow in division still implies a positive infinite result. The
+   * converse fails because finite-nonzero / zero is classified DivByZero,
+   * so we give the implication plus a soundness lemma rather than an iff. *)
+  lemma div_overflow_imp :
+    forall x y : t. classify_div x y = Overflow -> is_plus_infinity (div RNE x y)
+
+  lemma div_underflow_imp :
+    forall x y : t. classify_div x y = Underflow -> is_minus_infinity (div RNE x y)
+
+  (* As with multiplication, the quotient sign follows the operand signs. *)
+  lemma div_overflow_sound :
+    forall x y : t.
+      is_finite x -> is_finite y -> not (is_zero y) ->
+      not (no_overflow RNE (to_real x /. to_real y)) ->
+      same_sign x y ->
+      classify_div x y = Overflow
+
+  lemma div_underflow_sound :
+    forall x y : t.
+      is_finite x -> is_finite y -> not (is_zero y) ->
+      not (no_overflow RNE (to_real x /. to_real y)) ->
+      diff_sign x y ->
+      classify_div x y = Underflow
+
+  lemma div_correctness :
+    forall x y : t.
+      is_finite x -> is_finite y -> not (is_zero y) ->
+      no_overflow RNE (to_real x /. to_real y) ->
+      to_real (div RNE x y) = round RNE (to_real x /. to_real y)
+
+  (* ================= Comparison ================= *)
+
+  (* NaN compares unordered, and only NaN does. *)
+  lemma cmp_unordered_iff :
+    forall x y : t. compare x y = Unordered <-> (is_nan x \/ is_nan y)
+
+  lemma cmp_less_iff :
+    forall x y : t.
+      compare x y = Less <-> (not (is_nan x) /\ not (is_nan y) /\ lt x y)
+
+  lemma cmp_greater_iff :
+    forall x y : t.
+      compare x y = Greater <->
+        (not (is_nan x) /\ not (is_nan y) /\ not (lt x y) /\ gt x y)
+
+  lemma cmp_equiv_iff :
+    forall x y : t.
+      compare x y = Equivalent <->
+        (not (is_nan x) /\ not (is_nan y) /\ not (lt x y) /\ not (gt x y))
+
+  (* operator== is the IEEE eq: false on any NaN, reflexive otherwise, and
+   * +0 == -0. *)
+  lemma eqeq_nan_false :
+    forall x y : t. (is_nan x \/ is_nan y) -> not (eq x y)
+
+  lemma eqeq_refl_non_nan :
+    forall x : t. not (is_nan x) -> eq x x
+
+  lemma eqeq_signed_zero :
+    forall x y : t. is_zero x -> is_zero y -> eq x y
+
+  (* operator== and operator<=> agree on finite values. *)
+  lemma eq_iff_equivalent_finite :
+    forall x y : t.
+      is_finite x -> is_finite y -> (eq x y <-> compare x y = Equivalent)
+
+end
+
+(* ================================================================
+ * Theory: Float64Checks
+ *
+ * Classification proofs for f64 = float_basis<double>, modeled on
+ * ieee_float.Float64 (the IEEE-754 binary64 format, < float 11 53 >).
+ * Identical to Float32Checks apart from the imported format.
+ * ================================================================ *)
+theory Float64Checks
+
+  use Defs
+  use real.RealInfix
+  use ieee_float.Float64
+
+  (* Float64 substitutes is_finite and to_real by the built-in projections of
+   * the < float 11 53 > type when it clones GenericFloat, so those two names
+   * are not exposed (unlike is_nan, is_zero, ...). Reintroduce them. *)
+  function to_real (x : t) : real = t'real x
+  predicate is_finite (x : t) = t'isFinite x
+
+  (* ---- Signaling NaN abstraction ----
+   * ieee_float does not model signaling NaNs. is_signaling is an abstract
+   * predicate that refines is_nan; this is all the classifier needs. *)
+  predicate is_signaling (x : t)
+  axiom signaling_is_nan : forall x : t. is_signaling x -> is_nan x
+
+  (* ---- Classifiers modeling the C++ control flow ---- *)
+
+  (* checked_float_addition, float_basis.hpp lines 525-561.
+   * 7.2.a signaling, 7.2.d addition of infinities of differing sign,
+   * 6.2 NaN operand, 6.1 saturation to +/- infinity. *)
+  function classify_add (x y : t) : category =
+    let r = add RNE x y in
+    if is_finite r then NoError
+    else if is_signaling x \/ is_signaling y then InvalidOp
+    else if is_infinite x /\ is_infinite y /\ diff_sign x y then InvalidOp
+    else if is_nan x \/ is_nan y then NanOp
+    else if is_positive r then Overflow
+    else Underflow
+
+  (* checked_float_subtraction, float_basis.hpp lines 773-809.
+   * Differs from addition only in the infinity invalid case: subtraction
+   * of infinities of the SAME sign cancels to NaN. *)
+  function classify_sub (x y : t) : category =
+    let r = sub RNE x y in
+    if is_finite r then NoError
+    else if is_signaling x \/ is_signaling y then InvalidOp
+    else if is_infinite x /\ is_infinite y /\ same_sign x y then InvalidOp
+    else if is_nan x \/ is_nan y then NanOp
+    else if is_positive r then Overflow
+    else Underflow
+
+  (* checked_float_multiplication, float_basis.hpp lines 1027-1063.
+   * 7.2.c multiplication of zero by an infinity in either order. *)
+  function classify_mul (x y : t) : category =
+    let r = mul RNE x y in
+    if is_finite r then NoError
+    else if is_signaling x \/ is_signaling y then InvalidOp
+    else if (is_zero x /\ is_infinite y) \/ (is_infinite x /\ is_zero y) then InvalidOp
+    else if is_nan x \/ is_nan y then NanOp
+    else if is_positive r then Overflow
+    else Underflow
+
+  (* checked_float_division, float_basis.hpp lines 1285-1337.
+   * 7.2.b 0/0 and inf/inf, then 7.3 finite-nonzero / zero. *)
+  function classify_div (x y : t) : category =
+    let r = div RNE x y in
+    if is_finite r then NoError
+    else if is_signaling x \/ is_signaling y then InvalidOp
+    else if is_zero x /\ is_zero y then InvalidOp
+    else if is_infinite x /\ is_infinite y then InvalidOp
+    else if is_zero y /\ not (is_infinite x) /\ not (is_nan x) then DivByZero
+    else if is_nan x \/ is_nan y then NanOp
+    else if is_positive r then Overflow
+    else Underflow
+
+  (* ---- Comparison modeling operator<=> ---- *)
+
+  function compare (x y : t) : ordering =
+    if is_nan x \/ is_nan y then Unordered
+    else if lt x y then Less
+    else if gt x y then Greater
+    else Equivalent
+
+  (* ================= Addition ================= *)
+
+  (* The hot path fires exactly on a finite result. *)
+  lemma add_no_error_iff :
+    forall x y : t. classify_add x y = NoError <-> is_finite (add RNE x y)
+
+  (* Saturation to +infinity is flagged as overflow, and only then. *)
+  lemma add_overflow_iff :
+    forall x y : t. classify_add x y = Overflow <-> is_plus_infinity (add RNE x y)
+
+  (* Saturation to -infinity is flagged as underflow (negative overflow). *)
+  lemma add_underflow_iff :
+    forall x y : t. classify_add x y = Underflow <-> is_minus_infinity (add RNE x y)
+
+  (* invalid_op fires exactly on a signaling operand or inf + (-inf). *)
+  lemma add_invalid_iff :
+    forall x y : t.
+      classify_add x y = InvalidOp <->
+        (is_signaling x \/ is_signaling y \/
+         (is_infinite x /\ is_infinite y /\ diff_sign x y))
+
+  (* nan_op fires exactly on a (quiet) NaN operand with no signaling. *)
+  lemma add_nan_op_iff :
+    forall x y : t.
+      classify_add x y = NanOp <->
+        ((is_nan x \/ is_nan y) /\ not (is_signaling x) /\ not (is_signaling y))
+
+  (* Soundness against the reals: a genuine positive overflow of two finite
+   * operands is flagged as overflow. *)
+  lemma add_overflow_sound :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      not (no_overflow RNE (to_real x +. to_real y)) ->
+      (to_real x +. to_real y) >. 0.0 ->
+      classify_add x y = Overflow
+
+  lemma add_underflow_sound :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      not (no_overflow RNE (to_real x +. to_real y)) ->
+      (to_real x +. to_real y) <. 0.0 ->
+      classify_add x y = Underflow
+
+  (* No false positive: finite operands whose exact sum is representable
+   * are not flagged. *)
+  lemma add_finite_no_error :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      no_overflow RNE (to_real x +. to_real y) ->
+      classify_add x y = NoError
+
+  (* Correctness: when not flagged, the result is the correctly rounded sum. *)
+  lemma add_correctness :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      no_overflow RNE (to_real x +. to_real y) ->
+      to_real (add RNE x y) = round RNE (to_real x +. to_real y)
+
+  (* ================= Subtraction ================= *)
+
+  lemma sub_no_error_iff :
+    forall x y : t. classify_sub x y = NoError <-> is_finite (sub RNE x y)
+
+  lemma sub_overflow_iff :
+    forall x y : t. classify_sub x y = Overflow <-> is_plus_infinity (sub RNE x y)
+
+  lemma sub_underflow_iff :
+    forall x y : t. classify_sub x y = Underflow <-> is_minus_infinity (sub RNE x y)
+
+  lemma sub_invalid_iff :
+    forall x y : t.
+      classify_sub x y = InvalidOp <->
+        (is_signaling x \/ is_signaling y \/
+         (is_infinite x /\ is_infinite y /\ same_sign x y))
+
+  lemma sub_nan_op_iff :
+    forall x y : t.
+      classify_sub x y = NanOp <->
+        ((is_nan x \/ is_nan y) /\ not (is_signaling x) /\ not (is_signaling y))
+
+  lemma sub_overflow_sound :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      not (no_overflow RNE (to_real x -. to_real y)) ->
+      (to_real x -. to_real y) >. 0.0 ->
+      classify_sub x y = Overflow
+
+  lemma sub_underflow_sound :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      not (no_overflow RNE (to_real x -. to_real y)) ->
+      (to_real x -. to_real y) <. 0.0 ->
+      classify_sub x y = Underflow
+
+  lemma sub_correctness :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      no_overflow RNE (to_real x -. to_real y) ->
+      to_real (sub RNE x y) = round RNE (to_real x -. to_real y)
+
+  (* ================= Multiplication ================= *)
+
+  lemma mul_no_error_iff :
+    forall x y : t. classify_mul x y = NoError <-> is_finite (mul RNE x y)
+
+  lemma mul_overflow_iff :
+    forall x y : t. classify_mul x y = Overflow <-> is_plus_infinity (mul RNE x y)
+
+  lemma mul_underflow_iff :
+    forall x y : t. classify_mul x y = Underflow <-> is_minus_infinity (mul RNE x y)
+
+  lemma mul_invalid_iff :
+    forall x y : t.
+      classify_mul x y = InvalidOp <->
+        (is_signaling x \/ is_signaling y \/
+         (is_zero x /\ is_infinite y) \/ (is_infinite x /\ is_zero y))
+
+  lemma mul_nan_op_iff :
+    forall x y : t.
+      classify_mul x y = NanOp <->
+        ((is_nan x \/ is_nan y) /\ not (is_signaling x) /\ not (is_signaling y))
+
+  (* For multiplication the sign of the result follows the operand signs
+   * (product_sign), so the sound lemmas take same_sign / diff_sign as the
+   * sign condition. The bridge to the real product sign is the stdlib's
+   * same_sign_product and diff_sign_product. *)
+  lemma mul_overflow_sound :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      not (no_overflow RNE (to_real x *. to_real y)) ->
+      same_sign x y ->
+      classify_mul x y = Overflow
+
+  lemma mul_underflow_sound :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      not (no_overflow RNE (to_real x *. to_real y)) ->
+      diff_sign x y ->
+      classify_mul x y = Underflow
+
+  lemma mul_correctness :
+    forall x y : t.
+      is_finite x -> is_finite y ->
+      no_overflow RNE (to_real x *. to_real y) ->
+      to_real (mul RNE x y) = round RNE (to_real x *. to_real y)
+
+  (* ================= Division ================= *)
+
+  lemma div_no_error_iff :
+    forall x y : t. classify_div x y = NoError <-> is_finite (div RNE x y)
+
+  lemma div_invalid_iff :
+    forall x y : t.
+      classify_div x y = InvalidOp <->
+        (is_signaling x \/ is_signaling y \/
+         (is_zero x /\ is_zero y) \/ (is_infinite x /\ is_infinite y))
+
+  (* divide_by_zero fires exactly on finite-nonzero / zero. *)
+  lemma div_divbyzero_iff :
+    forall x y : t.
+      classify_div x y = DivByZero <->
+        (not (is_signaling x) /\ not (is_signaling y) /\
+         is_finite x /\ not (is_zero x) /\ is_zero y)
+
+  (* and that case produces an infinity. *)
+  lemma div_divbyzero_inf :
+    forall x y : t.
+      is_finite x -> not (is_zero x) -> is_zero y ->
+      is_infinite (div RNE x y)
+
+  lemma div_nan_op_iff :
+    forall x y : t.
+      classify_div x y = NanOp <->
+        ((is_nan x \/ is_nan y) /\ not (is_signaling x) /\ not (is_signaling y))
+
+  (* Overflow in division still implies a positive infinite result. The
+   * converse fails because finite-nonzero / zero is classified DivByZero,
+   * so we give the implication plus a soundness lemma rather than an iff. *)
+  lemma div_overflow_imp :
+    forall x y : t. classify_div x y = Overflow -> is_plus_infinity (div RNE x y)
+
+  lemma div_underflow_imp :
+    forall x y : t. classify_div x y = Underflow -> is_minus_infinity (div RNE x y)
+
+  (* As with multiplication, the quotient sign follows the operand signs. *)
+  lemma div_overflow_sound :
+    forall x y : t.
+      is_finite x -> is_finite y -> not (is_zero y) ->
+      not (no_overflow RNE (to_real x /. to_real y)) ->
+      same_sign x y ->
+      classify_div x y = Overflow
+
+  lemma div_underflow_sound :
+    forall x y : t.
+      is_finite x -> is_finite y -> not (is_zero y) ->
+      not (no_overflow RNE (to_real x /. to_real y)) ->
+      diff_sign x y ->
+      classify_div x y = Underflow
+
+  lemma div_correctness :
+    forall x y : t.
+      is_finite x -> is_finite y -> not (is_zero y) ->
+      no_overflow RNE (to_real x /. to_real y) ->
+      to_real (div RNE x y) = round RNE (to_real x /. to_real y)
+
+  (* ================= Comparison ================= *)
+
+  (* NaN compares unordered, and only NaN does. *)
+  lemma cmp_unordered_iff :
+    forall x y : t. compare x y = Unordered <-> (is_nan x \/ is_nan y)
+
+  lemma cmp_less_iff :
+    forall x y : t.
+      compare x y = Less <-> (not (is_nan x) /\ not (is_nan y) /\ lt x y)
+
+  lemma cmp_greater_iff :
+    forall x y : t.
+      compare x y = Greater <->
+        (not (is_nan x) /\ not (is_nan y) /\ not (lt x y) /\ gt x y)
+
+  lemma cmp_equiv_iff :
+    forall x y : t.
+      compare x y = Equivalent <->
+        (not (is_nan x) /\ not (is_nan y) /\ not (lt x y) /\ not (gt x y))
+
+  (* operator== is the IEEE eq: false on any NaN, reflexive otherwise, and
+   * +0 == -0. *)
+  lemma eqeq_nan_false :
+    forall x y : t. (is_nan x \/ is_nan y) -> not (eq x y)
+
+  lemma eqeq_refl_non_nan :
+    forall x : t. not (is_nan x) -> eq x x
+
+  lemma eqeq_signed_zero :
+    forall x y : t. is_zero x -> is_zero y -> eq x y
+
+  (* operator== and operator<=> agree on finite values. *)
+  lemma eq_iff_equivalent_finite :
+    forall x y : t.
+      is_finite x -> is_finite y -> (eq x y <-> compare x y = Equivalent)
+
+end
