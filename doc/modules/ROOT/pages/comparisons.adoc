@@ -5,10 +5,121 @@ https://www.boost.org/LICENSE_1_0.txt
 ////
 
 [#comparisons]
-= Comparison with Boost.SafeNumerics
+= Comparisons
 
-Boost.SafeNumbers and Boost.SafeNumerics both aim to make integer arithmetic safer, but they differ substantially in philosophy and behavior.
-This page summarizes the key differences and provides a runnable example demonstrating each one.
+Boost.SafeNumbers is one of several efforts to make numeric code safer.
+This page first situates the library among the existing C++ safe-integer libraries and the strong-typing facilities of other languages, then compares Boost.SafeNumbers and Boost.SafeNumerics in detail.
+
+== Feature Matrix
+
+The matrix below compares Boost.SafeNumbers against the closest C++ libraries (Boost.SafeNumerics, `bounded::integer`, and `type_safe`) and against the strong integer typing found in Ada/SPARK and Rust.
+"Yes" and "No" describe the default, out-of-the-box behavior; cells note important qualifications inline.
+
+[cols="2,3,3,2,2,2,2", options="header"]
+|===
+| Feature
+| Boost.SafeNumbers
+| Boost.SafeNumerics
+| `bounded::integer`
+| `type_safe`
+| Ada / SPARK
+| Rust
+
+| *Language / minimum standard*
+| C++20
+| C++14
+| Modern C++
+| C++11
+| Ada (SPARK subset)
+| Rust
+
+| *Default behavior on overflow*
+| Throws `std::overflow_error` / `std::underflow_error` at the declared width.
+| Policy-dependent; the default `native` promotion can absorb overflow into a wider type, while the exception policy throws at runtime.
+| Cannot overflow by construction; the result type's bounds are widened at compile time.
+| Undefined behavior (the arithmetic policy is configurable).
+| `Constraint_Error` at runtime; GNATprove proves absence statically.
+| Panics in debug, wraps in release; `checked_` / `saturating_` / `wrapping_` methods are explicit.
+
+| *Alternative overflow handling*
+| Per-operation functions: `saturating_*`, `checked_*`, `overflowing_*`, plus the throwing default.
+| Selected as a template parameter on the type (`safe<T, PP, EP>`); no per-operation functions.
+| Prevented by construction; explicit clamp / wrap helpers.
+| Arithmetic policy (undefined or checked) selectable.
+| Range subtypes, `mod` types, and library saturation.
+| `checked_` / `saturating_` / `wrapping_` / `overflowing_` methods on the primitive types.
+
+| *Range-constrained (bounded) types*
+| Yes: `bounded_uint` / `bounded_int` / `bounded_float`, with bounds enforced on every arithmetic result.
+| Yes: `safe_unsigned_range` / `safe_signed_range`, but bounds are enforced on construction and assignment only (arithmetic results may exceed them).
+| Yes: bounds are the core abstraction, tracked and widened at compile time.
+| `constrained_type` with a runtime-checked bound.
+| Yes: first-class subtype range constraints, statically proven by GNATprove.
+| No ranged integer type; only `NonZero`; ranges via external crates.
+
+| *Implicit widening / mixed-width arithmetic*
+| Compile-time error; both operands must be the same type.
+| Allowed; operands are promoted following C++ rules.
+| Allowed; result bounds are computed from the operand bounds.
+| Lossy and mixed-signedness operations are rejected.
+| Cross-subtype operations require an explicit conversion.
+| No implicit numeric conversion; explicit `as` / `From`.
+
+| *Implicit conversion to/from built-in types*
+| Compile-time error; explicit only.
+| Allowed, including from `bool`.
+| Constructs only from values within range.
+| Lossy and implicit conversions rejected; explicit only.
+| Explicit conversions required.
+| Explicit only.
+
+| *Compile-time-only verified construction (`consteval`)*
+| Yes: `consteval` constructors and arithmetic, `constexpr` conversions and comparisons.
+| `constexpr`-capable; the default policy dispatches checks at runtime.
+| `constexpr`-friendly; bound tracking is a compile-time computation.
+| `constexpr`-capable.
+| Static checking at compile and proof time (a different model).
+| `const fn` and const generics where values are `const`.
+
+| *Formal verification of the arithmetic*
+| Yes (model level): the fundamental operations (add, sub, mul, div, mod for signed and unsigned) were re-implemented in the https://why3.org[Why3] platform and proven correct, and the C++ is a faithful transcription of the verified algorithms. The shipped C++ source is not itself mechanically verified.
+| No formal-verification toolchain.
+| No.
+| No.
+| Yes (source level): GNATprove (built on Why3) proves absence of overflow, range violation, and division by zero in the Ada source itself.
+| No deductive proof in the standard library; type-system guarantees only (external tools such as Kani and Creusot are separate).
+
+| *GPU / CUDA device support*
+| Yes: usable from CUDA device code, with CUDA error reporting.
+| No.
+| No.
+| No.
+| No.
+| Via external crates only; not in the standard library.
+
+| *Floating-point safe types*
+| Yes: safe floating-point types and `bounded_float`.
+| Integer-focused; no safe floating-point type.
+| Integers only.
+| Yes: `floating_point<T>` wrapper.
+| Yes: floating-point and fixed-point subtypes with range constraints.
+| Primitives only; no ranged float type.
+|===
+
+[NOTE]
+====
+Compile-time integer range and overflow safety is well-established prior art: Boost.SafeNumerics, `bounded::integer`, and `type_safe` all track bounds or reject unsafe conversions, and Ada/SPARK and Rust provide strong integer typing at the language level.
+What distinguishes Boost.SafeNumbers in the table above is the combination of `consteval`-enforced types, fundamental operations whose algorithms are proven correct in Why3, and usability from CUDA device code in a single header-only C++20 library.
+====
+
+Sources for the compared projects:
+https://www.boost.org/doc/libs/release/libs/safe_numerics/doc/html/index.html[Boost.SafeNumerics],
+https://github.com/davidstone/bounded-integer[`bounded::integer`],
+https://github.com/foonathan/type_safe[`type_safe`],
+https://docs.adacore.com/spark2014-docs/html/ug/[SPARK User's Guide], and
+https://doc.rust-lang.org/std/num/[Rust numeric types].
+
+The remainder of this page compares Boost.SafeNumbers and Boost.SafeNumerics in detail.
 
 == Key Differences
 
