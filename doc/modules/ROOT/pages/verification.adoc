@@ -64,3 +64,11 @@ Division and modulo again fall outside the ring operations xref:reference.adoc[p
 For latexmath:[a \in \{-2^{n - 1}, \ldots, 2^{n - 1} - 1\}] and latexmath:[b \in \{-2^{n - 1}, \ldots, 2^{n - 1} - 1\} \setminus \{0\}], truncated division places latexmath:[a / b] in the closed interval latexmath:[\{-2^{n - 1}, \ldots, 2^{n - 1} - 1\}] except in the single pair latexmath:[(a, b) = (-2^{n - 1}, -1)], for which the mathematical quotient latexmath:[2^{n - 1}] is unrepresentable.
 Two inputs must therefore be rejected: latexmath:[b = 0], which is undefined, and the `INT_MIN / -1` pair, which overflows.
 The same pair is rejected for modulo even though latexmath:[a \bmod b = 0] mathematically, because the C++ language specifies the result of `INT_MIN % -1` as undefined behavior on native types and the library preserves that contract at the type boundary.
+
+== Scope of the Verification
+
+The guarantees described on this page are established at the level of the algorithms, not the shipped implementation.
+Each operation above was re-expressed in WhyML and proven correct with Why3 and its backend provers; the C++ definitions in the library are a manual transcription of those verified algorithms.
+We therefore do not claim that the C++ source is itself mechanically verified: there is no automatic extraction from the Why3 model to C++, and the correspondence between the two is maintained by hand.
+What the verification does establish is that the overflow, underflow, and edge-case detection logic is correct for every input in the relevant residue class, including the asymmetric cases such as `INT_MIN / -1` and `-INT_MIN`.
+The C++ implementation that realizes this logic is exercised separately by the library's test suite.
