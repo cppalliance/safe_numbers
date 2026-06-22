@@ -11,7 +11,11 @@
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
-#include <fmt/format.h>
+#if __has_include(<fmt/format.h>)
+#  include <fmt/format.h>
+#else
+#  error "{fmt} is required in order to use this header"
+#endif
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
 
