@@ -1802,4 +1802,60 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 
 } // namespace boost::safe_numbers::detail
 
+// Block any mixed floating point type operation (e.g. f32 and f64) with a
+// clear diagnostic, mirroring the unsigned integer mixed-type guard. Defined
+// outside the namespace so the generated operators are plain free functions.
+
+#define BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP(OP_NAME, OP_SYMBOL)                                                                                      \
+template <boost::safe_numbers::detail::compatible_float_type LHSBasis,                                                                                    \
+          boost::safe_numbers::detail::compatible_float_type RHSBasis>                                                                                    \
+    requires (!std::is_same_v<LHSBasis, RHSBasis>)                                                                                                        \
+BOOST_SAFE_NUMBERS_HOST_DEVICE                                                                                                                            \
+constexpr auto OP_SYMBOL(const boost::safe_numbers::detail::float_basis<LHSBasis>,                                                                        \
+                         const boost::safe_numbers::detail::float_basis<RHSBasis>)                                                                        \
+{                                                                                                                                                         \
+    if constexpr (std::is_same_v<LHSBasis, float>)                                                                                                        \
+    {                                                                                                                                                     \
+        if constexpr (std::is_same_v<RHSBasis, double>)                                                                                                   \
+        {                                                                                                                                                 \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between f32 and f64");           \
+        }                                                                                                                                                 \
+        else                                                                                                                                              \
+        {                                                                                                                                                 \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between f32 and unknown type");  \
+        }                                                                                                                                                 \
+    }                                                                                                                                                     \
+    else if constexpr (std::is_same_v<LHSBasis, double>)                                                                                                  \
+    {                                                                                                                                                     \
+        if constexpr (std::is_same_v<RHSBasis, float>)                                                                                                    \
+        {                                                                                                                                                 \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between f64 and f32");           \
+        }                                                                                                                                                 \
+        else                                                                                                                                              \
+        {                                                                                                                                                 \
+            static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between f64 and unknown type");  \
+        }                                                                                                                                                 \
+    }                                                                                                                                                     \
+    else                                                                                                                                                  \
+    {                                                                                                                                                     \
+        static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " on mixed floating point types");     \
+    }                                                                                                                                                     \
+                                                                                                                                                          \
+    return boost::safe_numbers::detail::float_basis<LHSBasis>{LHSBasis{0}};                                                                               \
+}
+
+namespace boost::safe_numbers::detail {
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP("comparison", operator<=>)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP("equality", operator==)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP("addition", operator+)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP("subtraction", operator-)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP("multiplication", operator*)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP("division", operator/)
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP("modulo", operator%)
+
+} // namespace boost::safe_numbers::detail
+
+#undef BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP
+
 #endif // BOOST_SAFE_NUMBERS_DETAIL_FLOAT_BASIS_HPP
