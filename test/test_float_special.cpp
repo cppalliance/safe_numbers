@@ -33,22 +33,37 @@ import boost.safe_numbers;
 
 using namespace boost::safe_numbers;
 
+// Route the argument through a volatile so the reference std:: call is evaluated by the
+// runtime libm rather than constant-folded by the compiler. On 32-bit x86 (x87) some
+// libm transcendentals are not correctly rounded and differ from the compiler's folded
+// value by an ULP; forcing both the wrapper and the reference onto the same runtime call
+// keeps the bit-exact comparison valid.
+template <typename U>
+auto opaque(const U value) noexcept -> U
+{
+    volatile U sink {value};
+    return sink;
+}
+
 template <typename T>
 void test_finite()
 {
     using basis_type = typename T::basis_type;
 
-    for (const auto x : {static_cast<basis_type>(0.0), static_cast<basis_type>(0.5),
-                         static_cast<basis_type>(-0.5), static_cast<basis_type>(1.0)})
+    for (const auto raw : {static_cast<basis_type>(0.0), static_cast<basis_type>(0.5),
+                           static_cast<basis_type>(-0.5), static_cast<basis_type>(1.0)})
     {
+        const auto x {opaque(raw)};
         BOOST_TEST(erf(T{x}) == T{std::erf(x)});
         BOOST_TEST(erfc(T{x}) == T{std::erfc(x)});
     }
 
     // tgamma(5) = 4! = 24, lgamma of a positive value is finite
-    BOOST_TEST(tgamma(T{static_cast<basis_type>(5.0)}) == T{std::tgamma(static_cast<basis_type>(5.0))});
-    BOOST_TEST(lgamma(T{static_cast<basis_type>(5.0)}) == T{std::lgamma(static_cast<basis_type>(5.0))});
-    BOOST_TEST(tgamma(T{static_cast<basis_type>(0.5)}) == T{std::tgamma(static_cast<basis_type>(0.5))});
+    const auto five {opaque(static_cast<basis_type>(5.0))};
+    BOOST_TEST(tgamma(T{five}) == T{std::tgamma(five)});
+    BOOST_TEST(lgamma(T{five}) == T{std::lgamma(five)});
+    const auto half {opaque(static_cast<basis_type>(0.5))};
+    BOOST_TEST(tgamma(T{half}) == T{std::tgamma(half)});
 }
 
 // tgamma at a negative integer is a pole. Most standard libraries report it as a

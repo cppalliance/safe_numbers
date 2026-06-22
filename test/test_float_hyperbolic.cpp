@@ -32,14 +32,27 @@ import boost.safe_numbers;
 
 using namespace boost::safe_numbers;
 
+// Route the argument through a volatile so the reference std:: call is evaluated by the
+// runtime libm rather than constant-folded by the compiler. On 32-bit x86 (x87) some
+// libm transcendentals are not correctly rounded and differ from the compiler's folded
+// value by an ULP; forcing both the wrapper and the reference onto the same runtime call
+// keeps the bit-exact comparison valid.
+template <typename U>
+auto opaque(const U value) noexcept -> U
+{
+    volatile U sink {value};
+    return sink;
+}
+
 template <typename T>
 void test_finite()
 {
     using basis_type = typename T::basis_type;
 
-    for (const auto x : {static_cast<basis_type>(0.0), static_cast<basis_type>(0.5),
-                         static_cast<basis_type>(-0.5), static_cast<basis_type>(1.0)})
+    for (const auto raw : {static_cast<basis_type>(0.0), static_cast<basis_type>(0.5),
+                           static_cast<basis_type>(-0.5), static_cast<basis_type>(1.0)})
     {
+        const auto x {opaque(raw)};
         BOOST_TEST(sinh(T{x}) == T{std::sinh(x)});
         BOOST_TEST(cosh(T{x}) == T{std::cosh(x)});
         BOOST_TEST(tanh(T{x}) == T{std::tanh(x)});
@@ -47,15 +60,17 @@ void test_finite()
     }
 
     // atanh domain is the open interval (-1, 1)
-    for (const auto x : {static_cast<basis_type>(0.0), static_cast<basis_type>(0.5),
-                         static_cast<basis_type>(-0.5), static_cast<basis_type>(0.9)})
+    for (const auto raw : {static_cast<basis_type>(0.0), static_cast<basis_type>(0.5),
+                           static_cast<basis_type>(-0.5), static_cast<basis_type>(0.9)})
     {
+        const auto x {opaque(raw)};
         BOOST_TEST(atanh(T{x}) == T{std::atanh(x)});
     }
 
     // acosh domain is [1, inf)
-    for (const auto x : {static_cast<basis_type>(1.0), static_cast<basis_type>(2.0)})
+    for (const auto raw : {static_cast<basis_type>(1.0), static_cast<basis_type>(2.0)})
     {
+        const auto x {opaque(raw)};
         BOOST_TEST(acosh(T{x}) == T{std::acosh(x)});
     }
 }

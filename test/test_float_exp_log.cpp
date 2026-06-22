@@ -32,22 +32,36 @@ import boost.safe_numbers;
 
 using namespace boost::safe_numbers;
 
+// Route the argument through a volatile so the reference std:: call is evaluated by the
+// runtime libm rather than constant-folded by the compiler. On 32-bit x86 (x87) some
+// libm transcendentals are not correctly rounded and differ from the compiler's folded
+// value by an ULP; forcing both the wrapper and the reference onto the same runtime call
+// keeps the bit-exact comparison valid.
+template <typename U>
+auto opaque(const U value) noexcept -> U
+{
+    volatile U sink {value};
+    return sink;
+}
+
 template <typename T>
 void test_finite()
 {
     using basis_type = typename T::basis_type;
 
-    for (const auto x : {static_cast<basis_type>(0.0), static_cast<basis_type>(1.0),
-                         static_cast<basis_type>(2.5), static_cast<basis_type>(-1.0)})
+    for (const auto raw : {static_cast<basis_type>(0.0), static_cast<basis_type>(1.0),
+                           static_cast<basis_type>(2.5), static_cast<basis_type>(-1.0)})
     {
+        const auto x {opaque(raw)};
         BOOST_TEST(exp(T{x}) == T{std::exp(x)});
         BOOST_TEST(exp2(T{x}) == T{std::exp2(x)});
         BOOST_TEST(expm1(T{x}) == T{std::expm1(x)});
     }
 
-    for (const auto x : {static_cast<basis_type>(0.5), static_cast<basis_type>(1.0),
-                         static_cast<basis_type>(2.0), static_cast<basis_type>(100.0)})
+    for (const auto raw : {static_cast<basis_type>(0.5), static_cast<basis_type>(1.0),
+                           static_cast<basis_type>(2.0), static_cast<basis_type>(100.0)})
     {
+        const auto x {opaque(raw)};
         BOOST_TEST(log(T{x}) == T{std::log(x)});
         BOOST_TEST(log2(T{x}) == T{std::log2(x)});
         BOOST_TEST(log10(T{x}) == T{std::log10(x)});

@@ -32,22 +32,41 @@ import boost.safe_numbers;
 
 using namespace boost::safe_numbers;
 
+// Route the argument through a volatile so the reference std:: call is evaluated by the
+// runtime libm rather than constant-folded by the compiler. On 32-bit x86 (x87) some
+// libm transcendentals are not correctly rounded and differ from the compiler's folded
+// value by an ULP; forcing both the wrapper and the reference onto the same runtime call
+// keeps the bit-exact comparison valid.
+template <typename U>
+auto opaque(const U value) noexcept -> U
+{
+    volatile U sink {value};
+    return sink;
+}
+
 template <typename T>
 void test_finite()
 {
     using basis_type = typename T::basis_type;
 
+    // sqrt is correctly rounded everywhere, so an exact integral result is portable
     BOOST_TEST(sqrt(T{static_cast<basis_type>(4.0)}) == T{static_cast<basis_type>(2.0)});
     BOOST_TEST(sqrt(T{static_cast<basis_type>(0.0)}) == T{static_cast<basis_type>(0.0)});
-    BOOST_TEST(cbrt(T{static_cast<basis_type>(27.0)}) == T{std::cbrt(static_cast<basis_type>(27.0))});
+
+    const auto twenty_seven {opaque(static_cast<basis_type>(27.0))};
+    BOOST_TEST(cbrt(T{twenty_seven}) == T{std::cbrt(twenty_seven)});
     // cbrt of a negative value is well defined
-    BOOST_TEST(cbrt(T{static_cast<basis_type>(-8.0)}) == T{std::cbrt(static_cast<basis_type>(-8.0))});
+    const auto neg_eight {opaque(static_cast<basis_type>(-8.0))};
+    BOOST_TEST(cbrt(T{neg_eight}) == T{std::cbrt(neg_eight)});
 
-    BOOST_TEST(pow(T{static_cast<basis_type>(2.0)}, T{static_cast<basis_type>(10.0)})
-             == T{std::pow(static_cast<basis_type>(2.0), static_cast<basis_type>(10.0))});
-    BOOST_TEST(pow(T{static_cast<basis_type>(9.0)}, T{static_cast<basis_type>(0.5)})
-             == T{std::pow(static_cast<basis_type>(9.0), static_cast<basis_type>(0.5))});
+    const auto two {opaque(static_cast<basis_type>(2.0))};
+    const auto ten {opaque(static_cast<basis_type>(10.0))};
+    BOOST_TEST(pow(T{two}, T{ten}) == T{std::pow(two, ten)});
+    const auto nine {opaque(static_cast<basis_type>(9.0))};
+    const auto half {opaque(static_cast<basis_type>(0.5))};
+    BOOST_TEST(pow(T{nine}, T{half}) == T{std::pow(nine, half)});
 
+    // hypot(3, 4) == 5 exactly
     BOOST_TEST(hypot(T{static_cast<basis_type>(3.0)}, T{static_cast<basis_type>(4.0)})
              == T{static_cast<basis_type>(5.0)});
 }

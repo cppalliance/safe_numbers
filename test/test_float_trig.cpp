@@ -32,6 +32,18 @@ import boost.safe_numbers;
 
 using namespace boost::safe_numbers;
 
+// Route the argument through a volatile so the reference std:: call is evaluated by the
+// runtime libm rather than constant-folded by the compiler. On 32-bit x86 (x87) some
+// libm transcendentals are not correctly rounded and differ from the compiler's folded
+// value by an ULP; forcing both the wrapper and the reference onto the same runtime call
+// keeps the bit-exact comparison valid.
+template <typename U>
+auto opaque(const U value) noexcept -> U
+{
+    volatile U sink {value};
+    return sink;
+}
+
 // Finite inputs: the wrapper delegates to the same std function on the same basis
 // value, so the result is bit-identical and can be compared with exact equality.
 template <typename T>
@@ -39,9 +51,10 @@ void test_finite()
 {
     using basis_type = typename T::basis_type;
 
-    for (const auto x : {static_cast<basis_type>(0.0), static_cast<basis_type>(0.5),
-                         static_cast<basis_type>(-0.5), static_cast<basis_type>(1.0)})
+    for (const auto raw : {static_cast<basis_type>(0.0), static_cast<basis_type>(0.5),
+                           static_cast<basis_type>(-0.5), static_cast<basis_type>(1.0)})
     {
+        const auto x {opaque(raw)};
         BOOST_TEST(sin(T{x}) == T{std::sin(x)});
         BOOST_TEST(cos(T{x}) == T{std::cos(x)});
         BOOST_TEST(tan(T{x}) == T{std::tan(x)});
@@ -50,10 +63,12 @@ void test_finite()
         BOOST_TEST(acos(T{x}) == T{std::acos(x)});
     }
 
-    BOOST_TEST(atan2(T{static_cast<basis_type>(1.0)}, T{static_cast<basis_type>(1.0)})
-             == T{std::atan2(static_cast<basis_type>(1.0), static_cast<basis_type>(1.0))});
-    BOOST_TEST(atan2(T{static_cast<basis_type>(-1.0)}, T{static_cast<basis_type>(2.0)})
-             == T{std::atan2(static_cast<basis_type>(-1.0), static_cast<basis_type>(2.0))});
+    const auto a {opaque(static_cast<basis_type>(1.0))};
+    const auto b {opaque(static_cast<basis_type>(1.0))};
+    BOOST_TEST(atan2(T{a}, T{b}) == T{std::atan2(a, b)});
+    const auto c {opaque(static_cast<basis_type>(-1.0))};
+    const auto d {opaque(static_cast<basis_type>(2.0))};
+    BOOST_TEST(atan2(T{c}, T{d}) == T{std::atan2(c, d)});
 }
 
 // asin/acos outside [-1, 1] produce NAN -> domain_error
