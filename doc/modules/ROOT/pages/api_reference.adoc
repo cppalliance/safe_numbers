@@ -65,7 +65,20 @@ https://www.boost.org/LICENSE_1_0.txt
 | Safe signed 128-bit integer
 |===
 
-=== Bounded Integer Types
+=== Floating-Point Types
+
+[cols="1,2", options="header"]
+|===
+| Type | Description
+
+| xref:floats.adoc[`f32`]
+| Safe single-precision (binary32) floating-point type
+
+| xref:floats.adoc[`f64`]
+| Safe double-precision (binary64) floating-point type
+|===
+
+=== Bounded Types
 
 [cols="1,2", options="header"]
 |===
@@ -76,6 +89,9 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:bounded_int.adoc[`bounded_int<Min, Max>`]
 | Safe signed integer constrained to a compile-time range `[Min, Max]`
+
+| xref:bounded_float.adoc[`bounded_float<Min, Max>`]
+| Safe floating-point value constrained to a compile-time range `[Min, Max]`
 |===
 
 === Enumerations
