@@ -26,22 +26,37 @@ import boost.safe_numbers;
 
 #endif
 
+#include <bit>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <stdexcept>
+#include <type_traits>
 
 using namespace boost::safe_numbers;
 
 // Route the argument through a volatile so the reference std:: call is evaluated by the
-// runtime libm rather than constant-folded by the compiler. On 32-bit x86 (x87) some
-// libm transcendentals are not correctly rounded and differ from the compiler's folded
-// value by an ULP; forcing both the wrapper and the reference onto the same runtime call
-// keeps the bit-exact comparison valid.
+// runtime libm, exactly as the wrapper evaluates it, rather than being constant-folded by
+// the compiler to a correctly-rounded value. On 32-bit x86 some libm transcendentals are
+// not correctly rounded, so the folded reference would not match the wrapper's faithful
+// passthrough of the runtime result.
 template <typename U>
 auto opaque(const U value) noexcept -> U
 {
     volatile U sink {value};
     return sink;
+}
+
+// Compare the stored basis values bit-for-bit. Going through bit_cast forces each value
+// out of any 80-bit x87 register to its true 32/64-bit storage, so the comparison is not
+// corrupted by excess precision (FLT_EVAL_METHOD == 2), where float_basis::operator== can
+// otherwise compare 80-bit register values that differ even when the stored values match.
+template <typename T>
+auto same_bits(const T a, const T b) noexcept -> bool
+{
+    using basis_type = typename T::basis_type;
+    using bits_type = std::conditional_t<std::is_same_v<basis_type, float>, std::uint32_t, std::uint64_t>;
+    return std::bit_cast<bits_type>(static_cast<basis_type>(a)) == std::bit_cast<bits_type>(static_cast<basis_type>(b));
 }
 
 template <typename T>
@@ -53,10 +68,10 @@ void test_finite()
                            static_cast<basis_type>(-0.5), static_cast<basis_type>(1.0)})
     {
         const auto x {opaque(raw)};
-        BOOST_TEST(sinh(T{x}) == T{std::sinh(x)});
-        BOOST_TEST(cosh(T{x}) == T{std::cosh(x)});
-        BOOST_TEST(tanh(T{x}) == T{std::tanh(x)});
-        BOOST_TEST(asinh(T{x}) == T{std::asinh(x)});
+        BOOST_TEST(same_bits(sinh(T{x}), T{std::sinh(x)}));
+        BOOST_TEST(same_bits(cosh(T{x}), T{std::cosh(x)}));
+        BOOST_TEST(same_bits(tanh(T{x}), T{std::tanh(x)}));
+        BOOST_TEST(same_bits(asinh(T{x}), T{std::asinh(x)}));
     }
 
     // atanh domain is the open interval (-1, 1)
@@ -64,14 +79,14 @@ void test_finite()
                            static_cast<basis_type>(-0.5), static_cast<basis_type>(0.9)})
     {
         const auto x {opaque(raw)};
-        BOOST_TEST(atanh(T{x}) == T{std::atanh(x)});
+        BOOST_TEST(same_bits(atanh(T{x}), T{std::atanh(x)}));
     }
 
     // acosh domain is [1, inf)
     for (const auto raw : {static_cast<basis_type>(1.0), static_cast<basis_type>(2.0)})
     {
         const auto x {opaque(raw)};
-        BOOST_TEST(acosh(T{x}) == T{std::acosh(x)});
+        BOOST_TEST(same_bits(acosh(T{x}), T{std::acosh(x)}));
     }
 }
 

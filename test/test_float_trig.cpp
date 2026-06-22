@@ -26,22 +26,37 @@ import boost.safe_numbers;
 
 #endif
 
+#include <bit>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <stdexcept>
+#include <type_traits>
 
 using namespace boost::safe_numbers;
 
 // Route the argument through a volatile so the reference std:: call is evaluated by the
-// runtime libm rather than constant-folded by the compiler. On 32-bit x86 (x87) some
-// libm transcendentals are not correctly rounded and differ from the compiler's folded
-// value by an ULP; forcing both the wrapper and the reference onto the same runtime call
-// keeps the bit-exact comparison valid.
+// runtime libm, exactly as the wrapper evaluates it, rather than being constant-folded by
+// the compiler to a correctly-rounded value. On 32-bit x86 some libm transcendentals are
+// not correctly rounded, so the folded reference would not match the wrapper's faithful
+// passthrough of the runtime result.
 template <typename U>
 auto opaque(const U value) noexcept -> U
 {
     volatile U sink {value};
     return sink;
+}
+
+// Compare the stored basis values bit-for-bit. Going through bit_cast forces each value
+// out of any 80-bit x87 register to its true 32/64-bit storage, so the comparison is not
+// corrupted by excess precision (FLT_EVAL_METHOD == 2), where float_basis::operator== can
+// otherwise compare 80-bit register values that differ even when the stored values match.
+template <typename T>
+auto same_bits(const T a, const T b) noexcept -> bool
+{
+    using basis_type = typename T::basis_type;
+    using bits_type = std::conditional_t<std::is_same_v<basis_type, float>, std::uint32_t, std::uint64_t>;
+    return std::bit_cast<bits_type>(static_cast<basis_type>(a)) == std::bit_cast<bits_type>(static_cast<basis_type>(b));
 }
 
 // Finite inputs: the wrapper delegates to the same std function on the same basis
@@ -55,20 +70,20 @@ void test_finite()
                            static_cast<basis_type>(-0.5), static_cast<basis_type>(1.0)})
     {
         const auto x {opaque(raw)};
-        BOOST_TEST(sin(T{x}) == T{std::sin(x)});
-        BOOST_TEST(cos(T{x}) == T{std::cos(x)});
-        BOOST_TEST(tan(T{x}) == T{std::tan(x)});
-        BOOST_TEST(atan(T{x}) == T{std::atan(x)});
-        BOOST_TEST(asin(T{x}) == T{std::asin(x)});
-        BOOST_TEST(acos(T{x}) == T{std::acos(x)});
+        BOOST_TEST(same_bits(sin(T{x}), T{std::sin(x)}));
+        BOOST_TEST(same_bits(cos(T{x}), T{std::cos(x)}));
+        BOOST_TEST(same_bits(tan(T{x}), T{std::tan(x)}));
+        BOOST_TEST(same_bits(atan(T{x}), T{std::atan(x)}));
+        BOOST_TEST(same_bits(asin(T{x}), T{std::asin(x)}));
+        BOOST_TEST(same_bits(acos(T{x}), T{std::acos(x)}));
     }
 
     const auto a {opaque(static_cast<basis_type>(1.0))};
     const auto b {opaque(static_cast<basis_type>(1.0))};
-    BOOST_TEST(atan2(T{a}, T{b}) == T{std::atan2(a, b)});
+    BOOST_TEST(same_bits(atan2(T{a}, T{b}), T{std::atan2(a, b)}));
     const auto c {opaque(static_cast<basis_type>(-1.0))};
     const auto d {opaque(static_cast<basis_type>(2.0))};
-    BOOST_TEST(atan2(T{c}, T{d}) == T{std::atan2(c, d)});
+    BOOST_TEST(same_bits(atan2(T{c}, T{d}), T{std::atan2(c, d)}));
 }
 
 // asin/acos outside [-1, 1] produce NAN -> domain_error

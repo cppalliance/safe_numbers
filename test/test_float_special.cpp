@@ -26,23 +26,38 @@ import boost.safe_numbers;
 
 #endif
 
+#include <bit>
 #include <cmath>
+#include <cstdint>
 #include <exception>
 #include <limits>
 #include <stdexcept>
+#include <type_traits>
 
 using namespace boost::safe_numbers;
 
 // Route the argument through a volatile so the reference std:: call is evaluated by the
-// runtime libm rather than constant-folded by the compiler. On 32-bit x86 (x87) some
-// libm transcendentals are not correctly rounded and differ from the compiler's folded
-// value by an ULP; forcing both the wrapper and the reference onto the same runtime call
-// keeps the bit-exact comparison valid.
+// runtime libm, exactly as the wrapper evaluates it, rather than being constant-folded by
+// the compiler to a correctly-rounded value. On 32-bit x86 some libm transcendentals are
+// not correctly rounded, so the folded reference would not match the wrapper's faithful
+// passthrough of the runtime result.
 template <typename U>
 auto opaque(const U value) noexcept -> U
 {
     volatile U sink {value};
     return sink;
+}
+
+// Compare the stored basis values bit-for-bit. Going through bit_cast forces each value
+// out of any 80-bit x87 register to its true 32/64-bit storage, so the comparison is not
+// corrupted by excess precision (FLT_EVAL_METHOD == 2), where float_basis::operator== can
+// otherwise compare 80-bit register values that differ even when the stored values match.
+template <typename T>
+auto same_bits(const T a, const T b) noexcept -> bool
+{
+    using basis_type = typename T::basis_type;
+    using bits_type = std::conditional_t<std::is_same_v<basis_type, float>, std::uint32_t, std::uint64_t>;
+    return std::bit_cast<bits_type>(static_cast<basis_type>(a)) == std::bit_cast<bits_type>(static_cast<basis_type>(b));
 }
 
 template <typename T>
@@ -54,16 +69,16 @@ void test_finite()
                            static_cast<basis_type>(-0.5), static_cast<basis_type>(1.0)})
     {
         const auto x {opaque(raw)};
-        BOOST_TEST(erf(T{x}) == T{std::erf(x)});
-        BOOST_TEST(erfc(T{x}) == T{std::erfc(x)});
+        BOOST_TEST(same_bits(erf(T{x}), T{std::erf(x)}));
+        BOOST_TEST(same_bits(erfc(T{x}), T{std::erfc(x)}));
     }
 
     // tgamma(5) = 4! = 24, lgamma of a positive value is finite
     const auto five {opaque(static_cast<basis_type>(5.0))};
-    BOOST_TEST(tgamma(T{five}) == T{std::tgamma(five)});
-    BOOST_TEST(lgamma(T{five}) == T{std::lgamma(five)});
+    BOOST_TEST(same_bits(tgamma(T{five}), T{std::tgamma(five)}));
+    BOOST_TEST(same_bits(lgamma(T{five}), T{std::lgamma(five)}));
     const auto half {opaque(static_cast<basis_type>(0.5))};
-    BOOST_TEST(tgamma(T{half}) == T{std::tgamma(half)});
+    BOOST_TEST(same_bits(tgamma(T{half}), T{std::tgamma(half)}));
 }
 
 // tgamma at a negative integer is a pole. Most standard libraries report it as a

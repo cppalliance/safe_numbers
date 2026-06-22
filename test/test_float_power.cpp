@@ -26,22 +26,37 @@ import boost.safe_numbers;
 
 #endif
 
+#include <bit>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <stdexcept>
+#include <type_traits>
 
 using namespace boost::safe_numbers;
 
 // Route the argument through a volatile so the reference std:: call is evaluated by the
-// runtime libm rather than constant-folded by the compiler. On 32-bit x86 (x87) some
-// libm transcendentals are not correctly rounded and differ from the compiler's folded
-// value by an ULP; forcing both the wrapper and the reference onto the same runtime call
-// keeps the bit-exact comparison valid.
+// runtime libm, exactly as the wrapper evaluates it, rather than being constant-folded by
+// the compiler to a correctly-rounded value. On 32-bit x86 some libm transcendentals are
+// not correctly rounded, so the folded reference would not match the wrapper's faithful
+// passthrough of the runtime result.
 template <typename U>
 auto opaque(const U value) noexcept -> U
 {
     volatile U sink {value};
     return sink;
+}
+
+// Compare the stored basis values bit-for-bit. Going through bit_cast forces each value
+// out of any 80-bit x87 register to its true 32/64-bit storage, so the comparison is not
+// corrupted by excess precision (FLT_EVAL_METHOD == 2), where float_basis::operator== can
+// otherwise compare 80-bit register values that differ even when the stored values match.
+template <typename T>
+auto same_bits(const T a, const T b) noexcept -> bool
+{
+    using basis_type = typename T::basis_type;
+    using bits_type = std::conditional_t<std::is_same_v<basis_type, float>, std::uint32_t, std::uint64_t>;
+    return std::bit_cast<bits_type>(static_cast<basis_type>(a)) == std::bit_cast<bits_type>(static_cast<basis_type>(b));
 }
 
 template <typename T>
@@ -54,17 +69,17 @@ void test_finite()
     BOOST_TEST(sqrt(T{static_cast<basis_type>(0.0)}) == T{static_cast<basis_type>(0.0)});
 
     const auto twenty_seven {opaque(static_cast<basis_type>(27.0))};
-    BOOST_TEST(cbrt(T{twenty_seven}) == T{std::cbrt(twenty_seven)});
+    BOOST_TEST(same_bits(cbrt(T{twenty_seven}), T{std::cbrt(twenty_seven)}));
     // cbrt of a negative value is well defined
     const auto neg_eight {opaque(static_cast<basis_type>(-8.0))};
-    BOOST_TEST(cbrt(T{neg_eight}) == T{std::cbrt(neg_eight)});
+    BOOST_TEST(same_bits(cbrt(T{neg_eight}), T{std::cbrt(neg_eight)}));
 
     const auto two {opaque(static_cast<basis_type>(2.0))};
     const auto ten {opaque(static_cast<basis_type>(10.0))};
-    BOOST_TEST(pow(T{two}, T{ten}) == T{std::pow(two, ten)});
+    BOOST_TEST(same_bits(pow(T{two}, T{ten}), T{std::pow(two, ten)}));
     const auto nine {opaque(static_cast<basis_type>(9.0))};
     const auto half {opaque(static_cast<basis_type>(0.5))};
-    BOOST_TEST(pow(T{nine}, T{half}) == T{std::pow(nine, half)});
+    BOOST_TEST(same_bits(pow(T{nine}, T{half}), T{std::pow(nine, half)}));
 
     // hypot(3, 4) == 5 exactly
     BOOST_TEST(hypot(T{static_cast<basis_type>(3.0)}, T{static_cast<basis_type>(4.0)})
