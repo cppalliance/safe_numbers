@@ -27,6 +27,7 @@ import boost.safe_numbers;
 #endif
 
 #include <cmath>
+#include <exception>
 #include <limits>
 #include <stdexcept>
 
@@ -50,14 +51,18 @@ void test_finite()
     BOOST_TEST(tgamma(T{static_cast<basis_type>(0.5)}) == T{std::tgamma(static_cast<basis_type>(0.5))});
 }
 
-// tgamma at a negative integer produces NAN -> domain_error
+// tgamma at a negative integer is a pole. Most standard libraries report it as a
+// NAN (so it surfaces as std::domain_error), but newlib/Cygwin returns an infinity
+// (so it surfaces as std::overflow_error or std::underflow_error). The portable
+// invariant is only that the non-finite result is rejected, so accept any of them
+// via their common base std::exception.
 template <typename T>
 void test_domain()
 {
     using basis_type = typename T::basis_type;
 
-    BOOST_TEST_THROWS(tgamma(T{static_cast<basis_type>(-1.0)}), std::domain_error);
-    BOOST_TEST_THROWS(tgamma(T{static_cast<basis_type>(-2.0)}), std::domain_error);
+    BOOST_TEST_THROWS(tgamma(T{static_cast<basis_type>(-1.0)}), std::exception);
+    BOOST_TEST_THROWS(tgamma(T{static_cast<basis_type>(-2.0)}), std::exception);
 }
 
 // tgamma(0) and lgamma(0) are poles producing +inf -> overflow_error.
