@@ -23,7 +23,11 @@
 #pragma clang diagnostic ignored "-Wold-style-cast"
 #endif
 
-#include <boost/random/uniform_int_distribution.hpp>
+#if __has_include(<boost/random/uniform_int_distribution.hpp>)
+#  include <boost/random/uniform_int_distribution.hpp>
+#else
+#  error "Boost.Random is required to use this file"
+#endif
 
 #endif
 
