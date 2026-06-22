@@ -62,6 +62,7 @@ run test_float_std_format.cpp ;
 run test_float_fmt_format.cpp ;
 run test_float_limits.cpp ;
 run test_float_literals.cpp ;
+compile-fail compile_fail_float_mixed_ops.cpp ;
 compile compile_integer_type_properties.cpp ;
 run test_unsigned_narrowing_conversions.cpp ;
 run test_signed_conversions.cpp ;
