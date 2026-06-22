@@ -1,0 +1,285 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#floats]
+
+= Floating-Point Types
+
+== Description
+
+The library provides safe floating-point types that detect IEEE 754 exceptional conditions at runtime: overflow, underflow, division by zero, invalid operations, and NaN propagation.
+These types are drop-in replacements for the standard floating-point types `float` and `double` with added safety guarantees.
+
+|===
+| Type | Underlying Type | Width | IEEE 754 Format | Approximate Max Finite Magnitude
+
+| `f32` | `float`  | 32 bits | binary32 (single precision) | 3.40e+38
+| `f64` | `double` | 64 bits | binary64 (double precision) | 1.80e+308
+|===
+
+The types assume an IEEE 754 binary32 / binary64 representation for the underlying `float` and `double`.
+
+Each type exposes a `basis_type` member type alias that refers to the underlying floating-point type, allowing conversion back to built-in types when needed.
+
+[source,c++]
+----
+#include <boost/safe_numbers/floats.hpp>
+
+namespace boost::safe_numbers {
+
+using f32 = detail::float_basis<float>;
+using f64 = detail::float_basis<double>;
+
+template <compatible_float_type BasisType>
+class float_basis {
+
+public:
+    using basis_type = BasisType;
+
+    // Construction
+    constexpr float_basis() noexcept = default;
+    explicit constexpr float_basis(BasisType val) noexcept;
+
+    // Reject construction from any non-basis type (prevents narrowing and silent widening)
+    template <typename T>
+        requires (!std::is_same_v<T, BasisType>)
+    explicit constexpr float_basis(T) noexcept = delete;
+
+    // Conversion to the underlying type
+    explicit constexpr operator BasisType() const noexcept;
+
+    // Comparison operators
+    friend constexpr auto operator==(float_basis lhs, float_basis rhs) noexcept -> bool;
+    friend constexpr auto operator<=>(float_basis lhs, float_basis rhs) noexcept
+        -> std::partial_ordering = default;
+
+}; // class float_basis
+
+// Arithmetic operators (throw on IEEE 754 exceptional results)
+template <compatible_float_type BasisType>
+constexpr auto operator+(float_basis<BasisType> lhs,
+                         float_basis<BasisType> rhs) -> float_basis<BasisType>;
+
+template <compatible_float_type BasisType>
+constexpr auto operator-(float_basis<BasisType> lhs,
+                         float_basis<BasisType> rhs) -> float_basis<BasisType>;
+
+template <compatible_float_type BasisType>
+constexpr auto operator*(float_basis<BasisType> lhs,
+                         float_basis<BasisType> rhs) -> float_basis<BasisType>;
+
+template <compatible_float_type BasisType>
+constexpr auto operator/(float_basis<BasisType> lhs,
+                         float_basis<BasisType> rhs) -> float_basis<BasisType>;
+
+template <compatible_float_type BasisType>
+constexpr auto operator%(float_basis<BasisType> lhs,
+                         float_basis<BasisType> rhs) -> float_basis<BasisType>;
+
+} // namespace boost::safe_numbers
+----
+
+`f32` and `f64` can store any value of the underlying type, including signed zeros, infinities, and NaN; construction does not validate the value.
+The safety guarantees are enforced at the point of arithmetic, where exceptional IEEE 754 results are turned into exceptions rather than being silently propagated.
+This differs from xref:bounded_float.adoc[], which rejects NaN and out-of-range values at construction time.
+
+== Operator Behavior
+
+=== Default Construction
+
+[source,c++]
+----
+constexpr float_basis() noexcept = default;
+----
+
+Values are default-initialized to positive zero.
+
+=== Construction from the Underlying Type
+
+[source,c++]
+----
+explicit constexpr float_basis(BasisType val) noexcept;
+----
+
+Construction from the underlying type is explicit to prevent accidental conversions.
+For `f32` the argument type is `float`, and for `f64` it is `double`.
+
+=== Construction from Other Types
+
+[source,c++]
+----
+template <typename T>
+    requires (!std::is_same_v<T, BasisType>)
+explicit constexpr float_basis(T) noexcept = delete;
+----
+
+Construction from any type other than the exact underlying type is a compile-time error.
+This deleted catch-all eliminates both narrowing (for example `double` into `f32`) and silent widening (for example `float` into `f64`), as well as construction from integers or `bool`.
+
+[source,c++]
+----
+auto a = f32{1.5f};   // OK: float into f32
+auto b = f64{1.5};    // OK: double into f64
+
+// auto c = f32{1.5};    // Compile error: double into f32 (would narrow)
+// auto d = f64{1.5f};   // Compile error: float into f64 (deleted to avoid silent widening)
+// auto e = f32{1};      // Compile error: int into f32
+// auto f = f32{true};   // Compile error: bool into f32
+----
+
+=== Conversion to the Underlying Type
+
+[source,c++]
+----
+explicit constexpr operator BasisType() const noexcept;
+----
+
+Conversion back to the underlying floating-point type is explicit.
+`f32` converts to `float` and `f64` converts to `double`.
+
+[source,c++]
+----
+auto x = f32{3.5f};
+auto raw = static_cast<float>(x);  // 3.5f
+----
+
+=== Comparison Operators
+
+[source,c++]
+----
+friend constexpr auto operator==(float_basis lhs, float_basis rhs) noexcept -> bool;
+friend constexpr auto operator<=>(float_basis lhs, float_basis rhs) noexcept
+    -> std::partial_ordering = default;
+----
+
+Three-way comparison is supported via `pass:[operator<=>]`, which returns `std::partial_ordering` because floating-point values are not totally ordered.
+All comparison operators (`<`, `<=`, `>`, `>=`, `==`, `!=`) are available.
+A comparison involving NaN yields `std::partial_ordering::unordered`, so every relational test against a NaN value is `false`, exactly as for the built-in types.
+Equality is defined explicitly rather than via a defaulted operator so that the `-Wfloat-equal` diagnostic stays contained within the library and does not leak into user code.
+
+=== Arithmetic Operators
+
+[source,c++]
+----
+template <compatible_float_type BasisType>
+constexpr auto operator+(float_basis<BasisType> lhs,
+                         float_basis<BasisType> rhs) -> float_basis<BasisType>;
+
+template <compatible_float_type BasisType>
+constexpr auto operator-(float_basis<BasisType> lhs,
+                         float_basis<BasisType> rhs) -> float_basis<BasisType>;
+
+template <compatible_float_type BasisType>
+constexpr auto operator*(float_basis<BasisType> lhs,
+                         float_basis<BasisType> rhs) -> float_basis<BasisType>;
+
+template <compatible_float_type BasisType>
+constexpr auto operator/(float_basis<BasisType> lhs,
+                         float_basis<BasisType> rhs) -> float_basis<BasisType>;
+
+template <compatible_float_type BasisType>
+constexpr auto operator%(float_basis<BasisType> lhs,
+                         float_basis<BasisType> rhs) -> float_basis<BasisType>;
+----
+
+Each arithmetic operator computes the result, classifies it according to IEEE 754-2008 sections 6 and 7, and throws when the result is an exceptional value:
+
+- `pass:[+]`, `-`: Throw `std::overflow_error` on saturation to positive infinity and `std::underflow_error` on saturation to negative infinity. Subtracting like-signed infinities, or adding opposite-signed infinities, is an invalid operation and throws `std::domain_error`.
+- `pass:[*]`: Throws `std::overflow_error` or `std::underflow_error` on saturation to an infinity. Multiplying zero by an infinity is an invalid operation and throws `std::domain_error`.
+- `/`: Throws `std::overflow_error` or `std::underflow_error` on saturation to an infinity. Dividing zero by zero or infinity by infinity is an invalid operation and throws `std::domain_error`. Dividing a finite non-zero value by zero throws `std::domain_error`.
+- `%`: Computes the IEEE 754 remainder via `std::fmod`. Modulo by zero, or modulo of an infinite dividend, throws `std::domain_error`. The remainder cannot overflow or underflow.
+
+In every operation, an operand that is a quiet or signaling NaN causes the operation to throw `std::domain_error`.
+The `%` operator borrows the spelling of the integer modulo operator but performs floating-point remainder, mirroring `std::fmod` rather than truncated integer division.
+
+== Exception Behavior
+
+The following table summarizes the exceptional conditions and the exception each one produces.
+
+|===
+| Condition | Operators | Exception Type
+
+| Result saturates to positive infinity | `pass:[+]` `-` `pass:[*]` `/` | `std::overflow_error`
+| Result saturates to negative infinity | `pass:[+]` `-` `pass:[*]` `/` | `std::underflow_error`
+| Either operand is a quiet NaN | `pass:[+]` `-` `pass:[*]` `/` `%` | `std::domain_error`
+| Either operand is a signaling NaN | `pass:[+]` `-` `pass:[*]` `/` `%` | `std::domain_error`
+| Addition of opposite-signed infinities, or subtraction of like-signed infinities | `pass:[+]` `-` | `std::domain_error`
+| Multiplication of zero by an infinity | `pass:[*]` | `std::domain_error`
+| Division of zero by zero, or infinity by infinity | `/` | `std::domain_error`
+| Division of a finite non-zero value by zero | `/` | `std::domain_error`
+| Modulo of zero by zero, or with an infinite dividend | `%` | `std::domain_error`
+| Modulo by zero with a finite non-zero dividend | `%` | `std::domain_error`
+|===
+
+NOTE: Saturation to an infinity (IEEE 754 section 6.1) maps to `std::overflow_error` or `std::underflow_error` according to sign. The invalid-operation cases (section 7.2), NaN propagation (section 6.2), and division by zero of a finite numerator (section 7.3) are all reported as `std::domain_error`.
+
+Because the underlying value is not validated at construction, an `f32` or `f64` that already holds a non-finite value will still throw on the first arithmetic operation that observes it:
+
+[source,c++]
+----
+auto nan = f32{std::numeric_limits<float>::quiet_NaN()};  // OK: stored, not validated
+auto inf = f32{std::numeric_limits<float>::infinity()};   // OK: stored, not validated
+
+// auto bad = nan + f32{1.0f};   // Throws std::domain_error: NaN operand
+// auto big = inf + f32{1.0f};   // Throws std::overflow_error: result is positive infinity
+----
+
+== Operations Not Provided
+
+The floating-point types deliberately expose a smaller surface than the integer types.
+The following operations are **not** provided:
+
+- Compound assignment (`+=`, `-=`, `pass:[*=]`, `/=`, `%=`)
+- Increment and decrement (`++`, `--`)
+- Unary `pass:[+]` and unary `-`
+- Bitwise operators (`~`, `&`, `|`, `^`, `<<`, `>>` and their compound forms)
+
+Bitwise operators have no meaning for floating-point values, and the remaining operations are omitted to keep the type minimal: every value change goes through one of the five checked binary operators, so there is a single place where IEEE 754 exceptional results are intercepted.
+
+The policy-based free functions offered for the integer types (`saturating_*`, `overflowing_*`, `checked_*`, `strict_*`, and `widening_*`) are likewise **not** provided for floating-point types.
+IEEE 754 already defines saturation to infinity and the propagation of NaN; the safe floating-point types intercept exactly those exceptional results and report them, rather than offering alternative numeric policies.
+See xref:policies.adoc[] for the policy model as it applies to the integer types.
+
+== Mixed-Width Operations
+
+Operations between `f32` and `f64` are compile-time errors.
+The operands must be promoted to a common type explicitly before performing the operation.
+
+[source,c++]
+----
+auto a = f32{1.0f};
+auto b = f64{2.0};
+
+// auto result = a + b;  // Compile error: mismatched types
+
+// Promote a to f64 explicitly, then add
+auto a_wide = f64{static_cast<double>(static_cast<float>(a))};
+auto result = a_wide + b;  // OK
+----
+
+== Literals
+
+The user-defined literals `pass:[_f32]` and `pass:[_f64]` construct `f32` and `f64` values from floating-point literals, range-checking against the target's maximum.
+See xref:literals.adoc[] for details.
+
+[source,c++]
+----
+using namespace boost::safe_numbers::literals;
+
+constexpr auto pi = 3.14_f32;
+constexpr auto e  = 2.718281828459045_f64;
+----
+
+== Standard Library Support
+
+`f32` and `f64` are specializations of `std::numeric_limits` in `<boost/safe_numbers/limits.hpp>`, so traits such as `max()`, `min()`, `epsilon()`, `infinity()`, and `is_iec559` are available.
+The types also participate in the same `library_type` concept as the integer types, so the `iostream` operators, `std::formatter`, and `fmt::formatter` specializations work transparently.
+See xref:limits.adoc[], xref:iostream.adoc[], and xref:format.adoc[].
+
+== Constexpr Support
+
+All operations are `constexpr`-compatible.
+An exceptional result at compile time results in a compiler error, since the throwing branch is reached during constant evaluation.
