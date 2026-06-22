@@ -16,7 +16,6 @@ target_link_libraries(boost_safe_numbers
         INTERFACE
         Boost::charconv
         Boost::core
-        Boost::random
         Boost::throw_exception
 )
 
