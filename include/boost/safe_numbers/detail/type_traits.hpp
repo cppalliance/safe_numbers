@@ -347,6 +347,12 @@ concept non_bounded_unsigned_library_type = is_unsigned_library_type_v<T> && !is
 template <typename T>
 concept non_bounded_integral_library_type = is_integral_library_type_v<T> && !is_bounded_type_v<T>;
 
+template <typename T>
+concept float_library_type = is_float_library_type_v<T>;
+
+template <typename T>
+concept non_bounded_float_library_type = is_float_library_type_v<T> && !is_bounded_type_v<T>;
+
 // underlying specialization for bounded_uint
 
 namespace impl {
