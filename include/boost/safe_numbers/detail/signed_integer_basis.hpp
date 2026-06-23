@@ -1463,6 +1463,13 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto signed_underflow_mul_msg() noexcep
     }
 }
 
+// clang lowers signed __builtin_mul_overflow on __int128 to __muloti4 (compiler-rt
+// only), which is missing when linking libgcc on clang-13. Limit the fast path to
+// GCC and clang >= 14; everything else uses signed_no_intrin_mul for int128.
+#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) && defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128) && (!defined(__clang__) || __clang_major__ >= 14)
+#  define BOOST_SAFE_NUMBERS_HAS_INT128_SIGNED_INTRIN_MUL
+#endif
+
 #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow)
 
 template <std::signed_integral T>
@@ -1475,6 +1482,24 @@ auto signed_intrin_mul(const T lhs, const T rhs, T& result) -> signed_overflow_s
 
     return signed_overflow_status::no_error;
 }
+
+#ifdef BOOST_SAFE_NUMBERS_HAS_INT128_SIGNED_INTRIN_MUL
+
+inline auto signed_intrin_mul(const int128::int128_t lhs, const int128::int128_t rhs, int128::int128_t& result) -> signed_overflow_status
+{
+    __int128_t builtin_result;
+    const auto overflow {__builtin_mul_overflow(static_cast<__int128_t>(lhs), static_cast<__int128_t>(rhs), &builtin_result)};
+    result = builtin_result;
+
+    if (overflow)
+    {
+        return (lhs >= 0) == (rhs >= 0) ? signed_overflow_status::overflow : signed_overflow_status::underflow;
+    }
+
+    return signed_overflow_status::no_error;
+}
+
+#endif // BOOST_SAFE_NUMBERS_HAS_INT128_SIGNED_INTRIN_MUL
 
 #elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
@@ -1765,7 +1790,11 @@ struct signed_mul_helper
 
         #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
+        // Route int128 through the intrin path only where the signed 128-bit
+        // fast path links (GCC, clang >= 14); elsewhere it uses no_intrin.
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_INT128_SIGNED_INTRIN_MUL)
         if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
+        #endif
         {
             #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
@@ -1812,7 +1841,11 @@ struct signed_mul_helper<overflow_policy::overflow_tuple, BasisType>
 
         #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
+        // Route int128 through the intrin path only where the signed 128-bit
+        // fast path links (GCC, clang >= 14); elsewhere it uses no_intrin.
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_INT128_SIGNED_INTRIN_MUL)
         if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
+        #endif
         {
             #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
@@ -1849,7 +1882,11 @@ struct signed_mul_helper<overflow_policy::checked, BasisType>
 
         #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
+        // Route int128 through the intrin path only where the signed 128-bit
+        // fast path links (GCC, clang >= 14); elsewhere it uses no_intrin.
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_INT128_SIGNED_INTRIN_MUL)
         if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
+        #endif
         {
             #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
