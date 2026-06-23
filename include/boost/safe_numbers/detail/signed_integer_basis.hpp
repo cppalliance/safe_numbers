@@ -1462,6 +1462,9 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto signed_underflow_mul_msg() noexcep
         return "Underflow detected in i128 multiplication";
     }
 }
+#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) && defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128) && (!defined(__clang__) || __clang_major__ >= 14)
+#  define BOOST_SAFE_NUMBERS_HAS_INT128_SIGNED_INTRIN_MUL
+#endif
 
 #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow)
 
@@ -1476,7 +1479,7 @@ auto signed_intrin_mul(const T lhs, const T rhs, T& result) -> signed_overflow_s
     return signed_overflow_status::no_error;
 }
 
-#ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128
+#ifdef BOOST_SAFE_NUMBERS_HAS_INT128_SIGNED_INTRIN_MUL
 
 inline auto signed_intrin_mul(const int128::int128_t lhs, const int128::int128_t rhs, int128::int128_t& result) -> signed_overflow_status
 {
@@ -1492,7 +1495,7 @@ inline auto signed_intrin_mul(const int128::int128_t lhs, const int128::int128_t
     return signed_overflow_status::no_error;
 }
 
-#endif // BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128
+#endif // BOOST_SAFE_NUMBERS_HAS_INT128_SIGNED_INTRIN_MUL
 
 #elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
