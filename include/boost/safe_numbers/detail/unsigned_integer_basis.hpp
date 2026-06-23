@@ -1446,7 +1446,10 @@ struct mul_helper<overflow_policy::overflow_tuple, BasisType>
         const auto rhs_basis {static_cast<BasisType>(rhs)};
         BasisType res {};
 
+        // We have an intrin path, but only with __builtin_mul_overflow
+        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128) || !defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128)
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
+        #endif
         {
             #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
@@ -1479,7 +1482,10 @@ struct mul_helper<overflow_policy::checked, BasisType>
         const auto rhs_basis {static_cast<BasisType>(rhs)};
         BasisType res {};
 
+        // We have an intrin path, but only with __builtin_mul_overflow
+        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128) || !defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128)
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
+        #endif
         {
             #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
