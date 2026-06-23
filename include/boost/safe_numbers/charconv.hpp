@@ -17,7 +17,7 @@
 
 namespace boost::charconv {
 
-template <safe_numbers::detail::library_type T>
+template <safe_numbers::detail::integral_library_type T>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto from_chars(const char* first, const char* last, T& value, int base = 10)
     -> charconv::from_chars_result
 {
@@ -30,12 +30,41 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto from_chars(const char* first, cons
     return r;
 }
 
-template <safe_numbers::detail::library_type T>
+template <safe_numbers::detail::integral_library_type T>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto to_chars(char* first, char* last, const T value, int base = 10)
     -> charconv::to_chars_result
 {
     using underlying_type = safe_numbers::detail::underlying_type_t<T>;
     return charconv::to_chars(first, last, static_cast<underlying_type>(value), base);
+}
+
+template <safe_numbers::detail::float_library_type T>
+auto from_chars(const char* first, const char* last, T& value, chars_format fmt = chars_format::general)
+    -> charconv::from_chars_result
+{
+    using underlying_type = safe_numbers::detail::underlying_type_t<T>;
+
+    underlying_type result {};
+    const auto r {charconv::from_chars(first, last, result, fmt)};
+    value = T{result};
+
+    return r;
+}
+
+template <safe_numbers::detail::float_library_type T>
+auto to_chars(char* first, char* last, const T value, chars_format fmt = chars_format::general)
+    -> charconv::to_chars_result
+{
+    using underlying_type = safe_numbers::detail::underlying_type_t<T>;
+    return charconv::to_chars(first, last, static_cast<underlying_type>(value), fmt);
+}
+
+template <safe_numbers::detail::float_library_type T>
+auto to_chars(char* first, char* last, const T value, chars_format fmt, int precision)
+    -> charconv::to_chars_result
+{
+    using underlying_type = safe_numbers::detail::underlying_type_t<T>;
+    return charconv::to_chars(first, last, static_cast<underlying_type>(value), fmt, precision);
 }
 
 } // namespace boost::charconv

@@ -18,6 +18,7 @@
 #include <compare>
 #include <limits>
 #include <stdexcept>
+#include <string>
 #include <cstdint>
 #include <cstdlib>
 #include <utility>
@@ -431,14 +432,9 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_issignalin
     }
 }
 
-template <compatible_float_type T>
-BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_isnormal(const T val) noexcept -> bool
-{
-    return !(val == T{} || constexpr_isinf(val) || constexpr_isnan(val) || constexpr_abs(val) < std::numeric_limits<T>::min());
-}
-
 // Bit-pattern test for true zero, used in IEEE 754 error classification where
-// a subnormal must not be confused with zero, such as with optimized builds on the Intel Compiler
+// a subnormal must not be confused with zero, such as with optimized builds on the Intel Compiler.
+// Defined before its users so they can avoid an unguarded -Wfloat-equal comparison.
 #ifdef __clang__
 #  pragma clang diagnostic push
 #  pragma clang diagnostic ignored "-Wfloat-equal"
@@ -467,6 +463,12 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto is_true_zero(const T
 #endif
 
 template <compatible_float_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_isnormal(const T val) noexcept -> bool
+{
+    return !(is_true_zero(val) || constexpr_isinf(val) || constexpr_isnan(val) || constexpr_abs(val) < std::numeric_limits<T>::min());
+}
+
+template <compatible_float_type T>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_fpclassify(const T val) noexcept -> int
 {
     if (constexpr_isnan(val))
@@ -477,7 +479,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_fpclassify
     {
         return FP_INFINITE;
     }
-    else if (val == T{})
+    else if (is_true_zero(val))
     {
         return FP_ZERO;
     }
@@ -500,6 +502,153 @@ enum class error_category
     nan_op,
     invalid_op
 };
+
+// ------------------------------
+// Shared <cmath> result validation
+// ------------------------------
+// These helpers are reused by the free <cmath> wrappers (cmath.hpp) so the
+// wrappers preserve the same class invariant as the arithmetic operators:
+// an operation never silently yields a non-finite value.
+
+// Sign-bit test that is correct for signed zero and NAN, where val < 0 is not.
+template <compatible_float_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_signbit(const T val) noexcept -> bool
+{
+    using bit_type = std::conditional_t<std::is_same_v<T, float>, std::uint32_t, std::uint64_t>;
+    constexpr bit_type sign_mask {bit_type{1} << (std::numeric_limits<bit_type>::digits - 1)};
+    return static_cast<bit_type>(std::bit_cast<bit_type>(val) & sign_mask) != bit_type{0};
+}
+
+// Classify a finished <cmath> result using the same IEEE 754 conventions as the
+// arithmetic operators: a finite result is fine, a NAN is a domain violation, and
+// an infinity is an overflow (+inf) or an underflow (-inf).
+template <compatible_float_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto classify_cmath_result(const T res) noexcept -> error_category
+{
+    if (!constexpr_isinf(res) && !constexpr_isnan(res)) [[likely]]
+    {
+        return error_category::no_error;
+    }
+
+    if (constexpr_isnan(res))
+    {
+        return error_category::nan_op;
+    }
+
+    return res > 0 ? error_category::overflow : error_category::underflow;
+}
+
+#if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+
+// Host-only descriptive runtime message, e.g. "Overflow detected in f64 sqrt".
+template <compatible_float_type BasisType>
+[[nodiscard]] inline auto cmath_error_msg(const char* const category, const char* const op) -> std::string
+{
+    return std::string{category} + " detected in " + float_type_name<BasisType>() + ' ' + op;
+}
+
+#endif
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_cmath_overflow(const char* const op) -> void
+{
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    if (std::is_constant_evaluated())
+    {
+        if constexpr (std::is_same_v<BasisType, float>)
+        {
+            throw std::overflow_error("Overflow detected in f32 <cmath> function");
+        }
+        else
+        {
+            throw std::overflow_error("Overflow detected in f64 <cmath> function");
+        }
+    }
+    else
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, cmath_error_msg<BasisType>("Overflow", op));
+    }
+    #else
+    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, op);
+    #endif
+}
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_cmath_underflow(const char* const op) -> void
+{
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    if (std::is_constant_evaluated())
+    {
+        if constexpr (std::is_same_v<BasisType, float>)
+        {
+            throw std::underflow_error("Underflow detected in f32 <cmath> function");
+        }
+        else
+        {
+            throw std::underflow_error("Underflow detected in f64 <cmath> function");
+        }
+    }
+    else
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, cmath_error_msg<BasisType>("Underflow", op));
+    }
+    #else
+    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, op);
+    #endif
+}
+
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_cmath_domain(const char* const op) -> void
+{
+    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    if (std::is_constant_evaluated())
+    {
+        if constexpr (std::is_same_v<BasisType, float>)
+        {
+            throw std::domain_error("Domain error detected in f32 <cmath> function");
+        }
+        else
+        {
+            throw std::domain_error("Domain error detected in f64 <cmath> function");
+        }
+    }
+    else
+    {
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, cmath_error_msg<BasisType>("Domain error", op));
+    }
+    #else
+    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, op);
+    #endif
+}
+
+// Validate a <cmath> result against the float_basis invariant: returns it when finite,
+// otherwise throws (+inf -> overflow_error, -inf -> underflow_error, NAN -> domain_error).
+// op names the calling function for diagnostics.
+template <compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto check_cmath_result(const BasisType res, const char* const op) -> BasisType
+{
+    switch (classify_cmath_result(res))
+    {
+        case error_category::no_error:
+            break;
+        case error_category::overflow:
+            throw_cmath_overflow<BasisType>(op);
+            break;
+        case error_category::underflow:
+            throw_cmath_underflow<BasisType>(op);
+            break;
+        case error_category::nan_op:
+        case error_category::invalid_op:
+        case error_category::divide_by_zero:
+            throw_cmath_domain<BasisType>(op);
+            break;
+        default:
+            BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
+            break;                          // LCOV_EXCL_LINE
+    }
+
+    return res;
+}
 
 } // namespace impl
 

@@ -20,6 +20,8 @@
 #include <boost/safe_numbers/integer_utilities.hpp>
 #include <boost/safe_numbers/byte_conversions.hpp>
 #include <boost/safe_numbers/numeric.hpp>
+#include <boost/safe_numbers/cmath.hpp>
+#include <boost/safe_numbers/functional.hpp>
 
 #undef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
