@@ -1476,6 +1476,24 @@ auto signed_intrin_mul(const T lhs, const T rhs, T& result) -> signed_overflow_s
     return signed_overflow_status::no_error;
 }
 
+#ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128
+
+inline auto signed_intrin_mul(const int128::int128_t lhs, const int128::int128_t rhs, int128::int128_t& result) -> signed_overflow_status
+{
+    __int128_t builtin_result;
+    const auto overflow {__builtin_mul_overflow(static_cast<__int128_t>(lhs), static_cast<__int128_t>(rhs), &builtin_result)};
+    result = builtin_result;
+
+    if (overflow)
+    {
+        return (lhs >= 0) == (rhs >= 0) ? signed_overflow_status::overflow : signed_overflow_status::underflow;
+    }
+
+    return signed_overflow_status::no_error;
+}
+
+#endif // BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128
+
 #elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
 template <std::signed_integral T>
@@ -1765,7 +1783,10 @@ struct signed_mul_helper
 
         #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
+        // We have a 128-bit intrin path, but only with __builtin_mul_overflow
+        #if defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN) || !defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128)
         if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
+        #endif
         {
             #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
@@ -1812,7 +1833,10 @@ struct signed_mul_helper<overflow_policy::overflow_tuple, BasisType>
 
         #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
+        // We have a 128-bit intrin path, but only with __builtin_mul_overflow
+        #if defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN) || !defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128)
         if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
+        #endif
         {
             #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
@@ -1849,7 +1873,10 @@ struct signed_mul_helper<overflow_policy::checked, BasisType>
 
         #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
+        // We have a 128-bit intrin path, but only with __builtin_mul_overflow
+        #if defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN) || !defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128)
         if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
+        #endif
         {
             #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
