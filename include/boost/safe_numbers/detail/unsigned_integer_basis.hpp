@@ -1252,6 +1252,18 @@ bool unsigned_intrin_mul(const T lhs, const T rhs, T& result)
     return __builtin_mul_overflow(lhs, rhs, &result);
 }
 
+#ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128
+
+inline bool unsigned_intrin_mul(const int128::uint128_t lhs, const int128::uint128_t rhs, int128::uint128_t& result)
+{
+    __uint128_t builtin_result;
+    const auto overflow {__builtin_mul_overflow(static_cast<__uint128_t>(lhs), static_cast<__uint128_t>(rhs), &builtin_result)};
+    result = builtin_result;
+    return overflow;
+}
+
+#endif
+
 #elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
 template <std::unsigned_integral T>
@@ -1390,7 +1402,10 @@ struct mul_helper
             }
         };
 
+        // We have an intrin path, but only with __builtin_mul_overflow
+        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128) || !defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128)
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
+        #endif
         {
             #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
 
