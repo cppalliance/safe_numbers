@@ -120,6 +120,18 @@ auto benchmark_subtraction(const std::vector<T>& values, const char* type)
     return benchmark_op(values, std::minus<>(), type, "sub");
 }
 
+template <typename T>
+auto benchmark_multiplication(const std::vector<T>& values, const char* type)
+{
+    return benchmark_op(values, std::multiplies<>(), type, "mul");
+}
+
+template <typename T>
+auto benchmark_division(const std::vector<T>& values, const char* type)
+{
+    return benchmark_op(values, std::divides<>(), type, "div");
+}
+
 #ifdef _MSC_VER
 #pragma optimize("", on)
 #endif
@@ -148,6 +160,14 @@ int main()
         builtin_runtime = benchmark_subtraction(builtin_values, "float");
         lib_runtime = benchmark_subtraction(lib_values, "boost::sn::f32");
         print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_multiplication(builtin_values, "float");
+        lib_runtime = benchmark_multiplication(lib_values, "boost::sn::f32");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_division(builtin_values, "float");
+        lib_runtime = benchmark_division(lib_values, "boost::sn::f32");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
     }
     {
         std::cout << "\n64-bit Floats\n";
@@ -160,6 +180,14 @@ int main()
 
         builtin_runtime = benchmark_subtraction(builtin_values, "double");
         lib_runtime = benchmark_subtraction(lib_values, "boost::sn::f64");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_multiplication(builtin_values, "double");
+        lib_runtime = benchmark_multiplication(lib_values, "boost::sn::f64");
+        print_runtime_ratio(lib_runtime, builtin_runtime);
+
+        builtin_runtime = benchmark_division(builtin_values, "double");
+        lib_runtime = benchmark_division(lib_values, "boost::sn::f64");
         print_runtime_ratio(lib_runtime, builtin_runtime);
     }
 
