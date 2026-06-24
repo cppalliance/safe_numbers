@@ -4,18 +4,35 @@
 
 #include <boost/safe_numbers/floats.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
-#include <boost/random/uniform_real_distribution.hpp>
-#include <random>
+#include <benchmark/benchmark.h>
 #include <cstdint>
 #include <vector>
-#include <chrono>
-#include <iostream>
-#include <iomanip>
+#include <random>
 #include <functional>
-#include <algorithm>
+#include <string>
+#include <type_traits>
+
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wconversion"
+#  pragma clang diagnostic ignored "-Wfloat-equal"
+#  pragma clang diagnostic ignored "-Wdouble-promotion"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+#  pragma GCC diagnostic ignored "-Wdouble-promotion"
+#endif
+
+#include <boost/random/uniform_real_distribution.hpp>
+
+#ifdef __clang__
+#  pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic pop
+#endif
 
 using namespace boost::safe_numbers;
-using namespace std::chrono;
 
 // Helper to extract the raw underlying type for any benchmarked type:
 //   builtin          -> itself
@@ -29,20 +46,20 @@ struct underlying_for_bench<detail::float_basis<T>> { using type = T; };
 template <typename T>
 using underlying_for_bench_t = typename underlying_for_bench<T>::type;
 
-inline constexpr std::size_t N {10'000'000};
-inline std::mt19937_64 rng(42);
+inline constexpr std::size_t N {1'000'000};
 
-// Range chosen so consecutive add / sub never approach overflow,
-// keeping the safe path on its hot branch and matching what builtin
-// floats see for a fair comparison.
+// Values are drawn from [1, 100] so that add, sub, mul, and div all stay on the
+// non-overflow path for every contender, keeping the comparison about the
+// safety checks rather than about throwing.
 template <typename T>
-auto generate_vector()
+std::vector<T> generate_builtin()
 {
     using value_type = underlying_for_bench_t<T>;
 
     std::vector<T> values;
     values.reserve(N);
 
+    std::mt19937_64 rng(42);
     boost::random::uniform_real_distribution<value_type> dist {static_cast<value_type>(1), static_cast<value_type>(100)};
 
     for (std::size_t i {}; i < N; ++i)
@@ -50,18 +67,16 @@ auto generate_vector()
         values.emplace_back(static_cast<T>(dist(rng)));
     }
 
-    std::sort(values.begin(), values.end(), std::greater<>());
-
     return values;
 }
 
 template <typename T, typename U>
-auto generate_vector(const std::vector<U>& values)
+std::vector<T> generate_from(const std::vector<U>& src)
 {
     std::vector<T> result;
-    result.reserve(values.size());
+    result.reserve(src.size());
 
-    for (const auto& value : values)
+    for (const auto& value : src)
     {
         result.emplace_back(static_cast<T>(value));
     }
@@ -69,133 +84,81 @@ auto generate_vector(const std::vector<U>& values)
     return result;
 }
 
-template <typename T, typename Func>
-BOOST_NOINLINE
-#if defined(_MSC_VER) && !defined(__clang__)
-#pragma optimize("t", off)
-#endif
-auto
-#if defined(__clang__)
-__attribute__((optnone))
-#elif defined(__GNUC__)
-__attribute__((optimize("O0")))
-#endif
-benchmark_op(const std::vector<T>& values, Func op, const char* type, const char* operation)
+// Generated once per type and cached for the lifetime of the program so that
+// data generation is never part of a timed region.
+template <typename T, typename Builtin>
+const std::vector<T>& data()
 {
-    const auto t1 = steady_clock::now();
+    if constexpr (std::is_same_v<T, Builtin>)
+    {
+        static const std::vector<T> values {generate_builtin<T>()};
+        return values;
+    }
+    else
+    {
+        static const std::vector<T> values {generate_from<T>(data<Builtin, Builtin>())};
+        return values;
+    }
+}
 
+template <typename T, typename Op>
+void run_bench(benchmark::State& state, const std::vector<T>& values, Op op)
+{
     using value_type = underlying_for_bench_t<T>;
 
-    value_type counter {};
+    const std::size_t n {values.size()};
 
-    for (std::size_t j {}; j < 10; ++j)
+    for (auto _ : state)
     {
-        for (std::size_t i {}; i < N - 1U; ++i)
+        value_type counter {};
+
+        for (std::size_t i {}; i + 1U < n; ++i)
         {
-            counter += static_cast<value_type>(op(values[i], values[i + 1]));
+            auto result {static_cast<value_type>(op(values[i], values[i + 1U]))};
+            benchmark::DoNotOptimize(result);
+            counter += result;
         }
+
+        benchmark::DoNotOptimize(counter);
     }
 
-    const auto t2 = steady_clock::now();
-
-    const volatile auto sink {static_cast<value_type>(counter)};
-    static_cast<void>(sink);
-
-    const auto runtime_ns = (t2 - t1) / 1ns;
-
-    std::cerr << operation << "<" << std::left << std::setw(15) << type << ">: " << std::setw( 10 ) << ( t2 - t1 ) / 1us << " us\n";
-
-    return runtime_ns;
+    state.SetItemsProcessed(static_cast<std::int64_t>(state.iterations()) * static_cast<std::int64_t>(n - 1U));
 }
 
-template <typename T>
-auto benchmark_addition(const std::vector<T>& values, const char* type)
+template <typename T, typename Builtin, typename Op>
+void register_one(const std::string& category, int bits, const char* op_name, const char* role, Op op)
 {
-    return benchmark_op(values, std::plus<>(), type, "add");
-}
-
-template <typename T>
-auto benchmark_subtraction(const std::vector<T>& values, const char* type)
-{
-    return benchmark_op(values, std::minus<>(), type, "sub");
-}
-
-template <typename T>
-auto benchmark_multiplication(const std::vector<T>& values, const char* type)
-{
-    return benchmark_op(values, std::multiplies<>(), type, "mul");
-}
-
-template <typename T>
-auto benchmark_division(const std::vector<T>& values, const char* type)
-{
-    return benchmark_op(values, std::divides<>(), type, "div");
-}
-
-#ifdef _MSC_VER
-#pragma optimize("", on)
-#endif
-
-template <typename T>
-void print_runtime_ratio(T lib, T builtin)
-{
-    std::cout << std::setprecision(2) << std::fixed << std::setw(22)
-              << "Runtime ratio: " << std::setw(3) << static_cast<double>(lib) / static_cast<double>(builtin)
-              << std::endl;
-}
-
-int main()
-{
-    #ifdef BOOST_SAFE_NUMBERS_RUN_BENCHMARKS
-
+    const std::string name {category + "_" + std::to_string(bits) + "_" + op_name + "_" + role};
+    benchmark::RegisterBenchmark(name, [op](benchmark::State& state)
     {
-        std::cout << "32-bit Floats\n";
-        const auto builtin_values{generate_vector<float>()};
-        const auto lib_values{generate_vector<f32>(builtin_values)};
+        run_bench<T>(state, data<T, Builtin>(), op);
+    });
+}
 
-        auto builtin_runtime = benchmark_addition(builtin_values, "float");
-        auto lib_runtime = benchmark_addition(lib_values, "boost::sn::f32");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
+template <typename T, typename Builtin>
+void register_float_ops(const std::string& category, int bits, const char* role)
+{
+    register_one<T, Builtin>(category, bits, "add", role, std::plus<>{});
+    register_one<T, Builtin>(category, bits, "sub", role, std::minus<>{});
+    register_one<T, Builtin>(category, bits, "mul", role, std::multiplies<>{});
+    register_one<T, Builtin>(category, bits, "div", role, std::divides<>{});
+}
 
-        builtin_runtime = benchmark_subtraction(builtin_values, "float");
-        lib_runtime = benchmark_subtraction(lib_values, "boost::sn::f32");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
+template <typename Builtin, typename SN>
+void register_float_width(const std::string& category, int bits)
+{
+    register_float_ops<Builtin, Builtin>(category, bits, "builtin");
+    register_float_ops<SN, Builtin>(category, bits, "sn");
+}
 
-        builtin_runtime = benchmark_multiplication(builtin_values, "float");
-        lib_runtime = benchmark_multiplication(lib_values, "boost::sn::f32");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
+int main(int argc, char** argv)
+{
+    register_float_width<float,  f32>("float", 32);
+    register_float_width<double, f64>("float", 64);
 
-        builtin_runtime = benchmark_division(builtin_values, "float");
-        lib_runtime = benchmark_division(lib_values, "boost::sn::f32");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-    }
-    {
-        std::cout << "\n64-bit Floats\n";
-        const auto builtin_values{generate_vector<double>()};
-        const auto lib_values{generate_vector<f64>(builtin_values)};
+    benchmark::Initialize(&argc, argv);
+    benchmark::RunSpecifiedBenchmarks();
+    benchmark::Shutdown();
 
-        auto builtin_runtime = benchmark_addition(builtin_values, "double");
-        auto lib_runtime = benchmark_addition(lib_values, "boost::sn::f64");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-
-        builtin_runtime = benchmark_subtraction(builtin_values, "double");
-        lib_runtime = benchmark_subtraction(lib_values, "boost::sn::f64");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-
-        builtin_runtime = benchmark_multiplication(builtin_values, "double");
-        lib_runtime = benchmark_multiplication(lib_values, "boost::sn::f64");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-
-        builtin_runtime = benchmark_division(builtin_values, "double");
-        lib_runtime = benchmark_division(lib_values, "boost::sn::f64");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-    }
-
-    #else
-
-    std::cerr << "Benchmarks not run" << std::endl;
-
-    #endif
-
-    return 1;
+    return 0;
 }
