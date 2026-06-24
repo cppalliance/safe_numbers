@@ -374,7 +374,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_abs(const 
 template <compatible_float_type T>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_isinf(const T val) noexcept -> bool
 {
-    return (val > std::numeric_limits<T>::max()) | (val < std::numeric_limits<T>::lowest());
+    return (val > std::numeric_limits<T>::max()) || (val < std::numeric_limits<T>::lowest());
 }
 
 // val != val is the canonical NAN test
