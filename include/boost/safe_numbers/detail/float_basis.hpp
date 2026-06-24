@@ -364,10 +364,13 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto modbyzero_mod_msg() 
 
 namespace impl {
 
+// Clear the sign bit rather than branch on val < 0 which was frequently mis-predicted
 template <compatible_float_type T>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto constexpr_abs(const T val) noexcept -> T
 {
-    return val < 0 ? -val : val;
+    using bit_type = std::conditional_t<std::is_same_v<T, float>, std::uint32_t, std::uint64_t>;
+    constexpr bit_type mask {static_cast<bit_type>(~(bit_type{1} << (sizeof(T) * 8U - 1U)))};
+    return std::bit_cast<T>(static_cast<bit_type>(std::bit_cast<bit_type>(val) & mask));
 }
 
 template <compatible_float_type T>
