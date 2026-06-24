@@ -89,9 +89,8 @@ compile-fail compile_fail_signed_bitwise.cpp ;
 
 run test_unsigned_addition.cpp ;
 compile-fail compile_fail_unsigned_addition.cpp ;
-run-fail benchmarks/benchmark_unsigned_operations.cpp ;
-run-fail benchmarks/benchmark_signed_operations.cpp ;
-run-fail benchmarks/benchmark_float_operations.cpp ;
+# benchmark_{unsigned,signed,float}_operations.cpp use Google Benchmark and are
+# built only via CMake with -DBOOST_SAFE_NUMBERS_BUILD_BENCHMARKS=ON.
 run-fail benchmarks/benchmark_boost.cpp ;
 run test_limits.cpp ;
 run limits_link_1.cpp limits_link_2.cpp limits_link_3.cpp ;
