@@ -1,0 +1,140 @@
+[#macos_arm64_benchmarks]
+== macOS ARM64
+
+Run on the GitHub Actions `macos-latest` runner (Apple Silicon) using Apple Clang in release mode (`-O2`, pass:[C++]20).
+
+=== Floating-Point
+
+.32-bit floating point (ratio relative to `float`)
+[cols="1,>1,>1,>1",options="header"]
+|===
+| Operation | `float` (ns/op) | `boost::sn::f32` (ns/op) | Ratio
+| Addition | 4.44 | 4.58 | 1.03
+| Subtraction | 4.56 | 4.61 | 1.01
+| Multiplication | 4.30 | 4.69 | 1.09
+| Division | 4.31 | 4.91 | 1.14
+|===
+
+.64-bit floating point (ratio relative to `double`)
+[cols="1,>1,>1,>1",options="header"]
+|===
+| Operation | `double` (ns/op) | `boost::sn::f64` (ns/op) | Ratio
+| Addition | 4.78 | 4.48 | 0.94
+| Subtraction | 4.31 | 3.89 | 0.90
+| Multiplication | 4.26 | 4.04 | 0.95
+| Division | 4.33 | 4.25 | 0.98
+|===
+
+=== Signed Integers
+
+.8-bit signed (ratio relative to `std::int8_t`)
+[cols="1,>1,>1,>1,>1,>1",options="header"]
+|===
+| Operation | `std::int8_t` (ns/op) | `boost::sn::i8` (ns/op) | Ratio | `safe<int8_t>` (ns/op) | Ratio
+| Addition | 2.86 | 2.44 | 0.85 | 2.45 | 0.86
+| Subtraction | 2.51 | 2.35 | 0.94 | 2.43 | 0.97
+| Multiplication | 2.36 | 2.35 | 1.00 | 2.31 | 0.98
+| Division | 2.69 | 2.50 | 0.93 | 2.44 | 0.91
+| Modulo | 2.47 | 2.56 | 1.04 | 2.55 | 1.03
+|===
+
+.16-bit signed (ratio relative to `std::int16_t`)
+[cols="1,>1,>1,>1,>1,>1",options="header"]
+|===
+| Operation | `std::int16_t` (ns/op) | `boost::sn::i16` (ns/op) | Ratio | `safe<int16_t>` (ns/op) | Ratio
+| Addition | 2.61 | 2.37 | 0.91 | 2.64 | 1.01
+| Subtraction | 2.58 | 2.38 | 0.92 | 2.23 | 0.86
+| Multiplication | 2.44 | 2.44 | 1.00 | 2.23 | 0.91
+| Division | 2.48 | 2.63 | 1.06 | 2.29 | 0.92
+| Modulo | 2.63 | 2.42 | 0.92 | 2.42 | 0.92
+|===
+
+.32-bit signed (ratio relative to `std::int32_t`)
+[cols="1,>1,>1,>1,>1,>1",options="header"]
+|===
+| Operation | `std::int32_t` (ns/op) | `boost::sn::i32` (ns/op) | Ratio | `safe<int32_t>` (ns/op) | Ratio
+| Addition | 2.25 | 3.44 | 1.53 | 2.56 | 1.14
+| Subtraction | 2.29 | 3.46 | 1.51 | 2.47 | 1.08
+| Multiplication | 2.31 | 3.43 | 1.49 | 2.28 | 0.99
+| Division | 2.51 | 3.49 | 1.39 | 2.71 | 1.08
+| Modulo | 2.78 | 3.31 | 1.19 | 2.93 | 1.05
+|===
+
+.64-bit signed (ratio relative to `std::int64_t`)
+[cols="1,>1,>1,>1,>1,>1",options="header"]
+|===
+| Operation | `std::int64_t` (ns/op) | `boost::sn::i64` (ns/op) | Ratio | `safe<int64_t>` (ns/op) | Ratio
+| Addition | 2.71 | 3.73 | 1.37 | 2.82 | 1.04
+| Subtraction | 2.61 | 3.90 | 1.49 | 2.79 | 1.07
+| Multiplication | 2.56 | 3.92 | 1.53 | 3.97 | 1.55
+| Division | 2.64 | 4.04 | 1.53 | 3.10 | 1.17
+| Modulo | 2.55 | 3.78 | 1.48 | 3.03 | 1.19
+|===
+
+.128-bit signed (ratio relative to `int128_t`)
+[cols="1,>1,>1,>1",options="header"]
+|===
+| Operation | `int128_t` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
+| Addition | 3.22 | 3.19 | 0.99
+| Subtraction | 3.28 | 3.18 | 0.97
+| Multiplication | 3.28 | 12.31 | 3.75
+| Division | 10.59 | 13.17 | 1.24
+| Modulo | 11.62 | 11.64 | 1.00
+|===
+
+=== Unsigned Integers
+
+.8-bit unsigned (ratio relative to `std::uint8_t`)
+[cols="1,>1,>1,>1,>1,>1",options="header"]
+|===
+| Operation | `std::uint8_t` (ns/op) | `boost::sn::u8` (ns/op) | Ratio | `safe<uint8_t>` (ns/op) | Ratio
+| Addition | 2.39 | 2.65 | 1.11 | 2.88 | 1.20
+| Subtraction | 2.69 | 2.63 | 0.98 | 2.70 | 1.01
+| Multiplication | 2.71 | 2.61 | 0.96 | 2.62 | 0.97
+| Division | 2.81 | 2.81 | 1.00 | 2.94 | 1.05
+| Modulo | 2.52 | 2.76 | 1.10 | 3.03 | 1.20
+|===
+
+.16-bit unsigned (ratio relative to `std::uint16_t`)
+[cols="1,>1,>1,>1,>1,>1",options="header"]
+|===
+| Operation | `std::uint16_t` (ns/op) | `boost::sn::u16` (ns/op) | Ratio | `safe<uint16_t>` (ns/op) | Ratio
+| Addition | 2.53 | 2.59 | 1.02 | 2.75 | 1.09
+| Subtraction | 2.83 | 2.73 | 0.96 | 2.65 | 0.94
+| Multiplication | 2.58 | 2.69 | 1.04 | 2.65 | 1.03
+| Division | 3.13 | 3.12 | 1.00 | 3.03 | 0.97
+| Modulo | 3.01 | 3.22 | 1.07 | 3.14 | 1.04
+|===
+
+.32-bit unsigned (ratio relative to `std::uint32_t`)
+[cols="1,>1,>1,>1,>1,>1",options="header"]
+|===
+| Operation | `std::uint32_t` (ns/op) | `boost::sn::u32` (ns/op) | Ratio | `safe<uint32_t>` (ns/op) | Ratio
+| Addition | 2.65 | 3.46 | 1.31 | 3.10 | 1.17
+| Subtraction | 2.81 | 3.61 | 1.28 | 2.88 | 1.02
+| Multiplication | 2.82 | 3.43 | 1.22 | 2.82 | 1.00
+| Division | 2.80 | 3.29 | 1.17 | 3.01 | 1.07
+| Modulo | 2.78 | 3.46 | 1.24 | 2.90 | 1.04
+|===
+
+.64-bit unsigned (ratio relative to `std::uint64_t`)
+[cols="1,>1,>1,>1,>1,>1",options="header"]
+|===
+| Operation | `std::uint64_t` (ns/op) | `boost::sn::u64` (ns/op) | Ratio | `safe<uint64_t>` (ns/op) | Ratio
+| Addition | 2.92 | 3.32 | 1.14 | 2.52 | 0.86
+| Subtraction | 2.70 | 3.24 | 1.20 | 2.63 | 0.97
+| Multiplication | 2.95 | 3.55 | 1.20 | 2.73 | 0.93
+| Division | 2.84 | 3.67 | 1.29 | 2.73 | 0.96
+| Modulo | 2.86 | 3.42 | 1.19 | 2.88 | 1.01
+|===
+
+.128-bit unsigned (ratio relative to `uint128_t`)
+[cols="1,>1,>1,>1",options="header"]
+|===
+| Operation | `uint128_t` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
+| Addition | 3.43 | 2.99 | 0.87
+| Subtraction | 3.10 | 3.33 | 1.07
+| Multiplication | 2.82 | 3.91 | 1.39
+| Division | 6.22 | 6.22 | 1.00
+| Modulo | 6.58 | 9.20 | 1.40
+|===
