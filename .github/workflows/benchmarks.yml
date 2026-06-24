@@ -29,7 +29,7 @@ concurrency:
 
 env:
   GIT_FETCH_JOBS: 8
-  BENCHMARK_TARGETS: benchmark_unsigned_operations benchmark_float_operations benchmark_boost
+  BENCHMARK_TARGETS: benchmark_unsigned_operations benchmark_signed_operations benchmark_float_operations benchmark_boost
 
 jobs:
   linux:
