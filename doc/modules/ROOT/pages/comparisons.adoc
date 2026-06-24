@@ -161,6 +161,10 @@ The remainder of this page compares Boost.SafeNumbers and Boost.SafeNumerics in 
 | `bounded_uint<Min, Max>` enforces bounds on every arithmetic result. `60 + 50` on a `[0, 100]` range throws immediately.
 | `safe_unsigned_range<Min, Max>` only enforces bounds on construction and assignment. Arithmetic results are promoted and can silently exceed the declared range (e.g. `60 + 50 = 110` on a `[0, 100]` range succeeds).
 
+| *128-bit integer types*
+| Yes: `u128` and `i128` wrap `boost::int128::uint128_t` and `int128_t` with the full safe API.
+| No: `safe<T>` requires a built-in arithmetic base type (it relies on `static_assert(std::is_arithmetic<T>())`), so the 128-bit class types fail to compile.
+
 | *C++ standard required*
 | C++20
 | C++14
