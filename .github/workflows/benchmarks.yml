@@ -1,0 +1,218 @@
+# ------------------------------------------------------------------------------
+#  Copyright Matt Borland 2026.
+#  Distributed under the Boost Software License,
+#  Version 1.0. (See accompanying file LICENSE_1_0.txt
+#  or copy at http://www.boost.org/LICENSE_1_0.txt)
+# ------------------------------------------------------------------------------
+#
+# Runs only the Boost.SafeNumbers benchmarks (test/benchmarks/*.cpp) in release
+# mode on a spread of native runners so that performance numbers, and any
+# regressions in them, are captured on every run. The benchmark targets are
+# run-fail tests that always return non-zero, so b2 reports success and the
+# timing output is read back from the captured .output files.
+
+name: Run Benchmarks
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+      - feature/**
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ format('{0}:{1}:benchmarks', github.repository, github.ref) }}
+  cancel-in-progress: true
+
+env:
+  GIT_FETCH_JOBS: 8
+  BENCHMARK_TARGETS: benchmark_unsigned_operations benchmark_float_operations benchmark_boost
+
+jobs:
+  linux:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x86 32-bit GCC
+            os: ubuntu-latest
+            arch: x86-32
+            address_model: 32
+            multilib: true
+          - name: Linux x64 GCC
+            os: ubuntu-latest
+            arch: x64
+            address_model: 64
+            multilib: false
+          - name: Linux ARM64 GCC
+            os: ubuntu-24.04-arm
+            arch: arm64
+            address_model: 64
+            multilib: false
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-14
+          if [ "${{ matrix.multilib }}" = "true" ]; then
+            sudo apt-get install -y g++-14-multilib
+          fi
+      - name: Setup Boost
+        run: |
+          LIBRARY=${GITHUB_REPOSITORY#*/}
+          echo "LIBRARY=$LIBRARY" >> $GITHUB_ENV
+          REF=${GITHUB_BASE_REF:-$GITHUB_REF}
+          REF=${REF#refs/heads/}
+          BOOST_BRANCH=develop && [ "$REF" = "master" ] && BOOST_BRANCH=master || true
+          echo "BOOST_BRANCH: $BOOST_BRANCH"
+          cd ..
+          git clone -b "$BOOST_BRANCH" --depth 1 "https://github.com/boostorg/boost.git" boost-root
+          cd boost-root
+          mkdir -p libs/$LIBRARY
+          cp -r "$GITHUB_WORKSPACE"/* libs/$LIBRARY
+          git submodule update --init tools/boostdep
+          python tools/boostdep/depinst/depinst.py --git_args "--jobs $GIT_FETCH_JOBS" $LIBRARY
+          ./bootstrap.sh
+          ./b2 headers
+          echo "using gcc : : g++-14 ;" > ~/user-config.jam
+      - name: Run benchmarks (release)
+        run: |
+          cd ../boost-root
+          TARGETS=""
+          for t in $BENCHMARK_TARGETS; do
+            TARGETS="$TARGETS libs/$LIBRARY/test//$t"
+          done
+          ./b2 -j$(nproc) toolset=gcc cxxstd=20 variant=release address-model=${{ matrix.address_model }} \
+            define=BOOST_SAFE_NUMBERS_RUN_BENCHMARKS $TARGETS
+          RESULTS="$GITHUB_WORKSPACE/benchmarks-linux-${{ matrix.arch }}.txt"
+          echo "==================== Benchmark results (${{ matrix.name }}) ====================" | tee "$RESULTS"
+          for f in $(find bin.v2 -path '*release*' -name 'benchmark_*.output' | sort); do
+            { echo ""; echo "----- $(basename "$f") -----"; cat "$f"; } | tee -a "$RESULTS"
+          done
+      - name: Upload benchmark output
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: benchmarks-linux-${{ matrix.arch }}
+          path: benchmarks-linux-${{ matrix.arch }}.txt
+          if-no-files-found: warn
+
+  windows:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x86 32-bit MSVC
+            os: windows-latest
+            arch: x86-32
+            address_model: 32
+          - name: Windows x64 MSVC
+            os: windows-latest
+            arch: x64
+            address_model: 64
+          - name: Windows ARM64 MSVC
+            os: windows-11-arm
+            arch: arm64
+            address_model: 64
+    defaults:
+      run:
+        shell: cmd
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Boost
+        run: |
+          for /f %%i in ("%GITHUB_REPOSITORY%") do set LIBRARY=%%~nxi
+          echo LIBRARY=%LIBRARY%>>%GITHUB_ENV%
+          if "%GITHUB_BASE_REF%" == "" set GITHUB_BASE_REF=%GITHUB_REF%
+          set BOOST_BRANCH=develop
+          for /f %%i in ("%GITHUB_BASE_REF%") do if "%%~nxi" == "master" set BOOST_BRANCH=master
+          echo BOOST_BRANCH: %BOOST_BRANCH%
+          cd ..
+          git clone -b %BOOST_BRANCH% --depth 1 https://github.com/boostorg/boost.git boost-root
+          cd boost-root
+          xcopy /s /e /q %GITHUB_WORKSPACE% libs\%LIBRARY%\
+          git submodule update --init tools/boostdep
+          python tools/boostdep/depinst/depinst.py --git_args "--jobs 3" %LIBRARY%
+          cmd /c bootstrap
+          b2 -d0 headers
+      - name: Run benchmarks (release)
+        run: |
+          setlocal enabledelayedexpansion
+          cd ../boost-root
+          set TARGETS=
+          for %%t in (%BENCHMARK_TARGETS%) do set TARGETS=!TARGETS! libs/%LIBRARY%/test//%%t
+          b2 -j3 !TARGETS! toolset=msvc cxxstd=latest address-model=${{ matrix.address_model }} variant=release define=BOOST_SAFE_NUMBERS_RUN_BENCHMARKS embed-manifest-via=linker || exit /b 1
+          set "RESULTS=%GITHUB_WORKSPACE%\benchmarks-windows-${{ matrix.arch }}.txt"
+          echo ==================== Benchmark results (${{ matrix.name }}) ====================> "!RESULTS!"
+          for /f "delims=" %%f in ('dir /s /b bin.v2\benchmark_*.output 2^>nul') do (
+            echo.>> "!RESULTS!"
+            echo ----- %%~nxf ----->> "!RESULTS!"
+            type "%%f">> "!RESULTS!"
+          )
+          type "!RESULTS!"
+          exit /b 0
+      - name: Upload benchmark output
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: benchmarks-windows-${{ matrix.arch }}
+          path: benchmarks-windows-${{ matrix.arch }}.txt
+          if-no-files-found: warn
+
+  macos:
+    name: macOS ARM64 Clang
+    runs-on: macos-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Boost
+        run: |
+          LIBRARY=${GITHUB_REPOSITORY#*/}
+          echo "LIBRARY=$LIBRARY" >> $GITHUB_ENV
+          REF=${GITHUB_BASE_REF:-$GITHUB_REF}
+          REF=${REF#refs/heads/}
+          BOOST_BRANCH=develop && [ "$REF" = "master" ] && BOOST_BRANCH=master || true
+          echo "BOOST_BRANCH: $BOOST_BRANCH"
+          cd ..
+          git clone -b "$BOOST_BRANCH" --depth 1 "https://github.com/boostorg/boost.git" boost-root
+          cd boost-root
+          mkdir -p libs/$LIBRARY
+          cp -r "$GITHUB_WORKSPACE"/* libs/$LIBRARY
+          git submodule update --init tools/boostdep
+          python3 tools/boostdep/depinst/depinst.py --git_args "--jobs $GIT_FETCH_JOBS" $LIBRARY
+          ./bootstrap.sh
+          ./b2 headers
+      - name: Run benchmarks (release)
+        run: |
+          cd ../boost-root
+          TARGETS=""
+          for t in $BENCHMARK_TARGETS; do
+            TARGETS="$TARGETS libs/$LIBRARY/test//$t"
+          done
+          ./b2 -j$(sysctl -n hw.ncpu) toolset=clang cxxstd=20 variant=release \
+            define=BOOST_SAFE_NUMBERS_RUN_BENCHMARKS $TARGETS
+          RESULTS="$GITHUB_WORKSPACE/benchmarks-macos-arm64.txt"
+          echo "==================== Benchmark results (macOS ARM64 Clang) ====================" | tee "$RESULTS"
+          for f in $(find bin.v2 -path '*release*' -name 'benchmark_*.output' | sort); do
+            { echo ""; echo "----- $(basename "$f") -----"; cat "$f"; } | tee -a "$RESULTS"
+          done
+      - name: Upload benchmark output
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: benchmarks-macos-arm64
+          path: benchmarks-macos-arm64.txt
+          if-no-files-found: warn
