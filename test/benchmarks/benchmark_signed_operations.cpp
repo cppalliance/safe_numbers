@@ -70,6 +70,14 @@
 #  pragma warning(pop)
 #endif
 
+// safe_numerics emits these from template instantiations that occur in the
+// benchmark body below (after the pop above), so disable them for the rest of
+// this translation unit. MSVC only; GCC and Clang do not warn here.
+#if defined(_MSC_VER) && !defined(__clang__)
+#  pragma warning(disable : 4244) // conversion, possible loss of data
+#  pragma warning(disable : 4245) // signed/unsigned mismatch on conversion
+#endif
+
 using namespace boost::safe_numbers;
 using namespace std::chrono;
 
