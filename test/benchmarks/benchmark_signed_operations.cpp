@@ -47,6 +47,7 @@
 #  pragma warning(disable : 4127)
 #  pragma warning(disable : 4305)
 #  pragma warning(disable : 4309)
+#  pragma warning(disable : 4702)
 #endif
 
 #include <boost/config.hpp>
