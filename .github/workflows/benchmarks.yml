@@ -5,11 +5,12 @@
 #  or copy at http://www.boost.org/LICENSE_1_0.txt)
 # ------------------------------------------------------------------------------
 #
-# Runs only the Boost.SafeNumbers benchmarks (test/benchmarks/*.cpp) in release
-# mode on a spread of native runners so that performance numbers, and any
-# regressions in them, are captured on every run. The benchmark targets are
-# run-fail tests that always return non-zero, so b2 reports success and the
-# timing output is read back from the captured .output files.
+# Runs the Boost.SafeNumbers Google Benchmark suites (test/benchmarks/*.cpp) in
+# release mode across a spread of native runners. The benchmarks are built via
+# CMake with -DBOOST_SAFE_NUMBERS_BUILD_BENCHMARKS=ON, which pulls Google
+# Benchmark in with FetchContent. Each job emits per-suite JSON and a ready to
+# paste AsciiDoc section (produced by test/benchmarks/render_results.py) as
+# artifacts for the documentation benchmarks page.
 
 name: Run Benchmarks
 
@@ -29,31 +30,39 @@ concurrency:
 
 env:
   GIT_FETCH_JOBS: 8
-  BENCHMARK_TARGETS: benchmark_unsigned_operations benchmark_signed_operations benchmark_float_operations benchmark_boost
+  # Repetitions plus the median aggregate keep the reported numbers stable; the
+  # report-aggregates-only flag keeps the JSON small.
+  BENCH_ARGS: "--benchmark_repetitions=5 --benchmark_min_time=0.10s --benchmark_report_aggregates_only=true --benchmark_out_format=json"
 
 jobs:
   linux:
-    name: ${{ matrix.name }}
+    name: ${{ matrix.title }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - name: Linux x86 32-bit GCC
-            os: ubuntu-latest
-            arch: x86-32
-            address_model: 32
-            multilib: true
-          - name: Linux x64 GCC
+          - title: Linux x64
             os: ubuntu-latest
             arch: x64
-            address_model: 64
+            anchor: linux_x64
+            desc: "Run on the GitHub Actions `ubuntu-latest` runner using GCC 14 in release mode (`-O2`, pass:[C++]20)."
             multilib: false
-          - name: Linux ARM64 GCC
+            cmake_extra: ""
+          - title: Linux x86 (32-bit)
+            os: ubuntu-latest
+            arch: x86-32
+            anchor: linux_x86_32
+            desc: "Run on the GitHub Actions `ubuntu-latest` runner using GCC 14 targeting 32-bit x86 (`-m32`) in release mode (`-O2`, pass:[C++]20)."
+            multilib: true
+            cmake_extra: "-DCMAKE_CXX_FLAGS=-m32 -DCMAKE_C_FLAGS=-m32"
+          - title: Linux ARM64
             os: ubuntu-24.04-arm
             arch: arm64
-            address_model: 64
+            anchor: linux_arm64
+            desc: "Run on the GitHub Actions `ubuntu-24.04-arm` runner using GCC 14 in release mode (`-O2`, pass:[C++]20)."
             multilib: false
+            cmake_extra: ""
     defaults:
       run:
         shell: bash
@@ -62,7 +71,7 @@ jobs:
       - name: Install packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y g++-14
+          sudo apt-get install -y g++-14 cmake
           if [ "${{ matrix.multilib }}" = "true" ]; then
             sudo apt-get install -y g++-14-multilib
           fi
@@ -73,105 +82,50 @@ jobs:
           REF=${GITHUB_BASE_REF:-$GITHUB_REF}
           REF=${REF#refs/heads/}
           BOOST_BRANCH=develop && [ "$REF" = "master" ] && BOOST_BRANCH=master || true
-          echo "BOOST_BRANCH: $BOOST_BRANCH"
           cd ..
           git clone -b "$BOOST_BRANCH" --depth 1 "https://github.com/boostorg/boost.git" boost-root
           cd boost-root
           mkdir -p libs/$LIBRARY
           cp -r "$GITHUB_WORKSPACE"/* libs/$LIBRARY
           git submodule update --init tools/boostdep
-          python tools/boostdep/depinst/depinst.py --git_args "--jobs $GIT_FETCH_JOBS" $LIBRARY
-          ./bootstrap.sh
-          ./b2 headers
-          echo "using gcc : : g++-14 ;" > ~/user-config.jam
-      - name: Run benchmarks (release)
+          python3 tools/boostdep/depinst/depinst.py --git_args "--jobs $GIT_FETCH_JOBS" $LIBRARY
+      - name: Configure and build benchmarks
         run: |
           cd ../boost-root
-          TARGETS=""
-          for t in $BENCHMARK_TARGETS; do
-            TARGETS="$TARGETS libs/$LIBRARY/test//$t"
-          done
-          ./b2 -j$(nproc) toolset=gcc cxxstd=20 variant=release address-model=${{ matrix.address_model }} \
-            define=BOOST_SAFE_NUMBERS_RUN_BENCHMARKS $TARGETS
-          RESULTS="$GITHUB_WORKSPACE/benchmarks-linux-${{ matrix.arch }}.txt"
-          echo "==================== Benchmark results (${{ matrix.name }}) ====================" | tee "$RESULTS"
-          for f in $(find bin.v2 -path '*release*' -name 'benchmark_*.output' | sort); do
-            { echo ""; echo "----- $(basename "$f") -----"; cat "$f"; } | tee -a "$RESULTS"
-          done
-      - name: Upload benchmark output
+          cmake -S . -B __build__ \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTING=OFF \
+            -DBOOST_INCLUDE_LIBRARIES="$LIBRARY;safe_numerics;random" \
+            -DBOOST_SAFE_NUMBERS_BUILD_BENCHMARKS=ON \
+            -DCMAKE_CXX_COMPILER=g++-14 -DCMAKE_C_COMPILER=gcc-14 \
+            ${{ matrix.cmake_extra }}
+          cmake --build __build__ --config Release --parallel 4 \
+            --target benchmark_unsigned_operations benchmark_signed_operations benchmark_float_operations
+      - name: Run benchmarks and render results
+        run: |
+          cd ../boost-root
+          OUT="$GITHUB_WORKSPACE/bench-results"
+          mkdir -p "$OUT"
+          find_exe() { find __build__ -type f \( -name "$1" -o -name "$1.exe" \) | head -1; }
+          "$(find_exe benchmark_unsigned_operations)" $BENCH_ARGS --benchmark_out="$OUT/unsigned.json"
+          "$(find_exe benchmark_signed_operations)"   $BENCH_ARGS --benchmark_out="$OUT/signed.json"
+          "$(find_exe benchmark_float_operations)"    $BENCH_ARGS --benchmark_out="$OUT/float.json"
+          python3 "$GITHUB_WORKSPACE/test/benchmarks/render_results.py" \
+            --title "${{ matrix.title }}" --anchor "${{ matrix.anchor }}" --desc "${{ matrix.desc }}" \
+            --unsigned "$OUT/unsigned.json" --signed "$OUT/signed.json" --float "$OUT/float.json" \
+            > "$OUT/section.adoc"
+          echo "==================== ${{ matrix.title }} ===================="
+          cat "$OUT/section.adoc"
+      - name: Upload results
         if: always()
         uses: actions/upload-artifact@v6
         with:
           name: benchmarks-linux-${{ matrix.arch }}
-          path: benchmarks-linux-${{ matrix.arch }}.txt
-          if-no-files-found: warn
-
-  windows:
-    name: ${{ matrix.name }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Windows x86 32-bit MSVC
-            os: windows-latest
-            arch: x86-32
-            address_model: 32
-          - name: Windows x64 MSVC
-            os: windows-latest
-            arch: x64
-            address_model: 64
-          - name: Windows ARM64 MSVC
-            os: windows-11-arm
-            arch: arm64
-            address_model: 64
-    defaults:
-      run:
-        shell: cmd
-    steps:
-      - uses: actions/checkout@v6
-      - name: Setup Boost
-        run: |
-          for /f %%i in ("%GITHUB_REPOSITORY%") do set LIBRARY=%%~nxi
-          echo LIBRARY=%LIBRARY%>>%GITHUB_ENV%
-          if "%GITHUB_BASE_REF%" == "" set GITHUB_BASE_REF=%GITHUB_REF%
-          set BOOST_BRANCH=develop
-          for /f %%i in ("%GITHUB_BASE_REF%") do if "%%~nxi" == "master" set BOOST_BRANCH=master
-          echo BOOST_BRANCH: %BOOST_BRANCH%
-          cd ..
-          git clone -b %BOOST_BRANCH% --depth 1 https://github.com/boostorg/boost.git boost-root
-          cd boost-root
-          xcopy /s /e /q %GITHUB_WORKSPACE% libs\%LIBRARY%\
-          git submodule update --init tools/boostdep
-          python tools/boostdep/depinst/depinst.py --git_args "--jobs 3" %LIBRARY%
-          cmd /c bootstrap
-          b2 -d0 headers
-      - name: Run benchmarks (release)
-        run: |
-          setlocal enabledelayedexpansion
-          cd ../boost-root
-          set TARGETS=
-          for %%t in (%BENCHMARK_TARGETS%) do set TARGETS=!TARGETS! libs/%LIBRARY%/test//%%t
-          b2 -j3 !TARGETS! toolset=msvc cxxstd=latest address-model=${{ matrix.address_model }} variant=release define=BOOST_SAFE_NUMBERS_RUN_BENCHMARKS embed-manifest-via=linker || exit /b 1
-          set "RESULTS=%GITHUB_WORKSPACE%\benchmarks-windows-${{ matrix.arch }}.txt"
-          echo ==================== Benchmark results (${{ matrix.name }}) ====================> "!RESULTS!"
-          for /f "delims=" %%f in ('dir /s /b bin.v2\benchmark_*.output 2^>nul') do (
-            echo.>> "!RESULTS!"
-            echo ----- %%~nxf ----->> "!RESULTS!"
-            type "%%f">> "!RESULTS!"
-          )
-          type "!RESULTS!"
-          exit /b 0
-      - name: Upload benchmark output
-        if: always()
-        uses: actions/upload-artifact@v6
-        with:
-          name: benchmarks-windows-${{ matrix.arch }}
-          path: benchmarks-windows-${{ matrix.arch }}.txt
+          path: bench-results
           if-no-files-found: warn
 
   macos:
-    name: macOS ARM64 Clang
+    name: macOS ARM64
     runs-on: macos-latest
     defaults:
       run:
@@ -185,7 +139,6 @@ jobs:
           REF=${GITHUB_BASE_REF:-$GITHUB_REF}
           REF=${REF#refs/heads/}
           BOOST_BRANCH=develop && [ "$REF" = "master" ] && BOOST_BRANCH=master || true
-          echo "BOOST_BRANCH: $BOOST_BRANCH"
           cd ..
           git clone -b "$BOOST_BRANCH" --depth 1 "https://github.com/boostorg/boost.git" boost-root
           cd boost-root
@@ -193,26 +146,112 @@ jobs:
           cp -r "$GITHUB_WORKSPACE"/* libs/$LIBRARY
           git submodule update --init tools/boostdep
           python3 tools/boostdep/depinst/depinst.py --git_args "--jobs $GIT_FETCH_JOBS" $LIBRARY
-          ./bootstrap.sh
-          ./b2 headers
-      - name: Run benchmarks (release)
+      - name: Configure and build benchmarks
         run: |
           cd ../boost-root
-          TARGETS=""
-          for t in $BENCHMARK_TARGETS; do
-            TARGETS="$TARGETS libs/$LIBRARY/test//$t"
-          done
-          ./b2 -j$(sysctl -n hw.ncpu) toolset=clang cxxstd=20 variant=release \
-            define=BOOST_SAFE_NUMBERS_RUN_BENCHMARKS $TARGETS
-          RESULTS="$GITHUB_WORKSPACE/benchmarks-macos-arm64.txt"
-          echo "==================== Benchmark results (macOS ARM64 Clang) ====================" | tee "$RESULTS"
-          for f in $(find bin.v2 -path '*release*' -name 'benchmark_*.output' | sort); do
-            { echo ""; echo "----- $(basename "$f") -----"; cat "$f"; } | tee -a "$RESULTS"
-          done
-      - name: Upload benchmark output
+          cmake -S . -B __build__ \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTING=OFF \
+            -DBOOST_INCLUDE_LIBRARIES="$LIBRARY;safe_numerics;random" \
+            -DBOOST_SAFE_NUMBERS_BUILD_BENCHMARKS=ON
+          cmake --build __build__ --config Release --parallel 4 \
+            --target benchmark_unsigned_operations benchmark_signed_operations benchmark_float_operations
+      - name: Run benchmarks and render results
+        run: |
+          cd ../boost-root
+          OUT="$GITHUB_WORKSPACE/bench-results"
+          mkdir -p "$OUT"
+          find_exe() { find __build__ -type f \( -name "$1" -o -name "$1.exe" \) | head -1; }
+          "$(find_exe benchmark_unsigned_operations)" $BENCH_ARGS --benchmark_out="$OUT/unsigned.json"
+          "$(find_exe benchmark_signed_operations)"   $BENCH_ARGS --benchmark_out="$OUT/signed.json"
+          "$(find_exe benchmark_float_operations)"    $BENCH_ARGS --benchmark_out="$OUT/float.json"
+          python3 "$GITHUB_WORKSPACE/test/benchmarks/render_results.py" \
+            --title "macOS ARM64" --anchor "macos_arm64" \
+            --desc "Run on the GitHub Actions \`macos-latest\` runner (Apple Silicon) using Apple Clang in release mode (\`-O2\`, pass:[C++]20)." \
+            --unsigned "$OUT/unsigned.json" --signed "$OUT/signed.json" --float "$OUT/float.json" \
+            > "$OUT/section.adoc"
+          echo "==================== macOS ARM64 ===================="
+          cat "$OUT/section.adoc"
+      - name: Upload results
         if: always()
         uses: actions/upload-artifact@v6
         with:
           name: benchmarks-macos-arm64
-          path: benchmarks-macos-arm64.txt
+          path: bench-results
+          if-no-files-found: warn
+
+  windows:
+    name: ${{ matrix.title }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - title: Windows x64
+            os: windows-latest
+            arch: x64
+            anchor: windows_x64
+            cmake_arch: x64
+            desc: "Run on the GitHub Actions `windows-latest` runner using MSVC in release mode (`/O2`, pass:[C++]20)."
+          - title: Windows x86 (32-bit)
+            os: windows-latest
+            arch: x86-32
+            anchor: windows_x86_32
+            cmake_arch: Win32
+            desc: "Run on the GitHub Actions `windows-latest` runner using MSVC targeting 32-bit x86 in release mode (`/O2`, pass:[C++]20)."
+          - title: Windows ARM64
+            os: windows-11-arm
+            arch: arm64
+            anchor: windows_arm64
+            cmake_arch: ARM64
+            desc: "Run on the GitHub Actions `windows-11-arm` runner using MSVC in release mode (`/O2`, pass:[C++]20)."
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Boost
+        run: |
+          LIBRARY=${GITHUB_REPOSITORY#*/}
+          echo "LIBRARY=$LIBRARY" >> $GITHUB_ENV
+          REF=${GITHUB_BASE_REF:-$GITHUB_REF}
+          REF=${REF#refs/heads/}
+          BOOST_BRANCH=develop && [ "$REF" = "master" ] && BOOST_BRANCH=master || true
+          cd ..
+          git clone -b "$BOOST_BRANCH" --depth 1 "https://github.com/boostorg/boost.git" boost-root
+          cd boost-root
+          mkdir -p libs/$LIBRARY
+          cp -r "$GITHUB_WORKSPACE"/* libs/$LIBRARY
+          git submodule update --init tools/boostdep
+          python tools/boostdep/depinst/depinst.py --git_args "--jobs $GIT_FETCH_JOBS" $LIBRARY
+      - name: Configure and build benchmarks
+        run: |
+          cd ../boost-root
+          cmake -S . -B __build__ -A ${{ matrix.cmake_arch }} \
+            -DBUILD_TESTING=OFF \
+            -DBOOST_INCLUDE_LIBRARIES="$LIBRARY;safe_numerics;random" \
+            -DBOOST_SAFE_NUMBERS_BUILD_BENCHMARKS=ON
+          cmake --build __build__ --config Release --parallel 4 \
+            --target benchmark_unsigned_operations benchmark_signed_operations benchmark_float_operations
+      - name: Run benchmarks and render results
+        run: |
+          cd ../boost-root
+          OUT="$GITHUB_WORKSPACE/bench-results"
+          mkdir -p "$OUT"
+          find_exe() { find __build__ -type f \( -name "$1" -o -name "$1.exe" \) | head -1; }
+          "$(find_exe benchmark_unsigned_operations)" $BENCH_ARGS --benchmark_out="$OUT/unsigned.json"
+          "$(find_exe benchmark_signed_operations)"   $BENCH_ARGS --benchmark_out="$OUT/signed.json"
+          "$(find_exe benchmark_float_operations)"    $BENCH_ARGS --benchmark_out="$OUT/float.json"
+          python "$GITHUB_WORKSPACE/test/benchmarks/render_results.py" \
+            --title "${{ matrix.title }}" --anchor "${{ matrix.anchor }}" --desc "${{ matrix.desc }}" \
+            --unsigned "$OUT/unsigned.json" --signed "$OUT/signed.json" --float "$OUT/float.json" \
+            > "$OUT/section.adoc"
+          echo "==================== ${{ matrix.title }} ===================="
+          cat "$OUT/section.adoc"
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: benchmarks-windows-${{ matrix.arch }}
+          path: bench-results
           if-no-files-found: warn
