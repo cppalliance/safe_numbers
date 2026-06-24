@@ -86,7 +86,11 @@ jobs:
           git clone -b "$BOOST_BRANCH" --depth 1 "https://github.com/boostorg/boost.git" boost-root
           cd boost-root
           mkdir -p libs/$LIBRARY
-          cp -r "$GITHUB_WORKSPACE"/* libs/$LIBRARY
+          # Exclude doc/: it carries an Antora examples symlink (which git-bash on
+          # Windows cannot recreate) and a large node_modules tree, neither of
+          # which the benchmark build or depinst need.
+          shopt -s extglob
+          cp -r "$GITHUB_WORKSPACE"/!(doc) libs/$LIBRARY/
           git submodule update --init tools/boostdep
           python3 tools/boostdep/depinst/depinst.py --git_args "--jobs $GIT_FETCH_JOBS" $LIBRARY
       - name: Configure and build benchmarks
@@ -143,7 +147,11 @@ jobs:
           git clone -b "$BOOST_BRANCH" --depth 1 "https://github.com/boostorg/boost.git" boost-root
           cd boost-root
           mkdir -p libs/$LIBRARY
-          cp -r "$GITHUB_WORKSPACE"/* libs/$LIBRARY
+          # Exclude doc/: it carries an Antora examples symlink (which git-bash on
+          # Windows cannot recreate) and a large node_modules tree, neither of
+          # which the benchmark build or depinst need.
+          shopt -s extglob
+          cp -r "$GITHUB_WORKSPACE"/!(doc) libs/$LIBRARY/
           git submodule update --init tools/boostdep
           python3 tools/boostdep/depinst/depinst.py --git_args "--jobs $GIT_FETCH_JOBS" $LIBRARY
       - name: Configure and build benchmarks
@@ -221,7 +229,11 @@ jobs:
           git clone -b "$BOOST_BRANCH" --depth 1 "https://github.com/boostorg/boost.git" boost-root
           cd boost-root
           mkdir -p libs/$LIBRARY
-          cp -r "$GITHUB_WORKSPACE"/* libs/$LIBRARY
+          # Exclude doc/: it carries an Antora examples symlink (which git-bash on
+          # Windows cannot recreate) and a large node_modules tree, neither of
+          # which the benchmark build or depinst need.
+          shopt -s extglob
+          cp -r "$GITHUB_WORKSPACE"/!(doc) libs/$LIBRARY/
           git submodule update --init tools/boostdep
           python tools/boostdep/depinst/depinst.py --git_args "--jobs $GIT_FETCH_JOBS" $LIBRARY
       - name: Configure and build benchmarks
