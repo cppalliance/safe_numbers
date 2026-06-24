@@ -9,20 +9,20 @@ Run on the GitHub Actions  runner using MSVC in release mode (, pass:[C++]20).
 [cols="1,>1,>1,>1",options="header"]
 |===
 | Operation | `float` (ns/op) | `boost::sn::f32` (ns/op) | Ratio
-| Addition | 2.08 | 2.89 | 1.39
-| Subtraction | 2.12 | 2.78 | 1.31
-| Multiplication | 2.10 | 2.78 | 1.32
-| Division | 2.12 | 3.13 | 1.47
+| Addition | 2.10 | 2.78 | 1.32
+| Subtraction | 2.10 | 3.13 | 1.49
+| Multiplication | 2.12 | 2.78 | 1.31
+| Division | 2.12 | 3.52 | 1.66
 |===
 
 .64-bit floating point (ratio relative to `double`)
 [cols="1,>1,>1,>1",options="header"]
 |===
 | Operation | `double` (ns/op) | `boost::sn::f64` (ns/op) | Ratio
-| Addition | 2.08 | 2.78 | 1.33
-| Subtraction | 2.10 | 2.78 | 1.32
-| Multiplication | 2.10 | 2.89 | 1.38
-| Division | 2.10 | 3.13 | 1.49
+| Addition | 2.08 | 3.13 | 1.50
+| Subtraction | 2.10 | 3.13 | 1.49
+| Multiplication | 2.08 | 3.13 | 1.50
+| Division | 2.08 | 3.65 | 1.75
 |===
 
 === Signed Integers
@@ -35,7 +35,7 @@ Run on the GitHub Actions  runner using MSVC in release mode (, pass:[C++]20).
 | Subtraction | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
 | Multiplication | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
 | Division | 1.74 | 1.74 | 1.00 | 1.91 | 1.10
-| Modulo | 1.93 | 1.93 | 1.00 | 1.91 | 0.99
+| Modulo | 1.91 | 1.93 | 1.01 | 1.91 | 1.00
 |===
 
 .16-bit signed (ratio relative to `std::int16_t`)
@@ -45,8 +45,8 @@ Run on the GitHub Actions  runner using MSVC in release mode (, pass:[C++]20).
 | Addition | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
 | Subtraction | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
 | Multiplication | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
-| Division | 1.74 | 1.91 | 1.10 | 2.12 | 1.22
-| Modulo | 1.91 | 2.08 | 1.09 | 2.08 | 1.09
+| Division | 1.74 | 1.91 | 1.10 | 2.08 | 1.20
+| Modulo | 1.93 | 1.93 | 1.00 | 2.08 | 1.08
 |===
 
 .32-bit signed (ratio relative to `std::int32_t`)
@@ -54,10 +54,10 @@ Run on the GitHub Actions  runner using MSVC in release mode (, pass:[C++]20).
 |===
 | Operation | `std::int32_t` (ns/op) | `boost::sn::i32` (ns/op) | Ratio | `safe<int32_t>` (ns/op) | Ratio
 | Addition | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
-| Subtraction | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
+| Subtraction | 1.74 | 1.91 | 1.10 | 1.74 | 1.00
 | Multiplication | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
-| Division | 1.74 | 1.91 | 1.10 | 1.91 | 1.10
-| Modulo | 2.12 | 1.93 | 0.91 | 2.12 | 1.00
+| Division | 1.74 | 1.91 | 1.10 | 1.93 | 1.11
+| Modulo | 2.12 | 1.91 | 0.90 | 2.08 | 0.98
 |===
 
 .64-bit signed (ratio relative to `std::int64_t`)
@@ -65,10 +65,10 @@ Run on the GitHub Actions  runner using MSVC in release mode (, pass:[C++]20).
 |===
 | Operation | `std::int64_t` (ns/op) | `boost::sn::i64` (ns/op) | Ratio | `safe<int64_t>` (ns/op) | Ratio
 | Addition | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
-| Subtraction | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
-| Multiplication | 1.74 | 4.17 | 2.40 | 5.21 | 3.00
-| Division | 1.74 | 1.93 | 1.11 | 1.91 | 1.10
-| Modulo | 2.12 | 2.08 | 0.98 | 2.12 | 1.00
+| Subtraction | 1.91 | 1.74 | 0.91 | 1.74 | 0.91
+| Multiplication | 1.74 | 4.30 | 2.47 | 5.21 | 3.00
+| Division | 1.74 | 1.91 | 1.10 | 1.91 | 1.10
+| Modulo | 2.08 | 2.08 | 1.00 | 2.08 | 1.00
 |===
 
 .128-bit signed (ratio relative to `int128_t`)
@@ -76,10 +76,10 @@ Run on the GitHub Actions  runner using MSVC in release mode (, pass:[C++]20).
 |===
 | Operation | `int128_t` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
 | Addition | 2.78 | 3.13 | 1.12
-| Subtraction | 2.78 | 3.13 | 1.12
+| Subtraction | 2.78 | 2.78 | 1.00
 | Multiplication | 4.17 | 22.57 | 5.42
-| Division | 7.10 | 8.59 | 1.21
-| Modulo | 7.81 | 9.38 | 1.20
+| Division | 7.10 | 7.81 | 1.10
+| Modulo | 7.81 | 8.33 | 1.07
 |===
 
 === Unsigned Integers
@@ -91,8 +91,8 @@ Run on the GitHub Actions  runner using MSVC in release mode (, pass:[C++]20).
 | Addition | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
 | Subtraction | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
 | Multiplication | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
-| Division | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
-| Modulo | 1.93 | 1.93 | 1.00 | 2.08 | 1.08
+| Division | 1.74 | 1.74 | 1.00 | 1.91 | 1.10
+| Modulo | 1.91 | 1.91 | 1.00 | 1.93 | 1.01
 |===
 
 .16-bit unsigned (ratio relative to `std::uint16_t`)
@@ -103,7 +103,7 @@ Run on the GitHub Actions  runner using MSVC in release mode (, pass:[C++]20).
 | Subtraction | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
 | Multiplication | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
 | Division | 1.74 | 1.74 | 1.00 | 1.91 | 1.10
-| Modulo | 1.91 | 1.91 | 1.00 | 2.08 | 1.09
+| Modulo | 1.93 | 1.91 | 0.99 | 2.08 | 1.08
 |===
 
 .32-bit unsigned (ratio relative to `std::uint32_t`)
@@ -114,7 +114,7 @@ Run on the GitHub Actions  runner using MSVC in release mode (, pass:[C++]20).
 | Subtraction | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
 | Multiplication | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
 | Division | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
-| Modulo | 2.10 | 2.08 | 0.99 | 2.08 | 0.99
+| Modulo | 2.10 | 2.12 | 1.01 | 2.08 | 0.99
 |===
 
 .64-bit unsigned (ratio relative to `std::uint64_t`)
@@ -123,18 +123,18 @@ Run on the GitHub Actions  runner using MSVC in release mode (, pass:[C++]20).
 | Operation | `std::uint64_t` (ns/op) | `boost::sn::u64` (ns/op) | Ratio | `safe<uint64_t>` (ns/op) | Ratio
 | Addition | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
 | Subtraction | 1.74 | 1.74 | 1.00 | 1.74 | 1.00
-| Multiplication | 1.74 | 1.74 | 1.00 | 4.97 | 2.86
+| Multiplication | 1.74 | 1.74 | 1.00 | 5.21 | 3.00
 | Division | 1.74 | 1.74 | 1.00 | 1.91 | 1.10
-| Modulo | 2.08 | 1.93 | 0.93 | 2.08 | 1.00
+| Modulo | 2.12 | 2.12 | 1.00 | 2.08 | 0.98
 |===
 
 .128-bit unsigned (ratio relative to `uint128_t`)
 [cols="1,>1,>1,>1",options="header"]
 |===
 | Operation | `uint128_t` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
-| Addition | 2.26 | 2.43 | 1.08
-| Subtraction | 2.12 | 2.43 | 1.15
+| Addition | 2.26 | 2.60 | 1.15
+| Subtraction | 2.26 | 2.43 | 1.08
 | Multiplication | 2.43 | 19.10 | 7.86
-| Division | 4.30 | 5.21 | 1.21
+| Division | 4.30 | 4.97 | 1.16
 | Modulo | 4.69 | 5.68 | 1.21
 |===

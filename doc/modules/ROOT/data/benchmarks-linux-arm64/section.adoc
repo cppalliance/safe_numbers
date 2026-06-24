@@ -9,20 +9,20 @@ Run on the GitHub Actions  runner using GCC 14 in release mode (, pass:[C++]20).
 [cols="1,>1,>1,>1",options="header"]
 |===
 | Operation | `float` (ns/op) | `boost::sn::f32` (ns/op) | Ratio
-| Addition | 0.71 | 1.19 | 1.67
-| Subtraction | 0.71 | 1.19 | 1.68
-| Multiplication | 0.79 | 1.26 | 1.60
-| Division | 0.73 | 1.22 | 1.67
+| Addition | 0.71 | 1.03 | 1.45
+| Subtraction | 0.71 | 1.03 | 1.45
+| Multiplication | 0.79 | 1.18 | 1.49
+| Division | 0.73 | 1.37 | 1.88
 |===
 
 .64-bit floating point (ratio relative to `double`)
 [cols="1,>1,>1,>1",options="header"]
 |===
 | Operation | `double` (ns/op) | `boost::sn::f64` (ns/op) | Ratio
-| Addition | 0.71 | 1.18 | 1.66
-| Subtraction | 0.71 | 1.18 | 1.66
-| Multiplication | 0.79 | 1.17 | 1.48
-| Division | 1.48 | 1.62 | 1.10
+| Addition | 0.71 | 1.04 | 1.46
+| Subtraction | 0.71 | 1.04 | 1.46
+| Multiplication | 0.79 | 1.18 | 1.49
+| Division | 1.48 | 1.75 | 1.19
 |===
 
 === Signed Integers
@@ -31,9 +31,9 @@ Run on the GitHub Actions  runner using GCC 14 in release mode (, pass:[C++]20).
 [cols="1,>1,>1,>1,>1,>1",options="header"]
 |===
 | Operation | `std::int8_t` (ns/op) | `boost::sn::i8` (ns/op) | Ratio | `safe<int8_t>` (ns/op) | Ratio
-| Addition | 0.62 | 0.83 | 1.35 | 0.65 | 1.06
-| Subtraction | 0.62 | 0.83 | 1.35 | 0.65 | 1.06
-| Multiplication | 0.62 | 0.81 | 1.31 | 0.65 | 1.06
+| Addition | 0.61 | 0.83 | 1.35 | 0.65 | 1.06
+| Subtraction | 0.61 | 0.83 | 1.35 | 0.65 | 1.06
+| Multiplication | 0.61 | 0.80 | 1.31 | 0.65 | 1.06
 | Division | 1.65 | 1.69 | 1.03 | 1.68 | 1.02
 | Modulo | 1.94 | 1.94 | 1.00 | 1.94 | 1.00
 |===
@@ -45,7 +45,7 @@ Run on the GitHub Actions  runner using GCC 14 in release mode (, pass:[C++]20).
 | Addition | 0.61 | 0.84 | 1.39 | 0.83 | 1.36
 | Subtraction | 0.61 | 0.84 | 1.39 | 0.83 | 1.36
 | Multiplication | 0.61 | 0.86 | 1.40 | 0.83 | 1.35
-| Division | 1.69 | 1.72 | 1.02 | 1.82 | 1.08
+| Division | 1.69 | 1.72 | 1.02 | 1.82 | 1.07
 | Modulo | 1.99 | 1.99 | 1.00 | 1.99 | 1.00
 |===
 
@@ -53,8 +53,8 @@ Run on the GitHub Actions  runner using GCC 14 in release mode (, pass:[C++]20).
 [cols="1,>1,>1,>1,>1,>1",options="header"]
 |===
 | Operation | `std::int32_t` (ns/op) | `boost::sn::i32` (ns/op) | Ratio | `safe<int32_t>` (ns/op) | Ratio
-| Addition | 0.51 | 0.58 | 1.13 | 0.70 | 1.38
-| Subtraction | 0.51 | 0.58 | 1.14 | 0.70 | 1.37
+| Addition | 0.51 | 0.58 | 1.13 | 0.70 | 1.39
+| Subtraction | 0.51 | 0.58 | 1.14 | 0.70 | 1.38
 | Multiplication | 0.49 | 0.70 | 1.44 | 0.69 | 1.41
 | Division | 1.74 | 1.72 | 0.99 | 1.73 | 0.99
 | Modulo | 2.02 | 2.02 | 1.00 | 2.02 | 1.00
@@ -64,8 +64,8 @@ Run on the GitHub Actions  runner using GCC 14 in release mode (, pass:[C++]20).
 [cols="1,>1,>1,>1,>1,>1",options="header"]
 |===
 | Operation | `std::int64_t` (ns/op) | `boost::sn::i64` (ns/op) | Ratio | `safe<int64_t>` (ns/op) | Ratio
-| Addition | 0.50 | 0.58 | 1.14 | 0.71 | 1.41
-| Subtraction | 0.50 | 0.58 | 1.14 | 0.71 | 1.41
+| Addition | 0.51 | 0.57 | 1.13 | 0.70 | 1.39
+| Subtraction | 0.51 | 0.57 | 1.13 | 0.71 | 1.40
 | Multiplication | 0.49 | 0.85 | 1.71 | 5.24 | 10.60
 | Division | 1.76 | 1.74 | 0.99 | 1.74 | 0.99
 | Modulo | 2.04 | 2.04 | 1.00 | 2.04 | 1.00
@@ -75,9 +75,9 @@ Run on the GitHub Actions  runner using GCC 14 in release mode (, pass:[C++]20).
 [cols="1,>1,>1,>1",options="header"]
 |===
 | Operation | `int128_t` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
-| Addition | 1.83 | 1.91 | 1.04
-| Subtraction | 1.85 | 1.91 | 1.03
-| Multiplication | 2.00 | 1.94 | 0.97
+| Addition | 1.83 | 1.90 | 1.04
+| Subtraction | 1.85 | 1.92 | 1.04
+| Multiplication | 1.99 | 1.93 | 0.97
 | Division | 5.08 | 5.30 | 1.04
 | Modulo | 5.04 | 5.18 | 1.03
 |===
@@ -88,10 +88,10 @@ Run on the GitHub Actions  runner using GCC 14 in release mode (, pass:[C++]20).
 [cols="1,>1,>1,>1,>1,>1",options="header"]
 |===
 | Operation | `std::uint8_t` (ns/op) | `boost::sn::u8` (ns/op) | Ratio | `safe<uint8_t>` (ns/op) | Ratio
-| Addition | 0.90 | 0.90 | 1.00 | 0.93 | 1.03
-| Subtraction | 0.90 | 0.90 | 1.00 | 0.93 | 1.02
+| Addition | 0.90 | 0.90 | 0.99 | 0.93 | 1.03
+| Subtraction | 0.90 | 0.90 | 1.00 | 0.92 | 1.02
 | Multiplication | 0.92 | 0.91 | 0.99 | 0.93 | 1.01
-| Division | 1.65 | 1.65 | 1.00 | 1.65 | 1.00
+| Division | 1.65 | 1.65 | 1.00 | 1.64 | 0.99
 | Modulo | 1.94 | 1.94 | 1.00 | 1.94 | 1.00
 |===
 
@@ -100,8 +100,8 @@ Run on the GitHub Actions  runner using GCC 14 in release mode (, pass:[C++]20).
 |===
 | Operation | `std::uint16_t` (ns/op) | `boost::sn::u16` (ns/op) | Ratio | `safe<uint16_t>` (ns/op) | Ratio
 | Addition | 0.89 | 0.89 | 1.00 | 0.91 | 1.02
-| Subtraction | 0.89 | 0.89 | 1.00 | 0.89 | 1.00
-| Multiplication | 0.90 | 0.89 | 0.99 | 0.95 | 1.06
+| Subtraction | 0.88 | 0.89 | 1.00 | 0.89 | 1.00
+| Multiplication | 0.90 | 0.88 | 0.99 | 0.95 | 1.06
 | Division | 1.69 | 1.70 | 1.00 | 1.71 | 1.01
 | Modulo | 1.99 | 1.99 | 1.00 | 1.99 | 1.00
 |===
@@ -121,9 +121,9 @@ Run on the GitHub Actions  runner using GCC 14 in release mode (, pass:[C++]20).
 [cols="1,>1,>1,>1,>1,>1",options="header"]
 |===
 | Operation | `std::uint64_t` (ns/op) | `boost::sn::u64` (ns/op) | Ratio | `safe<uint64_t>` (ns/op) | Ratio
-| Addition | 0.50 | 0.57 | 1.13 | 0.58 | 1.16
-| Subtraction | 0.50 | 0.57 | 1.14 | 0.57 | 1.14
-| Multiplication | 0.49 | 0.73 | 1.48 | 0.80 | 1.61
+| Addition | 0.51 | 0.58 | 1.14 | 0.58 | 1.13
+| Subtraction | 0.51 | 0.57 | 1.12 | 0.57 | 1.13
+| Multiplication | 0.49 | 0.73 | 1.48 | 0.79 | 1.61
 | Division | 1.76 | 1.76 | 1.00 | 1.76 | 1.00
 | Modulo | 2.04 | 2.04 | 1.00 | 2.04 | 1.00
 |===
@@ -132,9 +132,9 @@ Run on the GitHub Actions  runner using GCC 14 in release mode (, pass:[C++]20).
 [cols="1,>1,>1,>1",options="header"]
 |===
 | Operation | `uint128_t` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
-| Addition | 1.92 | 2.04 | 1.06
-| Subtraction | 1.93 | 2.04 | 1.05
-| Multiplication | 2.09 | 2.01 | 0.96
-| Division | 4.67 | 4.71 | 1.01
-| Modulo | 4.91 | 4.94 | 1.01
+| Addition | 1.85 | 1.91 | 1.03
+| Subtraction | 1.85 | 1.92 | 1.04
+| Multiplication | 2.01 | 1.90 | 0.95
+| Division | 4.67 | 4.70 | 1.01
+| Modulo | 4.90 | 4.93 | 1.01
 |===
