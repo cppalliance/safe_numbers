@@ -26,3 +26,13 @@ if(BUILD_TESTING AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test/CMakeLists.txt")
     add_subdirectory(test)
 
 endif()
+
+# Opt-in benchmarks. Fetches Google Benchmark via FetchContent so the library
+# stays self-contained and the benchmarks build the same way locally and in CI.
+option(BOOST_SAFE_NUMBERS_BUILD_BENCHMARKS "Build the Boost.SafeNumbers benchmarks (fetches Google Benchmark)" OFF)
+
+if(BOOST_SAFE_NUMBERS_BUILD_BENCHMARKS)
+
+    add_subdirectory(test/benchmarks)
+
+endif()

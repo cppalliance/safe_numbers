@@ -45,4 +45,5 @@
 * xref:byte_conversions.adoc[]
 * xref:random.adoc[]
 * xref:comparisons.adoc[]
+* xref:benchmarks.adoc[]
 * xref:reference.adoc[]

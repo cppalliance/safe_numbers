@@ -39,6 +39,11 @@
 #  pragma warning(disable : 4127)
 #  pragma warning(disable : 4305)
 #  pragma warning(disable : 4309)
+#  pragma warning(disable : 4244) // conversion, possible loss of data (safe_numerics/multiprecision)
+#  pragma warning(disable : 4245) // signed/unsigned mismatch on conversion
+#  pragma warning(disable : 4804) // unsafe use of type 'bool' in operation
+#  pragma warning(disable : 4018) // signed/unsigned mismatch in comparison
+#  pragma warning(disable : 4702)
 #endif
 
 #define BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE

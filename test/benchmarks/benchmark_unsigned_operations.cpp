@@ -7,14 +7,14 @@
 
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
-#include <random>
+#include <benchmark/benchmark.h>
 #include <cstdint>
 #include <vector>
-#include <chrono>
-#include <iostream>
-#include <iomanip>
+#include <random>
 #include <functional>
 #include <algorithm>
+#include <string>
+#include <type_traits>
 
 #if defined(__clang__)
 #  pragma clang diagnostic push
@@ -22,10 +22,7 @@
 #  pragma clang diagnostic ignored "-Wundef"
 #  pragma clang diagnostic ignored "-Wconversion"
 #  pragma clang diagnostic ignored "-Wsign-conversion"
-#  pragma clang diagnostic ignored "-Wfloat-equal"
 #  pragma clang diagnostic ignored "-Wsign-compare"
-#  pragma clang diagnostic ignored "-Woverflow"
-#  pragma clang diagnostic ignored "-Wdouble-promotion"
 
 #  if (__clang_major__ >= 10 && !defined(__APPLE__)) || __clang_major__ >= 13
 #    pragma clang diagnostic ignored "-Wdeprecated-copy"
@@ -38,8 +35,6 @@
 #  pragma GCC diagnostic ignored "-Wconversion"
 #  pragma GCC diagnostic ignored "-Wsign-conversion"
 #  pragma GCC diagnostic ignored "-Wsign-compare"
-#  pragma GCC diagnostic ignored "-Wfloat-equal"
-#  pragma GCC diagnostic ignored "-Woverflow"
 
 #elif defined(_MSC_VER)
 #  pragma warning(push)
@@ -70,8 +65,15 @@
 #  pragma warning(pop)
 #endif
 
+// safe_numerics emits these from template instantiations that occur in the
+// benchmark body below (after the pop above), so disable them for the rest of
+// this translation unit. MSVC only; GCC and Clang do not warn here.
+#if defined(_MSC_VER) && !defined(__clang__)
+#  pragma warning(disable : 4244) // conversion, possible loss of data
+#  pragma warning(disable : 4245) // signed/unsigned mismatch on conversion
+#endif
+
 using namespace boost::safe_numbers;
-using namespace std::chrono;
 
 // Helper to extract the raw underlying type for any benchmarked type:
 //   builtin          -> itself
@@ -89,17 +91,20 @@ struct underlying_for_bench<boost::safe_numerics::safe<T, PP, EP>> { using type 
 template <typename T>
 using underlying_for_bench_t = typename underlying_for_bench<T>::type;
 
-inline constexpr std::size_t N {10'000'000};
-inline std::mt19937_64 rng(42);
+inline constexpr std::size_t N {1'000'000};
 
+// Builtin values are drawn small and positive and sorted in descending order so
+// that add, sub, mul, div, and mod all stay on the non-overflow, non-throwing
+// path for every contender, which keeps the comparison about the safety checks.
 template <typename T>
-auto generate_vector()
+std::vector<T> generate_builtin()
 {
     using value_type = underlying_for_bench_t<T>;
 
     std::vector<T> values;
     values.reserve(N);
 
+    std::mt19937_64 rng(42);
     boost::random::uniform_int_distribution<value_type> dist {1, sizeof(T) * 8U - 1U};
 
     for (std::size_t i {}; i < N; ++i)
@@ -113,12 +118,12 @@ auto generate_vector()
 }
 
 template <typename T, typename U>
-auto generate_vector(const std::vector<U>& values)
+std::vector<T> generate_from(const std::vector<U>& src)
 {
     std::vector<T> result;
-    result.reserve(values.size());
+    result.reserve(src.size());
 
-    for (const auto& value : values)
+    for (const auto& value : src)
     {
         result.emplace_back(static_cast<T>(value));
     }
@@ -126,265 +131,95 @@ auto generate_vector(const std::vector<U>& values)
     return result;
 }
 
-template <typename T, typename Func>
-BOOST_NOINLINE
-#if defined(_MSC_VER) && !defined(__clang__)
-#pragma optimize("t", off)
-#endif
-auto
-#if defined(__clang__)
-__attribute__((optnone))
-#elif defined(__GNUC__)
-__attribute__((optimize("O0")))
-#endif
-benchmark_op(const std::vector<T>& values, Func op, const char* type, const char* operation)
+// Generated once per type and cached for the lifetime of the program so that
+// data generation is never part of a timed region.
+template <typename T, typename Builtin>
+const std::vector<T>& data()
 {
-    const auto t1 = steady_clock::now();
+    if constexpr (std::is_same_v<T, Builtin>)
+    {
+        static const std::vector<T> values {generate_builtin<T>()};
+        return values;
+    }
+    else
+    {
+        static const std::vector<T> values {generate_from<T>(data<Builtin, Builtin>())};
+        return values;
+    }
+}
 
+template <typename T, typename Op>
+void run_bench(benchmark::State& state, const std::vector<T>& values, Op op)
+{
     using value_type = underlying_for_bench_t<T>;
 
-    value_type counter {};
+    const std::size_t n {values.size()};
 
-    for (std::size_t j {}; j < 10; ++j)
+    for (auto _ : state)
     {
-        for (std::size_t i {}; i < N - 1U; ++i)
+        value_type counter {};
+
+        for (std::size_t i {}; i + 1U < n; ++i)
         {
-            counter += static_cast<value_type>(op(values[i], values[i + 1]));
+            auto result {static_cast<value_type>(op(values[i], values[i + 1U]))};
+            benchmark::DoNotOptimize(result);
+            counter += result;
         }
+
+        benchmark::DoNotOptimize(counter);
     }
 
-    const auto t2 = steady_clock::now();
-
-    const volatile auto sink {static_cast<std::uint64_t>(counter)};
-
-    const auto runtime_ns = (t2 - t1) / 1ns;
-
-    std::cerr << operation << "<" << std::left << std::setw(15) << type << ">: " << std::setw( 10 ) << ( t2 - t1 ) / 1us << " us (s=" << sink << ")\n";
-
-    return runtime_ns;
+    state.SetItemsProcessed(static_cast<std::int64_t>(state.iterations()) * static_cast<std::int64_t>(n - 1U));
 }
 
-template <typename T>
-auto benchmark_addition(const std::vector<T>& values, const char* type)
+template <typename T, typename Builtin, typename Op>
+void register_one(const std::string& category, int bits, const char* op_name, const char* role, Op op)
 {
-    return benchmark_op(values, std::plus<>(), type, "add");
-}
-
-template <typename T>
-auto benchmark_subtraction(const std::vector<T>& values, const char* type)
-{
-    return benchmark_op(values, std::minus<>(), type, "sub");
-}
-
-template <typename T>
-auto benchmark_multiplication(const std::vector<T>& values, const char* type)
-{
-    return benchmark_op(values, std::multiplies<>(), type, "mul");
-}
-
-template <typename T>
-auto benchmark_division(const std::vector<T>& values, const char* type)
-{
-    return benchmark_op(values, std::divides<>(), type, "div");
-}
-
-template <typename T>
-auto benchmark_modulo(const std::vector<T>& values, const char* type)
-{
-    return benchmark_op(values, std::modulus<>(), type, "mod");
-}
-
-#ifdef _MSC_VER
-#pragma optimize("", on)
-#endif
-
-template <typename T>
-void print_runtime_ratio(T lib, T builtin)
-{
-    std::cout << std::setprecision(2) << std::fixed << std::setw(22)
-              << "Runtime ratio: " << std::setw(3) << static_cast<double>(lib) / static_cast<double>(builtin)
-              << std::endl;
-}
-
-int main()
-{
-    #ifdef BOOST_SAFE_NUMBERS_RUN_BENCHMARKS
-
+    const std::string name {category + "_" + std::to_string(bits) + "_" + op_name + "_" + role};
+    benchmark::RegisterBenchmark(name, [op](benchmark::State& state)
     {
-        std::cout << "8-bit Unsigned Integers\n";
-        const auto builtin_values{generate_vector<std::uint8_t>()};
-        const auto lib_values{generate_vector<u8>(builtin_values)};
-        const auto safe_values{generate_vector<boost::safe_numerics::safe<std::uint8_t>>(builtin_values)};
+        run_bench<T>(state, data<T, Builtin>(), op);
+    });
+}
 
-        auto builtin_runtime = benchmark_addition(builtin_values, "std::uint8_t");
-        auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u8");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        auto safe_runtime = benchmark_addition(safe_values, "safe<uint8_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
+template <typename T, typename Builtin>
+void register_int_ops(const std::string& category, int bits, const char* role)
+{
+    register_one<T, Builtin>(category, bits, "add", role, std::plus<>{});
+    register_one<T, Builtin>(category, bits, "sub", role, std::minus<>{});
+    register_one<T, Builtin>(category, bits, "mul", role, std::multiplies<>{});
+    register_one<T, Builtin>(category, bits, "div", role, std::divides<>{});
+    register_one<T, Builtin>(category, bits, "mod", role, std::modulus<>{});
+}
 
-        builtin_runtime = benchmark_subtraction(builtin_values, "std::uint8_t");
-        lib_runtime = benchmark_subtraction(lib_values, "boost::sn::u8");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        safe_runtime = benchmark_subtraction(safe_values, "safe<uint8_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
+template <typename Builtin, typename SN, typename Safe>
+void register_width(const std::string& category, int bits)
+{
+    register_int_ops<Builtin, Builtin>(category, bits, "builtin");
+    register_int_ops<SN, Builtin>(category, bits, "sn");
+    register_int_ops<Safe, Builtin>(category, bits, "safe");
+}
 
-        builtin_runtime = benchmark_multiplication(builtin_values, "std::uint8_t");
-        lib_runtime = benchmark_multiplication(lib_values, "boost::sn::u8");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        safe_runtime = benchmark_multiplication(safe_values, "safe<uint8_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
+template <typename Builtin, typename SN>
+void register_width_no_safe(const std::string& category, int bits)
+{
+    register_int_ops<Builtin, Builtin>(category, bits, "builtin");
+    register_int_ops<SN, Builtin>(category, bits, "sn");
+}
 
-        builtin_runtime = benchmark_division(builtin_values, "std::uint8_t");
-        lib_runtime = benchmark_division(lib_values, "boost::sn::u8");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        safe_runtime = benchmark_division(safe_values, "safe<uint8_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
+int main(int argc, char** argv)
+{
+    using boost::safe_numerics::safe;
 
-        builtin_runtime = benchmark_modulo(builtin_values, "std::uint8_t");
-        lib_runtime = benchmark_modulo(lib_values, "boost::sn::u8");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        safe_runtime = benchmark_modulo(safe_values, "safe<uint8_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
-    }
-    {
-        std::cout << "\n16-bit Unsigned Integers\n";
-        const auto builtin_values{generate_vector<std::uint16_t>()};
-        const auto lib_values{generate_vector<u16>(builtin_values)};
-        const auto safe_values{generate_vector<boost::safe_numerics::safe<std::uint16_t>>(builtin_values)};
+    register_width<std::uint8_t,  u8,  safe<std::uint8_t>>("unsigned", 8);
+    register_width<std::uint16_t, u16, safe<std::uint16_t>>("unsigned", 16);
+    register_width<std::uint32_t, u32, safe<std::uint32_t>>("unsigned", 32);
+    register_width<std::uint64_t, u64, safe<std::uint64_t>>("unsigned", 64);
+    register_width_no_safe<boost::int128::uint128_t, u128>("unsigned", 128);
 
-        auto builtin_runtime = benchmark_addition(builtin_values, "std::uint16_t");
-        auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u16");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        auto safe_runtime = benchmark_addition(safe_values, "safe<uint16_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
+    benchmark::Initialize(&argc, argv);
+    benchmark::RunSpecifiedBenchmarks();
+    benchmark::Shutdown();
 
-        builtin_runtime = benchmark_subtraction(builtin_values, "std::uint16_t");
-        lib_runtime = benchmark_subtraction(lib_values, "boost::sn::u16");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        safe_runtime = benchmark_subtraction(safe_values, "safe<uint16_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
-
-        builtin_runtime = benchmark_multiplication(builtin_values, "std::uint16_t");
-        lib_runtime = benchmark_multiplication(lib_values, "boost::sn::u16");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        safe_runtime = benchmark_multiplication(safe_values, "safe<uint16_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
-
-        builtin_runtime = benchmark_division(builtin_values, "std::uint16_t");
-        lib_runtime = benchmark_division(lib_values, "boost::sn::u16");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        safe_runtime = benchmark_division(safe_values, "safe<uint16_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
-
-        builtin_runtime = benchmark_modulo(builtin_values, "std::uint16_t");
-        lib_runtime = benchmark_modulo(lib_values, "boost::sn::u16");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        safe_runtime = benchmark_modulo(safe_values, "safe<uint16_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
-    }
-    {
-        std::cout << "\n32-bit Unsigned Integers\n";
-        const auto builtin_values{generate_vector<std::uint32_t>()};
-        const auto lib_values{generate_vector<u32>(builtin_values)};
-        const auto safe_values{generate_vector<boost::safe_numerics::safe<std::uint32_t>>(builtin_values)};
-
-        auto builtin_runtime = benchmark_addition(builtin_values, "std::uint32_t");
-        auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u32");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        auto safe_runtime = benchmark_addition(safe_values, "safe<uint32_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
-
-        builtin_runtime = benchmark_subtraction(builtin_values, "std::uint32_t");
-        lib_runtime = benchmark_subtraction(lib_values, "boost::sn::u32");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        safe_runtime = benchmark_subtraction(safe_values, "safe<uint32_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
-
-        builtin_runtime = benchmark_multiplication(builtin_values, "std::uint32_t");
-        lib_runtime = benchmark_multiplication(lib_values, "boost::sn::u32");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        safe_runtime = benchmark_multiplication(safe_values, "safe<uint32_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
-
-        builtin_runtime = benchmark_division(builtin_values, "std::uint32_t");
-        lib_runtime = benchmark_division(lib_values, "boost::sn::u32");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        safe_runtime = benchmark_division(safe_values, "safe<uint32_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
-
-        builtin_runtime = benchmark_modulo(builtin_values, "std::uint32_t");
-        lib_runtime = benchmark_modulo(lib_values, "boost::sn::u32");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        safe_runtime = benchmark_modulo(safe_values, "safe<uint32_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
-    }
-    {
-        std::cout << "\n64-bit Unsigned Integers\n";
-        const auto builtin_values{generate_vector<std::uint64_t>()};
-        const auto lib_values{generate_vector<u64>(builtin_values)};
-        const auto safe_values{generate_vector<boost::safe_numerics::safe<std::uint64_t>>(builtin_values)};
-
-        auto builtin_runtime = benchmark_addition(builtin_values, "std::uint64_t");
-        auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u64");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        auto safe_runtime = benchmark_addition(safe_values, "safe<uint64_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
-
-        builtin_runtime = benchmark_subtraction(builtin_values, "std::uint64_t");
-        lib_runtime = benchmark_subtraction(lib_values, "boost::sn::u64");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        safe_runtime = benchmark_subtraction(safe_values, "safe<uint64_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
-
-        builtin_runtime = benchmark_multiplication(builtin_values, "std::uint64_t");
-        lib_runtime = benchmark_multiplication(lib_values, "boost::sn::u64");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        safe_runtime = benchmark_multiplication(safe_values, "safe<uint64_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
-
-        builtin_runtime = benchmark_division(builtin_values, "std::uint64_t");
-        lib_runtime = benchmark_division(lib_values, "boost::sn::u64");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        safe_runtime = benchmark_division(safe_values, "safe<uint64_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
-
-        builtin_runtime = benchmark_modulo(builtin_values, "std::uint64_t");
-        lib_runtime = benchmark_modulo(lib_values, "boost::sn::u64");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-        safe_runtime = benchmark_modulo(safe_values, "safe<uint64_t>");
-        print_runtime_ratio(safe_runtime, builtin_runtime);
-    }
-    {
-        std::cout << "\n128-bit Unsigned Integers\n";
-        const auto builtin_values{generate_vector<boost::int128::uint128_t>()};
-        const auto lib_values{generate_vector<u128>(builtin_values)};
-
-        auto builtin_runtime = benchmark_addition(builtin_values, "uint128_t");
-        auto lib_runtime = benchmark_addition(lib_values, "boost::sn::u128");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-
-        builtin_runtime = benchmark_subtraction(builtin_values, "uint128_t");
-        lib_runtime = benchmark_subtraction(lib_values, "boost::sn::u128");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-
-        builtin_runtime = benchmark_multiplication(builtin_values, "uint128_t");
-        lib_runtime = benchmark_multiplication(lib_values, "boost::sn::u128");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-
-        builtin_runtime = benchmark_division(builtin_values, "uint128_t");
-        lib_runtime = benchmark_division(lib_values, "boost::sn::u128");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-
-        builtin_runtime = benchmark_modulo(builtin_values, "uint128_t");
-        lib_runtime = benchmark_modulo(lib_values, "boost::sn::u128");
-        print_runtime_ratio(lib_runtime, builtin_runtime);
-    }
-
-    #else
-
-    std::cerr << "Benchmarks not run" << std::endl;
-
-    #endif
-
-    return 1;
+    return 0;
 }
