@@ -144,8 +144,6 @@ public:
     constexpr auto operator*=(bounded_float<Min, Max> rhs) -> bounded_float&;
 
     constexpr auto operator/=(bounded_float<Min, Max> rhs) -> bounded_float&;
-
-    constexpr auto operator%=(bounded_float<Min, Max> rhs) -> bounded_float&;
 };
 
 // ------------------------------
@@ -198,17 +196,6 @@ template <auto Min, auto Max>
     const basis lhs_b {static_cast<underlying>(lhs)};
     const basis rhs_b {static_cast<underlying>(rhs)};
     return bounded_float<Min, Max>{lhs_b / rhs_b};
-}
-
-template <auto Min, auto Max>
-[[nodiscard]] constexpr auto operator%(const bounded_float<Min, Max> lhs,
-                                       const bounded_float<Min, Max> rhs) -> bounded_float<Min, Max>
-{
-    using basis = typename bounded_float<Min, Max>::basis_type;
-    using underlying = detail::underlying_type_t<basis>;
-    const basis lhs_b {static_cast<underlying>(lhs)};
-    const basis rhs_b {static_cast<underlying>(rhs)};
-    return bounded_float<Min, Max>{lhs_b % rhs_b};
 }
 
 // ------------------------------
@@ -267,19 +254,6 @@ constexpr auto bounded_float<Min, Max>::operator/=(bounded_float<Min, Max> rhs) 
     return *this;
 }
 
-template <auto Min, auto Max>
-    requires (detail::valid_float_bound<decltype(Min)> &&
-              detail::valid_float_bound<decltype(Max)> &&
-              std::is_same_v<decltype(Min), decltype(Max)> &&
-              detail::float_raw_value(Min) == detail::float_raw_value(Min) &&
-              detail::float_raw_value(Max) == detail::float_raw_value(Max) &&
-              detail::float_raw_value(Max) > detail::float_raw_value(Min))
-constexpr auto bounded_float<Min, Max>::operator%=(bounded_float<Min, Max> rhs) -> bounded_float&
-{
-    *this = *this % rhs;
-    return *this;
-}
-
 } // namespace boost::safe_numbers
 
 // Mixed-bounds blocking for bounded_float
@@ -308,7 +282,6 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_FLOAT_OP("addition", operator+)
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_FLOAT_OP("subtraction", operator-)
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_FLOAT_OP("multiplication", operator*)
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_FLOAT_OP("division", operator/)
-BOOST_SAFE_NUMBERS_DEFINE_MIXED_BOUNDED_FLOAT_OP("modulo", operator%)
 
 } // namespace boost::safe_numbers
 
