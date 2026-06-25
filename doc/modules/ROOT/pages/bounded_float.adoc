@@ -88,14 +88,12 @@ public:
     friend constexpr auto operator-(bounded_float, bounded_float) -> bounded_float;
     friend constexpr auto operator*(bounded_float, bounded_float) -> bounded_float;
     friend constexpr auto operator/(bounded_float, bounded_float) -> bounded_float;
-    friend constexpr auto operator%(bounded_float, bounded_float) -> bounded_float;
 
     // Compound assignment
     constexpr auto operator+=(bounded_float) -> bounded_float&;
     constexpr auto operator-=(bounded_float) -> bounded_float&;
     constexpr auto operator*=(bounded_float) -> bounded_float&;
     constexpr auto operator/=(bounded_float) -> bounded_float&;
-    constexpr auto operator%=(bounded_float) -> bounded_float&;
 };
 
 } // namespace boost::safe_numbers
@@ -117,8 +115,6 @@ public:
 | Multiplication underflow | `std::underflow_error`
 | Division producing NaN (e.g., 0/0, inf/inf) | `std::domain_error`
 | Division by zero (finite numerator) | `std::domain_error`
-| Modulo with zero divisor | `std::domain_error`
-| Modulo with infinite numerator | `std::domain_error`
 | Narrowing conversion (e.g., f64 -> f32) overflowing to infinity | `std::overflow_error`
 |===
 
