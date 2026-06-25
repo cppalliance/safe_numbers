@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright 2026 Matt Borland
+  Distributed under the Boost Software License, Version 1.0.
+  https://www.boost.org/LICENSE_1_0.txt
+
+  NATVIS visualizer for the boost::safe_numbers types (MSVC / Visual Studio).
+  It is the Windows counterpart to the GDB and LLDB scripts in this directory.
+
+  Place this file alongside your project, or in:
+    %USERPROFILE%\Documents\Visual Studio <version>\Visualizers\
+
+  The 8/16/32/64-bit integer and float types map straight onto hardware types,
+  so their stored value is shown directly. The 128-bit types are shown in
+  decimal when the value fits in 64 bits, and as a zero-padded hexadecimal
+  value otherwise (the debugger expression evaluator has no 128-bit integer).
+  Bounded types show "[Min, Max] Current"; Min and Max come from the template
+  arguments ($T1 and $T2) and the value is rendered by the basis visualizer.
+-->
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <!-- ============================================================ -->
+  <!-- Unsigned integers: u8, u16, u32, u64                         -->
+  <!-- ============================================================ -->
+  <Type Name="boost::safe_numbers::detail::unsigned_integer_basis&lt;*&gt;">
+    <DisplayString>{basis_,u}</DisplayString>
+    <Expand>
+      <Item Name="basis_">basis_</Item>
+    </Expand>
+  </Type>
+
+  <!-- u128: delegate to the uint128_t visualizer below -->
+  <Type Name="boost::safe_numbers::detail::unsigned_integer_basis&lt;boost::int128::uint128_t&gt;">
+    <DisplayString>{basis_}</DisplayString>
+    <Expand>
+      <Item Name="basis_">basis_</Item>
+    </Expand>
+  </Type>
+
+  <!-- ============================================================ -->
+  <!-- Signed integers: i8, i16, i32, i64                           -->
+  <!-- ============================================================ -->
+  <Type Name="boost::safe_numbers::detail::signed_integer_basis&lt;*&gt;">
+    <DisplayString>{basis_,d}</DisplayString>
+    <Expand>
+      <Item Name="basis_">basis_</Item>
+    </Expand>
+  </Type>
+
+  <!-- i128: delegate to the int128_t visualizer below -->
+  <Type Name="boost::safe_numbers::detail::signed_integer_basis&lt;boost::int128::int128_t&gt;">
+    <DisplayString>{basis_}</DisplayString>
+    <Expand>
+      <Item Name="basis_">basis_</Item>
+    </Expand>
+  </Type>
+
+  <!-- ============================================================ -->
+  <!-- Floats: f32, f64                                             -->
+  <!-- ============================================================ -->
+  <Type Name="boost::safe_numbers::detail::float_basis&lt;*&gt;">
+    <DisplayString>{basis_}</DisplayString>
+    <Expand>
+      <Item Name="basis_">basis_</Item>
+    </Expand>
+  </Type>
+
+  <!-- ============================================================ -->
+  <!-- Bounded types: [Min, Max] Current                           -->
+  <!-- ============================================================ -->
+  <Type Name="boost::safe_numbers::bounded_uint&lt;*,*&gt;">
+    <DisplayString>[{$T1}, {$T2}] {basis_}</DisplayString>
+    <Expand>
+      <Item Name="[min]">$T1</Item>
+      <Item Name="[max]">$T2</Item>
+      <Item Name="basis_">basis_</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="boost::safe_numbers::bounded_int&lt;*,*&gt;">
+    <DisplayString>[{$T1}, {$T2}] {basis_}</DisplayString>
+    <Expand>
+      <Item Name="[min]">$T1</Item>
+      <Item Name="[max]">$T2</Item>
+      <Item Name="basis_">basis_</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="boost::safe_numbers::bounded_float&lt;*,*&gt;">
+    <DisplayString>[{$T1}, {$T2}] {basis_}</DisplayString>
+    <Expand>
+      <Item Name="[min]">$T1</Item>
+      <Item Name="[max]">$T2</Item>
+      <Item Name="basis_">basis_</Item>
+    </Expand>
+  </Type>
+
+  <!-- ============================================================ -->
+  <!-- Underlying 128-bit integers (vendored boost::int128).        -->
+  <!-- Included so the visualizer is self-contained; identical to   -->
+  <!-- libs/int128/extra/int128.natvis.                             -->
+  <!-- ============================================================ -->
+  <Type Name="boost::int128::uint128_t">
+    <DisplayString Condition="high == 0">{low,u}</DisplayString>
+    <DisplayString>0x{high&gt;&gt;60&amp;0xF,X}{high&gt;&gt;56&amp;0xF,X}{high&gt;&gt;52&amp;0xF,X}{high&gt;&gt;48&amp;0xF,X}{high&gt;&gt;44&amp;0xF,X}{high&gt;&gt;40&amp;0xF,X}{high&gt;&gt;36&amp;0xF,X}{high&gt;&gt;32&amp;0xF,X}{high&gt;&gt;28&amp;0xF,X}{high&gt;&gt;24&amp;0xF,X}{high&gt;&gt;20&amp;0xF,X}{high&gt;&gt;16&amp;0xF,X}{high&gt;&gt;12&amp;0xF,X}{high&gt;&gt;8&amp;0xF,X}{high&gt;&gt;4&amp;0xF,X}{high&amp;0xF,X}'{low&gt;&gt;60&amp;0xF,X}{low&gt;&gt;56&amp;0xF,X}{low&gt;&gt;52&amp;0xF,X}{low&gt;&gt;48&amp;0xF,X}{low&gt;&gt;44&amp;0xF,X}{low&gt;&gt;40&amp;0xF,X}{low&gt;&gt;36&amp;0xF,X}{low&gt;&gt;32&amp;0xF,X}{low&gt;&gt;28&amp;0xF,X}{low&gt;&gt;24&amp;0xF,X}{low&gt;&gt;20&amp;0xF,X}{low&gt;&gt;16&amp;0xF,X}{low&gt;&gt;12&amp;0xF,X}{low&gt;&gt;8&amp;0xF,X}{low&gt;&gt;4&amp;0xF,X}{low&amp;0xF,X}</DisplayString>
+    <Expand>
+      <Item Name="high">high</Item>
+      <Item Name="low">low</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="boost::int128::int128_t">
+    <DisplayString Condition="high == 0">{low,u}</DisplayString>
+    <DisplayString Condition="high == -1 &amp;&amp; low != 0">-{~low + 1,u}</DisplayString>
+    <DisplayString>0x{(unsigned __int64)high&gt;&gt;60&amp;0xF,X}{(unsigned __int64)high&gt;&gt;56&amp;0xF,X}{(unsigned __int64)high&gt;&gt;52&amp;0xF,X}{(unsigned __int64)high&gt;&gt;48&amp;0xF,X}{(unsigned __int64)high&gt;&gt;44&amp;0xF,X}{(unsigned __int64)high&gt;&gt;40&amp;0xF,X}{(unsigned __int64)high&gt;&gt;36&amp;0xF,X}{(unsigned __int64)high&gt;&gt;32&amp;0xF,X}{(unsigned __int64)high&gt;&gt;28&amp;0xF,X}{(unsigned __int64)high&gt;&gt;24&amp;0xF,X}{(unsigned __int64)high&gt;&gt;20&amp;0xF,X}{(unsigned __int64)high&gt;&gt;16&amp;0xF,X}{(unsigned __int64)high&gt;&gt;12&amp;0xF,X}{(unsigned __int64)high&gt;&gt;8&amp;0xF,X}{(unsigned __int64)high&gt;&gt;4&amp;0xF,X}{(unsigned __int64)high&amp;0xF,X}'{low&gt;&gt;60&amp;0xF,X}{low&gt;&gt;56&amp;0xF,X}{low&gt;&gt;52&amp;0xF,X}{low&gt;&gt;48&amp;0xF,X}{low&gt;&gt;44&amp;0xF,X}{low&gt;&gt;40&amp;0xF,X}{low&gt;&gt;36&amp;0xF,X}{low&gt;&gt;32&amp;0xF,X}{low&gt;&gt;28&amp;0xF,X}{low&gt;&gt;24&amp;0xF,X}{low&gt;&gt;20&amp;0xF,X}{low&gt;&gt;16&amp;0xF,X}{low&gt;&gt;12&amp;0xF,X}{low&gt;&gt;8&amp;0xF,X}{low&gt;&gt;4&amp;0xF,X}{low&amp;0xF,X}</DisplayString>
+    <Expand>
+      <Item Name="high">high</Item>
+      <Item Name="low">low</Item>
+    </Expand>
+  </Type>
+
+</AutoVisualizer>
