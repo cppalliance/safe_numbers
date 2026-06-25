@@ -23,9 +23,23 @@
 #include <cstdlib>
 #include <utility>
 #include <optional>
+
+#if (defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+#include <cuda/std/cmath>
+#else
 #include <cmath>
+#endif
 
 #endif // BOOST_SAFE_NUMBERS_BUILD_MODULE
+
+// Selects the namespace that provides the <cmath> functions so device builds use
+// the libcu++ implementation. Mirrors the switch in cmath.hpp, which is not
+// visible here because that header undefines the macro before this one is reused.
+#if (defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
+#  define BOOST_SAFE_NUMBERS_DETAIL_CMATH_NS cuda::std
+#else
+#  define BOOST_SAFE_NUMBERS_DETAIL_CMATH_NS std
+#endif
 
 namespace boost::safe_numbers::detail {
 
@@ -1748,7 +1762,7 @@ namespace impl {
 template <compatible_float_type T>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto checked_float_modulo(const T lhs, const T rhs, T& res) -> error_category
 {
-    res = std::fmod(lhs, rhs);
+    res = BOOST_SAFE_NUMBERS_DETAIL_CMATH_NS::fmod(lhs, rhs);
 
     // The hot path is that our modulo has nothing funny happening
     if (!constexpr_isinf(res) && !constexpr_isnan(res)) [[likely]]
@@ -2007,5 +2021,7 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP("modulo", operator%)
 } // namespace boost::safe_numbers::detail
 
 #undef BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP
+
+#undef BOOST_SAFE_NUMBERS_DETAIL_CMATH_NS
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_FLOAT_BASIS_HPP
