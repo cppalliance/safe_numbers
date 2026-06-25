@@ -75,10 +75,6 @@ template <compatible_float_type BasisType>
 constexpr auto operator/(float_basis<BasisType> lhs,
                          float_basis<BasisType> rhs) -> float_basis<BasisType>;
 
-template <compatible_float_type BasisType>
-constexpr auto operator%(float_basis<BasisType> lhs,
-                         float_basis<BasisType> rhs) -> float_basis<BasisType>;
-
 } // namespace boost::safe_numbers
 ----
 
@@ -179,10 +175,6 @@ constexpr auto operator*(float_basis<BasisType> lhs,
 template <compatible_float_type BasisType>
 constexpr auto operator/(float_basis<BasisType> lhs,
                          float_basis<BasisType> rhs) -> float_basis<BasisType>;
-
-template <compatible_float_type BasisType>
-constexpr auto operator%(float_basis<BasisType> lhs,
-                         float_basis<BasisType> rhs) -> float_basis<BasisType>;
 ----
 
 Each arithmetic operator computes the result, classifies it according to IEEE 754-2008 sections 6 and 7, and throws when the result is an exceptional value:
@@ -190,10 +182,10 @@ Each arithmetic operator computes the result, classifies it according to IEEE 75
 - `pass:[+]`, `-`: Throw `std::overflow_error` on saturation to positive infinity and `std::underflow_error` on saturation to negative infinity. Subtracting like-signed infinities, or adding opposite-signed infinities, is an invalid operation and throws `std::domain_error`.
 - `pass:[*]`: Throws `std::overflow_error` or `std::underflow_error` on saturation to an infinity. Multiplying zero by an infinity is an invalid operation and throws `std::domain_error`.
 - `/`: Throws `std::overflow_error` or `std::underflow_error` on saturation to an infinity. Dividing zero by zero or infinity by infinity is an invalid operation and throws `std::domain_error`. Dividing a finite non-zero value by zero throws `std::domain_error`.
-- `%`: Computes the IEEE 754 remainder via `std::fmod`. Modulo by zero, or modulo of an infinite dividend, throws `std::domain_error`. The remainder cannot overflow or underflow.
 
 In every operation, an operand that is a quiet or signaling NaN causes the operation to throw `std::domain_error`.
-The `%` operator borrows the spelling of the integer modulo operator but performs floating-point remainder, mirroring `std::fmod` rather than truncated integer division.
+
+NOTE: There is no `operator%` for `f32`/`f64`. C++ has no built-in floating-point remainder operator; use the `xref:cmath.adoc[fmod]` function instead.
 
 == Exception Behavior
 
@@ -204,14 +196,12 @@ The following table summarizes the exceptional conditions and the exception each
 
 | Result saturates to positive infinity | `pass:[+]` `-` `pass:[*]` `/` | `std::overflow_error`
 | Result saturates to negative infinity | `pass:[+]` `-` `pass:[*]` `/` | `std::underflow_error`
-| Either operand is a quiet NaN | `pass:[+]` `-` `pass:[*]` `/` `%` | `std::domain_error`
-| Either operand is a signaling NaN | `pass:[+]` `-` `pass:[*]` `/` `%` | `std::domain_error`
+| Either operand is a quiet NaN | `pass:[+]` `-` `pass:[*]` `/` | `std::domain_error`
+| Either operand is a signaling NaN | `pass:[+]` `-` `pass:[*]` `/` | `std::domain_error`
 | Addition of opposite-signed infinities, or subtraction of like-signed infinities | `pass:[+]` `-` | `std::domain_error`
 | Multiplication of zero by an infinity | `pass:[*]` | `std::domain_error`
 | Division of zero by zero, or infinity by infinity | `/` | `std::domain_error`
 | Division of a finite non-zero value by zero | `/` | `std::domain_error`
-| Modulo of zero by zero, or with an infinite dividend | `%` | `std::domain_error`
-| Modulo by zero with a finite non-zero dividend | `%` | `std::domain_error`
 |===
 
 NOTE: Saturation to an infinity (IEEE 754 section 6.1) maps to `std::overflow_error` or `std::underflow_error` according to sign. The invalid-operation cases (section 7.2), NaN propagation (section 6.2), and division by zero of a finite numerator (section 7.3) are all reported as `std::domain_error`.

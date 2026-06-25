@@ -344,6 +344,30 @@ run test_cuda_i128_mul.cu ;
 run test_cuda_i128_div.cu ;
 run test_cuda_i128_mod.cu ;
 
+# f32 tests
+run test_cuda_f32_add.cu ;
+run test_cuda_f32_sub.cu ;
+run test_cuda_f32_mul.cu ;
+run test_cuda_f32_div.cu ;
+
+# f64 tests
+run test_cuda_f64_add.cu ;
+run test_cuda_f64_sub.cu ;
+run test_cuda_f64_mul.cu ;
+run test_cuda_f64_div.cu ;
+
+# f32 error tests
+run test_cuda_f32_add_error.cu ;
+run test_cuda_f32_sub_error.cu ;
+run test_cuda_f32_mul_error.cu ;
+run test_cuda_f32_div_error.cu ;
+
+# f64 error tests
+run test_cuda_f64_add_error.cu ;
+run test_cuda_f64_sub_error.cu ;
+run test_cuda_f64_mul_error.cu ;
+run test_cuda_f64_div_error.cu ;
+
 # Examples
 run ../examples/cuda.cu ;
 run ../examples/cuda_error_handling.cu ;
