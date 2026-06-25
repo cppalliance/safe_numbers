@@ -279,6 +279,9 @@ constexpr auto e  = 2.718281828459045_f64;
 The types also participate in the same `library_type` concept as the integer types, so the `iostream` operators, `std::formatter`, and `fmt::formatter` specializations work transparently.
 See xref:limits.adoc[], xref:iostream.adoc[], and xref:format.adoc[].
 
+The standard `<cmath>` functions (trigonometric, exponential, power, rounding, classification, and more) are provided for `f32` and `f64` in `<boost/safe_numbers/cmath.hpp>`; see xref:cmath.adoc[].
+String conversions through `to_chars` and `from_chars` are available in `<boost/safe_numbers/charconv.hpp>`; see xref:charconv.adoc[].
+
 == Constexpr Support
 
 All operations are `constexpr`-compatible.

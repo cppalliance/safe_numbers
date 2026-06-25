@@ -172,6 +172,16 @@ https://www.boost.org/LICENSE_1_0.txt
 | Stream insertion and extraction for all safe integer types
 |===
 
+=== Hashing
+
+[cols="1,2", options="header"]
+|===
+| Specialization | Description
+
+| xref:functional.adoc[`std::hash`]
+| Hash support for all safe number types, enabling their use as keys in unordered containers
+|===
+
 === Bit Manipulation
 
 [cols="1,2", options="header"]
@@ -232,6 +242,45 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:numeric.adoc[`midpoint`]
 | Computes the midpoint of two safe integers without overflow
+|===
+
+=== Mathematical Functions
+
+These wrap the standard `<cmath>` functions for the floating-point types `f32` and `f64`.
+
+[cols="1,2", options="header"]
+|===
+| Function | Description
+
+| xref:cmath.adoc#cmath_trigonometric[`sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`]
+| Trigonometric functions
+
+| xref:cmath.adoc[`sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh`]
+| Hyperbolic functions
+
+| xref:cmath.adoc[`exp`, `exp2`, `expm1`, `log`, `log2`, `log10`, `log1p`, `logb`]
+| Exponential and logarithmic functions
+
+| xref:cmath.adoc#cmath_power_and_root[`sqrt`, `cbrt`, `pow`, `hypot`]
+| Power and root functions
+
+| xref:cmath.adoc[`erf`, `erfc`, `tgamma`, `lgamma`]
+| Error and gamma functions
+
+| xref:cmath.adoc[`floor`, `ceil`, `trunc`, `round`, `nearbyint`, `rint`]
+| Nearest-integer functions (floating-point result)
+
+| xref:cmath.adoc[`abs`, `fabs`, `fmod`, `remainder`, `fdim`, `fmin`, `fmax`, `copysign`, `nextafter`, `fma`, `ldexp`, `scalbn`, `scalbln`]
+| Absolute value, remainder, minimum, maximum, sign, and scaling
+
+| xref:cmath.adoc#cmath_classification[`isnan`, `isinf`, `isfinite`, `isnormal`, `signbit`, `fpclassify`]
+| Classification predicates (never throw)
+
+| xref:cmath.adoc[`isgreater`, `isgreaterequal`, `isless`, `islessequal`, `islessgreater`, `isunordered`]
+| Non-signaling comparison predicates (never throw)
+
+| xref:cmath.adoc#cmath_integer_returning[`lround`, `llround`, `lrint`, `llrint`, `ilogb`]
+| Integer-returning rounding and exponent functions
 |===
 
 === Integer Utilities
@@ -367,12 +416,18 @@ https://www.boost.org/LICENSE_1_0.txt
 | `<boost/safe_numbers/charconv.hpp>`
 | Character conversion functions (`to_chars`, `from_chars`)
 
+| `<boost/safe_numbers/cmath.hpp>`
+| Standard mathematical functions for the floating-point types (trigonometric, hyperbolic, exponential, power, gamma, rounding, classification, comparison, and integer-returning wrappers)
+
 | `<boost/safe_numbers/fmt_format.hpp`>
 | Support for library types to `pass:[{fmt}]`.
 This header is not included in the convenience header since it requires external dependencies
 
 | `<boost/safe_numbers/format.hpp>`
 | Contains specializations of `<format>` for library types
+
+| `<boost/safe_numbers/functional.hpp>`
+| Contains a specialization of `std::hash` for all library types
 
 | `<boost/safe_numbers/integer_utilities.hpp>`
 | Integer utility functions (`isqrt`, `remove_trailing_zeros`, `is_power_10`, `is_power_2`, `ipow`, `ilog2`, `ilog10`, `ilog`, `abs_diff`, `div_ceil`, `next_multiple_of`)
