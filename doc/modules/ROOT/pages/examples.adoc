@@ -502,6 +502,10 @@ include::example$byte_conversions.cpp[]
 
 Output:
 ----
+=== scalar byte-order round-trips ===
+from_be(to_be(0x01020304)) = 0x1020304
+from_le(to_le(0x01020304)) = 0x1020304
+
 === to_be_bytes ===
 u32(0x01020304) -> BE bytes: 01 02 03 04
 u16(0xABCD)     -> BE bytes: ab cd
@@ -523,6 +527,70 @@ Round-trip:      -> u32: 0xdeadbeef
 === u8 round-trip ===
 u8(0x42) -> BE: 42
 u8(0x42) -> LE: 42
+----
+====
+
+[#examples_integer_utilities]
+== Integer Utilities
+
+The library provides utility functions for the safe integer types: integer square root, trailing-zero removal, power-of-N predicates, integer logarithms, exponentiation, and alignment helpers.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/integer_utilities.cpp[example] demonstrates the integer utility functions.
+====
+[source, c++]
+----
+include::example$integer_utilities.cpp[]
+----
+
+Output:
+----
+isqrt(100)              = 10
+isqrt(200)              = 14
+
+remove_trailing_zeros(12300) = 123 (removed 2 zeros)
+
+is_power_10(1000)       = true
+is_power_10(1234)       = false
+is_power_2(1024)        = true
+is_power_2(1000)        = false
+
+ilog2(1024)             = 10
+ilog10(1000)            = 3
+ilog(80, 3)             = 3
+
+ipow(2, 10)             = 1024
+abs_diff(3, 10)         = 7
+div_ceil(10, 3)         = 4
+next_multiple_of(10, 3) = 12
+----
+====
+
+[#examples_numeric]
+== Numeric Algorithms
+
+The library provides overloads of the standard `<numeric>` algorithms (`gcd`, `lcm`, `midpoint`) for the safe integer types.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/numeric.cpp[example] demonstrates the numeric algorithms with safe integer types.
+====
+[source, c++]
+----
+include::example$numeric.cpp[]
+----
+
+Output:
+----
+gcd(12, 8)      = 4
+gcd(54, 24)     = 6
+gcd(7, 11)      = 1
+gcd(0, 42)      = 42
+
+lcm(4, 6)       = 12
+lcm(12, 18)     = 36
+lcm(7, 11)      = 77
+
+midpoint(0, 10) = 5
+midpoint(1, 4)  = 2
+midpoint(4, 1)  = 3
 ----
 ====
 
@@ -564,6 +632,64 @@ max element = 50
 std::min(u8(10), u8(20))     = 10
 std::max(u16(100), u16(200)) = 200
 std::clamp(u64(500), u64(0), u64(100)) = 100
+----
+====
+
+[#examples_cmath]
+== Mathematical Functions
+
+The library wraps the standard `<cmath>` functions for the safe floating-point types `f32` and `f64`, re-checking each result against the IEEE 754 safety contract so that an exceptional result becomes an exception instead of being silently propagated.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/cmath.cpp[example] demonstrates the `<cmath>` functions with the safe floating-point types.
+====
+[source, c++]
+----
+include::example$cmath.cpp[]
+----
+
+Output:
+----
+sqrt(4.0)      = 2
+hypot(3, 4)    = 5
+pow(2, 10)     = 1024
+
+isinf(inf)     = true
+isnan(nan)     = true
+isfinite(1.0)  = true
+
+isless(1, 2)   = true
+isless(nan, 2) = false
+
+lround(2.5)    = 3
+ilogb(8.0)     = 3
+
+sqrt(-1.0) threw std::domain_error
+pow(2, 2000) threw std::overflow_error
+----
+====
+
+[#examples_functional]
+== Hashing
+
+The library specializes `std::hash` for every safe number type, so they can be used as keys in the standard unordered containers (`std::unordered_set`, `std::unordered_map`, and their variants).
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/functional.cpp[example] demonstrates using safe number types as keys in unordered containers and the `std::hash` specialization.
+====
+[source, c++]
+----
+include::example$functional.cpp[]
+----
+
+Output:
+----
+seen.count(7) = 1
+seen.size()   = 2
+
+labels[-1] = minus one
+labels[42] = the answer
+
+hash(u32{42}) == hash(uint32_t{42})   : true
+hash(f64{3.14}) == hash(double{3.14}) : true
 ----
 ====
 
@@ -648,7 +774,7 @@ result[3] = 41
 
 This example demonstrates what happens when a safe_numbers overflow occurs on a CUDA device *without* using `device_error_context`.
 The overflow triggers a device-side trap that corrupts the CUDA context, making `cudaDeviceSynchronize()` report an unspecified launch failure.
-Even after calling `cudaDeviceReset()`, the process cannot launch any further kernels — all subsequent CUDA operations fail.
+Even after calling `cudaDeviceReset()`, the process cannot launch any further kernels; all subsequent CUDA operations fail.
 This motivates the use of `device_error_context` shown in the previous example.
 
 .This https://github.com/boostorg/safe_numbers/blob/develop/examples/cuda_error_handling_without_error_context.cu[example] demonstrates the consequences of not using `device_error_context` for GPU error handling.

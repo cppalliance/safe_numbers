@@ -348,33 +348,30 @@ NOTE: A non-finite input to any of these functions throws `std::domain_error`.
 
 == Examples
 
-[source,c++]
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/cmath.cpp[example] demonstrates the `<cmath>` functions with the safe floating-point types.
+====
+[source, c++]
 ----
-using namespace boost::safe_numbers;
-
-// Value functions return the same safe type
-auto root  = sqrt(f64{4.0});               // f64{2.0}
-auto side  = hypot(f32{3.0f}, f32{4.0f});  // f32{5.0f}
-auto power = pow(f64{2.0}, f64{10.0});     // f64{1024.0}
-
-// Classification never throws, even on non-finite values
-auto inf = f64{std::numeric_limits<double>::infinity()};
-auto qnan = f64{std::numeric_limits<double>::quiet_NaN()};
-
-bool a = isinf(inf);     // true
-bool b = isnan(qnan);    // true
-bool c = isfinite(root); // true
-
-// Non-signaling comparisons are false when an operand is NaN
-bool d = isless(f64{1.0}, f64{2.0});  // true
-bool e = isless(qnan, f64{2.0});      // false (not a throw)
-
-// Integer-returning functions produce a safe integer type
-auto n = lround(f64{2.5});  // i64{3}
-auto k = ilogb(f64{8.0});   // i32{3}
-
-// Exceptional results raise an exception rather than propagating
-// sqrt(f64{-1.0});                  // throws std::domain_error
-// pow(f64{2.0}, f64{2000.0});       // throws std::overflow_error
-// lround(inf);                      // throws std::domain_error
+include::example$cmath.cpp[]
 ----
+
+Output:
+----
+sqrt(4.0)      = 2
+hypot(3, 4)    = 5
+pow(2, 10)     = 1024
+
+isinf(inf)     = true
+isnan(nan)     = true
+isfinite(1.0)  = true
+
+isless(1, 2)   = true
+isless(nan, 2) = false
+
+lround(2.5)    = 3
+ilogb(8.0)     = 3
+
+sqrt(-1.0) threw std::domain_error
+pow(2, 2000) threw std::overflow_error
+----
+====

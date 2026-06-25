@@ -4,6 +4,7 @@
 
 #include <boost/safe_numbers/byte_conversions.hpp>
 #include <boost/safe_numbers/unsigned_integers.hpp>
+#include <boost/safe_numbers/iostream.hpp>
 #include <iostream>
 #include <iomanip>
 #include <cstddef>
@@ -13,6 +14,20 @@
 int main()
 {
     using namespace boost::safe_numbers;
+
+    // ---- to_be / from_be / to_le / from_le: scalar byte-order round-trips ----
+    // The direct result of to_be / to_le is platform dependent, but a round-trip
+    // back through from_be / from_le always recovers the original value.
+    std::cout << "=== scalar byte-order round-trips ===\n";
+    {
+        const auto value = u32{0x01020304U};
+        std::cout << std::hex;
+        std::cout << "from_be(to_be(0x01020304)) = 0x" << from_be(to_be(value)) << '\n';
+        std::cout << "from_le(to_le(0x01020304)) = 0x" << from_le(to_le(value)) << '\n';
+        std::cout << std::dec;
+    }
+
+    std::cout << '\n';
 
     // ---- to_be_bytes: convert to big-endian byte array ----
     std::cout << "=== to_be_bytes ===\n";

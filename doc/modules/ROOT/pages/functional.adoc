@@ -35,26 +35,24 @@ The call operator is `noexcept` and computes its result by casting the value to 
 * For the 128-bit types (`u128`, `i128`), the underlying value is hashed using the hash provided by the bundled `boost::int128` support rather than a standard built-in.
 * For the floating-point types, hashing follows the underlying `std::hash<float>` and `std::hash<double>` semantics exactly, including the treatment of signed zeros. Because `f32` and `f64` do not validate their value at construction (see xref:floats.adoc[]), a value holding a NaN can still be hashed; its hash is whatever the standard library produces for that NaN.
 
-== Example
+== Examples
 
-[source,c++]
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/functional.cpp[example] demonstrates using safe number types as keys in unordered containers and the `std::hash` specialization.
+====
+[source, c++]
 ----
-using namespace boost::safe_numbers;
-
-// Use a safe type as a key in an unordered container
-std::unordered_set<u32> seen {};
-seen.insert(u32{7});
-seen.insert(u32{8});
-bool has_seven = seen.count(u32{7}) == 1;   // true
-
-std::unordered_map<i64, std::string> labels {};
-labels[i64{-1}] = "minus one";
-
-// The hash matches the hash of the underlying built-in value
-auto h1 = std::hash<u32>{}(u32{42});
-auto h2 = std::hash<std::uint32_t>{}(42u);
-bool same = h1 == h2;                        // true
-
-// Floating-point keys hash exactly as the built-in does
-auto hf = std::hash<f64>{}(f64{3.14});       // == std::hash<double>{}(3.14)
+include::example$functional.cpp[]
 ----
+
+Output:
+----
+seen.count(7) = 1
+seen.size()   = 2
+
+labels[-1] = minus one
+labels[42] = the answer
+
+hash(u32{42}) == hash(uint32_t{42})   : true
+hash(f64{3.14}) == hash(double{3.14}) : true
+----
+====

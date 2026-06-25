@@ -43,18 +43,6 @@ The floor of the square root of `val`, as the same safe integer type `T`.
 
 O(log(val)) iterations of Newton's method.
 
-=== Example
-
-[source,c++]
-----
-using namespace boost::safe_numbers;
-
-auto r = isqrt(u32{100});   // r == u32{10}
-auto s = isqrt(u32{200});   // s == u32{14}  (floor of sqrt(200))
-auto t = isqrt(u32{0});     // t == u32{0}
-auto u = isqrt(u32{1});     // u == u32{1}
-----
-
 == remove_trailing_zeros
 
 Removes trailing decimal zeros from an unsigned integer value using a branchless algorithm based on modular multiplicative inverses (Granlund-Montgomery division).
@@ -118,22 +106,6 @@ A `remove_trailing_zeros_return` where:
 | 6
 |===
 
-=== Example
-
-[source,c++]
-----
-using namespace boost::safe_numbers;
-
-auto r1 = remove_trailing_zeros(u32{12300});
-// r1.trimmed_number == 123, r1.number_of_removed_zeros == 2
-
-auto r2 = remove_trailing_zeros(u64{1000000});
-// r2.trimmed_number == 1, r2.number_of_removed_zeros == 6
-
-auto r3 = remove_trailing_zeros(u8{static_cast<std::uint8_t>(7)});
-// r3.trimmed_number == 7, r3.number_of_removed_zeros == 0
-----
-
 == is_power_10
 
 Tests whether an unsigned integer value is an exact power of 10 (i.e., one of 1, 10, 100, 1000, ...).
@@ -151,18 +123,6 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto is_power_10(const T 
 === Return Value
 
 `true` if `n` is a power of 10, `false` otherwise.
-
-=== Example
-
-[source,c++]
-----
-using namespace boost::safe_numbers;
-
-is_power_10(u32{1000});      // true
-is_power_10(u32{1});         // true
-is_power_10(u32{1234});      // false
-is_power_10(u64{10000000000000000000ULL});  // true
-----
 
 == ilog2
 
@@ -192,18 +152,6 @@ The floor of the base-2 logarithm of `n`.
 
 O(1).
 
-=== Example
-
-[source,c++]
-----
-using namespace boost::safe_numbers;
-
-auto r1 = ilog2(u32{1024});   // r1 == 10  (2^10 = 1024)
-auto r2 = ilog2(u32{1000});   // r2 == 9   (floor of log2(1000))
-auto r3 = ilog2(u32{1});      // r3 == 0
-auto r4 = ilog2(u64{9223372036854775808ULL});  // r4 == 63  (2^63)
-----
-
 == ilog10
 
 Returns the integer base-10 logarithm (floor of log~10~) of a value.
@@ -229,18 +177,6 @@ Computes `floor(log~10~(n))` using `num_digits(n) - 1`, where `num_digits` appro
 === Return Value
 
 The floor of the base-10 logarithm of `n`.
-
-=== Example
-
-[source,c++]
-----
-using namespace boost::safe_numbers;
-
-auto r1 = ilog10(u32{1000});        // r1 == 3
-auto r2 = ilog10(u32{999});         // r2 == 2   (floor of log10(999))
-auto r3 = ilog10(u32{1});           // r3 == 0
-auto r4 = ilog10(u64{10000000000000000000ULL});  // r4 == 19
-----
 
 == ilog
 
@@ -273,19 +209,6 @@ For `n < base`, returns `0`.
 === Complexity
 
 O(log~base~(n)) divisions.
-
-=== Example
-
-[source,c++]
-----
-using namespace boost::safe_numbers;
-
-auto r1 = ilog(u32{1000}, u32{10});    // r1 == 3   (floor of log10(1000))
-auto r2 = ilog(u32{1024}, u32{2});     // r2 == 10  (floor of log2(1024))
-auto r3 = ilog(u32{80}, u32{3});       // r3 == 3   (floor of log3(80))
-auto r4 = ilog(u32{3125}, u32{5});     // r4 == 5   (5^5 = 3125)
-auto r5 = ilog(u32{1}, u32{7});        // r5 == 0   (any base, log(1) = 0)
-----
 
 == ipow
 
@@ -320,18 +243,6 @@ If the result overflows the type, the behavior follows the overflow policy of th
 
 O(log(b)) multiplications.
 
-=== Example
-
-[source,c++]
-----
-using namespace boost::safe_numbers;
-
-auto r1 = ipow(u32{2}, u32{10});     // r1 == u32{1024}
-auto r2 = ipow(u32{10}, u32{9});     // r2 == u32{1000000000}
-auto r3 = ipow(u64{3}, u64{30});     // r3 == u64{205891132094649}
-auto r4 = ipow(u32{5}, u32{0});      // r4 == u32{1}
-----
-
 == is_power_2
 
 Tests whether an unsigned integer value is an exact power of 2 (i.e., has exactly one bit set).
@@ -349,18 +260,6 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto is_power_2(const T n
 === Return Value
 
 `true` if `n` is a power of 2, `false` otherwise.
-
-=== Example
-
-[source,c++]
-----
-using namespace boost::safe_numbers;
-
-is_power_2(u32{1024});     // true
-is_power_2(u32{1});        // true
-is_power_2(u32{1000});     // false
-is_power_2(u64{9223372036854775808ULL});  // true  (2^63)
-----
 
 == abs_diff
 
@@ -391,18 +290,6 @@ The result is always commutative: `abs_diff(a, b) == abs_diff(b, a)`.
 
 O(1).
 
-=== Example
-
-[source,c++]
-----
-using namespace boost::safe_numbers;
-
-auto r1 = abs_diff(u32{10}, u32{3});      // r1 == u32{7}
-auto r2 = abs_diff(u32{3}, u32{10});      // r2 == u32{7}  (commutative)
-auto r3 = abs_diff(u32{42}, u32{42});     // r3 == u32{0}
-auto r4 = abs_diff(u32{0}, u32{100});     // r4 == u32{100}
-----
-
 == div_ceil
 
 Computes the ceiling of integer division, i.e., the smallest integer not less than the exact quotient `a / b`.
@@ -432,19 +319,6 @@ The smallest integer greater than or equal to the exact quotient `a / b`, as the
 === Complexity
 
 O(1).
-
-=== Example
-
-[source,c++]
-----
-using namespace boost::safe_numbers;
-
-auto r1 = div_ceil(u32{10}, u32{3});      // r1 == u32{4}   (ceil(3.33) = 4)
-auto r2 = div_ceil(u32{9}, u32{3});       // r2 == u32{3}   (exact division)
-auto r3 = div_ceil(u32{0}, u32{5});       // r3 == u32{0}
-auto r4 = div_ceil(u32{1}, u32{2});       // r4 == u32{1}   (ceil(0.5) = 1)
-auto r5 = div_ceil(u32{100}, u32{100});   // r5 == u32{1}
-----
 
 == next_multiple_of
 
@@ -477,16 +351,35 @@ When `a == 0`, returns `0`.
 
 O(1).
 
-=== Example
 
-[source,c++]
+== Examples
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/integer_utilities.cpp[example] demonstrates the integer utility functions.
+====
+[source, c++]
 ----
-using namespace boost::safe_numbers;
-
-auto r1 = next_multiple_of(u32{10}, u32{3});      // r1 == u32{12}   (next multiple of 3 >= 10)
-auto r2 = next_multiple_of(u32{9}, u32{3});        // r2 == u32{9}    (already a multiple)
-auto r3 = next_multiple_of(u32{0}, u32{5});        // r3 == u32{0}
-auto r4 = next_multiple_of(u32{1}, u32{4096});     // r4 == u32{4096} (align to page size)
-auto r5 = next_multiple_of(u32{4097}, u32{4096});  // r5 == u32{8192}
+include::example$integer_utilities.cpp[]
 ----
 
+Output:
+----
+isqrt(100)              = 10
+isqrt(200)              = 14
+
+remove_trailing_zeros(12300) = 123 (removed 2 zeros)
+
+is_power_10(1000)       = true
+is_power_10(1234)       = false
+is_power_2(1024)        = true
+is_power_2(1000)        = false
+
+ilog2(1024)             = 10
+ilog10(1000)            = 3
+ilog(80, 3)             = 3
+
+ipow(2, 10)             = 1024
+abs_diff(3, 10)         = 7
+div_ceil(10, 3)         = 4
+next_multiple_of(10, 3) = 12
+----
+====
