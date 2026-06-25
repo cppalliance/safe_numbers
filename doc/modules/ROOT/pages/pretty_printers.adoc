@@ -10,8 +10,8 @@ https://www.boost.org/LICENSE_1_0.txt
 
 == Description
 
-The library ships with pretty printer scripts for GDB and LLDB in the `extra/` directory.
-When loaded, these scripts display safe number types as human-readable decimal values instead of showing the internal class layout.
+The library ships with debugger pretty printers in the `extra/` directory: Python scripts for GDB and LLDB, and a NATVIS visualizer for the Visual Studio (MSVC) debugger.
+When loaded, they display safe number types as human-readable values instead of showing the internal class layout.
 
 == Loading the Printers
 
@@ -40,6 +40,56 @@ command script import /path/to/boost/libs/safe_numbers/extra/safe_numbers_printe
 ----
 
 On success, LLDB will print confirmation messages for each registered type.
+
+=== Visual Studio (MSVC)
+
+For the Microsoft Visual C++ debugger the library ships a NATVIS visualizer, `extra/safe_numbers.natvis`.
+NATVIS files are XML and require no compilation; the debugger reads them when a debugging session starts.
+There are several ways to register it.
+
+==== Per-project
+
+In Solution Explorer, right-click the project, choose *Add > Existing Item*, and select `safe_numbers.natvis`.
+Visual Studio uses it automatically when debugging that project.
+
+==== Per-user (all projects)
+
+Copy `safe_numbers.natvis` into your per-user Visualizers directory, replacing `2022` with your Visual Studio version:
+
+[source]
+----
+%USERPROFILE%\Documents\Visual Studio 2022\Visualizers\
+----
+
+Every project debugged with that installation then uses the visualizer.
+
+==== CMake projects
+
+Add the `.natvis` as a source of the target you debug:
+
+[source,cmake]
+----
+target_sources(my_target PRIVATE /path/to/boost/libs/safe_numbers/extra/safe_numbers.natvis)
+----
+
+==== Visual Studio Code
+
+When debugging with the C/C++ extension's `cppvsdbg` engine on Windows, point your `launch.json` configuration at the file:
+
+[source,json]
+----
+"visualizerFile": "${workspaceFolder}/path/to/safe_numbers.natvis"
+----
+
+[NOTE]
+====
+The NATVIS file is self-contained: it also visualizes the underlying `boost::int128::uint128_t` and `boost::int128::int128_t`, so `u128` and `i128` are readable without any additional file.
+
+Two display differences from the GDB and LLDB scripts are worth noting:
+
+* The Visual Studio debugger does not insert thousands separators, so values are shown as plain decimal (for example `1000000`, not `1,000,000`).
+* The expression evaluator has no 128-bit integer type, so `u128` and `i128` values that exceed 64 bits are shown in hexadecimal with a `'` separating the high and low halves (for example `0x0000000000000001'0000000000000000`). Values that fit in 64 bits are shown in decimal.
+====
 
 == Supported Types
 
@@ -81,5 +131,79 @@ Debugger output:
 ----
 percentage = [0, 100] 42
 port = [1, 65535] 8,080
+----
+
+=== Signed Integers (`i8`, `i16`, `i32`, `i64`, `i128`)
+
+All signed integer types are displayed as decimal values, including negatives.
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+auto a = i8{-42};
+auto b = i32{-2'000'000'000};
+auto c = i128{-5};
+----
+
+Debugger output:
+
+----
+a = -42
+b = -2,000,000,000
+c = -5
+----
+
+=== Bounded Signed Integers (`bounded_int`)
+
+Bounded signed integers display the compile-time bounds and the current value in the format `[Min, Max] Current`:
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+bounded_int<-100, 100> offset {i8{-7}};
+----
+
+Debugger output:
+
+----
+offset = [-100, 100] -7
+----
+
+=== Floating-Point Types (`f32`, `f64`)
+
+Floating-point types display the stored value.
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+auto a = f32{3.14159f};
+auto b = f64{2.718281828459045};
+----
+
+Debugger output:
+
+----
+a = 3.14159
+b = 2.718281828459045
+----
+
+=== Bounded Floating-Point Types (`bounded_float`)
+
+Bounded floating-point types display the compile-time bounds and the current value in the format `[Min, Max] Current`:
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+bounded_float<-10.0f, 10.0f> gain {f32{1.5f}};
+----
+
+Debugger output:
+
+----
+gain = [-10, 10] 1.5
 ----
 
