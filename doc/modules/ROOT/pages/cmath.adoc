@@ -1,0 +1,380 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#cmath]
+= `<cmath>` Support
+:idprefix: cmath_
+
+== Description
+
+The library provides wrappers around the standard https://en.cppreference.com/w/cpp/header/cmath.html[`<cmath>`] functions for the non-bounded safe floating-point types `f32` and `f64`.
+Each wrapper extracts the underlying `float` or `double`, delegates to the corresponding `std::` function, and re-checks the result against the `float_basis` invariant before returning it wrapped in the same safe type.
+This means the mathematical functions enforce the same IEEE 754 safety contract as the arithmetic operators described in xref:floats.adoc[]: an exceptional result is turned into an exception rather than being silently propagated.
+
+[source,c++]
+----
+#include <boost/safe_numbers/cmath.hpp>
+----
+
+The wrappers are constrained to the non-bounded floating-point types, so they accept `f32` and `f64` only.
+They are *not* provided for `bounded_float<Min, Max>`, whose invariant (a value inside a compile-time range) is not preserved by transcendental functions.
+See xref:bounded_float.adoc[].
+
+The functions fall into four groups, distinguished by how they handle exceptional values:
+
+* *Value functions* (xref:#cmath_trigonometric[trigonometric], xref:#cmath_power_and_root[power], and so on) return a safe floating-point value and throw when the result is not finite.
+* *Classification predicates* (`isnan`, `isinf`, ...) inspect a value, never throw, and are the escape hatch for reasoning about infinities and NaNs.
+* *Comparison predicates* (`isgreater`, `isless`, ...) perform non-signaling ordered comparisons and never throw.
+* *Integer-returning functions* (`lround`, `ilogb`, ...) return a safe integer type and reject non-finite input.
+
+When CUDA support is enabled (`BOOST_SAFE_NUMBERS_ENABLE_CUDA`) and the translation unit is compiled by `nvcc`, the wrappers delegate to `cuda::std::` instead of `std::`, so the same calls work in device code.
+See xref:cuda.adoc[].
+
+== Error Handling
+
+The value functions follow the same conventions as the floating-point arithmetic operators.
+The function is evaluated on the underlying type, and then the *result* is classified according to IEEE 754:
+
+|===
+| Result | Exception
+
+| Finite | None; the value is returned as the same safe type `T`
+| Positive infinity | `std::overflow_error`
+| Negative infinity | `std::underflow_error`
+| NaN (quiet or signaling) | `std::domain_error`
+|===
+
+It is the result that is validated, not the input.
+A NaN input usually propagates to a NaN result and therefore throws `std::domain_error`, but the few functions that discard a NaN operand (for example `fmin` and `fmax`) do not throw when their finite result is well defined.
+Conversely, a finite input that produces a non-finite result (for example `pow` overflowing, or `copysign` carrying through an infinity) throws even though the input was ordinary.
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+auto r = sqrt(f64{4.0});             // r == f64{2.0}
+
+// sqrt(f64{-1.0});                  // throws std::domain_error (result is NaN)
+// pow(f64{2.0}, f64{2000.0});       // throws std::overflow_error (result is +inf)
+// pow(f64{0.0}, f64{-1.0});         // throws std::overflow_error (0 ^ -1 == +inf)
+// fmod(f64{1.0}, f64{0.0});         // throws std::domain_error (result is NaN)
+
+auto m = fmax(f64{std::numeric_limits<double>::quiet_NaN()}, f64{3.0});  // m == f64{3.0}, no throw
+----
+
+The classification and comparison predicates never throw; they are `noexcept`.
+The integer-returning functions throw `std::domain_error` when the input is not finite, since the standard result is otherwise unspecified.
+
+== Constexpr Support
+
+The value functions and the classification and comparison predicates are `constexpr`.
+An exceptional result encountered during constant evaluation reaches the throwing branch and is reported as a compile-time error, exactly as for the arithmetic operators.
+The integer-returning functions are *not* `constexpr`, because the underlying standard functions they delegate to are not `constexpr` in C++20 or C++23.
+
+== Common Signatures
+
+Apart from the functions with their own signatures listed below, every value function is either a unary or a binary overload with one of these two shapes, where `T` is `f32` or `f64`:
+
+[source,c++]
+----
+// Unary value functions (sin, sqrt, exp, ...)
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto fn(const T x) -> T;
+
+// Binary value functions (atan2, pow, fmod, ...)
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto fn(const T x, const T y) -> T;
+----
+
+[#cmath_trigonometric]
+== Trigonometric Functions
+
+|===
+| Function | Arity | Description
+
+| `sin`   | unary  | Sine of `x` (in radians)
+| `cos`   | unary  | Cosine of `x` (in radians)
+| `tan`   | unary  | Tangent of `x` (in radians)
+| `asin`  | unary  | Arc sine, in the range [`-pi/2`, `pi/2`]
+| `acos`  | unary  | Arc cosine, in the range [`0`, `pi`]
+| `atan`  | unary  | Arc tangent, in the range [`-pi/2`, `pi/2`]
+| `atan2` | binary | Arc tangent of `x / y` using the signs of both arguments to determine the quadrant
+|===
+
+== Hyperbolic Functions
+
+|===
+| Function | Arity | Description
+
+| `sinh`  | unary | Hyperbolic sine of `x`
+| `cosh`  | unary | Hyperbolic cosine of `x`
+| `tanh`  | unary | Hyperbolic tangent of `x`
+| `asinh` | unary | Inverse hyperbolic sine of `x`
+| `acosh` | unary | Inverse hyperbolic cosine of `x`
+| `atanh` | unary | Inverse hyperbolic tangent of `x`
+|===
+
+== Exponential and Logarithmic Functions
+
+|===
+| Function | Arity | Description
+
+| `exp`   | unary | Base-e exponential, `e^x`
+| `exp2`  | unary | Base-2 exponential, `2^x`
+| `expm1` | unary | `e^x - 1`, accurate for small `x`
+| `log`   | unary | Natural (base-e) logarithm
+| `log2`  | unary | Base-2 logarithm
+| `log10` | unary | Base-10 logarithm
+| `log1p` | unary | `log(1 + x)`, accurate for small `x`
+| `logb`  | unary | Floating-point base-radix exponent of `x`
+|===
+
+[#cmath_power_and_root]
+== Power and Root Functions
+
+|===
+| Function | Arity | Description
+
+| `sqrt`  | unary  | Square root of `x`; a negative argument yields NaN and throws `std::domain_error`
+| `cbrt`  | unary  | Cube root of `x`; defined for negative arguments
+| `pow`   | binary | `x` raised to the power `y`
+| `hypot` | binary | `sqrt(x*x + y*y)` computed without intermediate overflow or underflow
+|===
+
+== Error and Gamma Functions
+
+|===
+| Function | Arity | Description
+
+| `erf`    | unary | Error function of `x`
+| `erfc`   | unary | Complementary error function, `1 - erf(x)`
+| `tgamma` | unary | Gamma function of `x`; a pole (such as a non-positive integer) throws
+| `lgamma` | unary | Natural logarithm of the absolute value of the gamma function
+|===
+
+== Nearest-Integer Functions
+
+These return a floating-point value (the nearest integer represented as `T`), not an integer type.
+For the variants that return a safe integer type, see xref:#cmath_integer_returning[Integer-Returning Functions].
+
+|===
+| Function | Arity | Description
+
+| `floor`     | unary | Largest integer value not greater than `x`
+| `ceil`      | unary | Smallest integer value not less than `x`
+| `trunc`     | unary | Nearest integer not greater in magnitude than `x` (rounds toward zero)
+| `round`     | unary | Nearest integer, rounding halfway cases away from zero
+| `nearbyint` | unary | Nearest integer using the current rounding mode, without raising `FE_INEXACT`
+| `rint`      | unary | Nearest integer using the current rounding mode
+|===
+
+== Absolute Value
+
+|===
+| Function | Arity | Description
+
+| `abs`  | unary | Absolute value of `x` (floating-point); identical to `fabs` for `f32` and `f64`
+| `fabs` | unary | Absolute value of `x`
+|===
+
+== Remainder, Difference, Minimum, Maximum, and Sign
+
+|===
+| Function | Arity | Description
+
+| `fmod`      | binary | Floating-point remainder of `x / y`; a zero divisor yields NaN and throws `std::domain_error`
+| `remainder` | binary | IEEE 754 remainder of `x / y` (rounds the quotient to the nearest integer)
+| `fdim`      | binary | Positive difference: `x - y` if `x > y`, otherwise `+0`
+| `fmin`      | binary | The smaller of `x` and `y`; a single NaN operand is ignored
+| `fmax`      | binary | The larger of `x` and `y`; a single NaN operand is ignored
+| `copysign`  | binary | A value with the magnitude of `x` and the sign of `y`
+| `nextafter` | binary | The next representable value after `x` in the direction of `y`
+|===
+
+NOTE: `copysign` carries the magnitude of its first argument through unchanged, so `copysign(+inf, -1.0)` produces negative infinity and therefore throws `std::underflow_error`.
+Likewise `fmax` and `fmin` ignore a single NaN, but if their result is an infinity (for example `fmax(+inf, 3.0)`) the result check still throws.
+
+== Fused Multiply-Add
+
+[source,c++]
+----
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto fma(const T x, const T y, const T z) -> T;
+----
+
+Computes `x * y + z` as a single operation, with a single rounding step.
+
+== Scaling Functions
+
+These scale a floating-point value by a power of two using an integer exponent.
+
+[source,c++]
+----
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto ldexp(const T x, const int exp) -> T;
+
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto scalbn(const T x, const int exp) -> T;
+
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto scalbln(const T x, const long exp) -> T;
+----
+
+|===
+| Function | Description
+
+| `ldexp`   | Multiplies `x` by `2` raised to the power `exp`
+| `scalbn`  | Multiplies `x` by `2` raised to the power `exp` (equivalent to `ldexp` on binary radix platforms)
+| `scalbln` | As `scalbn`, but the exponent has type `long`
+|===
+
+A scaled result that overflows to an infinity throws `std::overflow_error` or `std::underflow_error` in the same way as the other value functions.
+
+[#cmath_classification]
+== Classification Predicates
+
+These inspect a value and never throw.
+They are `constexpr` and `noexcept`, and delegate to the library's own constant-evaluation-friendly classification helpers, so they can be used to reason about infinities and NaNs without triggering an exception.
+
+[source,c++]
+----
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto isnan(const T x) noexcept -> bool;
+
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto isinf(const T x) noexcept -> bool;
+
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto isfinite(const T x) noexcept -> bool;
+
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto isnormal(const T x) noexcept -> bool;
+
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto signbit(const T x) noexcept -> bool;
+
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto fpclassify(const T x) noexcept -> int;
+----
+
+|===
+| Function | Returns | Description
+
+| `isnan`      | `bool` | `true` if `x` is NaN
+| `isinf`      | `bool` | `true` if `x` is positive or negative infinity
+| `isfinite`   | `bool` | `true` if `x` is neither infinite nor NaN
+| `isnormal`   | `bool` | `true` if `x` is a normal value (not zero, subnormal, infinite, or NaN)
+| `signbit`    | `bool` | `true` if the sign bit of `x` is set (including for `-0.0` and negative infinity)
+| `fpclassify` | `int`  | One of `FP_ZERO`, `FP_SUBNORMAL`, `FP_NORMAL`, `FP_INFINITE`, or `FP_NAN`
+|===
+
+== Comparison Predicates
+
+These perform non-signaling ordered comparisons: they return `false` (rather than throwing) when an operand is NaN.
+They are `constexpr` and `noexcept`.
+
+[source,c++]
+----
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto isgreater(const T x, const T y) noexcept -> bool;
+
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto isgreaterequal(const T x, const T y) noexcept -> bool;
+
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto isless(const T x, const T y) noexcept -> bool;
+
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto islessequal(const T x, const T y) noexcept -> bool;
+
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto islessgreater(const T x, const T y) noexcept -> bool;
+
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto isunordered(const T x, const T y) noexcept -> bool;
+----
+
+|===
+| Function | Description
+
+| `isgreater`      | `x > y`, and `false` if either operand is NaN
+| `isgreaterequal` | `x >= y`, and `false` if either operand is NaN
+| `isless`         | `x < y`, and `false` if either operand is NaN
+| `islessequal`    | `x <= y`, and `false` if either operand is NaN
+| `islessgreater`  | `x < y || x > y`, and `false` if either operand is NaN
+| `isunordered`    | `true` if either operand is NaN (the operands cannot be ordered)
+|===
+
+[#cmath_integer_returning]
+== Integer-Returning Functions
+
+These return a safe integer type whose width matches the corresponding standard return type.
+A non-finite input has an unspecified standard result and raises `FE_INVALID`, so it is reported as a `std::domain_error` instead.
+They are *not* `constexpr`, because the underlying standard functions are not `constexpr` in C++20 or C++23.
+
+[source,c++]
+----
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto lround(const T x) -> i64;
+
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto llround(const T x) -> i64;
+
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto lrint(const T x) -> i64;
+
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto llrint(const T x) -> i64;
+
+template <non_bounded_float_library_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] auto ilogb(const T x) -> i32;
+----
+
+|===
+| Function | Returns | Description
+
+| `lround`  | `i64` | Rounds `x` to the nearest integer, halfway cases away from zero
+| `llround` | `i64` | As `lround`; provided for parity with `std::llround`
+| `lrint`   | `i64` | Rounds `x` to the nearest integer using the current rounding mode
+| `llrint`  | `i64` | As `lrint`; provided for parity with `std::llrint`
+| `ilogb`   | `i32` | Extracts the unbiased base-radix exponent of `x` as an integer
+|===
+
+NOTE: A non-finite input to any of these functions throws `std::domain_error`.
+`ilogb` additionally rejects a zero argument (whose standard result is `FP_ILOGB0`), so it throws on NaN, infinity, and zero.
+
+== Examples
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+// Value functions return the same safe type
+auto root  = sqrt(f64{4.0});               // f64{2.0}
+auto side  = hypot(f32{3.0f}, f32{4.0f});  // f32{5.0f}
+auto power = pow(f64{2.0}, f64{10.0});     // f64{1024.0}
+
+// Classification never throws, even on non-finite values
+auto inf = f64{std::numeric_limits<double>::infinity()};
+auto qnan = f64{std::numeric_limits<double>::quiet_NaN()};
+
+bool a = isinf(inf);     // true
+bool b = isnan(qnan);    // true
+bool c = isfinite(root); // true
+
+// Non-signaling comparisons are false when an operand is NaN
+bool d = isless(f64{1.0}, f64{2.0});  // true
+bool e = isless(qnan, f64{2.0});      // false (not a throw)
+
+// Integer-returning functions produce a safe integer type
+auto n = lround(f64{2.5});  // i64{3}
+auto k = ilogb(f64{8.0});   // i32{3}
+
+// Exceptional results raise an exception rather than propagating
+// sqrt(f64{-1.0});                  // throws std::domain_error
+// pow(f64{2.0}, f64{2000.0});       // throws std::overflow_error
+// lround(inf);                      // throws std::domain_error
+----
