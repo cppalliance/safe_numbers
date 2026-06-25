@@ -10,8 +10,9 @@ https://www.boost.org/LICENSE_1_0.txt
 
 == Description
 
-The library provides character conversion functions for all safe integer types using https://www.boost.org/doc/libs/master/libs/charconv/doc/html/charconv.html[Boost.Charconv].
-These functions convert between safe integer types (including `bounded_uint`) and their string representations.
+The library provides character conversion functions for all safe integer types and the safe floating-point types using https://www.boost.org/doc/libs/master/libs/charconv/doc/html/charconv.html[Boost.Charconv].
+These functions convert between the safe types and their string representations.
+The integer overloads (covering `u8` through `u128`, `i8` through `i128`, and `bounded_uint`) take a numeric base, while the floating-point overloads (covering `f32`, `f64`, and `bounded_float`) take a `boost::charconv::chars_format` and an optional precision.
 
 Since Boost.Charconv is a compiled library, auto-linking may occur (Especially on MSVC platforms).
 If you do not use Boost.Charconv in your application except for the dependency to this library, you can define the following:
@@ -31,19 +32,34 @@ This will disable auto-linking for Boost.Charconv.
 
 namespace boost::charconv {
 
-// Convert safe integer to character string
-template <safe_numbers::detail::library_type T>
+// Integer conversions (take a numeric base)
+template <safe_numbers::detail::integral_library_type T>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto to_chars(char* first, char* last,
                         T value,
                         int base = 10) -> charconv::to_chars_result;
 
-// Convert character string to safe integer
-template <safe_numbers::detail::library_type T>
+template <safe_numbers::detail::integral_library_type T>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto from_chars(const char* first, const char* last,
                           T& value,
                           int base = 10) -> charconv::from_chars_result;
+
+// Floating-point conversions (take a chars_format and optional precision)
+template <safe_numbers::detail::float_library_type T>
+auto to_chars(char* first, char* last,
+              T value,
+              chars_format fmt = chars_format::general) -> charconv::to_chars_result;
+
+template <safe_numbers::detail::float_library_type T>
+auto to_chars(char* first, char* last,
+              T value,
+              chars_format fmt, int precision) -> charconv::to_chars_result;
+
+template <safe_numbers::detail::float_library_type T>
+auto from_chars(const char* first, const char* last,
+                T& value,
+                chars_format fmt = chars_format::general) -> charconv::from_chars_result;
 
 } // namespace boost::charconv
 ----
@@ -166,6 +182,57 @@ Returns `boost::charconv::from_chars_result` with:
 
 - `ptr` pointing to the first character not matching the pattern
 - `ec` set to `std::errc{}` on success, `std::errc::invalid_argument` if no valid conversion, or `std::errc::result_out_of_range` if the value overflows
+
+== Floating-Point Conversions
+
+For the floating-point types `f32`, `f64`, and `bounded_float<Min, Max>`, separate `to_chars` and `from_chars` overloads take a `boost::charconv::chars_format` instead of a numeric base.
+They delegate to the corresponding Boost.Charconv floating-point routines on the underlying `float` or `double`.
+
+[source,c++]
+----
+template <safe_numbers::detail::float_library_type T>
+auto from_chars(const char* first, const char* last,
+                T& value,
+                chars_format fmt = chars_format::general) -> charconv::from_chars_result;
+
+template <safe_numbers::detail::float_library_type T>
+auto to_chars(char* first, char* last,
+              T value,
+              chars_format fmt = chars_format::general) -> charconv::to_chars_result;
+
+template <safe_numbers::detail::float_library_type T>
+auto to_chars(char* first, char* last,
+              T value,
+              chars_format fmt, int precision) -> charconv::to_chars_result;
+----
+
+The `fmt` argument selects the textual representation:
+
+|===
+| `chars_format` | Meaning
+
+| `chars_format::scientific` | Scientific notation, for example `1.5e+10`
+| `chars_format::fixed` | Fixed notation, for example `15000000000`
+| `chars_format::hex` | Hexadecimal floating-point notation
+| `chars_format::general` | The shorter of fixed and scientific (the default)
+|===
+
+The third `to_chars` overload additionally takes a `precision`, the number of digits to emit (significant or fractional, depending on `fmt`).
+
+=== Parameters
+
+|===
+| Parameter | Description
+
+| `first`, `last` | Character buffer to write to (`to_chars`) or character range to parse (`from_chars`)
+| `value` | The safe floating-point value to convert, or the destination to parse into
+| `fmt` | The `boost::charconv::chars_format` controlling the representation
+| `precision` | Number of digits to emit (third `to_chars` overload only)
+|===
+
+The result types are the same `to_chars_result` and `from_chars_result` documented above.
+
+NOTE: Unlike the integer overloads, the floating-point overloads are not `constexpr` and are not available in device code.
 
 == Examples
 

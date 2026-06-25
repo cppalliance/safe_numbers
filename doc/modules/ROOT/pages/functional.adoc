@@ -1,0 +1,60 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#functional]
+= `<functional>` Support
+:idprefix: functional_
+
+== Description
+
+The library provides a specialization of `std::hash` for every safe number type, so they can be used as keys in the standard unordered associative containers (`std::unordered_set`, `std::unordered_map`, and their multi-keyed variants).
+The specialization extracts the underlying value and delegates to the standard hash of that underlying type, so a safe value hashes identically to the built-in value it wraps.
+
+[source,c++]
+----
+#include <boost/safe_numbers/functional.hpp>
+
+template <boost::safe_numbers::detail::library_type T>
+struct std::hash<T>
+{
+    [[nodiscard]] auto operator()(const T& value) const noexcept -> std::size_t;
+};
+----
+
+The specialization covers all safe number types: the safe integers (`u8`, `u16`, `u32`, `u64`, `u128`, `i8`, `i16`, `i32`, `i64`, `i128`), the safe floating-point types (`f32`, `f64`), and the bounded types (`bounded_uint<Min, Max>`, `bounded_int<Min, Max>`, `bounded_float<Min, Max>`).
+
+== Behavior
+
+The call operator is `noexcept` and computes its result by casting the value to its underlying type and applying `std::hash` to that underlying value:
+
+* It is *deterministic*: two values that compare equal produce the same hash.
+* It *agrees with the underlying hash*: for the hardware-backed types, `std::hash<T>{}(value)` equals `std::hash` of the corresponding built-in value. For example, `std::hash<u32>{}(u32{x})` equals `std::hash<std::uint32_t>{}(x)`.
+* For the 128-bit types (`u128`, `i128`), the underlying value is hashed using the hash provided by the bundled `boost::int128` support rather than a standard built-in.
+* For the floating-point types, hashing follows the underlying `std::hash<float>` and `std::hash<double>` semantics exactly, including the treatment of signed zeros. Because `f32` and `f64` do not validate their value at construction (see xref:floats.adoc[]), a value holding a NaN can still be hashed; its hash is whatever the standard library produces for that NaN.
+
+== Example
+
+[source,c++]
+----
+using namespace boost::safe_numbers;
+
+// Use a safe type as a key in an unordered container
+std::unordered_set<u32> seen {};
+seen.insert(u32{7});
+seen.insert(u32{8});
+bool has_seven = seen.count(u32{7}) == 1;   // true
+
+std::unordered_map<i64, std::string> labels {};
+labels[i64{-1}] = "minus one";
+
+// The hash matches the hash of the underlying built-in value
+auto h1 = std::hash<u32>{}(u32{42});
+auto h2 = std::hash<std::uint32_t>{}(42u);
+bool same = h1 == h2;                        // true
+
+// Floating-point keys hash exactly as the built-in does
+auto hf = std::hash<f64>{}(f64{3.14});       // == std::hash<double>{}(3.14)
+----

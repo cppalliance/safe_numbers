@@ -10,7 +10,7 @@ https://www.boost.org/LICENSE_1_0.txt
 
 == Description
 
-The library provides `operator<<` and `operator>>` overloads for all safe integer types, enabling use with standard C++ streams (`std::cout`, `std::cin`, `std::stringstream`, etc.).
+The library provides `operator<<` and `operator>>` overloads for all safe number types, integer and floating-point alike, enabling use with standard C++ streams (`std::cout`, `std::cin`, `std::stringstream`, etc.).
 
 The `u8` type is handled specially: it displays as a numeric value rather than as a character, unlike `std::uint8_t` which most implementations treat as `unsigned char`.
 
@@ -51,6 +51,9 @@ auto operator>>(std::basic_istream<charT, traits>& is, LibType& v)
 
 | `u128`
 | Converted to the underlying `uint128_t` and written using its stream support
+
+| `f32`, `f64`
+| Converted to the underlying `float` or `double` and written using the standard floating-point insertion
 |===
 
 Standard stream manipulators (`std::hex`, `std::oct`, `std::dec`, `std::showbase`, `std::setw`, etc.) work as expected.
@@ -69,6 +72,8 @@ Standard stream manipulators (`std::hex`, `std::oct`, `std::dec`, `std::showbase
 | Invalid input
 | Sets the stream's fail bit as with any standard stream extraction
 |===
+
+NOTE: The negative-value rejection applies only to the unsigned integer types. The signed integer types (`i8` through `i128`) and the floating-point types (`f32`, `f64`) read negative values normally.
 
 For `u8`, the input is read as a `std::uint32_t` to avoid character interpretation, then narrowed to `std::uint8_t`.
 

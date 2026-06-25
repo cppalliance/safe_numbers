@@ -10,7 +10,7 @@ https://www.boost.org/LICENSE_1_0.txt
 
 == Description
 
-The library provides `std::numeric_limits` specializations for all safe integer types.
+The library provides `std::numeric_limits` specializations for all safe integer types, for the safe floating-point types `f32` and `f64`, and for the bounded types.
 These specializations delegate to the underlying type's `numeric_limits`, ensuring consistent behavior with the built-in types.
 
 [source,c++]
@@ -33,6 +33,12 @@ struct numeric_limits<boost::safe_numbers::u64>;
 
 template <>
 struct numeric_limits<boost::safe_numbers::u128>;
+
+template <>
+struct numeric_limits<boost::safe_numbers::f32>;
+
+template <>
+struct numeric_limits<boost::safe_numbers::f64>;
 
 } // namespace std
 ----
@@ -199,6 +205,54 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE static constexpr T denorm_min() noexcept;
 
 Returns `Tpass:[{0}]` (not meaningful for integer types).
 
+== Floating-Point Specializations
+
+The specializations for `f32` and `f64` use the same structure shown above, delegating every member to `std::numeric_limits<float>` and `std::numeric_limits<double>` respectively.
+Unlike the integer specializations, the floating-point members therefore carry their genuine IEEE 754 meaning: the queries below reflect floating-point properties, and the member functions return real floating-point values rather than `Tpass:[{0}]`.
+
+|===
+| Member | `f32` and `f64` value | Description
+
+| `is_signed` | `true` | Floating-point types are signed
+| `is_integer` | `false` | Type does not represent integers
+| `is_exact` | `false` | Type uses an approximate representation
+| `has_infinity` | `true` | Type can represent positive and negative infinity
+| `has_quiet_NaN` | `true` | Type can represent a quiet NaN
+| `has_signaling_NaN` | `true` | Type can represent a signaling NaN
+| `is_iec559` | `true` | Type conforms to IEC 559 (IEEE 754)
+| `is_bounded` | `true` | Type has a finite set of representable values
+| `is_modulo` | `false` | Arithmetic does not wrap
+| `round_style` | `std::round_to_nearest` | Default IEEE 754 rounding
+| `radix` | `2` | Binary representation
+|===
+
+The type-specific values match the underlying `float` and `double`:
+
+|===
+| Type | `digits` | `digits10` | `max_digits10` | `min_exponent` | `max_exponent` | `min_exponent10` | `max_exponent10`
+
+| `f32` | 24 | 6  | 9  | -125  | 128  | -37  | 38
+| `f64` | 53 | 15 | 17 | -1021 | 1024 | -307 | 308
+|===
+
+For these types the member functions return meaningful floating-point values wrapped in the safe type:
+
+|===
+| Function | Returns
+
+| `min()` | The smallest positive normal value
+| `max()` | The largest finite value
+| `lowest()` | The most negative finite value (`-max()`)
+| `epsilon()` | The difference between `1.0` and the next representable value
+| `round_error()` | The maximum rounding error (`0.5` in the default rounding mode)
+| `infinity()` | Positive infinity
+| `quiet_NaN()` | A quiet NaN
+| `signaling_NaN()` | A signaling NaN
+| `denorm_min()` | The smallest positive subnormal value
+|===
+
+NOTE: `infinity()`, `quiet_NaN()`, and `signaling_NaN()` construct a non-finite `f32` or `f64`. Construction does not validate the value (see xref:floats.adoc[]), so these values are produced without throwing; an exception is only raised when such a value is later observed by a checked arithmetic or `<cmath>` operation.
+
 == Bounded Integer Specialization
 
 A partial specialization of `std::numeric_limits` is provided for all `bounded_uint<Min, Max>` types.
@@ -263,3 +317,57 @@ port type:
   digits: 16
 ----
 ====
+
+== Bounded Floating-Point Specialization
+
+A partial specialization of `std::numeric_limits` is also provided for `bounded_float<Min, Max>` on platforms where the bounded floating-point type is available.
+It mirrors the bounded integer specialization: the `min()` and `max()` member functions return the compile-time bounds `Min` and `Max` rather than the underlying type's full range.
+See xref:bounded_float.adoc[].
+
+Because a bounded value is a constrained subset of the underlying `float` or `double`, several queries differ from the unbounded floating-point specializations:
+
+|===
+| Member | Value | Description
+
+| `is_integer` | `false` | Type does not represent integers
+| `is_exact` | `false` | Type uses an approximate representation
+| `has_infinity` | `false` | A bounded value cannot be infinite
+| `has_quiet_NaN` | `false` | A bounded value cannot be NaN
+| `has_signaling_NaN` | `false` | A bounded value cannot be NaN
+| `is_iec559` | `false` | The constrained range is not a full IEC 559 type
+| `is_bounded` | `true` | Type has a finite range
+| `is_modulo` | `false` | Arithmetic does not wrap
+|===
+
+[source,c++]
+----
+namespace std {
+
+template <auto Min, auto Max>
+class numeric_limits<boost::safe_numbers::bounded_float<Min, Max>>
+{
+    // Static member constants delegate to std::numeric_limits<underlying_type>,
+    // except for the queries listed above
+
+    // Returns bounded_float constructed from Min
+    static constexpr bounded_float<Min, Max> min();
+
+    // Returns bounded_float constructed from Max
+    static constexpr bounded_float<Min, Max> max();
+
+    // Same as min()
+    static constexpr bounded_float<Min, Max> lowest();
+
+    // Not meaningful for a bounded range; each returns min()
+    static constexpr bounded_float<Min, Max> epsilon();
+    static constexpr bounded_float<Min, Max> round_error();
+    static constexpr bounded_float<Min, Max> infinity();
+    static constexpr bounded_float<Min, Max> quiet_NaN();
+    static constexpr bounded_float<Min, Max> signaling_NaN();
+    static constexpr bounded_float<Min, Max> denorm_min();
+};
+
+} // namespace std
+----
+
+NOTE: As with the bounded integer specialization, the non-applicable member functions (`epsilon`, `round_error`, `infinity`, `quiet_NaN`, `signaling_NaN`, `denorm_min`) return `min()` rather than a zero-constructed value, since zero may fall outside the valid range.

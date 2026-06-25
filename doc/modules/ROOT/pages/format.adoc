@@ -11,8 +11,9 @@ https://www.boost.org/LICENSE_1_0.txt
 == Description
 
 Boost.SafeNumbers supports formatting with both `<format>` (C++20 and later) and `<fmt/format.h>` (all language standards).
-The formatters delegate to the underlying integer type's formatter, so all standard integer format specifiers are supported.
-Both safe unsigned integers (`u8`, `u16`, `u32`, `u64`, `u128`) and bounded integers (`bounded_uint<Min, Max>`) are supported.
+The formatters delegate to the underlying type's formatter, so all standard format specifiers for that type are supported.
+Formatting is available for every safe number type: the safe integers (`u8`, `u16`, `u32`, `u64`, `u128`, `i8`, `i16`, `i32`, `i64`, `i128`), the safe floating-point types (`f32`, `f64`), and the bounded types (`bounded_uint<Min, Max>`, `bounded_int<Min, Max>`, `bounded_float<Min, Max>`).
+The integer format specifiers documented below apply to the integer types; for `f32` and `f64` the standard floating-point specifiers are forwarded to the underlying `float` or `double` formatter, as described in xref:#format_floating_point[Floating-Point Format Specifiers].
 
 `std::format` is supported when using C++20 or later with a compiler that has appropriate support: GCC >= 13, Clang >= 18, MSVC >= 19.40.
 
@@ -115,6 +116,24 @@ Use `L` to apply locale-specific formatting (e.g., thousand separators):
 std::locale::global(std::locale("en_US.UTF-8"));
 std::cout << std::format("{:L}", u32{1234567}); // "1,234,567"
 ----
+
+[#format_floating_point]
+== Floating-Point Format Specifiers
+
+For `f32` and `f64` the formatter forwards to the underlying `float` or `double` formatter, so the standard floating-point presentation types and precision apply instead of the integer type modifiers above.
+
+|===
+| Presentation | Meaning
+
+| (default) | Shortest representation that round-trips to the same value
+| `f` | Fixed-point notation
+| `e` | Scientific notation
+| `g` | General: fixed or scientific, whichever is shorter
+| `a` | Hexadecimal floating-point notation
+|===
+
+A precision is written after a dot: `{:.2f}` formats `f64{3.14159}` as `3.14`.
+The fill, alignment, width, sign, and locale specifiers described above apply to the floating-point types as well.
 
 == Format Specifier Order
 
