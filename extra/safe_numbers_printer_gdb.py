@@ -62,6 +62,36 @@ def _clean_float_bound(text, fmt):
     except ValueError:
         return text.strip()
 
+def _template_name(gdbtype, keyword):
+    """
+    Return the type-name spelling that contains keyword. A `using` typedef
+    renders as the alias name (e.g. 'temperature'), which hides the template
+    bounds, so fall back to the resolved type when the alias does not show them.
+    """
+    name = str(gdbtype)
+    if keyword in name:
+        return name
+
+    # Resolve top-level typedefs (also peels cv-qualifiers).
+    resolved = gdbtype.strip_typedefs()
+    if keyword in str(resolved):
+        return str(resolved)
+
+    # A typedef behind a reference/pointer is not stripped above, so peel it.
+    if resolved.code in (gdb.TYPE_CODE_REF, gdb.TYPE_CODE_PTR):
+        resolved = resolved.target().strip_typedefs()
+
+    return str(resolved)
+
+def _int_bound(text):
+    """
+    Return an integer-literal bound, or '?' when the spelling is not a plain
+    literal. A bound that needs more than 64 bits is a 128-bit non-type template
+    argument, which the debugger renders as a type name rather than a number.
+    """
+    s = text.strip()
+    return s if re.fullmatch(r'[+-]?[0-9]+', s) else "?"
+
 class U8Printer:
     """Pretty printer for u8 type"""
 
@@ -168,13 +198,13 @@ class BoundedUintPrinter:
 
     def to_string(self):
         try:
-            type_name = str(self.val.type)
+            type_name = _template_name(self.val.type, "bounded_uint<")
 
             # Extract Min and Max from template parameters
             match = re.search(r'bounded_uint<([^,]+),\s*([^>]+)>', type_name)
             if match:
-                min_str = match.group(1).strip()
-                max_str = match.group(2).strip()
+                min_str = _int_bound(match.group(1))
+                max_str = _int_bound(match.group(2))
             else:
                 min_str = "?"
                 max_str = "?"
@@ -344,13 +374,13 @@ class BoundedIntPrinter:
 
     def to_string(self):
         try:
-            type_name = str(self.val.type)
+            type_name = _template_name(self.val.type, "bounded_int<")
 
             # Extract Min and Max from template parameters
             match = re.search(r'bounded_int<([^,]+),\s*([^>]+)>', type_name)
             if match:
-                min_str = match.group(1).strip()
-                max_str = match.group(2).strip()
+                min_str = _int_bound(match.group(1))
+                max_str = _int_bound(match.group(2))
             else:
                 min_str = "?"
                 max_str = "?"
@@ -393,7 +423,7 @@ class BoundedFloatPrinter:
             inner = basis["basis_"]
             fmt = 'f' if inner.type.sizeof == 4 else 'd'
 
-            type_name = str(self.val.type)
+            type_name = _template_name(self.val.type, "bounded_float<")
 
             # Extract Min and Max from template parameters
             match = re.search(r'bounded_float<(.+),\s*(.+)>', type_name)
@@ -512,6 +542,17 @@ def lookup_safe_numbers_type(val):
         return F64Printer(val)
     if bounded_float_pattern.match(type_name):
         return BoundedFloatPrinter(val)
+
+    # A `using` typedef renders as the alias name, which the bounded_* patterns
+    # above will not match. Retry them against the resolved (typedef-stripped) type.
+    stripped_name = str(type_obj.strip_typedefs())
+    if stripped_name != type_name:
+        if bounded_uint_pattern.match(stripped_name):
+            return BoundedUintPrinter(val)
+        if bounded_int_pattern.match(stripped_name):
+            return BoundedIntPrinter(val)
+        if bounded_float_pattern.match(stripped_name):
+            return BoundedFloatPrinter(val)
 
     return None
 

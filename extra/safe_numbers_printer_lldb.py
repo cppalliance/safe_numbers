@@ -69,6 +69,26 @@ def _read_float(sbvalue):
         return data.GetFloat(err, 0), 'f'
     return data.GetDouble(err, 0), 'd'
 
+def _template_name(sbtype, keyword):
+    """
+    Return the type-name spelling that contains keyword. A `using` typedef
+    renders as the alias name (e.g. 'temperature'), which hides the template
+    bounds, so fall back to the canonical type when the alias does not show them.
+    """
+    name = sbtype.GetName() or ""
+    if keyword not in name:
+        name = sbtype.GetCanonicalType().GetName() or name
+    return name
+
+def _int_bound(text):
+    """
+    Return an integer-literal bound, or '?' when the spelling is not a plain
+    literal. A bound that needs more than 64 bits is a 128-bit non-type template
+    argument, which the debugger renders as a type name rather than a number.
+    """
+    s = text.strip()
+    return s if re.fullmatch(r'[+-]?[0-9]+', s) else "?"
+
 def u8_summary(valobj, internal_dict):
     """
     Custom summary for u8 type
@@ -144,13 +164,13 @@ def bounded_uint_summary(valobj, internal_dict):
     """
     try:
         val = valobj.GetNonSyntheticValue()
-        type_name = val.GetType().GetName()
+        type_name = _template_name(val.GetType(), "bounded_uint<")
 
         # Extract Min and Max from template parameters
         match = re.search(r'bounded_uint<([^,]+),\s*([^>]+)>', type_name)
         if match:
-            min_str = match.group(1).strip()
-            max_str = match.group(2).strip()
+            min_str = _int_bound(match.group(1))
+            max_str = _int_bound(match.group(2))
         else:
             min_str = "?"
             max_str = "?"
@@ -274,13 +294,13 @@ def bounded_int_summary(valobj, internal_dict):
     """
     try:
         val = valobj.GetNonSyntheticValue()
-        type_name = val.GetType().GetName()
+        type_name = _template_name(val.GetType(), "bounded_int<")
 
         # Extract Min and Max from template parameters
         match = re.search(r'bounded_int<([^,]+),\s*([^>]+)>', type_name)
         if match:
-            min_str = match.group(1).strip()
-            max_str = match.group(2).strip()
+            min_str = _int_bound(match.group(1))
+            max_str = _int_bound(match.group(2))
         else:
             min_str = "?"
             max_str = "?"
@@ -318,7 +338,7 @@ def bounded_float_summary(valobj, internal_dict):
         inner_basis = basis.GetChildMemberWithName("basis_")
         value, fmt = _read_float(inner_basis)
 
-        type_name = val.GetType().GetName()
+        type_name = _template_name(val.GetType(), "bounded_float<")
 
         # Extract Min and Max from template parameters
         match = re.search(r'bounded_float<(.+),\s*(.+)>', type_name)
