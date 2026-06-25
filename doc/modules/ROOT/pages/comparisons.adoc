@@ -5,7 +5,7 @@ https://www.boost.org/LICENSE_1_0.txt
 ////
 
 [#comparisons]
-= Comparisons
+= Comparisons to Other Libraries and Languages
 
 Boost.SafeNumbers is one of several efforts to make numeric code safer.
 This page first situates the library among the existing C++ safe-integer libraries and the strong-typing facilities of other languages, then compares Boost.SafeNumbers and Boost.SafeNumerics in detail.
