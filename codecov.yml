@@ -29,5 +29,3 @@ ignore:
   - include/boost/safe_numbers/detail/int128/*
   - test/benchmarks/*
   - test/benchmarks/**
-  - examples/*
-  - examples/**
