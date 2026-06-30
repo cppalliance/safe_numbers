@@ -188,6 +188,7 @@ run test_bounded_float_streaming.cpp ;
 run test_bounded_float_std_format.cpp ;
 run test_bounded_float_fmt_format.cpp ;
 run test_bounded_float_limits.cpp ;
+run test_bounded_limits.cpp ;
 compile-fail compile_fail_bounded_float_mixed_ops.cpp ;
 
 # Signed free function tests
