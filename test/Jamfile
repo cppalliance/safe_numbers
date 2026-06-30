@@ -162,6 +162,7 @@ run test_unsigned_bounded_subtraction.cpp ;
 run test_unsigned_bounded_multiplication.cpp ;
 run test_unsigned_bounded_division.cpp ;
 run test_unsigned_bounded_modulo.cpp ;
+run test_unsigned_bounded_unary.cpp ;
 run test_unsigned_bounded_conversions.cpp ;
 run test_unsigned_bounded_charconv.cpp ;
 run test_unsigned_bounded_fmt_format.cpp ;

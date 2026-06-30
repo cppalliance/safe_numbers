@@ -416,7 +416,6 @@ template <auto Min, auto Max>
 constexpr auto bounded_uint<Min, Max>::operator++() -> bounded_uint&
 {
     using underlying = detail::underlying_type_t<basis_type>;
-    constexpr auto min_raw {static_cast<underlying>(detail::raw_value(Min))};
     constexpr auto max_raw {static_cast<underlying>(detail::raw_value(Max))};
     const auto raw {static_cast<underlying>(static_cast<basis_type>(*this))};
 
@@ -468,7 +467,6 @@ constexpr auto bounded_uint<Min, Max>::operator--() -> bounded_uint&
 {
     using underlying = detail::underlying_type_t<basis_type>;
     constexpr auto min_raw {static_cast<underlying>(detail::raw_value(Min))};
-    constexpr auto max_raw {static_cast<underlying>(detail::raw_value(Max))};
     const auto raw {static_cast<underlying>(static_cast<basis_type>(*this))};
 
     underlying res {};

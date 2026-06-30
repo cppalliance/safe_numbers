@@ -113,6 +113,23 @@ void test_negative_divisor()
     BOOST_TEST(e == expected_e);
 }
 
+void test_mod_result_out_of_range()
+{
+    // A range that excludes zero can make the modulo result unrepresentable. The
+    // result sign follows the dividend and its magnitude is below the divisor, so
+    // an exact division yields zero, which then falls outside the bounds.
+
+    // Below Min: 4 % 2 = 0, and 0 < Min = 2.
+    constexpr bounded_int<2, 100> a {i8{4}};
+    constexpr bounded_int<2, 100> b {i8{2}};
+    BOOST_TEST_THROWS(a % b, std::domain_error);
+
+    // Above Max: -4 % -2 = 0, and 0 > Max = -2.
+    constexpr bounded_int<-100, -2> c {i8{-4}};
+    constexpr bounded_int<-100, -2> d {i8{-2}};
+    BOOST_TEST_THROWS(c % d, std::domain_error);
+}
+
 int main()
 {
     test_valid_modulo();
@@ -123,6 +140,7 @@ int main()
     test_mod_by_one();
     test_mod_exact_division();
     test_negative_divisor();
+    test_mod_result_out_of_range();
 
     return boost::report_errors();
 }

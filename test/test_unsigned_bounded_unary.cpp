@@ -33,59 +33,11 @@ import boost.safe_numbers;
 
 using namespace boost::safe_numbers;
 
-// -----------------------------------------------
-// Unary plus
-// -----------------------------------------------
-
-void test_unary_plus()
-{
-    constexpr bounded_int<-100, 100> a {i8{42}};
-    const auto b {+a};
-    const bounded_int<-100, 100> expected {i8{42}};
-    BOOST_TEST(b == expected);
-}
-
-// -----------------------------------------------
-// Unary negation
-// -----------------------------------------------
-
-void test_negation_positive()
-{
-    constexpr bounded_int<-100, 100> a {i8{42}};
-    const auto b {-a};
-    const bounded_int<-100, 100> expected {i8{-42}};
-    BOOST_TEST(b == expected);
-}
-
-void test_negation_negative()
-{
-    constexpr bounded_int<-100, 100> a {i8{-42}};
-    const auto b {-a};
-    const bounded_int<-100, 100> expected {i8{42}};
-    BOOST_TEST(b == expected);
-}
-
-void test_negation_zero()
-{
-    constexpr bounded_int<-100, 100> a {i8{0}};
-    const auto b {-a};
-    const bounded_int<-100, 100> expected {i8{0}};
-    BOOST_TEST(b == expected);
-}
-
-void test_negation_out_of_range()
-{
-    // -(-10) = 10, but max is 5, so the constructor rejects it
-    constexpr bounded_int<-10, 5> a {i8{-10}};
-    BOOST_TEST_THROWS(-a, std::domain_error);
-}
-
-void test_negation_type_min_overflow()
-{
-    // -(-128) overflows int8_t (result 128 > INT8_MAX)
-    constexpr bounded_int<-128, 127> a {i8{-128}};
-    BOOST_TEST_THROWS(-a, std::overflow_error);
-}
+// bounded_uint has no unary plus or negation (those are blocked for unsigned
+// types), so the only unary operations to exercise are increment and decrement.
+// Each throws in two distinct ways: an underlying-type overflow/underflow when a
+// bound sits at the underlying type's limit, and a result-out-of-range domain
+// error otherwise.
 
 // -----------------------------------------------
 // Pre-increment
@@ -93,23 +45,25 @@ void test_negation_type_min_overflow()
 
 void test_pre_increment_valid()
 {
-    bounded_int<-100, 100> a {i8{99}};
+    bounded_uint<0u, 100u> a {u8{5}};
     ++a;
-    const bounded_int<-100, 100> expected {i8{100}};
+    const bounded_uint<0u, 100u> expected {u8{6}};
     BOOST_TEST(a == expected);
 }
 
 void test_pre_increment_at_max()
 {
-    bounded_int<-100, 100> a {i8{100}};
+    // Max < UINT8_MAX, so 100 + 1 = 101 fits the underlying type but exceeds the
+    // bound (result out of range, not a type overflow).
+    bounded_uint<0u, 100u> a {u8{100}};
     BOOST_TEST_THROWS(++a, std::domain_error);
 }
 
 void test_pre_increment_type_max_overflow()
 {
-    // Max equals INT8_MAX, so 127 + 1 overflows the underlying type itself and
-    // throws before the result-range check (overflow, not domain).
-    bounded_int<-128, 127> a {i8{127}};
+    // Max equals UINT8_MAX, so 255 + 1 wraps the underlying type itself and throws
+    // before the result-range check (overflow, not domain).
+    bounded_uint<0u, 255u> a {u8{255}};
     BOOST_TEST_THROWS(++a, std::overflow_error);
 }
 
@@ -119,23 +73,25 @@ void test_pre_increment_type_max_overflow()
 
 void test_pre_decrement_valid()
 {
-    bounded_int<-100, 100> a {i8{-99}};
+    bounded_uint<0u, 100u> a {u8{5}};
     --a;
-    const bounded_int<-100, 100> expected {i8{-100}};
+    const bounded_uint<0u, 100u> expected {u8{4}};
     BOOST_TEST(a == expected);
 }
 
 void test_pre_decrement_at_min()
 {
-    bounded_int<-100, 100> a {i8{-100}};
+    // Min > 0, so 10 - 1 = 9 fits the underlying type but falls below the bound
+    // (result out of range, not a type underflow).
+    bounded_uint<10u, 100u> a {u8{10}};
     BOOST_TEST_THROWS(--a, std::domain_error);
 }
 
 void test_pre_decrement_type_min_underflow()
 {
-    // Min equals INT8_MIN, so -128 - 1 underflows the underlying type itself and
-    // throws before the result-range check (underflow, not domain).
-    bounded_int<-128, 127> a {i8{-128}};
+    // Min equals 0 (the underlying type minimum), so 0 - 1 wraps the underlying
+    // type itself and throws before the result-range check (underflow, not domain).
+    bounded_uint<0u, 255u> a {u8{0}};
     BOOST_TEST_THROWS(--a, std::underflow_error);
 }
 
@@ -145,17 +101,17 @@ void test_pre_decrement_type_min_underflow()
 
 void test_post_increment_valid()
 {
-    bounded_int<-100, 100> a {i8{50}};
+    bounded_uint<0u, 100u> a {u8{50}};
     const auto old {a++};
-    const bounded_int<-100, 100> expected_old {i8{50}};
-    const bounded_int<-100, 100> expected_new {i8{51}};
+    const bounded_uint<0u, 100u> expected_old {u8{50}};
+    const bounded_uint<0u, 100u> expected_new {u8{51}};
     BOOST_TEST(old == expected_old);
     BOOST_TEST(a == expected_new);
 }
 
 void test_post_increment_at_max()
 {
-    bounded_int<-100, 100> a {i8{100}};
+    bounded_uint<0u, 100u> a {u8{100}};
     BOOST_TEST_THROWS(a++, std::domain_error);
 }
 
@@ -165,29 +121,22 @@ void test_post_increment_at_max()
 
 void test_post_decrement_valid()
 {
-    bounded_int<-100, 100> a {i8{-50}};
+    bounded_uint<0u, 100u> a {u8{50}};
     const auto old {a--};
-    const bounded_int<-100, 100> expected_old {i8{-50}};
-    const bounded_int<-100, 100> expected_new {i8{-51}};
+    const bounded_uint<0u, 100u> expected_old {u8{50}};
+    const bounded_uint<0u, 100u> expected_new {u8{49}};
     BOOST_TEST(old == expected_old);
     BOOST_TEST(a == expected_new);
 }
 
 void test_post_decrement_at_min()
 {
-    bounded_int<-100, 100> a {i8{-100}};
+    bounded_uint<10u, 100u> a {u8{10}};
     BOOST_TEST_THROWS(a--, std::domain_error);
 }
 
 int main()
 {
-    test_unary_plus();
-    test_negation_positive();
-    test_negation_negative();
-    test_negation_zero();
-    test_negation_out_of_range();
-    test_negation_type_min_overflow();
-
     test_pre_increment_valid();
     test_pre_increment_at_max();
     test_pre_increment_type_max_overflow();
