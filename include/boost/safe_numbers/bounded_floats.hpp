@@ -63,7 +63,7 @@ public:
         {
             if (std::is_constant_evaluated())
             {
-                throw std::domain_error("bounded_float NaN value");
+                throw std::domain_error("bounded_float NaN value"); // LCOV_EXCL_LINE
             }
             else
             {
@@ -78,7 +78,7 @@ public:
         {
             if (std::is_constant_evaluated())
             {
-                throw std::domain_error("bounded_float value out of range");
+                throw std::domain_error("bounded_float value out of range"); // LCOV_EXCL_LINE
             }
             else
             {
@@ -105,7 +105,7 @@ public:
             {
                 if (std::is_constant_evaluated())
                 {
-                    throw std::overflow_error("bounded_float narrowing conversion overflow");
+                    throw std::overflow_error("bounded_float narrowing conversion overflow"); // LCOV_EXCL_LINE
                 }
                 else
                 {

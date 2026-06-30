@@ -81,7 +81,7 @@ public:
         {
             if (std::is_constant_evaluated())
             {
-                throw std::domain_error("bounded_uint value out of range");
+                throw std::domain_error("bounded_uint value out of range"); // LCOV_EXCL_LINE
             }
             else
             {
@@ -107,7 +107,7 @@ public:
             {
                 if (std::is_constant_evaluated())
                 {
-                    throw std::domain_error("bounded_uint conversion overflow");
+                    throw std::domain_error("bounded_uint conversion overflow"); // LCOV_EXCL_LINE
                 }
                 else
                 {
@@ -172,7 +172,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::overflow_error("bounded_uint addition overflow");
+            throw std::overflow_error("bounded_uint addition overflow"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -184,7 +184,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::domain_error("bounded_uint addition result out of range");
+            throw std::domain_error("bounded_uint addition result out of range"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -211,7 +211,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::underflow_error("bounded_uint subtraction underflow");
+            throw std::underflow_error("bounded_uint subtraction underflow"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -223,7 +223,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::domain_error("bounded_uint subtraction result out of range");
+            throw std::domain_error("bounded_uint subtraction result out of range"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -250,7 +250,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::overflow_error("bounded_uint multiplication overflow");
+            throw std::overflow_error("bounded_uint multiplication overflow"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -262,7 +262,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::domain_error("bounded_uint multiplication result out of range");
+            throw std::domain_error("bounded_uint multiplication result out of range"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -288,7 +288,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::domain_error("bounded_uint division by zero");
+            throw std::domain_error("bounded_uint division by zero"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -310,7 +310,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::domain_error("bounded_uint division result out of range");
+            throw std::domain_error("bounded_uint division result out of range"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -336,7 +336,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::domain_error("bounded_uint modulo by zero");
+            throw std::domain_error("bounded_uint modulo by zero"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -358,7 +358,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::domain_error("bounded_uint modulo result out of range");
+            throw std::domain_error("bounded_uint modulo result out of range"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -425,7 +425,7 @@ constexpr auto bounded_uint<Min, Max>::operator++() -> bounded_uint&
     {
         if (std::is_constant_evaluated())
         {
-            throw std::overflow_error("bounded_uint increment overflow");
+            throw std::overflow_error("bounded_uint increment overflow"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -437,7 +437,7 @@ constexpr auto bounded_uint<Min, Max>::operator++() -> bounded_uint&
     {
         if (std::is_constant_evaluated())
         {
-            throw std::domain_error("bounded_uint increment result out of range");
+            throw std::domain_error("bounded_uint increment result out of range"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -476,7 +476,7 @@ constexpr auto bounded_uint<Min, Max>::operator--() -> bounded_uint&
     {
         if (std::is_constant_evaluated())
         {
-            throw std::underflow_error("bounded_uint decrement underflow");
+            throw std::underflow_error("bounded_uint decrement underflow"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -488,7 +488,7 @@ constexpr auto bounded_uint<Min, Max>::operator--() -> bounded_uint&
     {
         if (std::is_constant_evaluated())
         {
-            throw std::domain_error("bounded_uint decrement result out of range");
+            throw std::domain_error("bounded_uint decrement result out of range"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -558,7 +558,7 @@ public:
         {
             if (std::is_constant_evaluated())
             {
-                throw std::domain_error("bounded_int value out of range");
+                throw std::domain_error("bounded_int value out of range"); // LCOV_EXCL_LINE
             }
             else
             {
@@ -585,7 +585,7 @@ public:
             {
                 if (std::is_constant_evaluated())
                 {
-                    throw std::domain_error("bounded_int conversion overflow");
+                    throw std::domain_error("bounded_int conversion overflow"); // LCOV_EXCL_LINE
                 }
                 else
                 {
@@ -655,7 +655,7 @@ constexpr auto bounded_int<Min, Max>::operator-() const -> bounded_int
     {
         if (std::is_constant_evaluated())
         {
-            throw std::overflow_error("bounded_int negation overflow");
+            throw std::overflow_error("bounded_int negation overflow"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -688,7 +688,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::overflow_error("bounded_int addition overflow");
+            throw std::overflow_error("bounded_int addition overflow"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -699,7 +699,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::underflow_error("bounded_int addition underflow");
+            throw std::underflow_error("bounded_int addition underflow"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -711,7 +711,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::domain_error("bounded_int addition result out of range");
+            throw std::domain_error("bounded_int addition result out of range"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -743,7 +743,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::overflow_error("bounded_int subtraction overflow");
+            throw std::overflow_error("bounded_int subtraction overflow"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -754,7 +754,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::underflow_error("bounded_int subtraction underflow");
+            throw std::underflow_error("bounded_int subtraction underflow"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -766,7 +766,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::domain_error("bounded_int subtraction result out of range");
+            throw std::domain_error("bounded_int subtraction result out of range"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -798,7 +798,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::overflow_error("bounded_int multiplication overflow");
+            throw std::overflow_error("bounded_int multiplication overflow"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -809,7 +809,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::underflow_error("bounded_int multiplication underflow");
+            throw std::underflow_error("bounded_int multiplication underflow"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -821,7 +821,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::domain_error("bounded_int multiplication result out of range");
+            throw std::domain_error("bounded_int multiplication result out of range"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -851,7 +851,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::domain_error("bounded_int division by zero");
+            throw std::domain_error("bounded_int division by zero"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -864,7 +864,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::overflow_error("bounded_int division overflow");
+            throw std::overflow_error("bounded_int division overflow"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -892,7 +892,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::domain_error("bounded_int division result out of range");
+            throw std::domain_error("bounded_int division result out of range"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -922,7 +922,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::domain_error("bounded_int modulo by zero");
+            throw std::domain_error("bounded_int modulo by zero"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -935,7 +935,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::overflow_error("bounded_int modulo overflow");
+            throw std::overflow_error("bounded_int modulo overflow"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -963,7 +963,7 @@ template <auto Min, auto Max>
     {
         if (std::is_constant_evaluated())
         {
-            throw std::domain_error("bounded_int modulo result out of range");
+            throw std::domain_error("bounded_int modulo result out of range"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -1038,7 +1038,7 @@ constexpr auto bounded_int<Min, Max>::operator++() -> bounded_int&
     {
         if (std::is_constant_evaluated())
         {
-            throw std::overflow_error("bounded_int increment overflow");
+            throw std::overflow_error("bounded_int increment overflow"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -1050,7 +1050,7 @@ constexpr auto bounded_int<Min, Max>::operator++() -> bounded_int&
     {
         if (std::is_constant_evaluated())
         {
-            throw std::domain_error("bounded_int increment result out of range");
+            throw std::domain_error("bounded_int increment result out of range"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -1089,7 +1089,7 @@ constexpr auto bounded_int<Min, Max>::operator--() -> bounded_int&
     {
         if (std::is_constant_evaluated())
         {
-            throw std::underflow_error("bounded_int decrement underflow");
+            throw std::underflow_error("bounded_int decrement underflow"); // LCOV_EXCL_LINE
         }
         else
         {
@@ -1101,7 +1101,7 @@ constexpr auto bounded_int<Min, Max>::operator--() -> bounded_int&
     {
         if (std::is_constant_evaluated())
         {
-            throw std::domain_error("bounded_int decrement result out of range");
+            throw std::domain_error("bounded_int decrement result out of range"); // LCOV_EXCL_LINE
         }
         else
         {
