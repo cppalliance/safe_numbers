@@ -99,6 +99,7 @@ run test_unsigned_literals.cpp ;
 compile-fail compile_fail_unsigned_literals.cpp ;
 run test_signed_literals.cpp ;
 compile-fail compile_fail_signed_literals.cpp ;
+run test_literals.cpp ;
 run test_unsigned_subtraction.cpp ;
 run test_unsigned_multiplication.cpp ;
 run test_unsigned_division.cpp ;
@@ -161,6 +162,7 @@ run test_unsigned_bounded_subtraction.cpp ;
 run test_unsigned_bounded_multiplication.cpp ;
 run test_unsigned_bounded_division.cpp ;
 run test_unsigned_bounded_modulo.cpp ;
+run test_unsigned_bounded_unary.cpp ;
 run test_unsigned_bounded_conversions.cpp ;
 run test_unsigned_bounded_charconv.cpp ;
 run test_unsigned_bounded_fmt_format.cpp ;
@@ -186,6 +188,7 @@ run test_bounded_float_streaming.cpp ;
 run test_bounded_float_std_format.cpp ;
 run test_bounded_float_fmt_format.cpp ;
 run test_bounded_float_limits.cpp ;
+run test_bounded_limits.cpp ;
 compile-fail compile_fail_bounded_float_mixed_ops.cpp ;
 
 # Signed free function tests

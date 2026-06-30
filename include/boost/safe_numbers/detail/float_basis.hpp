@@ -519,11 +519,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_cmath_overflow(const char* c
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::overflow_error("Overflow detected in f32 <cmath> function");
+            throw std::overflow_error("Overflow detected in f32 <cmath> function"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::overflow_error("Overflow detected in f64 <cmath> function");
+            throw std::overflow_error("Overflow detected in f64 <cmath> function"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -543,11 +543,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_cmath_underflow(const char* 
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::underflow_error("Underflow detected in f32 <cmath> function");
+            throw std::underflow_error("Underflow detected in f32 <cmath> function"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::underflow_error("Underflow detected in f64 <cmath> function");
+            throw std::underflow_error("Underflow detected in f64 <cmath> function"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -567,11 +567,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_cmath_domain(const char* con
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::domain_error("Domain error detected in f32 <cmath> function");
+            throw std::domain_error("Domain error detected in f32 <cmath> function"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::domain_error("Domain error detected in f64 <cmath> function");
+            throw std::domain_error("Domain error detected in f64 <cmath> function"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -683,11 +683,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_add() -> void
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::overflow_error("Overflow detected in f32 addition");
+            throw std::overflow_error("Overflow detected in f32 addition"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::overflow_error("Overflow detected in f64 addition");
+            throw std::overflow_error("Overflow detected in f64 addition"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -705,11 +705,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_underflow_add() -> void
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::underflow_error("Underflow detected in f32 addition");
+            throw std::underflow_error("Underflow detected in f32 addition"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::underflow_error("Underflow detected in f64 addition");
+            throw std::underflow_error("Underflow detected in f64 addition"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -727,11 +727,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_nan_add() -> void
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::domain_error("Operation with NAN detected in f32 addition");
+            throw std::domain_error("Operation with NAN detected in f32 addition"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::domain_error("Operation with NAN detected in f64 addition");
+            throw std::domain_error("Operation with NAN detected in f64 addition"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -749,11 +749,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_invalid_add() -> void
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 addition");
+            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 addition"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 addition");
+            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 addition"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -786,11 +786,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::overflow_error("Overflow detected in f32 addition");
+                    throw std::overflow_error("Overflow detected in f32 addition"); // LCOV_EXCL_LINE
                 }
                 else
                 {
-                    throw std::overflow_error("Overflow detected in f64 addition");
+                    throw std::overflow_error("Overflow detected in f64 addition"); // LCOV_EXCL_LINE
                 }
             }
             else
@@ -805,11 +805,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::underflow_error("Underflow detected in f32 addition");
+                    throw std::underflow_error("Underflow detected in f32 addition"); // LCOV_EXCL_LINE
                 }
                 else
                 {
-                    throw std::underflow_error("Underflow detected in f64 addition");
+                    throw std::underflow_error("Underflow detected in f64 addition"); // LCOV_EXCL_LINE
                 }
             }
             else
@@ -824,11 +824,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::domain_error("Operation with NAN detected in f32 addition");
+                    throw std::domain_error("Operation with NAN detected in f32 addition"); // LCOV_EXCL_LINE
                 }
                 else
                 {
-                    throw std::domain_error("Operation with NAN detected in f64 addition");
+                    throw std::domain_error("Operation with NAN detected in f64 addition"); // LCOV_EXCL_LINE
                 }
             }
             else
@@ -843,11 +843,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 addition");
+                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 addition"); // LCOV_EXCL_LINE
                 }
                 else
                 {
-                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 addition");
+                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 addition"); // LCOV_EXCL_LINE
                 }
             }
             else
@@ -931,11 +931,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_sub() -> void
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::overflow_error("Overflow detected in f32 subtraction");
+            throw std::overflow_error("Overflow detected in f32 subtraction"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::overflow_error("Overflow detected in f64 subtraction");
+            throw std::overflow_error("Overflow detected in f64 subtraction"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -953,11 +953,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_underflow_sub() -> void
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::underflow_error("Underflow detected in f32 subtraction");
+            throw std::underflow_error("Underflow detected in f32 subtraction"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::underflow_error("Underflow detected in f64 subtraction");
+            throw std::underflow_error("Underflow detected in f64 subtraction"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -975,11 +975,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_nan_sub() -> void
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::domain_error("Operation with NAN detected in f32 subtraction");
+            throw std::domain_error("Operation with NAN detected in f32 subtraction"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::domain_error("Operation with NAN detected in f64 subtraction");
+            throw std::domain_error("Operation with NAN detected in f64 subtraction"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -997,11 +997,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_invalid_sub() -> void
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 subtraction");
+            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 subtraction"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 subtraction");
+            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 subtraction"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -1034,11 +1034,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::overflow_error("Overflow detected in f32 subtraction");
+                    throw std::overflow_error("Overflow detected in f32 subtraction"); // LCOV_EXCL_LINE
                 }
                 else
                 {
-                    throw std::overflow_error("Overflow detected in f64 subtraction");
+                    throw std::overflow_error("Overflow detected in f64 subtraction"); // LCOV_EXCL_LINE
                 }
             }
             else
@@ -1053,11 +1053,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::underflow_error("Underflow detected in f32 subtraction");
+                    throw std::underflow_error("Underflow detected in f32 subtraction"); // LCOV_EXCL_LINE
                 }
                 else
                 {
-                    throw std::underflow_error("Underflow detected in f64 subtraction");
+                    throw std::underflow_error("Underflow detected in f64 subtraction"); // LCOV_EXCL_LINE
                 }
             }
             else
@@ -1072,11 +1072,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::domain_error("Operation with NAN detected in f32 subtraction");
+                    throw std::domain_error("Operation with NAN detected in f32 subtraction"); // LCOV_EXCL_LINE
                 }
                 else
                 {
-                    throw std::domain_error("Operation with NAN detected in f64 subtraction");
+                    throw std::domain_error("Operation with NAN detected in f64 subtraction"); // LCOV_EXCL_LINE
                 }
             }
             else
@@ -1091,11 +1091,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 subtraction");
+                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 subtraction"); // LCOV_EXCL_LINE
                 }
                 else
                 {
-                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 subtraction");
+                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 subtraction"); // LCOV_EXCL_LINE
                 }
             }
             else
@@ -1189,11 +1189,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_mul() -> void
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::overflow_error("Overflow detected in f32 multiplication");
+            throw std::overflow_error("Overflow detected in f32 multiplication"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::overflow_error("Overflow detected in f64 multiplication");
+            throw std::overflow_error("Overflow detected in f64 multiplication"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -1211,11 +1211,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_underflow_mul() -> void
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::underflow_error("Underflow detected in f32 multiplication");
+            throw std::underflow_error("Underflow detected in f32 multiplication"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::underflow_error("Underflow detected in f64 multiplication");
+            throw std::underflow_error("Underflow detected in f64 multiplication"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -1233,11 +1233,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_nan_mul() -> void
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::domain_error("Operation with NAN detected in f32 multiplication");
+            throw std::domain_error("Operation with NAN detected in f32 multiplication"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::domain_error("Operation with NAN detected in f64 multiplication");
+            throw std::domain_error("Operation with NAN detected in f64 multiplication"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -1255,11 +1255,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_invalid_mul() -> void
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 multiplication");
+            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 multiplication"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 multiplication");
+            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 multiplication"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -1292,11 +1292,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::overflow_error("Overflow detected in f32 multiplication");
+                    throw std::overflow_error("Overflow detected in f32 multiplication"); // LCOV_EXCL_LINE
                 }
                 else
                 {
-                    throw std::overflow_error("Overflow detected in f64 multiplication");
+                    throw std::overflow_error("Overflow detected in f64 multiplication"); // LCOV_EXCL_LINE
                 }
             }
             else
@@ -1311,11 +1311,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::underflow_error("Underflow detected in f32 multiplication");
+                    throw std::underflow_error("Underflow detected in f32 multiplication"); // LCOV_EXCL_LINE
                 }
                 else
                 {
-                    throw std::underflow_error("Underflow detected in f64 multiplication");
+                    throw std::underflow_error("Underflow detected in f64 multiplication"); // LCOV_EXCL_LINE
                 }
             }
             else
@@ -1330,11 +1330,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::domain_error("Operation with NAN detected in f32 multiplication");
+                    throw std::domain_error("Operation with NAN detected in f32 multiplication"); // LCOV_EXCL_LINE
                 }
                 else
                 {
-                    throw std::domain_error("Operation with NAN detected in f64 multiplication");
+                    throw std::domain_error("Operation with NAN detected in f64 multiplication"); // LCOV_EXCL_LINE
                 }
             }
             else
@@ -1349,11 +1349,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 multiplication");
+                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 multiplication"); // LCOV_EXCL_LINE
                 }
                 else
                 {
-                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 multiplication");
+                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 multiplication"); // LCOV_EXCL_LINE
                 }
             }
             else
@@ -1463,11 +1463,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_div() -> void
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::overflow_error("Overflow detected in f32 division");
+            throw std::overflow_error("Overflow detected in f32 division"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::overflow_error("Overflow detected in f64 division");
+            throw std::overflow_error("Overflow detected in f64 division"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -1485,11 +1485,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_underflow_div() -> void
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::underflow_error("Underflow detected in f32 division");
+            throw std::underflow_error("Underflow detected in f32 division"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::underflow_error("Underflow detected in f64 division");
+            throw std::underflow_error("Underflow detected in f64 division"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -1507,11 +1507,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_nan_div() -> void
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::domain_error("Operation with NAN detected in f32 division");
+            throw std::domain_error("Operation with NAN detected in f32 division"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::domain_error("Operation with NAN detected in f64 division");
+            throw std::domain_error("Operation with NAN detected in f64 division"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -1529,11 +1529,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_invalid_div() -> void
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 division");
+            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 division"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 division");
+            throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 division"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -1551,11 +1551,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_divbyzero_div() -> void
     {
         if constexpr (std::is_same_v<BasisType, float>)
         {
-            throw std::domain_error("Division by zero detected in f32 division");
+            throw std::domain_error("Division by zero detected in f32 division"); // LCOV_EXCL_LINE
         }
         else
         {
-            throw std::domain_error("Division by zero detected in f64 division");
+            throw std::domain_error("Division by zero detected in f64 division"); // LCOV_EXCL_LINE
         }
     }
     else
@@ -1588,11 +1588,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::overflow_error("Overflow detected in f32 division");
+                    throw std::overflow_error("Overflow detected in f32 division"); // LCOV_EXCL_LINE
                 }
                 else
                 {
-                    throw std::overflow_error("Overflow detected in f64 division");
+                    throw std::overflow_error("Overflow detected in f64 division"); // LCOV_EXCL_LINE
                 }
             }
             else
@@ -1607,11 +1607,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::underflow_error("Underflow detected in f32 division");
+                    throw std::underflow_error("Underflow detected in f32 division"); // LCOV_EXCL_LINE
                 }
                 else
                 {
-                    throw std::underflow_error("Underflow detected in f64 division");
+                    throw std::underflow_error("Underflow detected in f64 division"); // LCOV_EXCL_LINE
                 }
             }
             else
@@ -1626,11 +1626,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::domain_error("Operation with NAN detected in f32 division");
+                    throw std::domain_error("Operation with NAN detected in f32 division"); // LCOV_EXCL_LINE
                 }
                 else
                 {
-                    throw std::domain_error("Operation with NAN detected in f64 division");
+                    throw std::domain_error("Operation with NAN detected in f64 division"); // LCOV_EXCL_LINE
                 }
             }
             else
@@ -1645,11 +1645,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 division");
+                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 division"); // LCOV_EXCL_LINE
                 }
                 else
                 {
-                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 division");
+                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 division"); // LCOV_EXCL_LINE
                 }
             }
             else
@@ -1664,11 +1664,11 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             {
                 if constexpr (std::is_same_v<BasisType, float>)
                 {
-                    throw std::domain_error("Division by zero detected in f32 division");
+                    throw std::domain_error("Division by zero detected in f32 division"); // LCOV_EXCL_LINE
                 }
                 else
                 {
-                    throw std::domain_error("Division by zero detected in f64 division");
+                    throw std::domain_error("Division by zero detected in f64 division"); // LCOV_EXCL_LINE
                 }
             }
             else

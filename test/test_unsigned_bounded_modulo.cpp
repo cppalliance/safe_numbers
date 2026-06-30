@@ -294,6 +294,17 @@ void test_constexpr_modulo()
     static_assert(l == expected_l);
 }
 
+void test_mod_result_out_of_range()
+{
+    // A range that excludes zero can make the modulo result unrepresentable: an
+    // exact division yields zero, which falls below a positive minimum. The upper
+    // side is unreachable for unsigned, since the result never exceeds the
+    // dividend and therefore cannot exceed Max.
+    constexpr bounded_uint<2u, 100u> a {u8{4}};
+    constexpr bounded_uint<2u, 100u> b {u8{2}};
+    BOOST_TEST_THROWS(a % b, std::domain_error);
+}
+
 int main()
 {
     test_u8_valid_modulo();
@@ -312,6 +323,7 @@ int main()
     test_u128_throwing_modulo();
 
     test_constexpr_modulo();
+    test_mod_result_out_of_range();
 
     return boost::report_errors();
 }
