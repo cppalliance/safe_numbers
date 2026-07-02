@@ -86,6 +86,7 @@
 #else
 #define BOOST_SAFE_NUMBERS_COMPILE_ASSERT(condition, description)
 #define BOOST_SAFE_NUMBERS_COMPILE_ASSERT0(expression)
+#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(expression, message)
 #endif
 
 
