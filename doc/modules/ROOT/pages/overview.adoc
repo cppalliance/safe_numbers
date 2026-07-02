@@ -24,6 +24,12 @@ https://github.com/cppalliance/safe_numbers/blob/master/doc/proposal/proposal.pd
 
 Safety critical applications
 
+== Opt-In Compile-Time Checks
+
+On optimized GCC and Clang builds the library can promote provable, compile-time-constant precondition violations, for example division by a literal zero or a shift past the width of the type, from runtime failures to build errors, at no runtime cost.
+This is disabled by default.
+See xref:compile_time_checks.adoc[] for what is diagnosed and how to enable it with B2 and CMake.
+
 == Supported Compilers
 
 
