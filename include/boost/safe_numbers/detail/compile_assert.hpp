@@ -55,30 +55,41 @@
  * @see compile_assert
  */
 
+// The failure function carries the error message via the error attribute. Its name is
+// made unique per expansion with __COUNTER__ so that two assertions with different
+// messages in one translation unit do not redeclare the same symbol with conflicting
+// attributes (clang -Wignored-attributes).
+#define BOOST_SAFE_NUMBERS_CA_CAT2(a, b) a##b
+#define BOOST_SAFE_NUMBERS_CA_CAT(a, b) BOOST_SAFE_NUMBERS_CA_CAT2(a, b)
+
 /**
  * @def compile_assert
  * @brief Macro for compile-time assertions.
  * @param expression The compile-time condition to be checked.
  * @param message A description of the assertion.
  */
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT(expression, message) \
+#define BOOST_SAFE_NUMBERS_CA_ASSERT_IMPL(expression, message, fn) \
     do { \
-        void _compile_assert_fail() __attribute__ ((error(message))); \
+        void fn() __attribute__ ((error(message))); \
         if (!(expression)) { \
-            _compile_assert_fail(); \
+            fn(); \
         } \
     } while (0)
+#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT(expression, message) \
+    BOOST_SAFE_NUMBERS_CA_ASSERT_IMPL(expression, message, BOOST_SAFE_NUMBERS_CA_CAT(_compile_assert_fail_, __COUNTER__))
 
 
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(expression, message) \
+#define BOOST_SAFE_NUMBERS_CA_CONST_P_IMPL(expression, message, fn) \
     do { \
         if(__builtin_constant_p(expression)) { \
             if (!(expression)) { \
-                void _compile_assert_fail() __attribute__ ((error(message))); \
-                _compile_assert_fail(); \
+                void fn() __attribute__ ((error(message))); \
+                fn(); \
             } \
         } \
     } while (0)
+#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(expression, message) \
+    BOOST_SAFE_NUMBERS_CA_CONST_P_IMPL(expression, message, BOOST_SAFE_NUMBERS_CA_CAT(_compile_assert_fail_, __COUNTER__))
 
 
 #define BOOST_SAFE_NUMBERS_COMPILE_ASSERT0(expression) BOOST_SAFE_NUMBERS_COMPILE_ASSERT(expression, NULL)
