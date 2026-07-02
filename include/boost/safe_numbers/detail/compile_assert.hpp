@@ -130,7 +130,7 @@ void * stop_compile2() __attribute__ ((error("'compile_assert pointer error dete
 #define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_PTR(condition, ptr) ((condition) ? (ptr) : boost::safe_numbers::detail::stop_compile2())
 
 #else
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_PTR(condition, ptr)
+#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_PTR(condition, ptr) ptr
 #endif
 
 
