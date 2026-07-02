@@ -78,9 +78,9 @@ u8  ok_sat() { return saturating_add(u8{200}, u8{100}); } // fine: saturate defi
 The feature is a best-effort diagnostic layered on top of the existing runtime safety, not a replacement for it. The runtime checks always apply; this only adds earlier detection for the constant cases the optimizer can prove.
 ====
 
-* *Compiler and optimization.* GCC or Clang with optimization enabled (`-O1` or higher). It is inert at `-O0` and on MSVC, and never changes program behavior.
-* *GCC* reports every case as a clean compile error that names the condition.
-* *Clang* catches the common cases (for example the default `throw_exception` operators), but is more conservative through deep call chains and may report a caught violation as a link error against an undefined `+_compile_assert_fail+` symbol rather than a compile error. GCC is the reference toolset for the diagnostic.
+* *Compiler and optimization.* GCC, or Clang 14 or later, with optimization enabled (`-O1` or higher). It is inert at `-O0` and on MSVC, and never changes program behavior. The mechanism uses the `error` function attribute, which earlier Clang lacks; enabling the feature on such a compiler (for example Clang 13) is a compile-time `#error` rather than a silent no-op.
+* *GCC* reports every case as a clean compile error that names the condition, and is the reference toolset for the diagnostic.
+* *Clang* (14 or later) catches the common cases (for example the default `throw_exception` operators), but is more conservative through deep call chains and may report a caught violation as a link error against an undefined `+_compile_assert_fail+` symbol rather than a compile error.
 * *Constant operands only.* Runtime values are never diagnosed; they take the normal runtime path.
 
 [CAUTION]

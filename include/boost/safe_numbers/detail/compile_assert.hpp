@@ -41,11 +41,20 @@
  */
 
 #ifdef __GNUC__
+
+// The compile-time-error mechanism relies on the GCC/Clang function 'error' attribute.
+// GCC has always supported it; Clang only supports it from version 14. If the feature is
+// requested on a compiler that lacks it (for example Clang 13), fail with a clear message
+// instead of the confusing -Wunknown-attributes diagnostic that -Werror turns into an error.
+#if defined(BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT) && !(defined(__has_attribute) && __has_attribute(error))
+#error "BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT requires the 'error' function attribute, available on GCC and on Clang 14 or later."
+#endif
+
 #if defined(__OPTIMIZE__) && defined(BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT)
 #define BOOST_SAFE_NUMBERS_GCC_COMPILE_ASSERT
 #define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_ACTIVE
 #endif // defined(__OPTIMIZE__) && defined(BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT)
-#endif // __GNU__
+#endif // __GNUC__
 
 #ifdef BOOST_SAFE_NUMBERS_GCC_COMPILE_ASSERT
 

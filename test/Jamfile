@@ -122,20 +122,25 @@ compile-fail compile_fail_unsigned_unary_operators.cpp ;
 # provable constant precondition violation, and that value policies do not over-fire.
 # The mechanism needs both the define and an optimized, inlining build (it is inactive
 # at -O0 and with -fno-inline), so these force <optimization>speed <inlining>full
-# regardless of the variant. The firing diagnostic is a reliable compile error on gcc;
-# clang catches the unsigned cases and surfaces others at link, and msvc is a no-op, so
-# the cases that do not fail cleanly at compile time on a toolset are excluded there.
+# regardless of the variant.
+#
+# They are restricted to GCC, the only toolset where the diagnostic is a reliable clean
+# compile error: Clang catches fewer cases and surfaces some at link, Clang < 14 lacks the
+# 'error' attribute entirely, MSVC has no __builtin_constant_p, and the Intel (icpx)
+# toolset rejects the -ip flag that b2 passes for <optimization>speed. GCC coverage is
+# sufficient since it is the reference toolset for the feature.
 local ca-req = <optimization>speed <inlining>full <define>BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT ;
+local ca-gcc-only = <toolset>clang:<build>no <toolset>msvc:<build>no <toolset>intel-linux:<build>no ;
 
-compile-fail compile_fail_ca_unsigned_div_by_zero.cpp : $(ca-req) <toolset>msvc:<build>no ;
-compile-fail compile_fail_ca_unsigned_shl_overflow.cpp : $(ca-req) <toolset>msvc:<build>no ;
-compile-fail compile_fail_ca_unsigned_add_overflow.cpp : $(ca-req) <toolset>msvc:<build>no ;
-compile-fail compile_fail_ca_signed_div_by_zero.cpp : $(ca-req) <toolset>clang:<build>no <toolset>msvc:<build>no ;
-compile-fail compile_fail_ca_signed_div_min.cpp : $(ca-req) <toolset>clang:<build>no <toolset>msvc:<build>no ;
-compile-fail compile_fail_ca_div_ceil_zero.cpp : $(ca-req) <toolset>clang:<build>no <toolset>msvc:<build>no ;
+compile-fail compile_fail_ca_unsigned_div_by_zero.cpp : $(ca-req) $(ca-gcc-only) ;
+compile-fail compile_fail_ca_unsigned_shl_overflow.cpp : $(ca-req) $(ca-gcc-only) ;
+compile-fail compile_fail_ca_unsigned_add_overflow.cpp : $(ca-req) $(ca-gcc-only) ;
+compile-fail compile_fail_ca_signed_div_by_zero.cpp : $(ca-req) $(ca-gcc-only) ;
+compile-fail compile_fail_ca_signed_div_min.cpp : $(ca-req) $(ca-gcc-only) ;
+compile-fail compile_fail_ca_div_ceil_zero.cpp : $(ca-req) $(ca-gcc-only) ;
 
-compile compile_ca_saturating_add.cpp : $(ca-req) ;
-compile compile_ca_checked_div_by_zero.cpp : $(ca-req) ;
+compile compile_ca_saturating_add.cpp : $(ca-req) $(ca-gcc-only) ;
+compile compile_ca_checked_div_by_zero.cpp : $(ca-req) $(ca-gcc-only) ;
 
 run test_unsigned_saturating_addition.cpp ;
 run test_unsigned_comparisons.cpp ;
