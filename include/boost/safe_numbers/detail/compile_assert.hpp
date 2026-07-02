@@ -199,12 +199,9 @@ do { \
 #endif // defined(BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT)
 #endif // defined(_MSC_VER)
 
-// Compile out the other variants for the moment
-#if defined(_MSC_VER)
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_PTR(condition, ptr) ptr
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_NEVER_NULL(ptr) ptr
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_SCALAR(condition, scalar) scalar
-#endif
+// PTR / NEVER_NULL / SCALAR are already defined for every non-GCC-active configuration
+// (including MSVC) by the #else branches above, so they are not redefined here. Redefining
+// them for MSVC caused a C4005 macro-redefinition error under /WX (the PTR fallback differed).
 
 // Generic compiler support, via a missing symbol
 #if defined(BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT)
