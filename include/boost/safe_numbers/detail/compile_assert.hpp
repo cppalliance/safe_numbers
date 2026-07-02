@@ -167,11 +167,14 @@ int stop_compile3() __attribute__ ((error("'compile_assert_scalar error detected
 #define BOOST_SAFE_NUMBERS_MERGE1(a,b) BOOST_SAFE_NUMBERS_MERGE2(a,b)
 #define BOOST_SAFE_NUMBERS_MERGE3(a,b,c) BOOST_SAFE_NUMBERS_MERGE1(a, BOOST_SAFE_NUMBERS_MERGE1(b,c))
 
+// The non-active fallback above already defined these as empty; replace them here.
+#undef BOOST_SAFE_NUMBERS_COMPILE_ASSERT
+#undef BOOST_SAFE_NUMBERS_COMPILE_ASSERT0
 #define BOOST_SAFE_NUMBERS_COMPILE_ASSERT(expr, message) \
 do { \
     if (!(expr)) { \
-      extern void MERGE3(_compile_assert, COMPILE_FILE, __LINE__)(); \
-      MERGE3(_compile_assert, COMPILE_FILE, __LINE__)(); \
+      extern void BOOST_SAFE_NUMBERS_MERGE3(_compile_assert, BOOST_SAFE_NUMBERS_COMPILE_FILE, __LINE__)(); \
+      BOOST_SAFE_NUMBERS_MERGE3(_compile_assert, BOOST_SAFE_NUMBERS_COMPILE_FILE, __LINE__)(); \
     } \
 } while (0)
 
@@ -214,8 +217,12 @@ do { \
 #error "BOOST_SAFE_NUMBERS_COMPILE_ASSERT not defined"
 #endif
 
-#ifndef BOOST_SAFE_NUMBERS_COMPILE_ASSERT
+#ifndef BOOST_SAFE_NUMBERS_COMPILE_ASSERT0
 #error "BOOST_SAFE_NUMBERS_COMPILE_ASSERT0 not defined"
+#endif
+
+#ifndef BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P
+#error "BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P not defined"
 #endif
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_COMPILE_ASSERT_HPP
