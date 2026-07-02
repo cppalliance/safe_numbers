@@ -12,6 +12,11 @@ project : requirements
 
     <warnings>extra
 
+    # Opt-in: `b2 ... boost.safe_numbers.compile_assert=on` turns provable constant
+    # precondition violations into build errors (optimized GCC/Clang only). The feature
+    # is declared in ../build.jam.
+    <boost.safe_numbers.compile_assert>on:<define>BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+
     <toolset>gcc:<cxxflags>-Wsign-conversion
     <toolset>gcc:<cxxflags>-Wconversion
     <toolset>gcc:<cxxflags>-Wundef
@@ -111,6 +116,27 @@ run test_unsigned_charconv.cpp ;
 run test_bit.cpp ;
 run test_unsigned_bitwise_ops.cpp ;
 compile-fail compile_fail_unsigned_unary_operators.cpp ;
+
+# ---------------------------------------------------------------------------
+# compile_assert feature. These prove the optimized compile-time checks fire on a
+# provable constant precondition violation, and that value policies do not over-fire.
+# The mechanism needs both the define and an optimized, inlining build (it is inactive
+# at -O0 and with -fno-inline), so these force <optimization>speed <inlining>full
+# regardless of the variant. The firing diagnostic is a reliable compile error on gcc;
+# clang catches the unsigned cases and surfaces others at link, and msvc is a no-op, so
+# the cases that do not fail cleanly at compile time on a toolset are excluded there.
+local ca-req = <optimization>speed <inlining>full <define>BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT ;
+
+compile-fail compile_fail_ca_unsigned_div_by_zero.cpp : $(ca-req) <toolset>msvc:<build>no ;
+compile-fail compile_fail_ca_unsigned_shl_overflow.cpp : $(ca-req) <toolset>msvc:<build>no ;
+compile-fail compile_fail_ca_unsigned_add_overflow.cpp : $(ca-req) <toolset>msvc:<build>no ;
+compile-fail compile_fail_ca_signed_div_by_zero.cpp : $(ca-req) <toolset>clang:<build>no <toolset>msvc:<build>no ;
+compile-fail compile_fail_ca_signed_div_min.cpp : $(ca-req) <toolset>clang:<build>no <toolset>msvc:<build>no ;
+compile-fail compile_fail_ca_div_ceil_zero.cpp : $(ca-req) <toolset>clang:<build>no <toolset>msvc:<build>no ;
+
+compile compile_ca_saturating_add.cpp : $(ca-req) ;
+compile compile_ca_checked_div_by_zero.cpp : $(ca-req) ;
+
 run test_unsigned_saturating_addition.cpp ;
 run test_unsigned_comparisons.cpp ;
 run test_unsigned_saturating_subtraction.cpp ;

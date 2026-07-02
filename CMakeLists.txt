@@ -21,6 +21,16 @@ target_link_libraries(boost_safe_numbers
 
 target_compile_features(boost_safe_numbers INTERFACE cxx_std_20)
 
+# Opt-in: turn provable compile-time-constant precondition violations (divide by zero,
+# shift past type width, add/sub/mul overflow) into build errors. Only active on
+# optimized GCC/Clang builds; a no-op elsewhere and at -O0. Propagated to consumers.
+option(BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+    "Turn provable constant precondition violations into build errors (optimized GCC/Clang only)" OFF)
+
+if(BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT)
+    target_compile_definitions(boost_safe_numbers INTERFACE BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT)
+endif()
+
 if(BUILD_TESTING AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test/CMakeLists.txt")
 
     add_subdirectory(test)

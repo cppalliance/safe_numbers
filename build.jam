@@ -5,6 +5,8 @@
 
 require-b2 5.2 ;
 
+import feature ;
+
 constant boost_dependencies :
     /boost/charconv//boost_charconv
     /boost/core//boost_core
@@ -13,8 +15,17 @@ constant boost_dependencies :
 
 project /boost/safe_numbers ;
 
+# Opt-in: build with boost.safe_numbers.compile_assert=on to turn provable
+# compile-time-constant precondition violations (divide by zero, shift past type
+# width, add/sub/mul overflow) into build errors. Only active on optimized GCC/Clang
+# builds; a no-op elsewhere and at -O0. Default off. Propagated to consumers.
+feature.feature boost.safe_numbers.compile_assert : off on : propagated ;
+
 explicit
-    [ alias boost_safe_numbers : : : : <include>include <library>$(boost_dependencies) ]
+    [ alias boost_safe_numbers : : : :
+        <include>include
+        <boost.safe_numbers.compile_assert>on:<define>BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+        <library>$(boost_dependencies) ]
     [ alias all : boost_safe_numbers test ]
     ;
 
