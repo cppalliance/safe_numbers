@@ -82,6 +82,7 @@ The feature is a best-effort diagnostic layered on top of the existing runtime s
 * *GCC* reports every case as a clean compile error that names the condition, and is the reference toolset for the diagnostic.
 * *Clang* (14 or later) catches the common cases (for example the default `throw_exception` operators), but is more conservative through deep call chains and may report a caught violation as a link error against an undefined `+_compile_assert_fail+` symbol rather than a compile error.
 * *Constant operands only.* Runtime values are never diagnosed; they take the normal runtime path.
+* *Divide-by-zero and shift-past-width are the most portable.* They rest on direct constant comparisons that the optimizer folds on every supported compiler and architecture. Add, subtract and multiply overflow additionally depend on the optimizer folding `+__builtin_add_overflow+` (and its siblings) through the call chain. This works on the mainstream GCC and Clang targets (x86_64 and 32-bit Linux, Apple Silicon, and so on), but a few niche toolchains, for example Cygwin's gcc, do not perform that fold, so on those the arithmetic-overflow diagnostic may not fire.
 
 [CAUTION]
 ====

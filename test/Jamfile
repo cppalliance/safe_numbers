@@ -132,9 +132,13 @@ compile-fail compile_fail_unsigned_unary_operators.cpp ;
 local ca-req = <optimization>speed <inlining>full <define>BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT ;
 local ca-gcc-only = <toolset>clang:<build>no <toolset>msvc:<build>no <toolset>intel-linux:<build>no ;
 
+# Add-overflow asserts through __builtin_add_overflow. It fires on mainstream gcc targets
+# (x86_64 and 32-bit Linux, etc.), but Cygwin's gcc does not fold that result through the
+# call chain, so this one test skips Cygwin. Divide-by-zero, shift-past-width and min/-1
+# assert on direct constant comparisons and fire on every gcc/arch.
 compile-fail compile_fail_ca_unsigned_div_by_zero.cpp : $(ca-req) $(ca-gcc-only) ;
 compile-fail compile_fail_ca_unsigned_shl_overflow.cpp : $(ca-req) $(ca-gcc-only) ;
-compile-fail compile_fail_ca_unsigned_add_overflow.cpp : $(ca-req) $(ca-gcc-only) ;
+compile-fail compile_fail_ca_unsigned_add_overflow.cpp : $(ca-req) $(ca-gcc-only) <target-os>cygwin:<build>no ;
 compile-fail compile_fail_ca_signed_div_by_zero.cpp : $(ca-req) $(ca-gcc-only) ;
 compile-fail compile_fail_ca_signed_div_min.cpp : $(ca-req) $(ca-gcc-only) ;
 compile-fail compile_fail_ca_div_ceil_zero.cpp : $(ca-req) $(ca-gcc-only) ;
