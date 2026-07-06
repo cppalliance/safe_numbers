@@ -27,11 +27,13 @@
 #include <iostream>
 #include <cstdint>
 #include <limits>
+// tag::exclude[]
 
 #ifdef _MSC_VER
 #  pragma warning(push)
 #  pragma warning(disable: 4127) // Conditional expression is constant
 #endif
+// end::exclude[]
 
 #ifdef BOOST_SAFE_NUMBERS_INTEGER_SAFETY_PROFILE
 using u32 = boost::safe_numbers::u32;

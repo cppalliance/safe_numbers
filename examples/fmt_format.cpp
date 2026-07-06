@@ -2,10 +2,12 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
+// tag::exclude[]
 #define FMT_HEADER_ONLY
 
 #if __has_include(<fmt/format.h>)
 
+// end::exclude[]
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/bounded_integers.hpp>
 #include <boost/safe_numbers/fmt_format.hpp>
@@ -62,6 +64,7 @@ int main()
 
     return 0;
 }
+// tag::exclude[]
 
 #else
 
@@ -73,3 +76,4 @@ int main()
 }
 
 #endif
+// end::exclude[]

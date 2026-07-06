@@ -33,7 +33,7 @@ Error Detected: Overflow detected in unsigned addition
 ====
 [source, c++]
 ----
-include::example$basic_usage_stacktrace.cpp[]
+include::example$basic_usage_stacktrace.cpp[tags=**;!exclude]
 ----
 
 Output on Linux x64:
@@ -263,7 +263,7 @@ The example approximates the same effect with a type alias so it compiles either
 ====
 [source, c++]
 ----
-include::example$safety_profile.cpp[]
+include::example$safety_profile.cpp[tags=**;!exclude]
 ----
 
 Output without `BOOST_SAFE_NUMBERS_INTEGER_SAFETY_PROFILE` (silent wrap-around):
@@ -342,7 +342,7 @@ IMPORTANT: The header `<boost/safe_numbers/fmt_format.hpp>` is *NOT* part of the
 ====
 [source, c++]
 ----
-include::example$fmt_format.cpp[]
+include::example$fmt_format.cpp[tags=**;!exclude]
 ----
 
 Output:
