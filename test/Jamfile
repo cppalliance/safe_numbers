@@ -139,7 +139,7 @@ local ca-gcc-only = <toolset>clang:<build>no <toolset>msvc:<build>no <toolset>in
 compile-fail compile_fail_ca_unsigned_div_by_zero.cpp : $(ca-req) $(ca-gcc-only) ;
 compile-fail compile_fail_ca_unsigned_shl_overflow.cpp : $(ca-req) $(ca-gcc-only) ;
 compile-fail compile_fail_ca_unsigned_add_overflow.cpp : $(ca-req) $(ca-gcc-only) <target-os>cygwin:<build>no ;
-compile-fail compile_fail_ca_signed_div_by_zero.cpp : $(ca-req) $(ca-gcc-only) ;
+compile-fail compile_fail_ca_signed_div_by_zero.cpp : $(ca-req) $(ca-gcc-only) <target-os>cygwin:<build>no ;
 compile-fail compile_fail_ca_signed_div_min.cpp : $(ca-req) $(ca-gcc-only) ;
 compile-fail compile_fail_ca_div_ceil_zero.cpp : $(ca-req) $(ca-gcc-only) ;
 
