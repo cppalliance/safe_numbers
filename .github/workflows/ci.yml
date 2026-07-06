@@ -104,3 +104,70 @@ jobs:
             ctest -V --no-tests=error
             cd $GITHUB_WORKSPACE
           done
+
+  compile-time-checks:
+    name: Compile-time checks (GCC)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Boost
+        run: |
+          echo GITHUB_REPOSITORY: $GITHUB_REPOSITORY
+          LIBRARY=${GITHUB_REPOSITORY#*/}
+          echo LIBRARY: $LIBRARY
+          echo "LIBRARY=$LIBRARY" >> $GITHUB_ENV
+          echo GITHUB_BASE_REF: $GITHUB_BASE_REF
+          echo GITHUB_REF: $GITHUB_REF
+          REF=${GITHUB_BASE_REF:-$GITHUB_REF}
+          REF=${REF#refs/heads/}
+          echo REF: $REF
+          BOOST_BRANCH=develop && [ "$REF" == "master" ] && BOOST_BRANCH=master || true
+          echo BOOST_BRANCH: $BOOST_BRANCH
+          cd ..
+          git clone -b $BOOST_BRANCH --depth 1 https://github.com/boostorg/boost.git boost-root
+          cd boost-root
+          mkdir -p libs/$LIBRARY
+          cp -r $GITHUB_WORKSPACE/* libs/$LIBRARY
+          git submodule update --init tools/boostdep
+          python3 tools/boostdep/depinst/depinst.py --git_args "--jobs 3" $LIBRARY
+          ./bootstrap.sh
+          ./b2 headers
+
+      # The dedicated tests force optimization + the feature define per target, so they
+      # exercise the checks regardless of the global toggle: the compile_fail_ca_* files
+      # must fail to compile (the check fires) and the compile_ca_* files must compile
+      # (the value policies are not over-fired). GCC is the reference toolset.
+      - name: Feature fires and does not over-fire (dedicated tests, GCC, release)
+        run: |
+          cd ../boost-root
+          ./b2 \
+            libs/$LIBRARY/test//compile_fail_ca_unsigned_div_by_zero \
+            libs/$LIBRARY/test//compile_fail_ca_unsigned_shl_overflow \
+            libs/$LIBRARY/test//compile_fail_ca_unsigned_add_overflow \
+            libs/$LIBRARY/test//compile_fail_ca_signed_div_by_zero \
+            libs/$LIBRARY/test//compile_fail_ca_signed_div_min \
+            libs/$LIBRARY/test//compile_fail_ca_div_ceil_zero \
+            libs/$LIBRARY/test//compile_ca_saturating_add \
+            libs/$LIBRARY/test//compile_ca_checked_div_by_zero \
+            toolset=gcc cxxstd=20 variant=release
+
+      # End-to-end check of the B2 toggle: clean code still builds, and a test that
+      # divides by a compile-time-constant zero must fail to build once it is enabled.
+      - name: B2 toggle activates the checks
+        run: |
+          cd ../boost-root
+          ./b2 libs/$LIBRARY/test//quick boost.safe_numbers.compile_assert=on toolset=gcc cxxstd=20 variant=release
+          if ./b2 libs/$LIBRARY/test//test_unsigned_division boost.safe_numbers.compile_assert=on toolset=gcc cxxstd=20 variant=release >/dev/null 2>&1; then
+            echo "ERROR: expected test_unsigned_division to fail to build with the feature enabled"
+            exit 1
+          fi
+          echo "Confirmed: enabling boost.safe_numbers.compile_assert turns the constant violation into a build error."
+
+      # Smoke check that the CMake option is declared and configures cleanly.
+      - name: CMake option integrates
+        run: |
+          cd ../boost-root
+          rm -rf __build_ca__ && mkdir __build_ca__ && cd __build_ca__
+          cmake -DBOOST_INCLUDE_LIBRARIES=$LIBRARY -DBUILD_TESTING=OFF -DBOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT=ON -DCMAKE_BUILD_TYPE=Release ..

@@ -12,6 +12,11 @@ project : requirements
 
     <warnings>extra
 
+    # Opt-in: `b2 ... boost.safe_numbers.compile_assert=on` turns provable constant
+    # precondition violations into build errors (optimized GCC/Clang only). The feature
+    # is declared in ../build.jam.
+    <boost.safe_numbers.compile_assert>on:<define>BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+
     <toolset>gcc:<cxxflags>-Wsign-conversion
     <toolset>gcc:<cxxflags>-Wconversion
     <toolset>gcc:<cxxflags>-Wundef
@@ -111,6 +116,46 @@ run test_unsigned_charconv.cpp ;
 run test_bit.cpp ;
 run test_unsigned_bitwise_ops.cpp ;
 compile-fail compile_fail_unsigned_unary_operators.cpp ;
+
+# ---------------------------------------------------------------------------
+# compile_assert feature. These prove the optimized compile-time checks fire on a
+# provable constant precondition violation, and that value policies do not over-fire.
+# The mechanism needs both the define and an optimized, inlining build (it is inactive
+# at -O0 and with -fno-inline), so these force <optimization>speed <inlining>full
+# regardless of the variant.
+#
+# They are restricted to GCC, the only toolset where the diagnostic is a reliable clean
+# compile error: Clang catches fewer cases and surfaces some at link, Clang < 14 lacks the
+# 'error' attribute entirely, MSVC has no __builtin_constant_p, and the Intel (icpx)
+# toolset rejects the -ip flag that b2 passes for <optimization>speed. GCC coverage is
+# sufficient since it is the reference toolset for the feature.
+local ca-req = <optimization>speed <inlining>full <define>BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT ;
+local ca-gcc-only = <toolset>clang:<build>no <toolset>msvc:<build>no <toolset>intel-linux:<build>no ;
+
+# The compile-assert mechanism relies on the optimizer folding the constant and eliminating
+# the dead error() call. Sanitizer instrumentation inhibits that folding, so the error never
+# fires and these compile-fail tests would (wrongly) compile clean. Skip them whenever any
+# sanitizer is enabled.
+local ca-no-sanitizer =
+    <address-sanitizer>on:<build>no    <address-sanitizer>norecover:<build>no
+    <undefined-sanitizer>on:<build>no  <undefined-sanitizer>norecover:<build>no
+    <thread-sanitizer>on:<build>no     <thread-sanitizer>norecover:<build>no
+    <leak-sanitizer>on:<build>no       <leak-sanitizer>norecover:<build>no ;
+
+# Add-overflow asserts through __builtin_add_overflow. It fires on mainstream gcc targets
+# (x86_64 and 32-bit Linux, etc.), but Cygwin's gcc does not fold that result through the
+# call chain, so this one test skips Cygwin. Divide-by-zero, shift-past-width and min/-1
+# assert on direct constant comparisons and fire on every gcc/arch.
+compile-fail compile_fail_ca_unsigned_div_by_zero.cpp : $(ca-req) $(ca-gcc-only) $(ca-no-sanitizer) ;
+compile-fail compile_fail_ca_unsigned_shl_overflow.cpp : $(ca-req) $(ca-gcc-only) $(ca-no-sanitizer) ;
+compile-fail compile_fail_ca_unsigned_add_overflow.cpp : $(ca-req) $(ca-gcc-only) $(ca-no-sanitizer) <target-os>cygwin:<build>no ;
+compile-fail compile_fail_ca_signed_div_by_zero.cpp : $(ca-req) $(ca-gcc-only) $(ca-no-sanitizer) <target-os>cygwin:<build>no ;
+compile-fail compile_fail_ca_signed_div_min.cpp : $(ca-req) $(ca-gcc-only) $(ca-no-sanitizer) ;
+compile-fail compile_fail_ca_div_ceil_zero.cpp : $(ca-req) $(ca-gcc-only) $(ca-no-sanitizer) ;
+
+compile compile_ca_saturating_add.cpp : $(ca-req) $(ca-gcc-only) ;
+compile compile_ca_checked_div_by_zero.cpp : $(ca-req) $(ca-gcc-only) ;
+
 run test_unsigned_saturating_addition.cpp ;
 run test_unsigned_comparisons.cpp ;
 run test_unsigned_saturating_subtraction.cpp ;

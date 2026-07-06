@@ -1,0 +1,123 @@
+////
+Copyright 2026 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#compile_time_checks]
+= Compile-Time Precondition Checks
+:idprefix: ctc_
+
+== Description
+
+The library can turn a class of precondition violations into build errors instead of runtime failures.
+When an operand is a compile-time constant that provably violates a precondition, for example dividing by a literal zero or shifting past the width of the type, the compiler stops the build and names the problem.
+When the operands are ordinary runtime values the check is transparent: it compiles to nothing and has no effect on the generated code.
+
+The mechanism relies on the optimizer's constant propagation together with the GCC and Clang function `error` attribute (reached through `+__builtin_constant_p+`).
+Because it is driven by the optimizer, it is active only in optimized GCC or Clang builds, and only for values the optimizer can prove are constant.
+It is disabled by default and adds nothing to a normal build.
+
+See https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2026/p4021r1.pdf[P4021] and https://github.com/jonnygrant/compile_assert[the reference implementation] thereof both by Jonathan Grant for additional information.
+
+== What Is Diagnosed
+
+The check fires only where the operation would otherwise fail at runtime (throw or terminate).
+Policies that define a value for the boundary case, `saturate` (clamp), `checked` (returns an empty `std::optional`), and `overflow_tuple` (returns a `{value, flag}` pair), are intentionally left alone: for them the boundary is a documented result, not an error.
+
+[cols="2,3,3", options="header"]
+|===
+| Operation | Diagnosed when the constant operand | Policies it applies to
+
+| Division, modulo (`u8`-`u128`, `i8`-`i128`)
+| makes the divisor zero
+| `throw_exception`, `saturate`, `overflow_tuple`, `strict` (all abort on a zero divisor)
+
+| Signed division, modulo
+| forms `INT_MIN / -1` or `INT_MIN % -1`
+| `throw_exception`, `strict`
+
+| Left shift, right shift (unsigned)
+| shifts past the type width
+| `throw_exception`, `strict`
+
+| Addition, subtraction, multiplication
+| overflows or underflows
+| `throw_exception`, `strict`
+
+| `div_ceil`, `next_multiple_of`
+| makes the divisor zero
+| n/a (these are always error-on-zero)
+|===
+
+For example, with the feature enabled in an optimized build:
+
+[source, c++]
+----
+using namespace boost::safe_numbers;
+
+u32 bad_div()  { return u32{10} / u32{0}; }        // build error: unsigned division by zero
+u8  bad_add()  { return u8{200} + u8{100}; }       // build error: unsigned addition overflow
+u32 bad_shift(){ return u32{1} << u32{40}; }       // build error: unsigned left shift past type width
+i32 bad_min()  { return i32{INT32_MIN} / i32{-1};} // build error: signed division overflow (min / -1)
+
+u32 ok(u32 a, u32 b) { return a / b; }             // fine: runtime operands, no check emitted
+u8  ok_sat() { return saturating_add(u8{200}, u8{100}); } // fine: saturate defines this as 255
+----
+
+== Benefits
+
+* Bugs that would only show up on a specific runtime input are surfaced at build time, at the exact call site, with a message describing the violated precondition.
+* There is no runtime cost. When the check does not fire, or the operands are not constant, it is removed entirely by the optimizer; the generated code is identical to a build without the feature.
+* No source changes are required. The checks live inside the library operations, so enabling the build flag is all that is needed.
+
+== Requirements and Behavior
+
+[NOTE]
+====
+The feature is a best-effort diagnostic layered on top of the existing runtime safety, not a replacement for it. The runtime checks always apply; this only adds earlier detection for the constant cases the optimizer can prove.
+====
+
+* *Compiler and optimization.* GCC, or Clang 14 or later, with optimization enabled (`-O1` or higher). It is inert at `-O0` and on MSVC, and never changes program behavior. The mechanism uses the `error` function attribute, which earlier Clang lacks; enabling the feature on such a compiler (for example Clang 13) is a compile-time `#error` rather than a silent no-op.
+* *GCC* reports every case as a clean compile error that names the condition, and is the reference toolset for the diagnostic.
+* *Clang* (14 or later) catches the common cases (for example the default `throw_exception` operators), but is more conservative through deep call chains and may report a caught violation as a link error against an undefined `+_compile_assert_fail+` symbol rather than a compile error.
+* *Constant operands only.* Runtime values are never diagnosed; they take the normal runtime path.
+* *Divide-by-zero and shift-past-width are the most portable.* They rest on direct constant comparisons that the optimizer folds on every supported compiler and architecture. Add, subtract and multiply overflow additionally depend on the optimizer folding `+__builtin_add_overflow+` (and its siblings) through the call chain. This works on the mainstream GCC and Clang targets (x86_64 and 32-bit Linux, Apple Silicon, and so on), but a few niche toolchains, for example Cygwin's gcc, do not perform that fold, so on those the arithmetic-overflow diagnostic may not fire.
+
+[CAUTION]
+====
+Because the check fires on any provably constant violation, code that deliberately exercises a runtime error path with constant operands will fail to build with the feature on.
+A test such as `+BOOST_TEST_THROWS(x / u32{0}, std::domain_error)+` constructs a constant zero divisor, so it becomes a build error rather than a caught exception.
+Use runtime (non-constant) operands in such code, or enable the feature only for a dedicated build.
+It is intended for building application code or a curated CI job, not for the library's own test suite as-is.
+====
+
+== Enabling the Feature
+
+The feature is controlled by the macro `BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT`.
+Any build system can turn it on by defining that macro and compiling with optimization; the two supported build systems expose it directly.
+
+=== B2
+
+Add the `boost.safe_numbers.compile_assert=on` property to the build request and use an optimized variant:
+
+[source, bash]
+----
+b2 <your targets> boost.safe_numbers.compile_assert=on variant=release
+----
+
+The property is `propagated`, so targets that depend on `/boost/safe_numbers//boost_safe_numbers` pick up the define automatically.
+It defaults to `off`.
+Remember that `variant=debug` is unoptimized, so the checks are inert there even with the property set.
+
+=== CMake
+
+Configure with the option enabled and an optimized build type:
+
+[source, bash]
+----
+cmake -B build -DBOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT=ON -DCMAKE_BUILD_TYPE=Release
+----
+
+The option (default `OFF`) adds the define to the `Boost::safe_numbers` interface, so it propagates to every target that links `Boost::safe_numbers`.
+As with B2, an optimized build type (`Release` or `RelWithDebInfo`) is required for the checks to be active.

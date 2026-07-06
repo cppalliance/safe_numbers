@@ -7,6 +7,7 @@
 
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
+#include <boost/safe_numbers/detail/compile_assert.hpp>
 #include <boost/safe_numbers/detail/int128/bit.hpp>
 #include <boost/safe_numbers/detail/throw_exception.hpp>
 #include <boost/safe_numbers/overflow_policy.hpp>
@@ -594,6 +595,9 @@ struct signed_add_helper
             }
         };
 
+        // A constant operation that overflows is a build error under the error policies
+        // (throw_exception, strict); saturate/checked/overflow_tuple return a defined value
+        // and are excluded. The assert reuses the status the runtime path already computes.
         #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
         if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
@@ -603,6 +607,14 @@ struct signed_add_helper
             if (!std::is_constant_evaluated())
             {
                 const auto status {impl::signed_intrin_add(lhs_basis, rhs_basis, result)};
+
+                #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+                if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+                {
+                    BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(status == signed_overflow_status::no_error, "signed addition overflow");
+                }
+                #endif
+
                 if (status != signed_overflow_status::no_error)
                 {
                     handle_error(status);
@@ -617,6 +629,14 @@ struct signed_add_helper
         #endif // BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
         const auto status {impl::signed_no_intrin_add(lhs_basis, rhs_basis, result)};
+
+        #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+        if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+        {
+            BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(status == signed_overflow_status::no_error, "signed addition overflow");
+        }
+        #endif
+
         if (status != signed_overflow_status::no_error)
         {
             handle_error(status);
@@ -1207,6 +1227,9 @@ struct signed_sub_helper
             }
         };
 
+        // A constant operation that overflows is a build error under the error policies
+        // (throw_exception, strict); saturate/checked/overflow_tuple return a defined value
+        // and are excluded. The assert reuses the status the runtime path already computes.
         #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
         if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
@@ -1216,6 +1239,14 @@ struct signed_sub_helper
             if (!std::is_constant_evaluated())
             {
                 const auto status {impl::signed_intrin_sub(lhs_basis, rhs_basis, result)};
+
+                #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+                if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+                {
+                    BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(status == signed_overflow_status::no_error, "signed subtraction overflow");
+                }
+                #endif
+
                 if (status != signed_overflow_status::no_error)
                 {
                     handle_error(status);
@@ -1230,6 +1261,14 @@ struct signed_sub_helper
         #endif // BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
         const auto status {impl::signed_no_intrin_sub(lhs_basis, rhs_basis, result)};
+
+        #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+        if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+        {
+            BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(status == signed_overflow_status::no_error, "signed subtraction overflow");
+        }
+        #endif
+
         if (status != signed_overflow_status::no_error)
         {
             handle_error(status);
@@ -1788,6 +1827,9 @@ struct signed_mul_helper
             }
         };
 
+        // A constant operation that overflows is a build error under the error policies
+        // (throw_exception, strict); saturate/checked/overflow_tuple return a defined value
+        // and are excluded. The assert reuses the status the runtime path already computes.
         #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
         // Route int128 through the intrin path only where the signed 128-bit
@@ -1801,6 +1843,14 @@ struct signed_mul_helper
             if (!std::is_constant_evaluated())
             {
                 const auto status {impl::signed_intrin_mul(lhs_basis, rhs_basis, result)};
+
+                #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+                if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+                {
+                    BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(status == signed_overflow_status::no_error, "signed multiplication overflow");
+                }
+                #endif
+
                 if (status != signed_overflow_status::no_error)
                 {
                     handle_error(status);
@@ -1815,6 +1865,14 @@ struct signed_mul_helper
         #endif // BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
         const auto status {impl::signed_no_intrin_mul(lhs_basis, rhs_basis, result)};
+
+        #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+        if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+        {
+            BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(status == signed_overflow_status::no_error, "signed multiplication overflow");
+        }
+        #endif
+
         if (status != signed_overflow_status::no_error)
         {
             handle_error(status);
@@ -2087,6 +2145,18 @@ struct signed_div_helper
         const auto lhs_basis {static_cast<BasisType>(lhs)};
         const auto rhs_basis {static_cast<BasisType>(rhs)};
 
+        #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+        // Divide-by-zero throws or exits under every policy that reaches this template
+        // (throw_exception, saturate, strict), so a constant zero divisor is always a bug.
+        BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P1(rhs_basis, rhs_basis != BasisType{0}, "signed division by zero");
+
+        // min / -1 overflow is an error under throw_exception and strict; saturate returns max.
+        if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+        {
+            BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(!(lhs_basis == std::numeric_limits<BasisType>::min() && rhs_basis == static_cast<BasisType>(-1)), "signed division overflow (min / -1)");
+        }
+        #endif
+
         if (rhs_basis == BasisType{0}) [[unlikely]]
         {
             if constexpr (Policy == overflow_policy::strict)
@@ -2196,6 +2266,11 @@ struct signed_div_helper<overflow_policy::overflow_tuple, BasisType>
 
         const auto lhs_basis {static_cast<BasisType>(lhs)};
         const auto rhs_basis {static_cast<BasisType>(rhs)};
+
+        // overflow_tuple divide-by-zero throws, so a constant zero divisor is a build error
+        #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+        BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(rhs_basis != BasisType{0}, "signed division by zero");
+        #endif
 
         if (rhs_basis == BasisType{0}) [[unlikely]]
         {
@@ -2353,6 +2428,18 @@ struct signed_mod_helper
         const auto lhs_basis {static_cast<BasisType>(lhs)};
         const auto rhs_basis {static_cast<BasisType>(rhs)};
 
+        #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+        // Modulo-by-zero throws or exits under every policy that reaches this template
+        // (throw_exception, saturate, strict), so a constant zero divisor is always a bug.
+        BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(rhs_basis != BasisType{0}, "signed modulo by zero");
+
+        // min % -1 overflow is an error under throw_exception and strict; saturate returns 0.
+        if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+        {
+            BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(!(lhs_basis == std::numeric_limits<BasisType>::min() && rhs_basis == static_cast<BasisType>(-1)), "signed modulo overflow (min % -1)");
+        }
+        #endif
+
         if (rhs_basis == BasisType{0}) [[unlikely]]
         {
             if constexpr (Policy == overflow_policy::strict)
@@ -2465,6 +2552,11 @@ struct signed_mod_helper<overflow_policy::overflow_tuple, BasisType>
 
         const auto lhs_basis {static_cast<BasisType>(lhs)};
         const auto rhs_basis {static_cast<BasisType>(rhs)};
+
+        // overflow_tuple modulo-by-zero throws, so a constant zero divisor is a build error
+        #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+        BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(rhs_basis != BasisType{0}, "signed modulo by zero");
+        #endif
 
         if (rhs_basis == BasisType{0}) [[unlikely]]
         {

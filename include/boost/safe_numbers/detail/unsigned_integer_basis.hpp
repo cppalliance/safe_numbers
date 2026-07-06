@@ -9,6 +9,7 @@
 #include <boost/safe_numbers/detail/type_traits.hpp>
 #include <boost/safe_numbers/detail/throw_exception.hpp>
 #include <boost/safe_numbers/detail/int128/bit.hpp>
+#include <boost/safe_numbers/detail/compile_assert.hpp>
 #include <boost/safe_numbers/overflow_policy.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
@@ -574,6 +575,10 @@ struct add_helper
             }
         };
 
+        // A constant operation that overflows is a build error under the error policies
+        // (throw_exception, strict); saturate/checked/overflow_tuple return a defined
+        // value and are excluded. The assert reuses the same overflow result the runtime
+        // path already computes, so it costs nothing when it does not fire.
         #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
@@ -582,7 +587,16 @@ struct add_helper
 
             if (!std::is_constant_evaluated())
             {
-                if (impl::unsigned_intrin_add(lhs_basis, rhs_basis, res))
+                const bool overflowed {impl::unsigned_intrin_add(lhs_basis, rhs_basis, res)};
+
+                #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+                if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+                {
+                    BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P2(lhs_basis, rhs_basis, !overflowed, "unsigned addition overflow");
+                }
+                #endif
+
+                if (overflowed)
                 {
                     handle_overflow();
                 }
@@ -595,7 +609,16 @@ struct add_helper
 
         #endif // BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
-        if (impl::unsigned_no_intrin_add(lhs_basis, rhs_basis, res))
+        const bool overflowed {impl::unsigned_no_intrin_add(lhs_basis, rhs_basis, res)};
+
+        #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+        if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+        {
+            BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P2(lhs_basis, rhs_basis, !overflowed, "unsigned addition overflow");
+        }
+        #endif
+
+        if (overflowed)
         {
             handle_overflow();
         }
@@ -1089,7 +1112,18 @@ struct sub_helper
 
             if (!std::is_constant_evaluated())
             {
-                if (impl::unsigned_intrin_sub(lhs_basis, rhs_basis, res))
+                const bool underflowed {impl::unsigned_intrin_sub(lhs_basis, rhs_basis, res)};
+
+                // A constant subtraction that underflows is a build error under the error
+                // policies (throw_exception, strict); value policies are excluded.
+                #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+                if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+                {
+                    BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(!underflowed, "unsigned subtraction underflow");
+                }
+                #endif
+
+                if (underflowed)
                 {
                     handle_underflow();
                 }
@@ -1100,7 +1134,16 @@ struct sub_helper
             #endif
         }
 
-        if (impl::unsigned_no_intrin_sub(lhs_basis, rhs_basis, res))
+        const bool underflowed {impl::unsigned_no_intrin_sub(lhs_basis, rhs_basis, res)};
+
+        #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+        if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+        {
+            BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(!underflowed, "unsigned subtraction underflow");
+        }
+        #endif
+
+        if (underflowed)
         {
             handle_underflow();
         }
@@ -1411,7 +1454,18 @@ struct mul_helper
 
             if (!std::is_constant_evaluated())
             {
-                if (impl::unsigned_intrin_mul(lhs_basis, rhs_basis, res))
+                const bool overflowed {impl::unsigned_intrin_mul(lhs_basis, rhs_basis, res)};
+
+                // A constant multiplication that overflows is a build error under the error
+                // policies (throw_exception, strict); value policies are excluded.
+                #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+                if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+                {
+                    BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(!overflowed, "unsigned multiplication overflow");
+                }
+                #endif
+
+                if (overflowed)
                 {
                     handle_overflow();
                 }
@@ -1422,7 +1476,16 @@ struct mul_helper
             #endif
         }
 
-        if (impl::no_intrin_mul(lhs_basis, rhs_basis, res))
+        const bool overflowed {impl::no_intrin_mul(lhs_basis, rhs_basis, res)};
+
+        #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+        if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+        {
+            BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(!overflowed, "unsigned multiplication overflow");
+        }
+        #endif
+
+        if (overflowed)
         {
             handle_overflow();
         }
@@ -1598,7 +1661,15 @@ struct div_helper
     {
         using result_type = unsigned_integer_basis<BasisType>;
 
-        if (static_cast<BasisType>(rhs) == 0U) [[unlikely]]
+        const auto divisor {static_cast<BasisType>(rhs)};
+
+        // Divide-by-zero throws or exits under every policy that reaches this template
+        // (throw_exception, saturate, strict), so a constant zero divisor is always a bug.
+        #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+        BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(divisor != 0U, "unsigned division by zero");
+        #endif
+
+        if (divisor == 0U) [[unlikely]]
         {
             if constexpr (Policy == overflow_policy::throw_exception)
             {
@@ -1641,6 +1712,12 @@ struct div_helper<overflow_policy::overflow_tuple, BasisType>
         using result_type = unsigned_integer_basis<BasisType>;
 
         const auto divisor {static_cast<BasisType>(rhs)};
+
+        // overflow_tuple divide-by-zero throws, so a constant zero divisor is a build error
+        #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+        BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(divisor != 0U, "unsigned division by zero");
+        #endif
+
         if (divisor == 0U) [[unlikely]]
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, div_by_zero_msg<BasisType>());
@@ -1752,7 +1829,15 @@ struct mod_helper
     {
         using result_type = unsigned_integer_basis<BasisType>;
 
-        if (static_cast<BasisType>(rhs) == 0U) [[unlikely]]
+        const auto divisor {static_cast<BasisType>(rhs)};
+
+        // Modulo-by-zero throws or exits under every policy that reaches this template
+        // (throw_exception, saturate, strict), so a constant zero divisor is always a bug.
+        #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+        BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(divisor != 0U, "unsigned modulo by zero");
+        #endif
+
+        if (divisor == 0U) [[unlikely]]
         {
             if constexpr (Policy == overflow_policy::throw_exception)
             {
@@ -1795,9 +1880,15 @@ struct mod_helper<overflow_policy::overflow_tuple, BasisType>
         using result_type = unsigned_integer_basis<BasisType>;
 
         const auto divisor {static_cast<BasisType>(rhs)};
+
+        // overflow_tuple modulo-by-zero throws, so a constant zero divisor is a build error
+        #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+        BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(divisor != 0U, "unsigned modulo by zero");
+        #endif
+
         if (divisor == 0U) [[unlikely]]
         {
-            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, div_by_zero_msg<BasisType>());
+            BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, mod_by_zero_msg<BasisType>());
         }
 
         if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
@@ -1977,6 +2068,15 @@ struct shl_helper
         const auto lhs_width {static_cast<BasisType>(bit_width(raw_lhs))};
         const auto overflowed {lhs_width + raw_rhs >= static_cast<BasisType>(std::numeric_limits<BasisType>::digits)};
 
+        // Left shift past the type width is an error under throw_exception and strict;
+        // saturate/checked/overflow_tuple return a defined value, so they are excluded.
+        #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+        if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+        {
+            BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(!overflowed, "unsigned left shift past type width");
+        }
+        #endif
+
         if (overflowed)
         {
             if constexpr (Policy == overflow_policy::throw_exception)
@@ -2073,6 +2173,15 @@ struct shr_helper
         const auto raw_lhs {static_cast<BasisType>(lhs)};
         const auto raw_rhs {static_cast<BasisType>(rhs)};
         const auto overflowed {raw_rhs >= static_cast<BasisType>(std::numeric_limits<BasisType>::digits)};
+
+        // Right shift past the type width is an error under throw_exception and strict;
+        // saturate/checked/overflow_tuple return a defined value, so they are excluded.
+        #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+        if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+        {
+            BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(!overflowed, "unsigned right shift past type width");
+        }
+        #endif
 
         if (overflowed)
         {

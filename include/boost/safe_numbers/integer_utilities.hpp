@@ -7,6 +7,7 @@
 
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
+#include <boost/safe_numbers/detail/compile_assert.hpp>
 #include <boost/safe_numbers/detail/rtz.hpp>
 #include <boost/safe_numbers/detail/num_digits.hpp>
 #include <boost/safe_numbers/bit.hpp>
@@ -172,6 +173,13 @@ template <detail::integral_library_type T>
 BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto div_ceil(const T a, const T b) noexcept -> T
 {
     using underlying_type = detail::underlying_type_t<T>;
+
+    // div_ceil divides by b and is noexcept, so a constant zero divisor is always a bug
+    #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
+    const auto divisor {static_cast<underlying_type>(b)};
+    BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(divisor != static_cast<underlying_type>(0), "div_ceil divisor is zero");
+    static_cast<void>(divisor); // used only by the assert; keep ENABLE + -O0 warning-clean
+    #endif
 
     const auto d {a / b};
     const auto r {a % b};
