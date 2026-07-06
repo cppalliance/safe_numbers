@@ -14,6 +14,7 @@
 #elif defined(_MSC_VER)
 #  pragma warning (push)
 #  pragma warning (disable: 4834)
+#  pragma warning (disable: 4723) // Potential divide by 0. We need to test this
 #endif
 
 #ifdef BOOST_SAFE_NUMBERS_BUILD_MODULE
