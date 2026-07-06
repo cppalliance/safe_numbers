@@ -100,6 +100,36 @@
 #define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(expression, message) \
     BOOST_SAFE_NUMBERS_CA_CONST_P_IMPL(expression, message, BOOST_SAFE_NUMBERS_CA_CAT(_compile_assert_fail_, __COUNTER__))
 
+// GCC before 13 does not fold __builtin_constant_p when it is applied to a value derived
+// from an overflow builtin, or even to a comparison in a deep constexpr call chain, so the
+// guard above is missed and the assertion never fires. Guarding instead on the constness of
+// the raw operands (plain integers, which fold on every supported GCC) makes the check fire
+// on GCC 11 and 12 as well; the condition is still evaluated by dead-code removal exactly as
+// before. CONST_P1 guards one operand, CONST_P2 guards two.
+#define BOOST_SAFE_NUMBERS_CA_CONST_P1_IMPL(a, condition, message, fn) \
+    do { \
+        if (__builtin_constant_p(a)) { \
+            if (!(condition)) { \
+                void fn() __attribute__ ((error(message))); \
+                fn(); \
+            } \
+        } \
+    } while (0)
+#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P1(a, condition, message) \
+    BOOST_SAFE_NUMBERS_CA_CONST_P1_IMPL(a, condition, message, BOOST_SAFE_NUMBERS_CA_CAT(_compile_assert_fail_, __COUNTER__))
+
+#define BOOST_SAFE_NUMBERS_CA_CONST_P2_IMPL(a, b, condition, message, fn) \
+    do { \
+        if (__builtin_constant_p(a) && __builtin_constant_p(b)) { \
+            if (!(condition)) { \
+                void fn() __attribute__ ((error(message))); \
+                fn(); \
+            } \
+        } \
+    } while (0)
+#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P2(a, b, condition, message) \
+    BOOST_SAFE_NUMBERS_CA_CONST_P2_IMPL(a, b, condition, message, BOOST_SAFE_NUMBERS_CA_CAT(_compile_assert_fail_, __COUNTER__))
+
 
 #define BOOST_SAFE_NUMBERS_COMPILE_ASSERT0(expression) BOOST_SAFE_NUMBERS_COMPILE_ASSERT(expression, NULL)
 
@@ -107,6 +137,8 @@
 #define BOOST_SAFE_NUMBERS_COMPILE_ASSERT(condition, description)
 #define BOOST_SAFE_NUMBERS_COMPILE_ASSERT0(expression)
 #define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(expression, message)
+#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P1(a, condition, message)
+#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P2(a, b, condition, message)
 #endif
 
 
@@ -240,6 +272,14 @@ do { \
 
 #ifndef BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P
 #error "BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P not defined"
+#endif
+
+#ifndef BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P1
+#error "BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P1 not defined"
+#endif
+
+#ifndef BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P2
+#error "BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P2 not defined"
 #endif
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_COMPILE_ASSERT_HPP
