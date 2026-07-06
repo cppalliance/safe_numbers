@@ -2148,7 +2148,7 @@ struct signed_div_helper
         #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
         // Divide-by-zero throws or exits under every policy that reaches this template
         // (throw_exception, saturate, strict), so a constant zero divisor is always a bug.
-        BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(rhs_basis != BasisType{0}, "signed division by zero");
+        BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P1(rhs_basis, rhs_basis != BasisType{0}, "signed division by zero");
 
         // min / -1 overflow is an error under throw_exception and strict; saturate returns max.
         if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)

@@ -592,7 +592,7 @@ struct add_helper
                 #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
                 if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
                 {
-                    BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(!overflowed, "unsigned addition overflow");
+                    BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P2(lhs_basis, rhs_basis, !overflowed, "unsigned addition overflow");
                 }
                 #endif
 
@@ -614,7 +614,7 @@ struct add_helper
         #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
         if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
         {
-            BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(!overflowed, "unsigned addition overflow");
+            BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P2(lhs_basis, rhs_basis, !overflowed, "unsigned addition overflow");
         }
         #endif
 
