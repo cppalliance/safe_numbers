@@ -205,6 +205,7 @@ def render_section(title, anchor, desc, unsigned_json, signed_json, float_json):
 
     if float_json:
         data = load_ns_per_op(float_json)
+        out.append(f"[#{anchor}_floating_point]")
         out.append("=== Floating-Point")
         out.append("")
         for bits in FLOAT_BITS:
@@ -212,6 +213,7 @@ def render_section(title, anchor, desc, unsigned_json, signed_json, float_json):
 
     if signed_json:
         data = load_ns_per_op(signed_json)
+        out.append(f"[#{anchor}_signed_integers]")
         out.append("=== Signed Integers")
         out.append("")
         for bits in INT_BITS:
@@ -219,6 +221,7 @@ def render_section(title, anchor, desc, unsigned_json, signed_json, float_json):
 
     if unsigned_json:
         data = load_ns_per_op(unsigned_json)
+        out.append(f"[#{anchor}_unsigned_integers]")
         out.append("=== Unsigned Integers")
         out.append("")
         for bits in INT_BITS:
