@@ -368,7 +368,34 @@ run test_cuda_f64_sub_error.cu ;
 run test_cuda_f64_mul_error.cu ;
 run test_cuda_f64_div_error.cu ;
 
+# Bounded type tests
+
+# bounded_uint tests
+run test_cuda_bounded_uint_add.cu ;
+run test_cuda_bounded_uint_sub.cu ;
+run test_cuda_bounded_uint_mul.cu ;
+run test_cuda_bounded_uint_div.cu ;
+run test_cuda_bounded_uint_add_error.cu ;
+
+# bounded_int tests
+run test_cuda_bounded_int_add.cu ;
+run test_cuda_bounded_int_sub.cu ;
+run test_cuda_bounded_int_mul.cu ;
+run test_cuda_bounded_int_div.cu ;
+run test_cuda_bounded_int_add_error.cu ;
+
+# bounded_float tests
+run test_cuda_bounded_float_add.cu ;
+run test_cuda_bounded_float_sub.cu ;
+run test_cuda_bounded_float_mul.cu ;
+run test_cuda_bounded_float_div.cu ;
+run test_cuda_bounded_float_add_error.cu ;
+
+# bounded mixed operators (modulo, increment/decrement, unary, compound assignment)
+run test_cuda_bounded_ops.cu ;
+
 # Examples
 run ../examples/cuda.cu ;
 run ../examples/cuda_error_handling.cu ;
 run ../examples/cuda_error_handling_without_error_context.cu ;
+run ../examples/cuda_bounded.cu ;
