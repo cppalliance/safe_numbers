@@ -284,6 +284,9 @@ If an error was captured by device code, the error state is cleared and the appr
 | Domain error (e.g. division by zero)
 | `std::domain_error`
 
+| Invalid argument
+| `std::invalid_argument`
+
 | Unknown
 | `std::runtime_error`
 |===
