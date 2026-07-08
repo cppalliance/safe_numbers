@@ -146,10 +146,10 @@ https://www.boost.org/LICENSE_1_0.txt
 | Function | Description
 
 | xref:charconv.adoc[`to_chars`]
-| Converts a safe integer to a character string
+| Converts a safe integer or floating-point value to a character string
 
 | xref:charconv.adoc[`from_chars`]
-| Parses a character string into a safe integer
+| Parses a character string into a safe integer or floating-point value
 |===
 
 === Literals
@@ -158,8 +158,8 @@ https://www.boost.org/LICENSE_1_0.txt
 |===
 | Literal | Description
 
-| xref:literals.adoc[`_u8`, `_u16`, `_u32`, `_u64`, `_u128`]
-| User-defined literal suffixes for constructing safe integer types
+| xref:literals.adoc[`_u8`, `_u16`, `_u32`, `_u64`, `_u128`, `_i8`, `_i16`, `_i32`, `_i64`, `_i128`, `_f32`, `_f64`]
+| User-defined literal suffixes for constructing safe integer and floating-point types
 |===
 
 === Stream I/O
@@ -169,7 +169,7 @@ https://www.boost.org/LICENSE_1_0.txt
 | Function | Description
 
 | xref:iostream.adoc[`operator<<`, `operator>>`]
-| Stream insertion and extraction for all safe integer types
+| Stream insertion and extraction for all library types, including the floating-point types
 |===
 
 === Hashing
@@ -442,7 +442,7 @@ This header is not included in the convenience header since it requires external
 | Contains specializations of `<limits>` for library types
 
 | `<boost/safe_numbers/literals.hpp>`
-| User-defined literal suffixes (`_u8`, `_u16`, `_u32`, `_u64`, `_u128`)
+| User-defined literal suffixes (`_u8`, `_u16`, `_u32`, `_u64`, `_u128`, `_i8`, `_i16`, `_i32`, `_i64`, `_i128`, `_f32`, `_f64`)
 
 | `<boost/safe_numbers/overflow_policy.hpp>`
 | The `overflow_policy` enum class
@@ -453,8 +453,14 @@ This header is not included in the convenience header since it requires external
 | `<boost/safe_numbers/unsigned_integers.hpp>`
 | All unsigned safe integer types (`u8`, `u16`, `u32`, `u64`, `u128`)
 
+| `<boost/safe_numbers/floats.hpp>`
+| All safe floating-point types (`f32`, `f64`)
+
 | `<boost/safe_numbers/bounded_integers.hpp>`
-| Bounded unsigned integer type (`bounded_uint<Min, Max>`)
+| Bounded unsigned and signed integer types (`bounded_uint<Min, Max>`, `bounded_int<Min, Max>`)
+
+| `<boost/safe_numbers/bounded_floats.hpp>`
+| Bounded floating-point type (`bounded_float<Min, Max>`)
 
 | `<boost/safe_numbers/byte_conversions.hpp>`
 | Byte order conversion functions (`to_be`, `from_be`, `to_le`, `from_le`, `to_be_bytes`, `from_be_bytes`, `to_le_bytes`, `from_le_bytes`, `to_ne_bytes`, `from_ne_bytes`)

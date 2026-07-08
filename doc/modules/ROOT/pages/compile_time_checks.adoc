@@ -50,6 +50,13 @@ Policies that define a value for the boundary case, `saturate` (clamp), `checked
 | n/a (these are always error-on-zero)
 |===
 
+[NOTE]
+====
+This opt-in diagnostic targets the integer operations listed above.
+The floating-point types `f32` and `f64` do not participate in it: an exceptional floating-point result is already rejected at compile time during constant evaluation, independently of this feature.
+See xref:floats.adoc[] and xref:design.adoc[].
+====
+
 For example, with the feature enabled in an optimized build:
 
 [source, c++]

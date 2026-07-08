@@ -18,6 +18,7 @@
 ** xref:examples.adoc#examples_bit[Bit Manipulation]
 ** xref:examples.adoc#examples_integer_utilities[Integer Utilities]
 ** xref:examples.adoc#examples_numeric[Numeric Algorithms]
+** xref:examples.adoc#examples_floats[Floating-Point Types]
 ** xref:examples.adoc#examples_cmath[Mathematical Functions]
 ** xref:examples.adoc#examples_functional[Hashing]
 ** xref:examples.adoc#examples_random[Random Number Generation]

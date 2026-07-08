@@ -13,6 +13,10 @@ https://www.boost.org/LICENSE_1_0.txt
 The library provides multiple overflow handling policies for arithmetic and shift operations.
 The default arithmetic operators (`+`, `-`, `*`, `/`, `%`) and shift operators (`<<`, `>>`) use the `throw_exception` policy, but alternative free functions and a generic policy-parameterized interface allow selecting different behavior at the call site.
 
+These policies apply to the integer types.
+The floating-point types `f32` and `f64` follow IEEE 754 semantics instead: they do not participate in the policy model, and their exceptional results (saturation to infinity, invalid operations, and NaN) are reported as exceptions directly.
+See xref:floats.adoc[].
+
 == The `overflow_policy` Enum
 
 [source,c++]

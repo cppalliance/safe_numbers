@@ -178,6 +178,19 @@ Stacktrace:
 
 To see these yourself see the xref:examples.adoc#examples_basic_usage_stacktrace[Basic Usage with Diagnostic Information Example].
 
+=== Floating-Point Safety
+
+The same principles extend to the floating-point types `f32` and `f64`, which wrap `float` and `double` as concrete, named types under the identical rules on explicit conversion and disallowed mixed-width operations: `f32 + f64` is a compile-time error, and construction from any type other than the exact underlying type is rejected.
+What changes is the failure model.
+Integer overflow is a silent wrap that the library must detect, whereas IEEE 754 arithmetic never traps and always yields a value, saturating to a signed infinity on range escape and producing a NaN on an undefined form.
+The safe floating-point types therefore do not detect a wrap: they run the native operation and classify its IEEE 754 result, turning saturation to positive or negative infinity into `std::overflow_error` or `std::underflow_error`, and the invalid operations, a NaN operand, and division by zero into `std::domain_error`.
+
+For this reason the overflow policies described below do not apply to the floating-point types.
+IEEE 754 already defines saturation to infinity and the propagation of NaN, so there is no `saturate` or `checked` variant to select; the safe types simply report those exceptional results rather than offering alternative numeric behavior.
+The operation surface is also deliberately smaller than for the integer types: only `pass:[+]`, `-`, `pass:[*]`, and `/` are provided, with no compound assignment, increment, decrement, unary, bitwise, or remainder operators, so that every value change passes through a single point where the IEEE 754 result is checked.
+The dual compile-time and runtime behavior is unchanged: an exceptional result reached during constant evaluation is a compile-time error, exactly as for the integer types.
+See xref:floats.adoc[] for the full type behavior and xref:verification.adoc[] for the formal verification of the classification logic.
+
 == Runtime Overflow Policies
 
 Different domains require different responses to overflow:

@@ -318,6 +318,7 @@ run ../examples/byte_conversions.cpp ;
 run ../examples/integer_utilities.cpp ;
 run ../examples/numeric.cpp ;
 run ../examples/std_numeric_usage.cpp ;
+run ../examples/floats.cpp ;
 run ../examples/cmath.cpp ;
 run ../examples/functional.cpp ;
 run ../examples/random.cpp ;
