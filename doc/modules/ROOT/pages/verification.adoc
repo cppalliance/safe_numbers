@@ -65,10 +65,71 @@ For latexmath:[a \in \{-2^{n - 1}, \ldots, 2^{n - 1} - 1\}] and latexmath:[b \in
 Two inputs must therefore be rejected: latexmath:[b = 0], which is undefined, and the `INT_MIN / -1` pair, which overflows.
 The same pair is rejected for modulo even though latexmath:[a \bmod b = 0] mathematically, because the C++ language specifies the result of `INT_MIN % -1` as undefined behavior on native types and the library preserves that contract at the type boundary.
 
+== Floating Point
+
+The integer guarantees rest on the representable values forming a ring, where overflow is a range escape of an operation that is otherwise total and wrapping, detected from a sign identity or by lifting the computation into a more precise arithmetic.
+IEEE-754 floating point offers neither device.
+The representable values of a fixed format carry no such ring structure, addition is not associative and nothing wraps, and the value set contains three elements that are not real numbers: the two signed infinities and NaN.
+What the format does guarantee is that every operation is total and non-trapping under the default rounding: `a + b` always yields a value, a result that escapes the finite range becomes a signed infinity rather than wrapping, and an indeterminate form such as `inf - inf` or `0.0 / 0.0` becomes a NaN (see xref:reference.adoc[pass:[[4]]] for the arithmetic).
+
+Because the native operation always runs to a value and never traps, the safe layer classifies the value that was produced rather than proving in advance that it will lie in range.
+It performs the native operation in the default round-to-nearest (ties to even) mode and then classifies the result together with its operands as one of the six values of `error_category`: `no_error`, `overflow`, `underflow`, `divide_by_zero`, `nan_op`, and `invalid_op`.
+The verification target changes accordingly: in place of a single range predicate, we prove that the classifier assigns the correct category to every input, that it never misses a genuine range escape and never flags a computation that stays in range, and that the value delivered on the hot path is the exact result rounded to nearest.
+
+One naming point governs the section.
+The category `underflow` denotes saturation of the result to negative infinity, that is, a negative overflow; it is not IEEE-754 tininess.
+Gradual underflow to a subnormal or to zero is a finite result and classifies as `no_error`.
+
+Every arithmetic classifier shares one skeleton.
+A finite result takes the hot path to `no_error`.
+Otherwise the result is a NaN or an infinity, and the remaining branches are examined in the priority order the standard assigns: a signaling operand is `invalid_op` (7.2.a), the operation's own indeterminate form is `invalid_op` (7.2), a surviving quiet NaN operand is `nan_op` (6.2), and a non-NaN infinity is `overflow` when positive and `underflow` when negative (6.1).
+Testing the signaling case ahead of the quiet case ensures that a signaling operand always dominates.
+
+=== Addition and Subtraction
+
+Addition and subtraction share the skeleton and differ only in their indeterminate form.
+For addition it is the sum of two infinities of opposite sign, `inf + (-inf)` (7.2.d).
+Subtraction is the dual under the same clause: `inf - inf` of like sign is the cancellation that produces a NaN.
+For each we prove that `no_error` holds exactly when the native result is finite, `overflow` exactly when it is latexmath:[+\infty], `underflow` exactly when it is latexmath:[-\infty], `invalid_op` exactly on a signaling operand or the infinity form above, and `nan_op` exactly on a quiet NaN operand with no signaling operand present.
+
+These branch characterizations are then tied to the real numbers.
+When two finite operands have an exact real sum that leaves the representable range, the result is reported as `overflow` if that sum is positive and `underflow` if it is negative.
+When the exact sum is representable the operation is never flagged, and the value delivered equals that sum rounded to nearest, so the safe layer neither rejects a computation that fits nor perturbs the value a bare `float` or `double` would have produced.
+
+=== Multiplication
+
+Multiplication carries the same skeleton with its own indeterminate form, the product of a zero and an infinity in either order, `0 * inf` or `inf * 0` (7.2.c).
+The five branch characterizations hold as for addition.
+The soundness statements change in one respect: the sign of a product follows the signs of its operands rather than the sign of a sum, so a genuine overflow of finite operands is reported as `overflow` when the operands share a sign and as `underflow` when their signs differ.
+A product that is representable is delivered as the correctly rounded exact product.
+
+=== Division
+
+Division introduces the sixth category.
+Its indeterminate forms are the two undefined quotients `0.0 / 0.0` and `inf / inf`, both `invalid_op` (7.2.b).
+Separate from these is the division of a finite nonzero dividend by zero, which the standard signals as divideByZero (7.3) and which the classifier reports as `divide_by_zero`; that case produces an infinity, and we prove that it does.
+The zero test here is a true-zero test rather than a comparison against `0.0`, so a subnormal divisor flushed to zero under a denormals-are-zero (DAZ) mode is not mistaken for a genuine zero.
+
+Because a finite nonzero dividend over zero produces an infinity yet is reported as `divide_by_zero`, the overflow and underflow results for division are stated as implications rather than equivalences: `overflow` still implies a latexmath:[+\infty] result and `underflow` a latexmath:[-\infty] result, but a positive infinity no longer implies `overflow`.
+Soundness returns against the reals once the divisor is constrained to be nonzero: a finite computation that overflows the range is `overflow` when the operands share a sign and `underflow` when their signs differ, and a quotient that is representable is delivered as the correctly rounded exact quotient.
+
+=== Comparison
+
+The comparison operators are modeled on `operator<=>`, whose result type is `std::partial_ordering`, so the model is a four-valued ordering: less, greater, equivalent, and unordered.
+Any NaN operand compares unordered, and only a NaN operand does, which is the whole reason the ordering is partial rather than total.
+With both operands non-NaN the comparison is less, greater, or equivalent according to the ordered IEEE comparison.
+Alongside the ordering we prove the properties of `operator==` as the IEEE equality: it is false whenever either operand is a NaN, it is reflexive on every non-NaN value, and it holds between latexmath:[+0] and latexmath:[-0].
+On finite operands equality and the ordering agree, with `x == y` exactly when the two compare equivalent.
+
+The branch characterizations above are settled entirely within the backend provers' built-in floating-point theory, since they speak only of the format's own predicates.
+The soundness and correctness statements cross out of that theory into reasoning about the real-valued result and its rounding, which is discharged separately.
+Two modeling choices are deliberately left to the library's test suite rather than the proof: a signaling NaN is modeled abstractly as a NaN refining the quiet case, so the fidelity of the bit-level signaling test is a testing obligation, and the denormals-are-zero behavior folded into the true-zero test is a bit-level concern outside the real-number model.
+Both formats, binary32 (`f32`) and binary64 (`f64`), are covered by the identical development.
+
 == Scope of the Verification
 
 The guarantees described on this page are established at the level of the algorithms, not the shipped implementation.
 Each operation above was re-expressed in WhyML and proven correct with Why3 and its backend provers; the C++ definitions in the library are a manual transcription of those verified algorithms.
 We therefore do not claim that the C++ source is itself mechanically verified: there is no automatic extraction from the Why3 model to C++, and the correspondence between the two is maintained by hand.
-What the verification does establish is that the overflow, underflow, and edge-case detection logic is correct for every input in the relevant residue class, including the asymmetric cases such as `INT_MIN / -1` and `-INT_MIN`.
+What the verification does establish is that the overflow, underflow, and edge-case detection logic is correct for every input in the relevant domain, including the asymmetric integer cases such as `INT_MIN / -1` and `-INT_MIN` and the floating-point special forms such as `inf - inf` and `0.0 / 0.0`.
 The C++ implementation that realizes this logic is exercised separately by the library's test suite.
