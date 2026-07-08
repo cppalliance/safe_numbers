@@ -54,18 +54,20 @@ private:
 
 public:
 
-    explicit constexpr bounded_float(const basis_type val)
+    BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr bounded_float(const basis_type val)
     {
         const auto raw {static_cast<underlying_type>(val)};
 
         // NaN comparisons are unordered: a naked range check would silently accept NaN.
         if (detail::impl::constexpr_isnan(raw))
         {
+            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
             if (std::is_constant_evaluated())
             {
                 throw std::domain_error("bounded_float NaN value"); // LCOV_EXCL_LINE
             }
             else
+            #endif
             {
                 BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_float NaN value");
             }
@@ -76,11 +78,13 @@ public:
 
         if (raw < min_raw || raw > max_raw)
         {
+            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
             if (std::is_constant_evaluated())
             {
                 throw std::domain_error("bounded_float value out of range"); // LCOV_EXCL_LINE
             }
             else
+            #endif
             {
                 BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_float value out of range");
             }
@@ -89,11 +93,11 @@ public:
         basis_ = val;
     }
 
-    explicit constexpr bounded_float(const underlying_type val) : bounded_float{basis_type{val}} {}
+    BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr bounded_float(const underlying_type val) : bounded_float{basis_type{val}} {}
 
     template <typename OtherBasis>
         requires (detail::is_compatible_float_type<OtherBasis>)
-    [[nodiscard]] explicit constexpr operator OtherBasis() const
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator OtherBasis() const
     {
         const auto raw {static_cast<underlying_type>(basis_)};
 
@@ -103,11 +107,13 @@ public:
 
             if (detail::impl::constexpr_isinf(result) && !detail::impl::constexpr_isinf(raw))
             {
+                #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
                 if (std::is_constant_evaluated())
                 {
                     throw std::overflow_error("bounded_float narrowing conversion overflow"); // LCOV_EXCL_LINE
                 }
                 else
+                #endif
                 {
                     BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "bounded_float narrowing conversion overflow");
                 }
@@ -122,7 +128,7 @@ public:
     }
 
     template <auto Min2, auto Max2>
-    [[nodiscard]] explicit constexpr operator bounded_float<Min2, Max2>() const
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator bounded_float<Min2, Max2>() const
     {
         using target_basis = typename bounded_float<Min2, Max2>::basis_type;
         using target_underlying = detail::underlying_type_t<target_basis>;
@@ -130,20 +136,20 @@ public:
         return bounded_float<Min2, Max2>{target_basis{static_cast<target_underlying>(raw)}};
     }
 
-    [[nodiscard]] constexpr auto to_basis() const noexcept -> basis_type { return basis_; }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto to_basis() const noexcept -> basis_type { return basis_; }
 
-    [[nodiscard]] friend constexpr auto operator==(bounded_float lhs, bounded_float rhs) noexcept -> bool = default;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] friend constexpr auto operator==(bounded_float lhs, bounded_float rhs) noexcept -> bool = default;
 
-    [[nodiscard]] friend constexpr auto operator<=>(bounded_float lhs, bounded_float rhs) noexcept
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] friend constexpr auto operator<=>(bounded_float lhs, bounded_float rhs) noexcept
         -> std::partial_ordering = default;
 
-    constexpr auto operator+=(bounded_float<Min, Max> rhs) -> bounded_float&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator+=(bounded_float<Min, Max> rhs) -> bounded_float&;
 
-    constexpr auto operator-=(bounded_float<Min, Max> rhs) -> bounded_float&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator-=(bounded_float<Min, Max> rhs) -> bounded_float&;
 
-    constexpr auto operator*=(bounded_float<Min, Max> rhs) -> bounded_float&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator*=(bounded_float<Min, Max> rhs) -> bounded_float&;
 
-    constexpr auto operator/=(bounded_float<Min, Max> rhs) -> bounded_float&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator/=(bounded_float<Min, Max> rhs) -> bounded_float&;
 };
 
 // ------------------------------
@@ -155,7 +161,7 @@ public:
 // The bounded_float constructor then re-validates the result against [Min, Max].
 
 template <auto Min, auto Max>
-[[nodiscard]] constexpr auto operator+(const bounded_float<Min, Max> lhs,
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator+(const bounded_float<Min, Max> lhs,
                                        const bounded_float<Min, Max> rhs) -> bounded_float<Min, Max>
 {
     using basis = typename bounded_float<Min, Max>::basis_type;
@@ -166,7 +172,7 @@ template <auto Min, auto Max>
 }
 
 template <auto Min, auto Max>
-[[nodiscard]] constexpr auto operator-(const bounded_float<Min, Max> lhs,
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator-(const bounded_float<Min, Max> lhs,
                                        const bounded_float<Min, Max> rhs) -> bounded_float<Min, Max>
 {
     using basis = typename bounded_float<Min, Max>::basis_type;
@@ -177,7 +183,7 @@ template <auto Min, auto Max>
 }
 
 template <auto Min, auto Max>
-[[nodiscard]] constexpr auto operator*(const bounded_float<Min, Max> lhs,
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator*(const bounded_float<Min, Max> lhs,
                                        const bounded_float<Min, Max> rhs) -> bounded_float<Min, Max>
 {
     using basis = typename bounded_float<Min, Max>::basis_type;
@@ -188,7 +194,7 @@ template <auto Min, auto Max>
 }
 
 template <auto Min, auto Max>
-[[nodiscard]] constexpr auto operator/(const bounded_float<Min, Max> lhs,
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator/(const bounded_float<Min, Max> lhs,
                                        const bounded_float<Min, Max> rhs) -> bounded_float<Min, Max>
 {
     using basis = typename bounded_float<Min, Max>::basis_type;
@@ -209,7 +215,7 @@ template <auto Min, auto Max>
               detail::float_raw_value(Min) == detail::float_raw_value(Min) &&
               detail::float_raw_value(Max) == detail::float_raw_value(Max) &&
               detail::float_raw_value(Max) > detail::float_raw_value(Min))
-constexpr auto bounded_float<Min, Max>::operator+=(bounded_float<Min, Max> rhs) -> bounded_float&
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_float<Min, Max>::operator+=(bounded_float<Min, Max> rhs) -> bounded_float&
 {
     *this = *this + rhs;
     return *this;
@@ -222,7 +228,7 @@ template <auto Min, auto Max>
               detail::float_raw_value(Min) == detail::float_raw_value(Min) &&
               detail::float_raw_value(Max) == detail::float_raw_value(Max) &&
               detail::float_raw_value(Max) > detail::float_raw_value(Min))
-constexpr auto bounded_float<Min, Max>::operator-=(bounded_float<Min, Max> rhs) -> bounded_float&
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_float<Min, Max>::operator-=(bounded_float<Min, Max> rhs) -> bounded_float&
 {
     *this = *this - rhs;
     return *this;
@@ -235,7 +241,7 @@ template <auto Min, auto Max>
               detail::float_raw_value(Min) == detail::float_raw_value(Min) &&
               detail::float_raw_value(Max) == detail::float_raw_value(Max) &&
               detail::float_raw_value(Max) > detail::float_raw_value(Min))
-constexpr auto bounded_float<Min, Max>::operator*=(bounded_float<Min, Max> rhs) -> bounded_float&
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_float<Min, Max>::operator*=(bounded_float<Min, Max> rhs) -> bounded_float&
 {
     *this = *this * rhs;
     return *this;
@@ -248,7 +254,7 @@ template <auto Min, auto Max>
               detail::float_raw_value(Min) == detail::float_raw_value(Min) &&
               detail::float_raw_value(Max) == detail::float_raw_value(Max) &&
               detail::float_raw_value(Max) > detail::float_raw_value(Min))
-constexpr auto bounded_float<Min, Max>::operator/=(bounded_float<Min, Max> rhs) -> bounded_float&
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_float<Min, Max>::operator/=(bounded_float<Min, Max> rhs) -> bounded_float&
 {
     *this = *this / rhs;
     return *this;
