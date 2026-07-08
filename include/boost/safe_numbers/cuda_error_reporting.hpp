@@ -45,6 +45,7 @@ enum class exception_type : unsigned
     domain_error,
     overflow,
     underflow,
+    invalid_argument,
     unknown,
 };
 
@@ -76,7 +77,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto to_exception_enum() noexcept -> ex
     }
     else if constexpr (std::is_same_v<T, std::invalid_argument>)
     {
-        return exception_type::domain_error;
+        return exception_type::invalid_argument;
     }
     else
     {
@@ -167,6 +168,9 @@ __host__ __device__ inline void report_device_error(
             break;
         case exception_type::underflow:
             BOOST_THROW_EXCEPTION(std::underflow_error(msg));
+            break;
+        case exception_type::invalid_argument:
+            BOOST_THROW_EXCEPTION(std::invalid_argument(msg));
             break;
         case exception_type::unknown:
             [[fallthrough]];
@@ -276,6 +280,9 @@ public:
                     break;
                 case detail::exception_type::underflow:
                     BOOST_THROW_EXCEPTION(std::underflow_error(msg));
+                    break;
+                case detail::exception_type::invalid_argument:
+                    BOOST_THROW_EXCEPTION(std::invalid_argument(msg));
                     break;
                 case detail::exception_type::unknown:
                     [[fallthrough]];
