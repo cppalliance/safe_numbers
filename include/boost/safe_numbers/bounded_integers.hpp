@@ -48,6 +48,22 @@ auto to_string_val(T val) -> std::string
     return to_string(val);
 }
 
+// Range checks that take the bounds as runtime parameters. A bound of 0 reaches
+// the comparison as a parameter rather than a literal, so an unsigned check does
+// not trip the "pointless comparison of unsigned integer with zero" diagnostic
+// (for example NVCC warning 186) when Min is 0.
+template <typename U>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto out_of_bounds(const U value, const U min_val, const U max_val) noexcept -> bool
+{
+    return value < min_val || value > max_val;
+}
+
+template <typename U>
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto below_bound(const U value, const U min_val) noexcept -> bool
+{
+    return value < min_val;
+}
+
 } // namespace detail
 
 template <auto Min, auto Max>
@@ -70,7 +86,7 @@ private:
 
 public:
 
-    explicit constexpr bounded_uint(const basis_type val)
+    BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr bounded_uint(const basis_type val)
     {
         constexpr auto min_raw {static_cast<underlying_type>(detail::raw_value(Min))};
         constexpr auto max_raw {static_cast<underlying_type>(detail::raw_value(Max))};
@@ -79,11 +95,13 @@ public:
 
         if (val < min_val || val > max_val)
         {
+            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
             if (std::is_constant_evaluated())
             {
                 throw std::domain_error("bounded_uint value out of range"); // LCOV_EXCL_LINE
             }
             else
+            #endif
             {
                 BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_uint value out of range");
             }
@@ -92,11 +110,11 @@ public:
         basis_ = val;
     }
 
-    explicit constexpr bounded_uint(const underlying_type val) : bounded_uint{basis_type{val}} {}
+    BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr bounded_uint(const underlying_type val) : bounded_uint{basis_type{val}} {}
 
     template <typename OtherBasis>
         requires (detail::is_unsigned_library_type_v<OtherBasis> || detail::is_fundamental_unsigned_integral_v<OtherBasis>)
-    [[nodiscard]] explicit constexpr operator OtherBasis() const
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator OtherBasis() const
     {
         const auto raw {static_cast<detail::underlying_type_t<basis_type>>(basis_)};
 
@@ -105,11 +123,13 @@ public:
             using raw_other = detail::underlying_type_t<OtherBasis>;
             if (raw > static_cast<detail::underlying_type_t<basis_type>>(std::numeric_limits<raw_other>::max()))
             {
+                #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
                 if (std::is_constant_evaluated())
                 {
                     throw std::domain_error("bounded_uint conversion overflow"); // LCOV_EXCL_LINE
                 }
                 else
+                #endif
                 {
                     BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_uint conversion overflow");
                 }
@@ -124,40 +144,40 @@ public:
     }
 
     template <auto Min2, auto Max2>
-    [[nodiscard]] explicit constexpr operator bounded_uint<Min2, Max2>() const
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator bounded_uint<Min2, Max2>() const
     {
         using target_basis = typename bounded_uint<Min2, Max2>::basis_type;
         const auto raw {static_cast<detail::underlying_type_t<basis_type>>(basis_)};
         return bounded_uint<Min2, Max2>{static_cast<target_basis>(raw)};
     }
 
-    [[nodiscard]] explicit constexpr operator basis_type() const noexcept { return basis_; }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator basis_type() const noexcept { return basis_; }
 
-    [[nodiscard]] explicit constexpr operator underlying_type() const noexcept { return static_cast<underlying_type>(basis_); }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator underlying_type() const noexcept { return static_cast<underlying_type>(basis_); }
 
-    [[nodiscard]] friend constexpr auto operator<=>(bounded_uint lhs, bounded_uint rhs) noexcept
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] friend constexpr auto operator<=>(bounded_uint lhs, bounded_uint rhs) noexcept
         -> std::strong_ordering = default;
 
 
-    constexpr auto operator+=(bounded_uint<Min, Max> rhs) -> bounded_uint&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator+=(bounded_uint<Min, Max> rhs) -> bounded_uint&;
 
-    constexpr auto operator-=(bounded_uint<Min, Max> rhs) -> bounded_uint&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator-=(bounded_uint<Min, Max> rhs) -> bounded_uint&;
 
-    constexpr auto operator*=(bounded_uint<Min, Max> rhs) -> bounded_uint&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator*=(bounded_uint<Min, Max> rhs) -> bounded_uint&;
 
-    constexpr auto operator/=(bounded_uint<Min, Max> rhs) -> bounded_uint&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator/=(bounded_uint<Min, Max> rhs) -> bounded_uint&;
 
-    constexpr auto operator++() -> bounded_uint&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator++() -> bounded_uint&;
 
-    constexpr auto operator++(int) -> bounded_uint;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator++(int) -> bounded_uint;
 
-    constexpr auto operator--() -> bounded_uint&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator--() -> bounded_uint&;
 
-    constexpr auto operator--(int) -> bounded_uint;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator--(int) -> bounded_uint;
 };
 
 template <auto Min, auto Max>
-[[nodiscard]] constexpr auto operator+(const bounded_uint<Min, Max> lhs,
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator+(const bounded_uint<Min, Max> lhs,
                                        const bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>
 {
     using basis = typename bounded_uint<Min, Max>::basis_type;
@@ -170,23 +190,27 @@ template <auto Min, auto Max>
     underlying res {};
     if (detail::impl::unsigned_no_intrin_add(lhs_raw, rhs_raw, res))
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_uint addition overflow"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "bounded_uint addition overflow");
         }
     }
 
-    if (res < min_raw || res > max_raw)
+    if (detail::out_of_bounds(res, min_raw, max_raw))
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_uint addition result out of range"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_uint addition result out of range");
         }
@@ -196,7 +220,7 @@ template <auto Min, auto Max>
 }
 
 template <auto Min, auto Max>
-[[nodiscard]] constexpr auto operator-(const bounded_uint<Min, Max> lhs,
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator-(const bounded_uint<Min, Max> lhs,
                                        const bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>
 {
     using basis = typename bounded_uint<Min, Max>::basis_type;
@@ -209,23 +233,27 @@ template <auto Min, auto Max>
     underlying res {};
     if (detail::impl::unsigned_no_intrin_sub(lhs_raw, rhs_raw, res))
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::underflow_error("bounded_uint subtraction underflow"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, "bounded_uint subtraction underflow");
         }
     }
 
-    if (res < min_raw || res > max_raw)
+    if (detail::out_of_bounds(res, min_raw, max_raw))
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_uint subtraction result out of range"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_uint subtraction result out of range");
         }
@@ -235,7 +263,7 @@ template <auto Min, auto Max>
 }
 
 template <auto Min, auto Max>
-[[nodiscard]] constexpr auto operator*(const bounded_uint<Min, Max> lhs,
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator*(const bounded_uint<Min, Max> lhs,
                                        const bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>
 {
     using basis = typename bounded_uint<Min, Max>::basis_type;
@@ -248,23 +276,27 @@ template <auto Min, auto Max>
     underlying res {};
     if (detail::impl::no_intrin_mul(lhs_raw, rhs_raw, res))
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_uint multiplication overflow"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "bounded_uint multiplication overflow");
         }
     }
 
-    if (res < min_raw || res > max_raw)
+    if (detail::out_of_bounds(res, min_raw, max_raw))
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_uint multiplication result out of range"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_uint multiplication result out of range");
         }
@@ -274,7 +306,7 @@ template <auto Min, auto Max>
 }
 
 template <auto Min, auto Max>
-[[nodiscard]] constexpr auto operator/(const bounded_uint<Min, Max> lhs,
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator/(const bounded_uint<Min, Max> lhs,
                                        const bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>
 {
     using basis = typename bounded_uint<Min, Max>::basis_type;
@@ -286,11 +318,13 @@ template <auto Min, auto Max>
 
     if (rhs_raw == 0U) [[unlikely]]
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_uint division by zero"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_uint division by zero");
         }
@@ -306,13 +340,15 @@ template <auto Min, auto Max>
         res = lhs_raw / rhs_raw;
     }
 
-    if (res < min_raw || res > max_raw)
+    if (detail::out_of_bounds(res, min_raw, max_raw))
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_uint division result out of range"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_uint division result out of range");
         }
@@ -322,7 +358,7 @@ template <auto Min, auto Max>
 }
 
 template <auto Min, auto Max>
-[[nodiscard]] constexpr auto operator%(const bounded_uint<Min, Max> lhs,
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator%(const bounded_uint<Min, Max> lhs,
                                        const bounded_uint<Min, Max> rhs) -> bounded_uint<Min, Max>
 {
     using basis = typename bounded_uint<Min, Max>::basis_type;
@@ -334,11 +370,13 @@ template <auto Min, auto Max>
 
     if (rhs_raw == 0U) [[unlikely]]
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_uint modulo by zero"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_uint modulo by zero");
         }
@@ -354,13 +392,15 @@ template <auto Min, auto Max>
         res = lhs_raw % rhs_raw;
     }
 
-    if (res < min_raw || res > max_raw)
+    if (detail::out_of_bounds(res, min_raw, max_raw))
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_uint modulo result out of range"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_uint modulo result out of range");
         }
@@ -373,7 +413,7 @@ template <auto Min, auto Max>
     requires (detail::valid_bound<decltype(Min)> &&
               detail::valid_bound<decltype(Max)> &&
               detail::raw_value(Max) > detail::raw_value(Min))
-constexpr auto bounded_uint<Min, Max>::operator+=(bounded_uint<Min, Max> rhs) -> bounded_uint&
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_uint<Min, Max>::operator+=(bounded_uint<Min, Max> rhs) -> bounded_uint&
 {
     *this = *this + rhs;
     return *this;
@@ -383,7 +423,7 @@ template <auto Min, auto Max>
     requires (detail::valid_bound<decltype(Min)> &&
               detail::valid_bound<decltype(Max)> &&
               detail::raw_value(Max) > detail::raw_value(Min))
-constexpr auto bounded_uint<Min, Max>::operator-=(bounded_uint<Min, Max> rhs) -> bounded_uint&
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_uint<Min, Max>::operator-=(bounded_uint<Min, Max> rhs) -> bounded_uint&
 {
     *this = *this - rhs;
     return *this;
@@ -393,7 +433,7 @@ template <auto Min, auto Max>
     requires (detail::valid_bound<decltype(Min)> &&
               detail::valid_bound<decltype(Max)> &&
               detail::raw_value(Max) > detail::raw_value(Min))
-constexpr auto bounded_uint<Min, Max>::operator*=(bounded_uint<Min, Max> rhs) -> bounded_uint&
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_uint<Min, Max>::operator*=(bounded_uint<Min, Max> rhs) -> bounded_uint&
 {
     *this = *this * rhs;
     return *this;
@@ -403,7 +443,7 @@ template <auto Min, auto Max>
     requires (detail::valid_bound<decltype(Min)> &&
               detail::valid_bound<decltype(Max)> &&
               detail::raw_value(Max) > detail::raw_value(Min))
-constexpr auto bounded_uint<Min, Max>::operator/=(bounded_uint<Min, Max> rhs) -> bounded_uint&
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_uint<Min, Max>::operator/=(bounded_uint<Min, Max> rhs) -> bounded_uint&
 {
     *this = *this / rhs;
     return *this;
@@ -413,7 +453,7 @@ template <auto Min, auto Max>
     requires (detail::valid_bound<decltype(Min)> &&
               detail::valid_bound<decltype(Max)> &&
               detail::raw_value(Max) > detail::raw_value(Min))
-constexpr auto bounded_uint<Min, Max>::operator++() -> bounded_uint&
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_uint<Min, Max>::operator++() -> bounded_uint&
 {
     using underlying = detail::underlying_type_t<basis_type>;
     constexpr auto max_raw {static_cast<underlying>(detail::raw_value(Max))};
@@ -422,11 +462,13 @@ constexpr auto bounded_uint<Min, Max>::operator++() -> bounded_uint&
     underlying res {};
     if (detail::impl::unsigned_no_intrin_add(raw, static_cast<underlying>(1U), res))
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_uint increment overflow"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "bounded_uint increment overflow");
         }
@@ -434,11 +476,13 @@ constexpr auto bounded_uint<Min, Max>::operator++() -> bounded_uint&
 
     if (res > max_raw)
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_uint increment result out of range"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_uint increment result out of range");
         }
@@ -452,7 +496,7 @@ template <auto Min, auto Max>
     requires (detail::valid_bound<decltype(Min)> &&
               detail::valid_bound<decltype(Max)> &&
               detail::raw_value(Max) > detail::raw_value(Min))
-constexpr auto bounded_uint<Min, Max>::operator++(int) -> bounded_uint
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_uint<Min, Max>::operator++(int) -> bounded_uint
 {
     auto tmp {*this};
     ++(*this);
@@ -463,7 +507,7 @@ template <auto Min, auto Max>
     requires (detail::valid_bound<decltype(Min)> &&
               detail::valid_bound<decltype(Max)> &&
               detail::raw_value(Max) > detail::raw_value(Min))
-constexpr auto bounded_uint<Min, Max>::operator--() -> bounded_uint&
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_uint<Min, Max>::operator--() -> bounded_uint&
 {
     using underlying = detail::underlying_type_t<basis_type>;
     constexpr auto min_raw {static_cast<underlying>(detail::raw_value(Min))};
@@ -472,23 +516,27 @@ constexpr auto bounded_uint<Min, Max>::operator--() -> bounded_uint&
     underlying res {};
     if (detail::impl::unsigned_no_intrin_sub(raw, static_cast<underlying>(1U), res))
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::underflow_error("bounded_uint decrement underflow"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, "bounded_uint decrement underflow");
         }
     }
 
-    if (res < min_raw)
+    if (detail::below_bound(res, min_raw))
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_uint decrement result out of range"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_uint decrement result out of range");
         }
@@ -502,7 +550,7 @@ template <auto Min, auto Max>
     requires (detail::valid_bound<decltype(Min)> &&
               detail::valid_bound<decltype(Max)> &&
               detail::raw_value(Max) > detail::raw_value(Min))
-constexpr auto bounded_uint<Min, Max>::operator--(int) -> bounded_uint
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_uint<Min, Max>::operator--(int) -> bounded_uint
 {
     auto tmp {*this};
     --(*this);
@@ -545,7 +593,7 @@ private:
 
 public:
 
-    explicit constexpr bounded_int(const basis_type val)
+    BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr bounded_int(const basis_type val)
     {
         constexpr auto min_raw {static_cast<underlying_type>(detail::signed_raw_value(Min))};
         constexpr auto max_raw {static_cast<underlying_type>(detail::signed_raw_value(Max))};
@@ -554,11 +602,13 @@ public:
 
         if (val < min_val || val > max_val)
         {
+            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
             if (std::is_constant_evaluated())
             {
                 throw std::domain_error("bounded_int value out of range"); // LCOV_EXCL_LINE
             }
             else
+            #endif
             {
                 BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_int value out of range");
             }
@@ -567,11 +617,11 @@ public:
         basis_ = val;
     }
 
-    explicit constexpr bounded_int(const underlying_type val) : bounded_int{basis_type{val}} {}
+    BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr bounded_int(const underlying_type val) : bounded_int{basis_type{val}} {}
 
     template <typename OtherBasis>
         requires (detail::is_signed_library_type_v<OtherBasis> || detail::is_fundamental_signed_integral_v<OtherBasis>)
-    [[nodiscard]] explicit constexpr operator OtherBasis() const
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator OtherBasis() const
     {
         const auto raw {static_cast<detail::underlying_type_t<basis_type>>(basis_)};
 
@@ -581,11 +631,13 @@ public:
             if (raw > static_cast<detail::underlying_type_t<basis_type>>(std::numeric_limits<raw_other>::max()) ||
                 raw < static_cast<detail::underlying_type_t<basis_type>>(std::numeric_limits<raw_other>::min()))
             {
+                #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
                 if (std::is_constant_evaluated())
                 {
                     throw std::domain_error("bounded_int conversion overflow"); // LCOV_EXCL_LINE
                 }
                 else
+                #endif
                 {
                     BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_int conversion overflow");
                 }
@@ -600,7 +652,7 @@ public:
     }
 
     template <auto Min2, auto Max2>
-    [[nodiscard]] explicit constexpr operator bounded_int<Min2, Max2>() const
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator bounded_int<Min2, Max2>() const
     {
         using target_basis = typename bounded_int<Min2, Max2>::basis_type;
         using target_underlying = detail::underlying_type_t<target_basis>;
@@ -608,32 +660,32 @@ public:
         return bounded_int<Min2, Max2>{target_basis{static_cast<target_underlying>(raw)}};
     }
 
-    [[nodiscard]] explicit constexpr operator basis_type() const noexcept { return basis_; }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator basis_type() const noexcept { return basis_; }
 
-    [[nodiscard]] explicit constexpr operator underlying_type() const noexcept { return static_cast<underlying_type>(basis_); }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator underlying_type() const noexcept { return static_cast<underlying_type>(basis_); }
 
-    [[nodiscard]] friend constexpr auto operator<=>(bounded_int lhs, bounded_int rhs) noexcept
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] friend constexpr auto operator<=>(bounded_int lhs, bounded_int rhs) noexcept
         -> std::strong_ordering = default;
 
-    [[nodiscard]] constexpr auto operator+() const noexcept -> bounded_int { return *this; }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator+() const noexcept -> bounded_int { return *this; }
 
-    [[nodiscard]] constexpr auto operator-() const -> bounded_int;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator-() const -> bounded_int;
 
-    constexpr auto operator+=(bounded_int<Min, Max> rhs) -> bounded_int&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator+=(bounded_int<Min, Max> rhs) -> bounded_int&;
 
-    constexpr auto operator-=(bounded_int<Min, Max> rhs) -> bounded_int&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator-=(bounded_int<Min, Max> rhs) -> bounded_int&;
 
-    constexpr auto operator*=(bounded_int<Min, Max> rhs) -> bounded_int&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator*=(bounded_int<Min, Max> rhs) -> bounded_int&;
 
-    constexpr auto operator/=(bounded_int<Min, Max> rhs) -> bounded_int&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator/=(bounded_int<Min, Max> rhs) -> bounded_int&;
 
-    constexpr auto operator++() -> bounded_int&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator++() -> bounded_int&;
 
-    constexpr auto operator++(int) -> bounded_int;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator++(int) -> bounded_int;
 
-    constexpr auto operator--() -> bounded_int&;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator--() -> bounded_int&;
 
-    constexpr auto operator--(int) -> bounded_int;
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator--(int) -> bounded_int;
 };
 
 // ------------------------------
@@ -644,18 +696,20 @@ template <auto Min, auto Max>
     requires (detail::valid_signed_bound<decltype(Min)> &&
               detail::valid_signed_bound<decltype(Max)> &&
               detail::signed_raw_value(Max) > detail::signed_raw_value(Min))
-constexpr auto bounded_int<Min, Max>::operator-() const -> bounded_int
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_int<Min, Max>::operator-() const -> bounded_int
 {
     using underlying = detail::underlying_type_t<basis_type>;
     const auto raw {static_cast<underlying>(basis_)};
 
     if (raw == std::numeric_limits<underlying>::min()) [[unlikely]]
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_int negation overflow"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "bounded_int negation overflow");
         }
@@ -670,7 +724,7 @@ constexpr auto bounded_int<Min, Max>::operator-() const -> bounded_int
 // ------------------------------
 
 template <auto Min, auto Max>
-[[nodiscard]] constexpr auto operator+(const bounded_int<Min, Max> lhs,
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator+(const bounded_int<Min, Max> lhs,
                                        const bounded_int<Min, Max> rhs) -> bounded_int<Min, Max>
 {
     using basis = typename bounded_int<Min, Max>::basis_type;
@@ -684,34 +738,40 @@ template <auto Min, auto Max>
     const auto status {detail::impl::signed_no_intrin_add(lhs_raw, rhs_raw, res)};
     if (status == detail::impl::signed_overflow_status::overflow)
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_int addition overflow"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "bounded_int addition overflow");
         }
     }
     else if (status == detail::impl::signed_overflow_status::underflow)
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::underflow_error("bounded_int addition underflow"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, "bounded_int addition underflow");
         }
     }
 
-    if (res < min_raw || res > max_raw)
+    if (detail::out_of_bounds(res, min_raw, max_raw))
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_int addition result out of range"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_int addition result out of range");
         }
@@ -725,7 +785,7 @@ template <auto Min, auto Max>
 // ------------------------------
 
 template <auto Min, auto Max>
-[[nodiscard]] constexpr auto operator-(const bounded_int<Min, Max> lhs,
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator-(const bounded_int<Min, Max> lhs,
                                        const bounded_int<Min, Max> rhs) -> bounded_int<Min, Max>
 {
     using basis = typename bounded_int<Min, Max>::basis_type;
@@ -739,34 +799,40 @@ template <auto Min, auto Max>
     const auto status {detail::impl::signed_no_intrin_sub(lhs_raw, rhs_raw, res)};
     if (status == detail::impl::signed_overflow_status::overflow)
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_int subtraction overflow"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "bounded_int subtraction overflow");
         }
     }
     else if (status == detail::impl::signed_overflow_status::underflow)
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::underflow_error("bounded_int subtraction underflow"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, "bounded_int subtraction underflow");
         }
     }
 
-    if (res < min_raw || res > max_raw)
+    if (detail::out_of_bounds(res, min_raw, max_raw))
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_int subtraction result out of range"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_int subtraction result out of range");
         }
@@ -780,7 +846,7 @@ template <auto Min, auto Max>
 // ------------------------------
 
 template <auto Min, auto Max>
-[[nodiscard]] constexpr auto operator*(const bounded_int<Min, Max> lhs,
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator*(const bounded_int<Min, Max> lhs,
                                        const bounded_int<Min, Max> rhs) -> bounded_int<Min, Max>
 {
     using basis = typename bounded_int<Min, Max>::basis_type;
@@ -794,34 +860,40 @@ template <auto Min, auto Max>
     const auto status {detail::impl::signed_no_intrin_mul(lhs_raw, rhs_raw, res)};
     if (status == detail::impl::signed_overflow_status::overflow)
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_int multiplication overflow"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "bounded_int multiplication overflow");
         }
     }
     else if (status == detail::impl::signed_overflow_status::underflow)
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::underflow_error("bounded_int multiplication underflow"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, "bounded_int multiplication underflow");
         }
     }
 
-    if (res < min_raw || res > max_raw)
+    if (detail::out_of_bounds(res, min_raw, max_raw))
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_int multiplication result out of range"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_int multiplication result out of range");
         }
@@ -835,7 +907,7 @@ template <auto Min, auto Max>
 // ------------------------------
 
 template <auto Min, auto Max>
-[[nodiscard]] constexpr auto operator/(const bounded_int<Min, Max> lhs,
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator/(const bounded_int<Min, Max> lhs,
                                        const bounded_int<Min, Max> rhs) -> bounded_int<Min, Max>
 {
     using basis = typename bounded_int<Min, Max>::basis_type;
@@ -847,11 +919,13 @@ template <auto Min, auto Max>
 
     if (rhs_raw == static_cast<underlying>(0)) [[unlikely]]
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_int division by zero"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_int division by zero");
         }
@@ -860,11 +934,13 @@ template <auto Min, auto Max>
     if (lhs_raw == std::numeric_limits<underlying>::min() &&
         rhs_raw == static_cast<underlying>(-1)) [[unlikely]]
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_int division overflow"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "bounded_int division overflow");
         }
@@ -886,13 +962,15 @@ template <auto Min, auto Max>
         res = lhs_raw / rhs_raw;
     }
 
-    if (res < min_raw || res > max_raw)
+    if (detail::out_of_bounds(res, min_raw, max_raw))
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_int division result out of range"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_int division result out of range");
         }
@@ -906,7 +984,7 @@ template <auto Min, auto Max>
 // ------------------------------
 
 template <auto Min, auto Max>
-[[nodiscard]] constexpr auto operator%(const bounded_int<Min, Max> lhs,
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator%(const bounded_int<Min, Max> lhs,
                                        const bounded_int<Min, Max> rhs) -> bounded_int<Min, Max>
 {
     using basis = typename bounded_int<Min, Max>::basis_type;
@@ -918,11 +996,13 @@ template <auto Min, auto Max>
 
     if (rhs_raw == static_cast<underlying>(0)) [[unlikely]]
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_int modulo by zero"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_int modulo by zero");
         }
@@ -931,11 +1011,13 @@ template <auto Min, auto Max>
     if (lhs_raw == std::numeric_limits<underlying>::min() &&
         rhs_raw == static_cast<underlying>(-1)) [[unlikely]]
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_int modulo overflow"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "bounded_int modulo overflow");
         }
@@ -957,13 +1039,15 @@ template <auto Min, auto Max>
         res = lhs_raw % rhs_raw;
     }
 
-    if (res < min_raw || res > max_raw)
+    if (detail::out_of_bounds(res, min_raw, max_raw))
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_int modulo result out of range"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_int modulo result out of range");
         }
@@ -980,7 +1064,7 @@ template <auto Min, auto Max>
     requires (detail::valid_signed_bound<decltype(Min)> &&
               detail::valid_signed_bound<decltype(Max)> &&
               detail::signed_raw_value(Max) > detail::signed_raw_value(Min))
-constexpr auto bounded_int<Min, Max>::operator+=(bounded_int<Min, Max> rhs) -> bounded_int&
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_int<Min, Max>::operator+=(bounded_int<Min, Max> rhs) -> bounded_int&
 {
     *this = *this + rhs;
     return *this;
@@ -990,7 +1074,7 @@ template <auto Min, auto Max>
     requires (detail::valid_signed_bound<decltype(Min)> &&
               detail::valid_signed_bound<decltype(Max)> &&
               detail::signed_raw_value(Max) > detail::signed_raw_value(Min))
-constexpr auto bounded_int<Min, Max>::operator-=(bounded_int<Min, Max> rhs) -> bounded_int&
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_int<Min, Max>::operator-=(bounded_int<Min, Max> rhs) -> bounded_int&
 {
     *this = *this - rhs;
     return *this;
@@ -1000,7 +1084,7 @@ template <auto Min, auto Max>
     requires (detail::valid_signed_bound<decltype(Min)> &&
               detail::valid_signed_bound<decltype(Max)> &&
               detail::signed_raw_value(Max) > detail::signed_raw_value(Min))
-constexpr auto bounded_int<Min, Max>::operator*=(bounded_int<Min, Max> rhs) -> bounded_int&
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_int<Min, Max>::operator*=(bounded_int<Min, Max> rhs) -> bounded_int&
 {
     *this = *this * rhs;
     return *this;
@@ -1010,7 +1094,7 @@ template <auto Min, auto Max>
     requires (detail::valid_signed_bound<decltype(Min)> &&
               detail::valid_signed_bound<decltype(Max)> &&
               detail::signed_raw_value(Max) > detail::signed_raw_value(Min))
-constexpr auto bounded_int<Min, Max>::operator/=(bounded_int<Min, Max> rhs) -> bounded_int&
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_int<Min, Max>::operator/=(bounded_int<Min, Max> rhs) -> bounded_int&
 {
     *this = *this / rhs;
     return *this;
@@ -1024,7 +1108,7 @@ template <auto Min, auto Max>
     requires (detail::valid_signed_bound<decltype(Min)> &&
               detail::valid_signed_bound<decltype(Max)> &&
               detail::signed_raw_value(Max) > detail::signed_raw_value(Min))
-constexpr auto bounded_int<Min, Max>::operator++() -> bounded_int&
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_int<Min, Max>::operator++() -> bounded_int&
 {
     using underlying = detail::underlying_type_t<basis_type>;
     constexpr auto max_raw {static_cast<underlying>(detail::signed_raw_value(Max))};
@@ -1034,11 +1118,13 @@ constexpr auto bounded_int<Min, Max>::operator++() -> bounded_int&
     const auto status {detail::impl::signed_no_intrin_add(raw, static_cast<underlying>(1), res)};
     if (status != detail::impl::signed_overflow_status::no_error)
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_int increment overflow"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, "bounded_int increment overflow");
         }
@@ -1046,11 +1132,13 @@ constexpr auto bounded_int<Min, Max>::operator++() -> bounded_int&
 
     if (res > max_raw)
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_int increment result out of range"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_int increment result out of range");
         }
@@ -1064,7 +1152,7 @@ template <auto Min, auto Max>
     requires (detail::valid_signed_bound<decltype(Min)> &&
               detail::valid_signed_bound<decltype(Max)> &&
               detail::signed_raw_value(Max) > detail::signed_raw_value(Min))
-constexpr auto bounded_int<Min, Max>::operator++(int) -> bounded_int
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_int<Min, Max>::operator++(int) -> bounded_int
 {
     auto tmp {*this};
     ++(*this);
@@ -1075,7 +1163,7 @@ template <auto Min, auto Max>
     requires (detail::valid_signed_bound<decltype(Min)> &&
               detail::valid_signed_bound<decltype(Max)> &&
               detail::signed_raw_value(Max) > detail::signed_raw_value(Min))
-constexpr auto bounded_int<Min, Max>::operator--() -> bounded_int&
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_int<Min, Max>::operator--() -> bounded_int&
 {
     using underlying = detail::underlying_type_t<basis_type>;
     constexpr auto min_raw {static_cast<underlying>(detail::signed_raw_value(Min))};
@@ -1085,23 +1173,27 @@ constexpr auto bounded_int<Min, Max>::operator--() -> bounded_int&
     const auto status {detail::impl::signed_no_intrin_sub(raw, static_cast<underlying>(1), res)};
     if (status != detail::impl::signed_overflow_status::no_error)
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::underflow_error("bounded_int decrement underflow"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, "bounded_int decrement underflow");
         }
     }
 
-    if (res < min_raw)
+    if (detail::below_bound(res, min_raw))
     {
+        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_int decrement result out of range"); // LCOV_EXCL_LINE
         }
         else
+        #endif
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, "bounded_int decrement result out of range");
         }
@@ -1115,7 +1207,7 @@ template <auto Min, auto Max>
     requires (detail::valid_signed_bound<decltype(Min)> &&
               detail::valid_signed_bound<decltype(Max)> &&
               detail::signed_raw_value(Max) > detail::signed_raw_value(Min))
-constexpr auto bounded_int<Min, Max>::operator--(int) -> bounded_int
+BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_int<Min, Max>::operator--(int) -> bounded_int
 {
     auto tmp {*this};
     --(*this);

@@ -105,6 +105,7 @@ compile-fail compile_fail_unsigned_literals.cpp ;
 run test_signed_literals.cpp ;
 compile-fail compile_fail_signed_literals.cpp ;
 run test_literals.cpp ;
+run test_device_error_mapping.cpp ;
 run test_unsigned_subtraction.cpp ;
 run test_unsigned_multiplication.cpp ;
 run test_unsigned_division.cpp ;

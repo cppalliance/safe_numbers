@@ -23,6 +23,7 @@
 ** xref:examples.adoc#examples_functional[Hashing]
 ** xref:examples.adoc#examples_random[Random Number Generation]
 ** xref:examples.adoc#examples_cuda[CUDA Device Support]
+** xref:examples.adoc#examples_cuda_bounded[Bounded Types on a CUDA Device]
 ** xref:examples.adoc#examples_cuda_error_handling[CUDA Error Handling]
 *** xref:examples.adoc#examples_cuda_error_handling_with_error_context[With Safe_Numbers Error Context]
 *** xref:examples.adoc#examples_cuda_error_handling_without_error_context[Without Safe_Numbers Error Context]
