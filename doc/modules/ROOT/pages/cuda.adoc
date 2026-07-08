@@ -11,6 +11,7 @@ https://www.boost.org/LICENSE_1_0.txt
 == Description
 
 All integer types of this library (unsigned `u8`-`u128`, signed `i8`-`i128`, and bounded types) support compilation with NVCC.
+The safe floating-point types `f32` and `f64` are supported on the device as well, using the same error-reporting mechanism; see <<cuda_floats>>.
 To get the safety guarantees, there are some small modifications to the way that CUDA code is written.
 Normally you would have something like this:
 
@@ -93,6 +94,49 @@ Device error on thread 256 at /home/runner/work/safe_numbers/boost-root/libs/saf
 The `device_error_context` will also attempt to `printf` the error into the terminal.
 This works when compiling with verbose mode `-V`.
 `printf` error messages will look the same as the message displayed by the thrown exception.
+
+[#cuda_floats]
+== Floating-Point Support
+
+The safe floating-point types `f32` and `f64` compile with NVCC and execute inside device kernels alongside the integer types.
+Their four checked operators (`pass:[+]`, `-`, `pass:[*]`, and `/`) run on the device and classify the result according to IEEE 754 exactly as they do on the host.
+As on the host there is no `operator%`, because C++ defines no floating-point remainder operator; see xref:floats.adoc[].
+
+A device kernel uses them the same way it uses the integer types:
+
+[source, c++]
+----
+using test_type = boost::safe_numbers::f32;
+
+__global__ void scale(const test_type *in, test_type *out, int numElements)
+{
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+
+    if (i < numElements)
+    {
+        out[i] = in[i] * test_type{2.0f};
+    }
+}
+----
+
+When a device-side floating-point operation produces an exceptional result, it records the error into the `device_error_context` just as the integer operations do, and `synchronize()` throws the matching exception on the host.
+The mapping mirrors the host behavior of the types documented in xref:floats.adoc[]:
+
+|===
+| Device Floating-Point Result | Host Exception
+
+| Saturation to positive infinity
+| `std::overflow_error`
+
+| Saturation to negative infinity
+| `std::underflow_error`
+
+| Invalid operation, a NaN operand, or division of a finite non-zero value by zero
+| `std::domain_error`
+|===
+
+The `device_exception_mode` and the choice between `trapped` and `untrapped` apply unchanged, so the same `device_error_context` catches overflow, underflow, and domain errors from `f32` and `f64` kernels.
+The range-checked `bounded_float` type (see xref:bounded_float.adoc[]) validates its value at construction and is a host-side type, so the device-enabled floating-point types are `f32` and `f64`.
 
 [#cuda_device_exception_mode]
 == The `device_exception_mode` Enum

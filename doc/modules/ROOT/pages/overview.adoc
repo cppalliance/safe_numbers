@@ -14,6 +14,8 @@ Matt Borland
 
 SafeNumbers strives to enhance the type safety of fundamental numeric types, with an acceptable performance degradation.
 
+It provides safe unsigned and signed integer types (`u8` through `u128` and `i8` through `i128`), safe floating-point types (`f32` and `f64`), and compile-time range-checked bounded variants (`bounded_uint`, `bounded_int`, and `bounded_float`).
+
 The library is header-only, minimal dependencies (Boost.Assert, Config, and Throw_Exception), and requires only C++20.
 
 == Motivation

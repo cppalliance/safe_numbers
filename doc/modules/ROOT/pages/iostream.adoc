@@ -56,7 +56,7 @@ auto operator>>(std::basic_istream<charT, traits>& is, LibType& v)
 | Converted to the underlying `float` or `double` and written using the standard floating-point insertion
 |===
 
-Standard stream manipulators (`std::hex`, `std::oct`, `std::dec`, `std::showbase`, `std::setw`, etc.) work as expected.
+Standard stream manipulators work as expected: the integer types respond to `std::hex`, `std::oct`, `std::dec`, `std::showbase`, and `std::setw`, and the floating-point types `f32` and `f64` respond to `std::setprecision`, `std::fixed`, and `std::scientific`.
 
 === Input (`operator>>`)
 
