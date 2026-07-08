@@ -771,6 +771,28 @@ Charconv (rt):     PASSED
 ----
 ====
 
+[#examples_cuda_bounded]
+== Bounded Types on a CUDA Device
+
+The range-checked bounded types (`bounded_uint`, `bounded_int`, and `bounded_float`) are also annotated with `\\__host__ __device__` and run on a CUDA device.
+In-range arithmetic matches the host result, and a result that leaves the `[Min, Max]` range is captured by `device_error_context` and rethrown as `std::domain_error` on the host.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/cuda_bounded.cu[example] demonstrates the bounded types running on a CUDA device.
+====
+[source, c++]
+----
+include::example$cuda_bounded.cu[]
+----
+
+Output:
+----
+bounded_uint  add: PASSED
+bounded_int   mul: PASSED
+bounded_float add: PASSED
+out-of-range sum:  caught std::domain_error
+----
+====
+
 [#examples_cuda_error_handling]
 == CUDA Error Handling
 
