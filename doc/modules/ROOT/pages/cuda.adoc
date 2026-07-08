@@ -10,7 +10,7 @@ https://www.boost.org/LICENSE_1_0.txt
 
 == Description
 
-All integer types of this library (unsigned `u8`-`u128`, signed `i8`-`i128`, and bounded types) support compilation with NVCC.
+All integer types of this library (unsigned `u8`-`u128`, signed `i8`-`i128`, and bounded types) support compilation with NVCC and use inside device kernels.
 The safe floating-point types `f32` and `f64` are supported on the device as well, using the same error-reporting mechanism; see <<cuda_floats>>.
 To get the safety guarantees, there are some small modifications to the way that CUDA code is written.
 Normally you would have something like this:
@@ -136,7 +136,9 @@ The mapping mirrors the host behavior of the types documented in xref:floats.ado
 |===
 
 The `device_exception_mode` and the choice between `trapped` and `untrapped` apply unchanged, so the same `device_error_context` catches overflow, underflow, and domain errors from `f32` and `f64` kernels.
-The range-checked `bounded_float` type (see xref:bounded_float.adoc[]) validates its value at construction and is a host-side type, so the device-enabled floating-point types are `f32` and `f64`.
+The range-checked `bounded_float` type runs on the device as well; a result that violates its IEEE 754 contract or leaves the `[Min, Max]` range is captured by the same `device_error_context` and rethrown on the host.
+The bounded integer types `bounded_uint` and `bounded_int` are likewise device-enabled.
+See xref:examples.adoc#examples_cuda_bounded[the bounded-types CUDA example].
 
 [#cuda_device_exception_mode]
 == The `device_exception_mode` Enum
