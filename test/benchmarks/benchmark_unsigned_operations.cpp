@@ -2,9 +2,6 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-#define BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
-#define BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
-
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
 #include <benchmark/benchmark.h>

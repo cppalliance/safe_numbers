@@ -9,10 +9,6 @@
 #include <limits>
 #include <sstream>
 
-#ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
-#  error "Should not be defined for the user"
-#endif
-
 using namespace boost::safe_numbers;
 
 static std::mt19937_64 rng{42};

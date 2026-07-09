@@ -23,7 +23,7 @@ namespace detail {
 
 namespace impl {
 
-#if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_ENABLE_CUDA))
+#if !defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_GPU_SUPPORT)
 
 BOOST_SAFE_NUMBERS_DETAIL_INT128_INLINE_CONSTEXPR unsigned char uchar_values[] =
      {255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
@@ -50,7 +50,7 @@ static_assert(sizeof(uchar_values) == 256, "uchar_values should represent all 25
 // Convert characters for 0-9, A-Z, a-z to 0-35. Anything else is 255
 BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE BOOST_SAFE_NUMBERS_DETAIL_INT128_FORCE_INLINE constexpr auto digit_from_char(char val) noexcept -> unsigned char
 {
-    #if defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_ENABLE_CUDA)
+    #if defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_GPU_SUPPORT)
 
     constexpr unsigned char uchar_values[] =
     {255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
@@ -140,11 +140,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE constexpr int from_chars_integer_im
     const std::ptrdiff_t nc = last - next;
 
     // For bases 2..10 the first digits10 characters always fit in the unsigned
-    // target type without overflow, so the per-iteration check is unnecessary
-    // there: 10^digits10 <= 2^bits, and any base <= 10 packs no more value per
-    // digit than base 10. For bases above 10 the safe window is shorter than
-    // digits10 (e.g. only ~24 digits in base 36 fit in 128 bits), so the check
-    // must run on every iteration.
+    // For bases above 10, the safe window is shorter, so we must check with each iteration
     const std::ptrdiff_t nd {
         base <= 10
             ? static_cast<std::ptrdiff_t>(std::numeric_limits<Integer>::digits10)
@@ -190,7 +186,7 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE constexpr int from_chars_integer_im
     }
 
     // Return the parsed value, adding the sign back if applicable
-    // If we have overflowed then we do not return the result
+    // If we have overflowed, then we do not return the result
     if (overflowed)
     {
         return EDOM;
@@ -208,7 +204,18 @@ BOOST_SAFE_NUMBERS_DETAIL_INT128_HOST_DEVICE constexpr int from_chars_integer_im
 
     // This value will be negative to differentiate from errno values
     // since they are in the range of acceptable distances
+
+    // This cast is useless on 32-bit platforms
+    #if defined(__GNUC__) && !defined(__clang__)
+    #  pragma GCC diagnostic push
+    #  pragma GCC diagnostic ignored "-Wuseless-cast"
+    #endif
+
     return static_cast<int>(first - next);
+
+    #if defined(__GNUC__) && !defined(__clang__)
+    #  pragma GCC diagnostic pop
+    #endif
 }
 } // namespace impl
 
