@@ -3,9 +3,6 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-#define BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
-#define BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
-
 #if defined(__clang__)
 #  pragma clang diagnostic push
 #  pragma clang diagnostic ignored "-Wold-style-cast"
@@ -45,9 +42,6 @@
 #  pragma warning(disable : 4018) // signed/unsigned mismatch in comparison
 #  pragma warning(disable : 4702)
 #endif
-
-#define BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_COMPARE
-#define BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
 // Even with the pragma above for -Wundef, GCC-11 and GCC-12 still fail
 // This is a workaround to at least define BOOST_CLANG to a fail value for safe_numerics

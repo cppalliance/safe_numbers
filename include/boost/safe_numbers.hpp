@@ -5,8 +5,6 @@
 #ifndef BOOST_SAFENUMBERS_HPP
 #define BOOST_SAFENUMBERS_HPP
 
-#define BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
-
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/signed_integers.hpp>
 #include <boost/safe_numbers/bounded_integers.hpp>
@@ -22,7 +20,5 @@
 #include <boost/safe_numbers/numeric.hpp>
 #include <boost/safe_numbers/cmath.hpp>
 #include <boost/safe_numbers/functional.hpp>
-
-#undef BOOST_SAFE_NUMBERS_DETAIL_INT128_ALLOW_SIGN_CONVERSION
 
 #endif //BOOST_SAFENUMBERS_HPP
