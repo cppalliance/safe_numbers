@@ -95,7 +95,7 @@ public:
 
         if (val < min_val || val > max_val)
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 throw std::domain_error("bounded_uint value out of range"); // LCOV_EXCL_LINE
@@ -123,7 +123,7 @@ public:
             using raw_other = detail::underlying_type_t<OtherBasis>;
             if (raw > static_cast<detail::underlying_type_t<basis_type>>(std::numeric_limits<raw_other>::max()))
             {
-                #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
                 if (std::is_constant_evaluated())
                 {
                     throw std::domain_error("bounded_uint conversion overflow"); // LCOV_EXCL_LINE
@@ -190,7 +190,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator+(const boun
     underlying res {};
     if (detail::impl::unsigned_no_intrin_add(lhs_raw, rhs_raw, res))
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_uint addition overflow"); // LCOV_EXCL_LINE
@@ -204,7 +204,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator+(const boun
 
     if (detail::out_of_bounds(res, min_raw, max_raw))
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_uint addition result out of range"); // LCOV_EXCL_LINE
@@ -233,7 +233,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator-(const boun
     underlying res {};
     if (detail::impl::unsigned_no_intrin_sub(lhs_raw, rhs_raw, res))
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::underflow_error("bounded_uint subtraction underflow"); // LCOV_EXCL_LINE
@@ -247,7 +247,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator-(const boun
 
     if (detail::out_of_bounds(res, min_raw, max_raw))
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_uint subtraction result out of range"); // LCOV_EXCL_LINE
@@ -276,7 +276,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator*(const boun
     underlying res {};
     if (detail::impl::no_intrin_mul(lhs_raw, rhs_raw, res))
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_uint multiplication overflow"); // LCOV_EXCL_LINE
@@ -290,7 +290,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator*(const boun
 
     if (detail::out_of_bounds(res, min_raw, max_raw))
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_uint multiplication result out of range"); // LCOV_EXCL_LINE
@@ -318,7 +318,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator/(const boun
 
     if (rhs_raw == 0U) [[unlikely]]
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_uint division by zero"); // LCOV_EXCL_LINE
@@ -342,7 +342,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator/(const boun
 
     if (detail::out_of_bounds(res, min_raw, max_raw))
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_uint division result out of range"); // LCOV_EXCL_LINE
@@ -370,7 +370,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator%(const boun
 
     if (rhs_raw == 0U) [[unlikely]]
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_uint modulo by zero"); // LCOV_EXCL_LINE
@@ -394,7 +394,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator%(const boun
 
     if (detail::out_of_bounds(res, min_raw, max_raw))
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_uint modulo result out of range"); // LCOV_EXCL_LINE
@@ -462,7 +462,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_uint<Min, Max>::operator++
     underlying res {};
     if (detail::impl::unsigned_no_intrin_add(raw, static_cast<underlying>(1U), res))
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_uint increment overflow"); // LCOV_EXCL_LINE
@@ -476,7 +476,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_uint<Min, Max>::operator++
 
     if (res > max_raw)
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_uint increment result out of range"); // LCOV_EXCL_LINE
@@ -516,7 +516,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_uint<Min, Max>::operator--
     underlying res {};
     if (detail::impl::unsigned_no_intrin_sub(raw, static_cast<underlying>(1U), res))
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::underflow_error("bounded_uint decrement underflow"); // LCOV_EXCL_LINE
@@ -530,7 +530,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_uint<Min, Max>::operator--
 
     if (detail::below_bound(res, min_raw))
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_uint decrement result out of range"); // LCOV_EXCL_LINE
@@ -602,7 +602,7 @@ public:
 
         if (val < min_val || val > max_val)
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 throw std::domain_error("bounded_int value out of range"); // LCOV_EXCL_LINE
@@ -631,7 +631,7 @@ public:
             if (raw > static_cast<detail::underlying_type_t<basis_type>>(std::numeric_limits<raw_other>::max()) ||
                 raw < static_cast<detail::underlying_type_t<basis_type>>(std::numeric_limits<raw_other>::min()))
             {
-                #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
                 if (std::is_constant_evaluated())
                 {
                     throw std::domain_error("bounded_int conversion overflow"); // LCOV_EXCL_LINE
@@ -703,7 +703,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_int<Min, Max>::operator-()
 
     if (raw == std::numeric_limits<underlying>::min()) [[unlikely]]
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_int negation overflow"); // LCOV_EXCL_LINE
@@ -738,7 +738,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator+(const boun
     const auto status {detail::impl::signed_no_intrin_add(lhs_raw, rhs_raw, res)};
     if (status == detail::impl::signed_overflow_status::overflow)
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_int addition overflow"); // LCOV_EXCL_LINE
@@ -751,7 +751,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator+(const boun
     }
     else if (status == detail::impl::signed_overflow_status::underflow)
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::underflow_error("bounded_int addition underflow"); // LCOV_EXCL_LINE
@@ -765,7 +765,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator+(const boun
 
     if (detail::out_of_bounds(res, min_raw, max_raw))
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_int addition result out of range"); // LCOV_EXCL_LINE
@@ -799,7 +799,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator-(const boun
     const auto status {detail::impl::signed_no_intrin_sub(lhs_raw, rhs_raw, res)};
     if (status == detail::impl::signed_overflow_status::overflow)
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_int subtraction overflow"); // LCOV_EXCL_LINE
@@ -812,7 +812,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator-(const boun
     }
     else if (status == detail::impl::signed_overflow_status::underflow)
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::underflow_error("bounded_int subtraction underflow"); // LCOV_EXCL_LINE
@@ -826,7 +826,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator-(const boun
 
     if (detail::out_of_bounds(res, min_raw, max_raw))
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_int subtraction result out of range"); // LCOV_EXCL_LINE
@@ -860,7 +860,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator*(const boun
     const auto status {detail::impl::signed_no_intrin_mul(lhs_raw, rhs_raw, res)};
     if (status == detail::impl::signed_overflow_status::overflow)
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_int multiplication overflow"); // LCOV_EXCL_LINE
@@ -873,7 +873,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator*(const boun
     }
     else if (status == detail::impl::signed_overflow_status::underflow)
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::underflow_error("bounded_int multiplication underflow"); // LCOV_EXCL_LINE
@@ -887,7 +887,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator*(const boun
 
     if (detail::out_of_bounds(res, min_raw, max_raw))
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_int multiplication result out of range"); // LCOV_EXCL_LINE
@@ -919,7 +919,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator/(const boun
 
     if (rhs_raw == static_cast<underlying>(0)) [[unlikely]]
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_int division by zero"); // LCOV_EXCL_LINE
@@ -934,7 +934,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator/(const boun
     if (lhs_raw == std::numeric_limits<underlying>::min() &&
         rhs_raw == static_cast<underlying>(-1)) [[unlikely]]
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_int division overflow"); // LCOV_EXCL_LINE
@@ -964,7 +964,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator/(const boun
 
     if (detail::out_of_bounds(res, min_raw, max_raw))
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_int division result out of range"); // LCOV_EXCL_LINE
@@ -996,7 +996,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator%(const boun
 
     if (rhs_raw == static_cast<underlying>(0)) [[unlikely]]
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_int modulo by zero"); // LCOV_EXCL_LINE
@@ -1011,7 +1011,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator%(const boun
     if (lhs_raw == std::numeric_limits<underlying>::min() &&
         rhs_raw == static_cast<underlying>(-1)) [[unlikely]]
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_int modulo overflow"); // LCOV_EXCL_LINE
@@ -1041,7 +1041,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator%(const boun
 
     if (detail::out_of_bounds(res, min_raw, max_raw))
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_int modulo result out of range"); // LCOV_EXCL_LINE
@@ -1118,7 +1118,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_int<Min, Max>::operator++(
     const auto status {detail::impl::signed_no_intrin_add(raw, static_cast<underlying>(1), res)};
     if (status != detail::impl::signed_overflow_status::no_error)
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::overflow_error("bounded_int increment overflow"); // LCOV_EXCL_LINE
@@ -1132,7 +1132,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_int<Min, Max>::operator++(
 
     if (res > max_raw)
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_int increment result out of range"); // LCOV_EXCL_LINE
@@ -1173,7 +1173,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_int<Min, Max>::operator--(
     const auto status {detail::impl::signed_no_intrin_sub(raw, static_cast<underlying>(1), res)};
     if (status != detail::impl::signed_overflow_status::no_error)
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::underflow_error("bounded_int decrement underflow"); // LCOV_EXCL_LINE
@@ -1187,7 +1187,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto bounded_int<Min, Max>::operator--(
 
     if (detail::below_bound(res, min_raw))
     {
-        #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+        #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
         if (std::is_constant_evaluated())
         {
             throw std::domain_error("bounded_int decrement result out of range"); // LCOV_EXCL_LINE

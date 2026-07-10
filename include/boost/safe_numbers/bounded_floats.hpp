@@ -61,7 +61,7 @@ public:
         // NaN comparisons are unordered: a naked range check would silently accept NaN.
         if (detail::impl::constexpr_isnan(raw))
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 throw std::domain_error("bounded_float NaN value"); // LCOV_EXCL_LINE
@@ -78,7 +78,7 @@ public:
 
         if (raw < min_raw || raw > max_raw)
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 throw std::domain_error("bounded_float value out of range"); // LCOV_EXCL_LINE
@@ -107,7 +107,7 @@ public:
 
             if (detail::impl::constexpr_isinf(result) && !detail::impl::constexpr_isinf(raw))
             {
-                #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
                 if (std::is_constant_evaluated())
                 {
                     throw std::overflow_error("bounded_float narrowing conversion overflow"); // LCOV_EXCL_LINE

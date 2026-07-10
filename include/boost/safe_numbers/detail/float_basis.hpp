@@ -500,7 +500,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto classify_cmath_resul
     return res > 0 ? error_category::overflow : error_category::underflow;
 }
 
-#if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+#if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
 // Host-only descriptive runtime message, e.g. "Overflow detected in f64 sqrt".
 template <compatible_float_type BasisType>
@@ -514,7 +514,7 @@ template <compatible_float_type BasisType>
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_cmath_overflow(const char* const op) -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -538,7 +538,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_cmath_overflow(const char* c
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_cmath_underflow(const char* const op) -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -562,7 +562,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_cmath_underflow(const char* 
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_cmath_domain(const char* const op) -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -678,7 +678,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto checked_float_additi
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_add() -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -700,7 +700,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_add() -> void
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_underflow_add() -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -722,7 +722,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_underflow_add() -> void
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_nan_add() -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -744,7 +744,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_nan_add() -> void
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_invalid_add() -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -781,7 +781,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
         case impl::error_category::no_error:
             break;
         case impl::error_category::overflow:
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, float>)
@@ -800,7 +800,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             }
             break;
         case impl::error_category::underflow:
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, float>)
@@ -819,7 +819,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             }
             break;
         case impl::error_category::nan_op:
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, float>)
@@ -838,7 +838,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             }
             break;
         case impl::error_category::invalid_op:
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, float>)
@@ -926,7 +926,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto checked_float_subtra
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_sub() -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -948,7 +948,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_sub() -> void
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_underflow_sub() -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -970,7 +970,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_underflow_sub() -> void
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_nan_sub() -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -992,7 +992,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_nan_sub() -> void
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_invalid_sub() -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -1029,7 +1029,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
         case impl::error_category::no_error:
             break;
         case impl::error_category::overflow:
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, float>)
@@ -1048,7 +1048,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             }
             break;
         case impl::error_category::underflow:
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, float>)
@@ -1067,7 +1067,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             }
             break;
         case impl::error_category::nan_op:
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, float>)
@@ -1086,7 +1086,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             }
             break;
         case impl::error_category::invalid_op:
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, float>)
@@ -1184,7 +1184,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto checked_float_multip
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_mul() -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -1206,7 +1206,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_mul() -> void
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_underflow_mul() -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -1228,7 +1228,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_underflow_mul() -> void
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_nan_mul() -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -1250,7 +1250,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_nan_mul() -> void
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_invalid_mul() -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -1287,7 +1287,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
         case impl::error_category::no_error:
             break;
         case impl::error_category::overflow:
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, float>)
@@ -1306,7 +1306,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             }
             break;
         case impl::error_category::underflow:
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, float>)
@@ -1325,7 +1325,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             }
             break;
         case impl::error_category::nan_op:
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, float>)
@@ -1344,7 +1344,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             }
             break;
         case impl::error_category::invalid_op:
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, float>)
@@ -1458,7 +1458,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto checked_float_divisi
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_div() -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -1480,7 +1480,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_overflow_div() -> void
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_underflow_div() -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -1502,7 +1502,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_underflow_div() -> void
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_nan_div() -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -1524,7 +1524,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_nan_div() -> void
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_invalid_div() -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -1546,7 +1546,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_invalid_div() -> void
 template <compatible_float_type BasisType>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_divbyzero_div() -> void
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
     if (std::is_constant_evaluated())
     {
         if constexpr (std::is_same_v<BasisType, float>)
@@ -1583,7 +1583,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
         case impl::error_category::no_error:
             break;
         case impl::error_category::overflow:
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, float>)
@@ -1602,7 +1602,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             }
             break;
         case impl::error_category::underflow:
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, float>)
@@ -1621,7 +1621,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             }
             break;
         case impl::error_category::nan_op:
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, float>)
@@ -1640,7 +1640,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             }
             break;
         case impl::error_category::invalid_op:
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, float>)
@@ -1659,7 +1659,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
             }
             break;
         case impl::error_category::divide_by_zero:
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, float>)
