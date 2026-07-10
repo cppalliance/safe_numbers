@@ -1,0 +1,114 @@
+# Copyright 2026 Matt Borland
+# Distributed under the Boost Software License, Version 1.0.
+# https://www.boost.org/LICENSE_1_0.txt
+#
+# SYCL test manifest. Consumed only by test/CMakeLists.txt via boost_test_jamfile
+# under -DBOOST_SAFE_NUMBERS_ENABLE_SYCL=ON (icpx). Not built by plain b2.
+
+import testing ;
+import ../../config/checks/config : requires ;
+
+project : requirements
+    [ requires cxx20_hdr_bit cxx20_hdr_compare cxx20_hdr_concepts ]
+    ;
+
+# Arithmetic - unsigned (u8, u16, u32, u64, u128)
+run test_unsigned_add_sycl.cpp ;
+run test_unsigned_sub_sycl.cpp ;
+run test_unsigned_mul_sycl.cpp ;
+run test_unsigned_div_sycl.cpp ;
+run test_unsigned_mod_sycl.cpp ;
+
+# Arithmetic - signed (i8, i16, i32, i64, i128)
+run test_signed_add_sycl.cpp ;
+run test_signed_sub_sycl.cpp ;
+run test_signed_mul_sycl.cpp ;
+run test_signed_div_sycl.cpp ;
+run test_signed_mod_sycl.cpp ;
+
+# Arithmetic - floats (f32, f64)
+run test_float_add_sycl.cpp ;
+run test_float_sub_sycl.cpp ;
+run test_float_mul_sycl.cpp ;
+run test_float_div_sycl.cpp ;
+
+# Bounded types (bounded_uint, bounded_int, bounded_float)
+run test_bounded_add_sycl.cpp ;
+run test_bounded_sub_sycl.cpp ;
+run test_bounded_mul_sycl.cpp ;
+run test_bounded_div_sycl.cpp ;
+run test_bounded_ops_sycl.cpp ;
+
+# Error paths: the device records the error into the device_global buffer,
+# and the host re-raises the matching std exception
+run test_unsigned_add_error_sycl.cpp ;
+run test_unsigned_sub_error_sycl.cpp ;
+run test_unsigned_mul_error_sycl.cpp ;
+run test_unsigned_div_error_sycl.cpp ;
+run test_unsigned_mod_error_sycl.cpp ;
+run test_signed_ops_error_sycl.cpp ;
+run test_float_add_error_sycl.cpp ;
+run test_float_sub_error_sycl.cpp ;
+run test_float_mul_error_sycl.cpp ;
+run test_float_div_error_sycl.cpp ;
+run test_bounded_add_error_sycl.cpp ;
+
+# Error-reporting mechanism
+run test_device_error_context_reuse_sycl.cpp ;
+run test_device_error_single_context_sycl.cpp ;
+run test_device_error_mapping_sycl.cpp ;
+run test_device_error_workitem_id_sycl.cpp ;
+
+# Free functions - bit manipulation
+run test_has_single_bit_sycl.cpp ;
+run test_bit_ceil_sycl.cpp ;
+run test_bit_floor_sycl.cpp ;
+run test_bit_width_sycl.cpp ;
+run test_bitswap_sycl.cpp ;
+run test_byteswap_sycl.cpp ;
+run test_countl_one_sycl.cpp ;
+run test_countl_zero_sycl.cpp ;
+run test_countr_one_sycl.cpp ;
+run test_countr_zero_sycl.cpp ;
+run test_popcount_sycl.cpp ;
+run test_rotl_sycl.cpp ;
+run test_rotr_sycl.cpp ;
+
+# Free functions - byte order conversions
+run test_to_be_sycl.cpp ;
+run test_from_be_sycl.cpp ;
+run test_to_le_sycl.cpp ;
+run test_from_le_sycl.cpp ;
+
+# Free functions - integer utilities
+run test_isqrt_sycl.cpp ;
+run test_ilog2_sycl.cpp ;
+run test_ilog10_sycl.cpp ;
+run test_ilog_sycl.cpp ;
+run test_is_power_2_sycl.cpp ;
+run test_is_power_10_sycl.cpp ;
+run test_remove_trailing_zeros_sycl.cpp ;
+run test_abs_diff_sycl.cpp ;
+run test_div_ceil_sycl.cpp ;
+run test_next_multiple_of_sycl.cpp ;
+# test_ipow_sycl is disabled: its large looped kernels (u8..u128 in one TU) hit
+# a DPC++ JIT bug where llvm.umul.with.overflow.i8/i16/i32 fail to materialize
+# ("JIT session error: Symbols not found: [ old_llvm.umul.with.overflow.* ]",
+# then abort). Reproduced identically on icpx 2026.0.0 (native OpenCL CPU
+# runtime 2026.21.3) and 2026.1.0, with range rounding disabled; the plain
+# unsigned mul tests that use the same intrinsic pass, so it is kernel-size
+# dependent. Same class as the int128 signed-midpoint ICE; report to Intel.
+# run test_ipow_sycl.cpp ;
+
+# Free functions - numeric algorithms
+run test_gcd_sycl.cpp ;
+run test_lcm_sycl.cpp ;
+run test_midpoint_sycl.cpp ;
+
+# Free functions - charconv (to_chars / from_chars round-trip)
+run test_charconv_sycl.cpp ;
+run test_charconv_all_bases_sycl.cpp ;
+
+# Examples
+run ../examples/sycl.cpp ;
+run ../examples/sycl_error_handling.cpp ;

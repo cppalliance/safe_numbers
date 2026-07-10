@@ -8,7 +8,7 @@
 // own category rather than being folded into domain_error, so that a device
 // (or CUDA host) invalid_argument is rethrown as std::invalid_argument.
 
-#include <boost/safe_numbers/cuda_error_reporting.hpp>
+#include <boost/safe_numbers/device_error_reporting.hpp>
 #include <stdexcept>
 
 using boost::safe_numbers::detail::exception_type;
