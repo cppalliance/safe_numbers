@@ -236,3 +236,7 @@ The error state is cleared *before* throwing, so after catching the exception th
 
 * xref:examples.adoc#examples_sycl[SYCL Device Support]: runs safe_numbers arithmetic on a SYCL device and verifies the results against the host.
 * xref:examples.adoc#examples_sycl_error_handling[SYCL Error Handling]: shows how to use `device_error_context` to catch a device-side error on the host.
+
+== Benchmarks
+
+xref:benchmarks.adoc#device_benchmarks[Dedicated device benchmarks] measure the overhead of the safety checks inside SYCL kernels, in both a memory-bound streaming shape and a compute-bound register chain.
