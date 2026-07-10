@@ -6,7 +6,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <boost/safe_numbers/bounded_floats.hpp>
-#include <boost/safe_numbers/cuda_error_reporting.hpp>
+#include <boost/safe_numbers/device_error_reporting.hpp>
 #include "cuda_managed_ptr.hpp"
 
 #include <cuda_runtime.h>

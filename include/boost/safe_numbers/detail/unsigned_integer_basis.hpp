@@ -427,7 +427,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr unsigned_integer_basis<BasisType>::oper
 
 namespace impl {
 
-#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_add(const T lhs, const T rhs, T& result)
@@ -435,7 +435,7 @@ bool unsigned_intrin_add(const T lhs, const T rhs, T& result)
     return __builtin_add_overflow(lhs, rhs, &result);
 }
 
-#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_add(const T lhs, const T rhs, T& result)
@@ -458,7 +458,7 @@ bool unsigned_intrin_add(const T lhs, const T rhs, T& result)
     }
 }
 
-#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_add(const T lhs, const T rhs, T& result)
@@ -526,7 +526,7 @@ struct add_helper
 
         auto handle_overflow = [&res]
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, std::uint8_t>)
@@ -583,7 +583,7 @@ struct add_helper
 
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (!std::is_constant_evaluated())
             {
@@ -644,7 +644,7 @@ struct add_helper<overflow_policy::overflow_tuple, BasisType>
 
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         {
-            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (!std::is_constant_evaluated())
             {
@@ -677,7 +677,7 @@ struct add_helper<overflow_policy::checked, BasisType>
 
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         {
-            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (!std::is_constant_evaluated())
             {
@@ -763,7 +763,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
     1 error generated.
     */
 
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
     if (std::is_constant_evaluated())
     {
@@ -956,7 +956,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator+=(const unsigned_inte
 
 namespace impl {
 
-#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_sub(T lhs, T rhs, T& result)
@@ -964,7 +964,7 @@ bool unsigned_intrin_sub(T lhs, T rhs, T& result)
     return __builtin_sub_overflow(lhs, rhs, &result);
 }
 
-#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_sub(T lhs, T rhs, T& result)
@@ -987,7 +987,7 @@ bool unsigned_intrin_sub(T lhs, T rhs, T& result)
     }
 }
 
-#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_sub(T lhs, T rhs, T& result)
@@ -1056,7 +1056,7 @@ struct sub_helper
 
         auto handle_underflow = [&res]
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (std::is_constant_evaluated())
             {
@@ -1108,7 +1108,7 @@ struct sub_helper
 
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         {
-            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (!std::is_constant_evaluated())
             {
@@ -1169,7 +1169,7 @@ struct sub_helper<overflow_policy::overflow_tuple, BasisType>
 
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         {
-            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (!std::is_constant_evaluated())
             {
@@ -1202,7 +1202,7 @@ struct sub_helper<overflow_policy::checked, BasisType>
 
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         {
-            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (!std::is_constant_evaluated())
             {
@@ -1232,7 +1232,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator-(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
     if (std::is_constant_evaluated())
     {
@@ -1287,7 +1287,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator-=(const unsigned_inte
 
 namespace impl {
 
-#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_mul(const T lhs, const T rhs, T& result)
@@ -1307,7 +1307,7 @@ inline bool unsigned_intrin_mul(const int128::uint128_t lhs, const int128::uint1
 
 #endif
 
-#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_mul(const T lhs, const T rhs, T& result)
@@ -1331,7 +1331,7 @@ bool unsigned_intrin_mul(const T lhs, const T rhs, T& result)
     }
 }
 
-#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_ARM64_INTRIN) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+#elif defined(BOOST_SAFENUMBERS_HAS_WINDOWS_ARM64_INTRIN) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
 template <std::unsigned_integral T>
 bool unsigned_intrin_mul(const T lhs, const T rhs, T& result)
@@ -1396,7 +1396,7 @@ struct mul_helper
 
         auto handle_overflow = [&res]
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if constexpr (std::is_same_v<BasisType, std::uint8_t>)
@@ -1450,7 +1450,7 @@ struct mul_helper
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         #endif
         {
-            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (!std::is_constant_evaluated())
             {
@@ -1514,7 +1514,7 @@ struct mul_helper<overflow_policy::overflow_tuple, BasisType>
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         #endif
         {
-            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (!std::is_constant_evaluated())
             {
@@ -1550,7 +1550,7 @@ struct mul_helper<overflow_policy::checked, BasisType>
         if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
         #endif
         {
-            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)) && !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (!std::is_constant_evaluated())
             {
@@ -1596,7 +1596,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator*(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
     if (std::is_constant_evaluated())
     {
@@ -1776,7 +1776,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator/(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
     if (std::is_constant_evaluated())
     {
@@ -1944,7 +1944,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator%(const unsigned_integer_basis<BasisType> lhs,
                                        const unsigned_integer_basis<BasisType> rhs) -> unsigned_integer_basis<BasisType>
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
     if (std::is_constant_evaluated())
     {

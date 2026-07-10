@@ -136,6 +136,35 @@ https://www.boost.org/LICENSE_1_0.txt
 | Synchronizes the device, checks for captured errors, and throws the corresponding host exception
 |===
 
+=== SYCL Support
+
+[cols="1,2", options="header"]
+|===
+| Type | Description
+
+| xref:sycl.adoc#sycl_device_error_context[`device_error_context`]
+| SYCL error context bound to a queue; the device records errors implicitly and `synchronize()` rethrows them on the host
+
+| xref:sycl.adoc#sycl_device_exception_mode[`device_exception_mode`]
+| Shared with the CUDA backend; always deferred under SYCL
+|===
+
+==== `device_error_context` Member Functions (SYCL)
+
+[cols="1,2", options="header"]
+|===
+| Function | Description
+
+| xref:sycl.adoc#sycl_device_error_context_reset[`reset`]
+| Zeroes the device error buffer so the context can be reused across launches
+
+| xref:sycl.adoc#sycl_device_error_context_set_mode[`set_device_exception_method`]
+| Records the exception mode after construction (advisory under SYCL)
+
+| xref:sycl.adoc#sycl_device_error_context_synchronize[`synchronize`]
+| Waits for the queue, reads the device buffer, and throws the matching host exception
+|===
+
 [#api_functions]
 == Functions
 
@@ -465,6 +494,6 @@ This header is not included in the convenience header since it requires external
 | `<boost/safe_numbers/byte_conversions.hpp>`
 | Byte order conversion functions (`to_be`, `from_be`, `to_le`, `from_le`, `to_be_bytes`, `from_be_bytes`, `to_le_bytes`, `from_le_bytes`, `to_ne_bytes`, `from_ne_bytes`)
 
-| `<boost/safe_numbers/cuda_error_reporting.hpp>`
-| CUDA device error handling (`device_exception_mode`, `device_error_context`)
+| `<boost/safe_numbers/device_error_reporting.hpp>`
+| CUDA and SYCL device error handling (`device_exception_mode`, `device_error_context`)
 |===

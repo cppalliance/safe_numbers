@@ -505,7 +505,7 @@ struct signed_add_helper
 
         auto handle_error = [&result](signed_overflow_status status)
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if (status == signed_overflow_status::overflow)
@@ -602,7 +602,7 @@ struct signed_add_helper
 
         if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (!std::is_constant_evaluated())
             {
@@ -665,7 +665,7 @@ struct signed_add_helper<overflow_policy::overflow_tuple, BasisType>
 
         if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (!std::is_constant_evaluated())
             {
@@ -702,7 +702,7 @@ struct signed_add_helper<overflow_policy::checked, BasisType>
 
         if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (!std::is_constant_evaluated())
             {
@@ -758,7 +758,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator+(const signed_integer_basis<BasisType> lhs,
                                        const signed_integer_basis<BasisType> rhs) -> signed_integer_basis<BasisType>
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
     if (std::is_constant_evaluated())
     {
@@ -1137,7 +1137,7 @@ struct signed_sub_helper
 
         auto handle_error = [&result](signed_overflow_status status)
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if (status == signed_overflow_status::overflow)
@@ -1234,7 +1234,7 @@ struct signed_sub_helper
 
         if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (!std::is_constant_evaluated())
             {
@@ -1297,7 +1297,7 @@ struct signed_sub_helper<overflow_policy::overflow_tuple, BasisType>
 
         if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (!std::is_constant_evaluated())
             {
@@ -1334,7 +1334,7 @@ struct signed_sub_helper<overflow_policy::checked, BasisType>
 
         if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (!std::is_constant_evaluated())
             {
@@ -1373,7 +1373,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator-(const signed_integer_basis<BasisType> lhs,
                                        const signed_integer_basis<BasisType> rhs) -> signed_integer_basis<BasisType>
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
     if (std::is_constant_evaluated())
     {
@@ -1737,7 +1737,7 @@ struct signed_mul_helper
 
         auto handle_error = [&result](signed_overflow_status status)
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             if (std::is_constant_evaluated())
             {
                 if (status == signed_overflow_status::overflow)
@@ -1838,7 +1838,7 @@ struct signed_mul_helper
         if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
         #endif
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (!std::is_constant_evaluated())
             {
@@ -1905,7 +1905,7 @@ struct signed_mul_helper<overflow_policy::overflow_tuple, BasisType>
         if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
         #endif
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (!std::is_constant_evaluated())
             {
@@ -1946,7 +1946,7 @@ struct signed_mul_helper<overflow_policy::checked, BasisType>
         if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
         #endif
         {
-            #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
             if (!std::is_constant_evaluated())
             {
@@ -2002,7 +2002,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator*(const signed_integer_basis<BasisType> lhs,
                                        const signed_integer_basis<BasisType> rhs) -> signed_integer_basis<BasisType>
 {
-    #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+    #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
     if (std::is_constant_evaluated())
     {
@@ -2165,7 +2165,7 @@ struct signed_div_helper
             }
             else
             {
-                #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
                 if (std::is_constant_evaluated())
                 {
                     if constexpr (std::is_same_v<BasisType, std::int8_t>)
@@ -2217,7 +2217,7 @@ struct signed_div_helper
             }
             else
             {
-                #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
                 if (std::is_constant_evaluated())
                 {
                     if constexpr (std::is_same_v<BasisType, std::int8_t>)
@@ -2448,7 +2448,7 @@ struct signed_mod_helper
             }
             else
             {
-                #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
                 if (std::is_constant_evaluated())
                 {
                     if constexpr (std::is_same_v<BasisType, std::int8_t>)
@@ -2503,7 +2503,7 @@ struct signed_mod_helper
             }
             else
             {
-                #if !(defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA))
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
                 if (std::is_constant_evaluated())
                 {
                     if constexpr (std::is_same_v<BasisType, std::int8_t>)

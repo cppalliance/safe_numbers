@@ -27,6 +27,8 @@
 ** xref:examples.adoc#examples_cuda_error_handling[CUDA Error Handling]
 *** xref:examples.adoc#examples_cuda_error_handling_with_error_context[With Safe_Numbers Error Context]
 *** xref:examples.adoc#examples_cuda_error_handling_without_error_context[Without Safe_Numbers Error Context]
+** xref:examples.adoc#examples_sycl[SYCL Device Support]
+** xref:examples.adoc#examples_sycl_error_handling[SYCL Error Handling]
 * xref:pretty_printers.adoc[]
 * xref:api_reference.adoc[]
 ** xref:api_reference.adoc#api_namespaces[Namespaces]
@@ -41,6 +43,7 @@
 * xref:bounded_int.adoc[]
 * xref:bounded_float.adoc[]
 * xref:cuda.adoc[]
+* xref:sycl.adoc[]
 * xref:literals.adoc[]
 * Standard Library Support
 ** xref:limits.adoc[]

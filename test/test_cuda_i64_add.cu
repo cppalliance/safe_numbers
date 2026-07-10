@@ -9,7 +9,7 @@
 #include <random>
 #include <limits>
 #include <boost/safe_numbers/signed_integers.hpp>
-#include <boost/safe_numbers/cuda_error_reporting.hpp>
+#include <boost/safe_numbers/device_error_reporting.hpp>
 #include "cuda_managed_ptr.hpp"
 #include "stopwatch.hpp"
 

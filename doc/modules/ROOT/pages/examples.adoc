@@ -848,3 +848,45 @@ Kernel has been reset via CUDA API
 Kernel failed with error: CUDA-capable device(s) is/are busy or unavailable
 ----
 ====
+
+[#examples_sycl]
+== SYCL Device Support
+
+With `BOOST_SAFE_NUMBERS_ENABLE_SYCL` defined and `<sycl/sycl.hpp>` included first, the safe_numbers types run inside SYCL device kernels compiled with `icpx -fsycl`.
+This example runs `u128` arithmetic element-wise on a SYCL device over shared memory and verifies the device results against a host recomputation.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/sycl.cpp[example] demonstrates safe_numbers arithmetic running on a SYCL device.
+====
+[source, c++]
+----
+include::example$sycl.cpp[]
+----
+
+Output:
+----
+Running on: Intel(R) Data Center GPU
+All CPU and GPU computed elements match!
+----
+====
+
+[#examples_sycl_error_handling]
+== SYCL Error Handling
+
+A SYCL device kernel cannot throw, so a safe_numbers error is recorded on the device and rethrown on the host by `device_error_context::synchronize()`.
+This example forces a `bounded_uint` result out of its declared range on the device and catches the resulting `std::domain_error` on the host.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/sycl_error_handling.cpp[example] demonstrates catching a device-side error on the host using `device_error_context`.
+====
+[source, c++]
+----
+include::example$sycl_error_handling.cpp[]
+----
+
+Output:
+----
+Running on: Intel(R) Data Center GPU
+Caught expected device error on the host: Device error on thread 0 at .../boost/safe_numbers/include/boost/safe_numbers/bounded_integers.hpp:215: bounded_uint addition result out of range
+----
+====
+
+The reported thread is the failing work-item's global linear id (here `0`, since every element fails and the first work-item wins the recording race); with a single bad input element the id pinpoints it exactly, as on CUDA.
