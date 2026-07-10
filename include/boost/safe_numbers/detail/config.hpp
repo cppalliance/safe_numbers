@@ -17,7 +17,9 @@
 #  define BOOST_SAFE_NUMBERS_HAS_BUILTIN(x) 0
 #endif // __has_builtin
 
-#ifdef __x86_64__
+// __x86_64__ remains defined on the SYCL spir64 device pass, but these x86 intrinsic
+// headers do not compile for that target, so exclude them when __SYCL_DEVICE_ONLY__ is set.
+#if defined(__x86_64__) && !defined(__SYCL_DEVICE_ONLY__)
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 #  include <x86intrin.h>
@@ -76,6 +78,8 @@ inline constexpr auto dependent_false {false};
 
 } // namespace boost::safe_numbers::detail
 
+// BOOST_SAFE_NUMBERS_HOST_DEVICE annotates every device-callable function and
+// expands to "__host__ __device__" (CUDA), "SYCL_EXTERNAL" (SYCL), or nothing.
 #if defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA)
 
 #ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_ENABLE_CUDA
@@ -87,11 +91,32 @@ inline constexpr auto dependent_false {false};
 #endif
 
 #define BOOST_SAFE_NUMBERS_HOST_DEVICE __host__ __device__
+#define BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT
+
+#elif defined(BOOST_SAFE_NUMBERS_ENABLE_SYCL)
+
+// SYCL is fully opt-in. <sycl/sycl.hpp> must be included before any safe_numbers
+// header so the SYCL_EXTERNAL keyword exists; icpx defines __SYCL_DEVICE_ONLY__
+// on the spir64 device pass, which forces the portable code paths downstream.
+#ifndef SYCL_EXTERNAL
+#  error "Include <sycl/sycl.hpp> before any Boost.safe_numbers header when BOOST_SAFE_NUMBERS_ENABLE_SYCL is defined"
+#endif
+
+#ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_ENABLE_SYCL
+#  define BOOST_SAFE_NUMBERS_DETAIL_INT128_ENABLE_SYCL
+#endif
+
+#ifndef BOOST_CHARCONV_ENABLE_SYCL
+#  define BOOST_CHARCONV_ENABLE_SYCL
+#endif
+
+#define BOOST_SAFE_NUMBERS_HOST_DEVICE SYCL_EXTERNAL
+#define BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT
 
 #else
 
 #define BOOST_SAFE_NUMBERS_HOST_DEVICE
 
-#endif // CUDA
+#endif // GPU backends
 
 #endif // BOOST_SAFENUMBERS_CONFIG_HPP
