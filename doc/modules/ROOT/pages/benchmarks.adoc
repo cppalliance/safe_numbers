@@ -56,6 +56,193 @@ The floating-point benchmarks draw values uniformly from `[1, 100]` and measure 
 
 NOTE: The numbers come from shared CI runners and reflect a single run each, so treat small differences as noise. The repetition count and median reporting keep the central figure stable, but they cannot remove the variance inherent to a shared virtual machine.
 
+[#device_benchmarks]
+== Device Benchmarks (CUDA and SYCL)
+
+All of the safe types run inside CUDA and SYCL kernels (see xref:cuda.adoc[] and xref:sycl.adoc[]), and two dedicated benchmarks measure what the safety checks cost on the device itself:
+
+* `test/benchmarks/benchmark_cuda_operations.cu`, timed with CUDA events
+* `test/benchmarks/benchmark_sycl_operations.cpp`, timed with SYCL event profiling
+
+Each compares every safe type against its own basis type running the identical kernel (`boost::sn::u32` against `std::uint32_t`, `boost::sn::u128` against the emulated 128-bit basis type, and so on), so the ratio isolates the cost of the safety checks.
+As in the host benchmarks, the inputs are chosen so that no check ever fires: the timed regions never enter the error reporting path, and a `device_error_context` covering the whole run aborts the benchmark if a check does fire.
+
+[#device_benchmarks_methodology]
+=== Device Methodology
+
+Two kernel shapes are measured for every type:
+
+Streaming::
+`out[i] = a[i] op b[i]`, one checked operation per element over 4,194,304 elements.
+This is the shape real element-wise kernels have.
+On a discrete GPU it is bound by memory bandwidth, so it shows the overhead a typical kernel actually experiences.
+Integer operands are drawn from `[1, width_in_bits - 1]` with `a >= b`, and floating point operands from `[1, 100]`, mirroring the host benchmarks.
+
+Compute-bound chain::
+65,536 threads each evolve one value through a serial dependency chain held in registers (256 cycles of eight to nine checked operations), so the arithmetic cannot hide behind memory traffic and the worst case per-operation cost becomes visible.
+
+The integer chain is a fixed mixed sequence (two modulo, two addition, two division, one subtraction, and one multiplication per cycle) rather than a single repeated operation.
+That is deliberate: wrapping integer arithmetic is associative, so the optimizer can legally collapse a run of additions or multiplications by loop-invariant operands for the builtin baseline, and the comparison would then measure an optimizer artifact instead of the checks.
+Division and modulo cannot be reassociated, and interleaving them forces every step to execute for both contenders.
+The floating point chains are per operation (eight operations plus one restore step of the inverse kind), because IEEE arithmetic is not associative and cannot be folded.
+
+Every timed region is verified afterwards: the safe results must match the builtin results bit for bit across all elements, a slice is recomputed on the host, and the process exit code reflects any mismatch.
+Both benchmarks accept optional positional arguments `[stream_elements] [chain_cycles] [launches] [chain_threads]` for scaling the run to slower or faster devices.
+
+[#run_device_benchmarks]
+=== How to Run the Device Benchmarks
+
+CUDA (requires the CUDA toolkit):
+
+[source, shell]
+----
+cmake -S . -B __build__ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF \
+  -DBOOST_INCLUDE_LIBRARIES="safe_numbers" \
+  -DBOOST_SAFE_NUMBERS_BUILD_BENCHMARKS=ON \
+  -DBOOST_SAFE_NUMBERS_ENABLE_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=native
+cmake --build __build__ --target benchmark_cuda_operations
+./__build__/stage/bin/benchmark_cuda_operations
+----
+
+SYCL (requires oneAPI):
+
+[source, shell]
+----
+cmake -S . -B __build__ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF \
+  -DCMAKE_CXX_COMPILER=icpx \
+  -DBOOST_INCLUDE_LIBRARIES="safe_numbers" \
+  -DBOOST_SAFE_NUMBERS_BUILD_BENCHMARKS=ON \
+  -DBOOST_SAFE_NUMBERS_ENABLE_SYCL=ON
+cmake --build __build__ --target benchmark_sycl_operations
+./__build__/stage/bin/benchmark_sycl_operations
+----
+
+NOTE: `icpx` compiles with `-ffp-model=fast` by default, which grants the optimizer floating point associativity; the builtin baseline chains then fold algebraically and the float comparison becomes meaningless. The build therefore pins `-ffp-model=precise` for the SYCL benchmark, so both contenders run IEEE arithmetic exactly as they do under `nvcc`. The build also splits the device code per kernel (`-fsycl-device-code-split=per_kernel`) because at `-O3` the monolithic device image of a few hundred kernels fails to JIT on the OpenCL CPU backend.
+
+[#cuda_rtx3060_benchmarks]
+=== CUDA Results: NVIDIA RTX 3060
+
+Run on an NVIDIA GeForce RTX 3060 (sm_86, 28 SMs) with CUDA 13.1 on Ubuntu 24.04, compiled at `-O2` with `--expt-relaxed-constexpr`, using the default sizes.
+
+.Streaming, ratio of safe time to basis type time (RTX 3060)
+[cols="1,>1,>1,>1,>1,>1",options="header"]
+|===
+| Type | Addition | Subtraction | Multiplication | Division | Modulo
+| `u8` | 1.05 | 1.04 | 1.05 | 1.03 | 1.02
+| `u16` | 1.01 | 1.00 | 1.00 | 1.00 | 1.00
+| `u32` | 1.00 | 1.00 | 1.00 | 1.00 | 1.00
+| `u64` | 1.00 | 1.00 | 1.00 | 1.00 | 1.00
+| `u128` | 1.00 | 1.00 | 6.78 | 1.00 | 1.00
+| `i8` | 1.23 | 1.23 | 1.22 | 1.16 | 1.16
+| `i16` | 1.05 | 1.05 | 1.05 | 1.04 | 1.04
+| `i32` | 1.00 | 1.00 | 1.00 | 1.00 | 1.00
+| `i64` | 1.00 | 1.00 | 1.00 | 1.00 | 1.00
+| `i128` | 1.00 | 1.00 | 6.78 | 1.00 | 1.00
+| `f32` | 1.00 | 1.00 | 1.00 | 1.00 | n/a
+| `f64` | 1.00 | 1.00 | 1.00 | 1.44 | n/a
+|===
+
+In the streaming regime the checks are essentially free: the kernels are limited by memory bandwidth and the check instructions execute in the shadow of the loads.
+The only rows above parity are the 8-bit types (up to 1.23x, since a byte of traffic buys less time to hide the check), `f64` division (1.44x), and 128-bit multiplication (6.78x).
+The multiplication overflow check on the 128-bit types is the one genuinely expensive check in the library, since it must be computed from 64-bit limbs.
+
+.Compute-bound integer chain (RTX 3060)
+[cols="1,>1,>1,>1",options="header"]
+|===
+| Type | Basis type (ns/op) | Boost.SafeNumbers (ns/op) | Ratio
+| `u8` | 0.0030 | 0.0039 | 1.30
+| `u16` | 0.0030 | 0.0039 | 1.30
+| `u32` | 0.0012 | 0.0034 | 2.82
+| `u64` | 0.0031 | 0.0045 | 1.46
+| `u128` | 0.0094 | 0.0963 | 10.30
+| `i8` | 0.0021 | 0.0056 | 2.68
+| `i16` | 0.0020 | 0.0058 | 2.92
+| `i32` | 0.0018 | 0.0051 | 2.85
+| `i64` | 0.0031 | 0.0068 | 2.22
+| `i128` | 0.0121 | 0.0944 | 7.81
+|===
+
+.Compute-bound floating point chains (RTX 3060)
+[cols="1,1,>1,>1,>1",options="header"]
+|===
+| Type | Operation | Basis type (ns/op) | Boost.SafeNumbers (ns/op) | Ratio
+| `f32` | Addition | 0.0002 | 0.0037 | 17.44
+| `f32` | Subtraction | 0.0002 | 0.0037 | 17.74
+| `f32` | Multiplication | 0.0004 | 0.0038 | 8.73
+| `f32` | Division | 0.0026 | 0.0057 | 2.22
+| `f64` | Addition | 0.0124 | 0.0494 | 4.00
+| `f64` | Subtraction | 0.0133 | 0.0489 | 3.68
+| `f64` | Multiplication | 0.0200 | 0.0561 | 2.80
+| `f64` | Division | 0.0770 | 0.1151 | 1.50
+|===
+
+With the arithmetic pinned in registers the checked integer types cost 1.3x to 2.9x through 64 bits, and the 128-bit chains are dominated by the multiplication check (7.8x to 10.3x).
+For the floating point chains the baseline operation is a single hardware instruction, so the fixed cost of the checks multiplies it: up to 17.7x for `f32`, and 1.5x to 4.0x for `f64`, whose baseline instruction is already slow on a consumer GPU.
+Real kernels sit between the two regimes, and usually much closer to the streaming one.
+
+[#sycl_cpu_benchmarks]
+=== SYCL Results: Intel OpenCL CPU Device
+
+Run on the OpenCL CPU device of an Intel Core i9-11900K (8 cores) with oneAPI icpx 2026.0 at `-O3`, `-ffp-model=precise`, and per kernel device code split, using the default sizes.
+A CPU device executes a kernel by vectorizing it across work items, and that shapes these results: a branch-free kernel body runs 8 or 16 lanes wide, and the branches of the safety checks inhibit exactly that transformation.
+
+.Streaming, ratio of safe time to basis type time (SYCL CPU device)
+[cols="1,>1,>1,>1,>1,>1",options="header"]
+|===
+| Type | Addition | Subtraction | Multiplication | Division | Modulo
+| `u8` | 5.86 | 6.59 | 14.80 | 1.08 | 1.01
+| `u16` | 1.05 | 1.07 | 1.78 | 1.27 | 1.28
+| `u32` | 1.04 | 1.05 | 1.04 | 1.02 | 1.00
+| `u64` | 1.03 | 1.03 | 1.03 | 1.00 | 1.00
+| `u128` | 1.00 | 1.01 | 1.05 | 1.01 | 0.99
+| `i8` | 9.48 | 9.61 | 8.75 | 1.15 | 1.16
+| `i16` | 1.58 | 1.46 | 1.60 | 1.75 | 1.64
+| `i32` | 1.05 | 1.05 | 1.05 | 1.03 | 1.07
+| `i64` | 1.04 | 1.03 | 1.03 | 1.01 | 1.01
+| `i128` | 1.00 | 1.01 | 1.11 | 1.00 | 1.00
+| `f32` | 1.37 | 1.36 | 1.38 | 1.72 | n/a
+| `f64` | 1.06 | 1.05 | 1.05 | 1.14 | n/a
+|===
+
+For 32 bits and up the streaming results match the CUDA picture: the arrays no longer fit in cache, the kernels are bound by memory, and the checks cost 0 to 7 percent.
+The 8-bit rows stand out (up to 14.8x) because four million 1-byte elements fit inside the processor's cache: those kernels are compute bound, so they measure the vectorization gap rather than memory bandwidth.
+
+.Compute-bound integer chain (SYCL CPU device)
+[cols="1,>1,>1,>1",options="header"]
+|===
+| Type | Basis type (ns/op) | Boost.SafeNumbers (ns/op) | Ratio
+| `u8` | 0.0810 | 0.1229 | 1.52
+| `u16` | 0.0845 | 0.1486 | 1.76
+| `u32` | 0.0220 | 0.0833 | 3.79
+| `u64` | 0.1263 | 0.1431 | 1.13
+| `u128` | 0.3279 | 0.5028 | 1.53
+| `i8` | 0.1300 | 0.2062 | 1.59
+| `i16` | 0.0243 | 0.2057 | 8.48
+| `i32` | 0.0215 | 0.2043 | 9.48
+| `i64` | 0.1266 | 0.1838 | 1.45
+| `i128` | 0.4155 | 0.6179 | 1.49
+|===
+
+.Compute-bound floating point chains (SYCL CPU device)
+[cols="1,1,>1,>1,>1",options="header"]
+|===
+| Type | Operation | Basis type (ns/op) | Boost.SafeNumbers (ns/op) | Ratio
+| `f32` | Addition | 0.0035 | 0.6207 | 175.43
+| `f32` | Subtraction | 0.0035 | 0.6072 | 171.47
+| `f32` | Multiplication | 0.0050 | 0.6302 | 126.55
+| `f32` | Division | 0.0149 | 0.7543 | 50.64
+| `f64` | Addition | 0.0036 | 0.6496 | 181.82
+| `f64` | Subtraction | 0.0036 | 0.6516 | 182.26
+| `f64` | Multiplication | 0.0063 | 0.6594 | 104.15
+| `f64` | Division | 0.0451 | 0.7733 | 17.16
+|===
+
+In the chains the dominant cost on a CPU device is lost vectorization rather than the check instructions themselves.
+Where the baseline cannot vectorize either (the 64-bit and 128-bit chains, and the 8-bit chains whose narrow division defeats the vectorizer), the checked types cost 1.1x to 1.8x, in line with the host benchmarks.
+Where the baseline vectorizes and the checked chain does not (`i16`, `i32`, and every floating point chain), the gap is the SIMD width times the check cost, up to 182x for the `f64` addition chain.
+
+NOTE: The device numbers come from one machine and a single run each, so treat small differences as noise. On a discrete GPU a SYCL build should behave like the CUDA column; this machine only exposes the CPU device.
+
 // The per-platform sections below are generated from the JSON artifacts in
 // doc/modules/ROOT/data by test/benchmarks/render_results.py. Do not edit them
 // by hand; re-run that script to refresh them.
