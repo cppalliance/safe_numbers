@@ -642,19 +642,9 @@ struct add_helper<overflow_policy::overflow_tuple, BasisType>
         const auto rhs_basis {static_cast<BasisType>(rhs)};
         BasisType res {};
 
-        if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
-        {
-            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-
-            if (!std::is_constant_evaluated())
-            {
-                const auto overflowed {impl::unsigned_intrin_add(lhs_basis, rhs_basis, res)};
-                return std::make_pair(result_type{res}, overflowed);
-            }
-
-            #endif
-        }
-
+        // No overflow intrinsic here on purpose: the *.with.overflow intrinsics
+        // block loop vectorization when the flag is consumed as a value, while
+        // this compare form vectorizes and emits the same scalar code.
         const auto overflowed {impl::unsigned_no_intrin_add(lhs_basis, rhs_basis, res)};
         return std::make_pair(result_type{res}, overflowed);
     }
@@ -675,19 +665,9 @@ struct add_helper<overflow_policy::checked, BasisType>
         const auto rhs_basis {static_cast<BasisType>(rhs)};
         BasisType res {};
 
-        if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
-        {
-            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_addcarry_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-
-            if (!std::is_constant_evaluated())
-            {
-                const auto overflowed {impl::unsigned_intrin_add(lhs_basis, rhs_basis, res)};
-                return overflowed ? std::nullopt : std::make_optional(result_type{res});
-            }
-
-            #endif
-        }
-
+        // No overflow intrinsic here on purpose: the *.with.overflow intrinsics
+        // block loop vectorization when the flag is consumed as a value, while
+        // this compare form vectorizes and emits the same scalar code.
         const auto overflowed {impl::unsigned_no_intrin_add(lhs_basis, rhs_basis, res)};
         return overflowed ? std::nullopt : std::make_optional(result_type{res});
     }
@@ -1167,19 +1147,9 @@ struct sub_helper<overflow_policy::overflow_tuple, BasisType>
         const auto rhs_basis {static_cast<BasisType>(rhs)};
         BasisType res {};
 
-        if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
-        {
-            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-
-            if (!std::is_constant_evaluated())
-            {
-                const auto underflowed {impl::unsigned_intrin_sub(lhs_basis, rhs_basis, res)};
-                return std::make_pair(result_type{res}, underflowed);
-            }
-
-            #endif
-        }
-
+        // No overflow intrinsic here on purpose: the *.with.overflow intrinsics
+        // block loop vectorization when the flag is consumed as a value, while
+        // this compare form vectorizes and emits the same scalar code.
         const auto underflowed {impl::unsigned_no_intrin_sub(lhs_basis, rhs_basis, res)};
         return std::make_pair(result_type{res}, underflowed);
     }
@@ -1200,19 +1170,9 @@ struct sub_helper<overflow_policy::checked, BasisType>
         const auto rhs_basis {static_cast<BasisType>(rhs)};
         BasisType res {};
 
-        if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
-        {
-            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_subborrow_u64) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-
-            if (!std::is_constant_evaluated())
-            {
-                const auto underflowed {impl::unsigned_intrin_sub(lhs_basis, rhs_basis, res)};
-                return underflowed ? std::nullopt : std::make_optional(result_type{res});
-            }
-
-            #endif
-        }
-
+        // No overflow intrinsic here on purpose: the *.with.overflow intrinsics
+        // block loop vectorization when the flag is consumed as a value, while
+        // this compare form vectorizes and emits the same scalar code.
         const auto underflowed {impl::unsigned_no_intrin_sub(lhs_basis, rhs_basis, res)};
         return underflowed ? std::nullopt : std::make_optional(result_type{res});
     }
@@ -1509,22 +1469,9 @@ struct mul_helper<overflow_policy::overflow_tuple, BasisType>
         const auto rhs_basis {static_cast<BasisType>(rhs)};
         BasisType res {};
 
-        // We have an intrin path, but only with __builtin_mul_overflow
-        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128) || !defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128)
-        if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
-        #endif
-        {
-            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-
-            if (!std::is_constant_evaluated())
-            {
-                const auto overflowed {impl::unsigned_intrin_mul(lhs_basis, rhs_basis, res)};
-                return std::make_pair(result_type{res}, overflowed);
-            }
-
-            #endif
-        }
-
+        // No overflow intrinsic here on purpose: the *.with.overflow intrinsics
+        // block loop vectorization when the flag is consumed as a value, while
+        // this compare form vectorizes and emits the same scalar code.
         const auto overflowed {impl::no_intrin_mul(lhs_basis, rhs_basis, res)};
         return std::make_pair(result_type{res}, overflowed);
     }
@@ -1545,22 +1492,9 @@ struct mul_helper<overflow_policy::checked, BasisType>
         const auto rhs_basis {static_cast<BasisType>(rhs)};
         BasisType res {};
 
-        // We have an intrin path, but only with __builtin_mul_overflow
-        #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128) || !defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128)
-        if constexpr (!std::is_same_v<BasisType, int128::uint128_t>)
-        #endif
-        {
-            #if (BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) || BOOST_SAFE_NUMBERS_HAS_BUILTIN(_umul128)) && !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-
-            if (!std::is_constant_evaluated())
-            {
-                const auto overflowed {impl::unsigned_intrin_mul(lhs_basis, rhs_basis, res)};
-                return overflowed ? std::nullopt : std::make_optional(result_type{res});
-            }
-
-            #endif
-        }
-
+        // No overflow intrinsic here on purpose: the *.with.overflow intrinsics
+        // block loop vectorization when the flag is consumed as a value, while
+        // this compare form vectorizes and emits the same scalar code.
         const auto overflowed {impl::no_intrin_mul(lhs_basis, rhs_basis, res)};
         return overflowed ? std::nullopt : std::make_optional(result_type{res});
     }
@@ -2055,6 +1989,7 @@ constexpr auto unsigned_integer_basis<BasisType>::operator--(int)
 template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
 struct shl_helper
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs)
         noexcept(Policy != overflow_policy::throw_exception)
@@ -2105,6 +2040,7 @@ struct shl_helper
 template <fundamental_unsigned_integral BasisType>
 struct shl_helper<overflow_policy::overflow_tuple, BasisType>
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs) noexcept
         -> std::pair<unsigned_integer_basis<BasisType>, bool>
@@ -2131,6 +2067,7 @@ struct shl_helper<overflow_policy::overflow_tuple, BasisType>
 template <fundamental_unsigned_integral BasisType>
 struct shl_helper<overflow_policy::checked, BasisType>
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs) noexcept
         -> std::optional<unsigned_integer_basis<BasisType>>
@@ -2148,6 +2085,7 @@ struct shl_helper<overflow_policy::checked, BasisType>
 };
 
 template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto shl_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
     noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::strict)
@@ -2163,6 +2101,7 @@ template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
 template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
 struct shr_helper
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs)
         noexcept(Policy != overflow_policy::throw_exception)
@@ -2211,6 +2150,7 @@ struct shr_helper
 template <fundamental_unsigned_integral BasisType>
 struct shr_helper<overflow_policy::overflow_tuple, BasisType>
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs) noexcept
         -> std::pair<unsigned_integer_basis<BasisType>, bool>
@@ -2234,6 +2174,7 @@ struct shr_helper<overflow_policy::overflow_tuple, BasisType>
 template <fundamental_unsigned_integral BasisType>
 struct shr_helper<overflow_policy::checked, BasisType>
 {
+    BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const unsigned_integer_basis<BasisType> lhs,
                                               const unsigned_integer_basis<BasisType> rhs) noexcept
         -> std::optional<unsigned_integer_basis<BasisType>>
@@ -2249,6 +2190,7 @@ struct shr_helper<overflow_policy::checked, BasisType>
 };
 
 template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto shr_impl(const unsigned_integer_basis<BasisType> lhs,
                                       const unsigned_integer_basis<BasisType> rhs)
     noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple || Policy == overflow_policy::checked || Policy == overflow_policy::strict)
@@ -2265,6 +2207,7 @@ template <overflow_policy Policy, fundamental_unsigned_integral BasisType>
 namespace boost::safe_numbers {
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto saturating_add(const detail::unsigned_integer_basis<BasisType> lhs,
                                             const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> detail::unsigned_integer_basis<BasisType>
@@ -2275,6 +2218,7 @@ template <detail::fundamental_unsigned_integral BasisType>
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating addition", saturating_add)
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto saturating_sub(const detail::unsigned_integer_basis<BasisType> lhs,
                                             const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> detail::unsigned_integer_basis<BasisType>
@@ -2285,6 +2229,7 @@ template <detail::fundamental_unsigned_integral BasisType>
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating subtraction", saturating_sub)
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto saturating_mul(const detail::unsigned_integer_basis<BasisType> lhs,
                                             const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> detail::unsigned_integer_basis<BasisType>
@@ -2295,6 +2240,7 @@ template <detail::fundamental_unsigned_integral BasisType>
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating multiplication", saturating_mul)
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto saturating_div(const detail::unsigned_integer_basis<BasisType> lhs,
                                             const detail::unsigned_integer_basis<BasisType> rhs)
     -> detail::unsigned_integer_basis<BasisType>
@@ -2305,6 +2251,7 @@ template <detail::fundamental_unsigned_integral BasisType>
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating division", saturating_div)
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto saturating_mod(const detail::unsigned_integer_basis<BasisType> lhs,
                                             const detail::unsigned_integer_basis<BasisType> rhs)
     -> detail::unsigned_integer_basis<BasisType>
@@ -2315,6 +2262,7 @@ template <detail::fundamental_unsigned_integral BasisType>
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating modulo", saturating_mod)
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto overflowing_add(const detail::unsigned_integer_basis<BasisType> lhs,
                                              const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
@@ -2325,6 +2273,7 @@ template <detail::fundamental_unsigned_integral BasisType>
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("overflowing addition", overflowing_add)
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto overflowing_sub(const detail::unsigned_integer_basis<BasisType> lhs,
                                              const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
@@ -2335,6 +2284,7 @@ template <detail::fundamental_unsigned_integral BasisType>
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("overflowing subtraction", overflowing_sub)
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto overflowing_mul(const detail::unsigned_integer_basis<BasisType> lhs,
                                              const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
@@ -2345,6 +2295,7 @@ template <detail::fundamental_unsigned_integral BasisType>
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("overflowing multiplication", overflowing_mul)
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto overflowing_div(const detail::unsigned_integer_basis<BasisType> lhs,
                                              const detail::unsigned_integer_basis<BasisType> rhs)
     -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
@@ -2355,6 +2306,7 @@ template <detail::fundamental_unsigned_integral BasisType>
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("overflowing division", overflowing_div)
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto overflowing_mod(const detail::unsigned_integer_basis<BasisType> lhs,
                                              const detail::unsigned_integer_basis<BasisType> rhs)
     -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
@@ -2365,6 +2317,7 @@ template <detail::fundamental_unsigned_integral BasisType>
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("overflowing modulo", overflowing_mod)
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto checked_add(const detail::unsigned_integer_basis<BasisType> lhs,
                                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> std::optional<detail::unsigned_integer_basis<BasisType>>
@@ -2375,6 +2328,7 @@ template <detail::fundamental_unsigned_integral BasisType>
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("checked addition", checked_add)
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto checked_sub(const detail::unsigned_integer_basis<BasisType> lhs,
                                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> std::optional<detail::unsigned_integer_basis<BasisType>>
@@ -2385,6 +2339,7 @@ template <detail::fundamental_unsigned_integral BasisType>
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("checked subtraction", checked_sub)
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto checked_mul(const detail::unsigned_integer_basis<BasisType> lhs,
                                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> std::optional<detail::unsigned_integer_basis<BasisType>>
@@ -2395,6 +2350,7 @@ template <detail::fundamental_unsigned_integral BasisType>
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("checked multiplication", checked_mul)
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto checked_div(const detail::unsigned_integer_basis<BasisType> lhs,
                                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> std::optional<detail::unsigned_integer_basis<BasisType>>
@@ -2405,6 +2361,7 @@ template <detail::fundamental_unsigned_integral BasisType>
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("checked division", checked_div)
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto checked_mod(const detail::unsigned_integer_basis<BasisType> lhs,
                                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> std::optional<detail::unsigned_integer_basis<BasisType>>
@@ -2487,6 +2444,7 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("widening mul", widening_mul
 // ------------------------------
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto saturating_shl(const detail::unsigned_integer_basis<BasisType> lhs,
                                             const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> detail::unsigned_integer_basis<BasisType>
@@ -2497,6 +2455,7 @@ template <detail::fundamental_unsigned_integral BasisType>
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating left shift", saturating_shl)
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto saturating_shr(const detail::unsigned_integer_basis<BasisType> lhs,
                                             const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> detail::unsigned_integer_basis<BasisType>
@@ -2511,6 +2470,7 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("saturating right shift", sa
 // ------------------------------
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto overflowing_shl(const detail::unsigned_integer_basis<BasisType> lhs,
                                              const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
@@ -2521,6 +2481,7 @@ template <detail::fundamental_unsigned_integral BasisType>
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("overflowing left shift", overflowing_shl)
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto overflowing_shr(const detail::unsigned_integer_basis<BasisType> lhs,
                                              const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> std::pair<detail::unsigned_integer_basis<BasisType>, bool>
@@ -2535,6 +2496,7 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("overflowing right shift", o
 // ------------------------------
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto checked_shl(const detail::unsigned_integer_basis<BasisType> lhs,
                                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> std::optional<detail::unsigned_integer_basis<BasisType>>
@@ -2545,6 +2507,7 @@ template <detail::fundamental_unsigned_integral BasisType>
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_UNSIGNED_INTEGER_OP("checked left shift", checked_shl)
 
 template <detail::fundamental_unsigned_integral BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto checked_shr(const detail::unsigned_integer_basis<BasisType> lhs,
                                          const detail::unsigned_integer_basis<BasisType> rhs) noexcept
     -> std::optional<detail::unsigned_integer_basis<BasisType>>
