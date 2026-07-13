@@ -1740,6 +1740,77 @@ BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP("division", operator/)
 
 } // namespace boost::safe_numbers::detail
 
+// ------------------------------
+// Deferred (overflowing) Math
+// ------------------------------
+
+namespace boost::safe_numbers {
+
+namespace detail::impl {
+
+// True exactly when the checked float operators would report res as an error:
+// every one of them errors precisely on a non-finite result (the classifiers
+// above only choose which exception to raise). The comparison is false for
+// both inf and NAN, so the negation flags both without a branch.
+template <compatible_float_type T>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto nonfinite_result(const T res) noexcept -> bool
+{
+    return !(constexpr_abs(res) <= (std::numeric_limits<T>::max)());
+}
+
+} // namespace detail::impl
+
+// Non-throwing counterparts of the checked float operators for hot loops. The
+// value is the raw IEEE result and the bool is true exactly when the checked
+// operator would have thrown. The branch-free form keeps loops vectorizable:
+// accumulate the flags in an unsigned value and test once at a boundary.
+
+template <detail::compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto overflowing_add(const detail::float_basis<BasisType> lhs,
+                                                                            const detail::float_basis<BasisType> rhs) noexcept
+    -> std::pair<detail::float_basis<BasisType>, bool>
+{
+    const auto res {static_cast<BasisType>(static_cast<BasisType>(lhs) + static_cast<BasisType>(rhs))};
+    return std::make_pair(detail::float_basis<BasisType>{res}, detail::impl::nonfinite_result(res));
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP("overflowing addition", overflowing_add)
+
+template <detail::compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto overflowing_sub(const detail::float_basis<BasisType> lhs,
+                                                                            const detail::float_basis<BasisType> rhs) noexcept
+    -> std::pair<detail::float_basis<BasisType>, bool>
+{
+    const auto res {static_cast<BasisType>(static_cast<BasisType>(lhs) - static_cast<BasisType>(rhs))};
+    return std::make_pair(detail::float_basis<BasisType>{res}, detail::impl::nonfinite_result(res));
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP("overflowing subtraction", overflowing_sub)
+
+template <detail::compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto overflowing_mul(const detail::float_basis<BasisType> lhs,
+                                                                            const detail::float_basis<BasisType> rhs) noexcept
+    -> std::pair<detail::float_basis<BasisType>, bool>
+{
+    const auto res {static_cast<BasisType>(static_cast<BasisType>(lhs) * static_cast<BasisType>(rhs))};
+    return std::make_pair(detail::float_basis<BasisType>{res}, detail::impl::nonfinite_result(res));
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP("overflowing multiplication", overflowing_mul)
+
+template <detail::compatible_float_type BasisType>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto overflowing_div(const detail::float_basis<BasisType> lhs,
+                                                                            const detail::float_basis<BasisType> rhs) noexcept
+    -> std::pair<detail::float_basis<BasisType>, bool>
+{
+    const auto res {static_cast<BasisType>(static_cast<BasisType>(lhs) / static_cast<BasisType>(rhs))};
+    return std::make_pair(detail::float_basis<BasisType>{res}, detail::impl::nonfinite_result(res));
+}
+
+BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP("overflowing division", overflowing_div)
+
+} // namespace boost::safe_numbers
+
 #undef BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_FLOAT_BASIS_HPP
