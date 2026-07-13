@@ -92,13 +92,16 @@ void test_type()
                        [](const SafeT a, const SafeT b) { return a / b; });
 }
 
-// The family is constexpr and never throws, so overflow cases are usable in
-// constant expressions where the throwing operators would fail to compile.
-// (Division by zero remains outside constant evaluation, as for raw floats.)
+// The family is constexpr and never throws, so a non-finite result is usable in
+// a constant expression where the throwing operator would fail to compile (it
+// would throw). The non-finite result must come from a non-finite input:
+// producing inf by overflowing finite operands, or dividing by zero, is
+// undefined during constant evaluation for raw floats and so cannot be
+// exercised in constexpr here either.
 static_assert(!overflowing_add(f32{1.0F}, f32{2.0F}).second);
 static_assert(static_cast<float>(overflowing_add(f32{1.0F}, f32{2.0F}).first) == 3.0F);
-static_assert(overflowing_mul(f32{(std::numeric_limits<float>::max)()}, f32{2.0F}).second);
-static_assert(overflowing_div(f64{(std::numeric_limits<double>::max)()}, f64{0.5}).second);
+static_assert(overflowing_mul(f32{std::numeric_limits<float>::infinity()}, f32{2.0F}).second);
+static_assert(overflowing_div(f64{std::numeric_limits<double>::infinity()}, f64{0.5}).second);
 static_assert(!overflowing_sub(f64{100.0}, f64{1.0}).second);
 
 int main()
