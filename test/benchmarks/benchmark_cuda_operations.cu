@@ -301,6 +301,7 @@ int run_int_family(const char* name, boost::safe_numbers::device_error_context& 
         failures += run_stream_op<device_bench::op_mul>(ctx, in, a_b, b_b, out_b, a_s, b_s, out_s, cfg);
         failures += run_stream_op<device_bench::op_div>(ctx, in, a_b, b_b, out_b, a_s, b_s, out_s, cfg);
         failures += run_stream_op<device_bench::op_mod>(ctx, in, a_b, b_b, out_b, a_s, b_s, out_s, cfg);
+        failures += run_stream_op<device_bench::op_sat_add>(ctx, in, a_b, b_b, out_b, a_s, b_s, out_s, cfg);
     }
 
     {
@@ -308,6 +309,8 @@ int run_int_family(const char* name, boost::safe_numbers::device_error_context& 
 
         device_bench::print_table_header(name, "register chain of checked ops (compute-bound)");
         failures += run_chain<device_bench::int_mixed_chain>(ctx, in, cfg);
+        failures += run_chain<device_bench::int_mixed_sat_chain>(ctx, in, cfg);
+        failures += run_chain<device_bench::int_mixed_ovf_chain>(ctx, in, cfg);
     }
 
     return failures;
@@ -354,6 +357,11 @@ int run_real_family(const char* name, boost::safe_numbers::device_error_context&
 
         const auto div_in {device_bench::gen_real_chain<TB, TS>(cfg.chain_threads, device_bench::real_chain_kind::divisor)};
         failures += run_chain<device_bench::real_div_chain>(ctx, div_in, cfg);
+
+        failures += run_chain<device_bench::real_ovf_add_chain>(ctx, add_in, cfg);
+        failures += run_chain<device_bench::real_ovf_sub_chain>(ctx, add_in, cfg);
+        failures += run_chain<device_bench::real_ovf_mul_chain>(ctx, mul_in, cfg);
+        failures += run_chain<device_bench::real_ovf_div_chain>(ctx, div_in, cfg);
     }
 
     return failures;
