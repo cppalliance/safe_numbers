@@ -237,6 +237,48 @@ The error state is cleared *before* throwing, so after catching the exception th
 * xref:examples.adoc#examples_sycl[SYCL Device Support]: runs safe_numbers arithmetic on a SYCL device and verifies the results against the host.
 * xref:examples.adoc#examples_sycl_error_handling[SYCL Error Handling]: shows how to use `device_error_context` to catch a device-side error on the host.
 
+[#sycl_deferred_errors]
+== Deferred Error Reporting
+
+A CPU SYCL device executes kernels by vectorizing them across work items, and the per-operation reporting branch of the throwing operators inhibits exactly that transformation: the device benchmarks measure the branch-free baseline running up to two orders of magnitude faster than the checked kernel in compute-bound float loops.
+
+For hot kernels the library therefore offers a deferred mode built on the `overflowing_*` families (see xref:floats.adoc#floats_overflowing_arithmetic[Overflowing Arithmetic] for floats; the integer functions are documented with each integer type).
+The `deferred_errors` accumulator collects the per-operation error flags without branching and raises them once per work item, through the same `device_global` machinery the operators use, so `device_error_context::synchronize()` surfaces the error on the host exactly as usual:
+
+[source, c++]
+----
+#include <sycl/sycl.hpp>
+#include <boost/safe_numbers/unsigned_integers.hpp>
+#include <boost/safe_numbers/device_error_reporting.hpp>
+
+using boost::safe_numbers::u32;
+
+void run(sycl::queue& q, const u32* in, u32* out, const int n)
+{
+    boost::safe_numbers::device_error_context ctx {q};
+
+    q.parallel_for(sycl::range<1>(static_cast<std::size_t>(n)), [=](sycl::id<1> idx)
+    {
+        const auto i {idx[0]};
+
+        boost::safe_numbers::deferred_errors errs;
+
+        // unwrap() accumulates the flag of each overflowing result branch-free
+        auto x {errs.unwrap(boost::safe_numbers::overflowing_add(in[i], in[i]))};
+        x = errs.unwrap(boost::safe_numbers::overflowing_mul(x, in[i]));
+
+        // The one branch per work item; records into the device error state
+        errs.report(__FILE__, __LINE__);
+        out[i] = x;
+    });
+
+    ctx.synchronize(); // rethrows on the host if any work item reported
+}
+----
+
+The trade against the throwing operators is precision of the report: the error surfaces at the report() call rather than at the exact operation, and the individual categories are not preserved (a deferred error is always raised as overflow).
+In exchange the kernel body stays vectorizable, which on CPU devices is the difference between roughly 2x and roughly 200x for floating point chains (see the benchmarks below).
+
 == Benchmarks
 
-xref:benchmarks.adoc#device_benchmarks[Dedicated device benchmarks] measure the overhead of the safety checks inside SYCL kernels, in both a memory-bound streaming shape and a compute-bound register chain.
+xref:benchmarks.adoc#device_benchmarks[Dedicated device benchmarks] measure the overhead of the safety checks inside SYCL kernels, in both a memory-bound streaming shape and a compute-bound register chain, including the non-throwing `saturating_*` and `overflowing_*` forms.

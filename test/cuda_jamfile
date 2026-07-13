@@ -12,6 +12,7 @@ project : requirements
 # Test the error handler mechanisms
 run test_cuda_error_handling.cu ;
 run test_cuda_invalid_argument.cu ;
+run test_cuda_deferred_errors.cu ;
 
 # u8 tests
 run test_cuda_u8_add.cu ;

@@ -25,4 +25,60 @@
 #  include <boost/safe_numbers/detail/sycl_error_reporting.hpp>
 #endif
 
+#if (defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA)) || defined(BOOST_SAFE_NUMBERS_ENABLE_SYCL)
+
+#ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
+#include <utility>
+#endif
+
+namespace boost::safe_numbers {
+
+// Deferred device error reporting for kernels built on the overflowing_*
+// families. The per-operation flags accumulate branch-free, so the kernel
+// body stays vectorizable on CPU style devices where the per-operation report
+// branch of the throwing operators inhibits SPMD vectorization. report() is
+// the one branch per work item: on the device it records into the same error
+// state that device_error_context::synchronize() rethrows from, and on the
+// host it throws immediately. The individual error categories are not
+// preserved; a deferred error always surfaces as overflow.
+class deferred_errors
+{
+public:
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr void accumulate(const bool had_error) noexcept
+    {
+        flags_ |= static_cast<unsigned>(had_error);
+    }
+
+    // Accumulates the flag of an overflowing_* result and returns its value
+    template <typename T>
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto unwrap(const std::pair<T, bool> result) noexcept -> T
+    {
+        accumulate(result.second);
+        return result.first;
+    }
+
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto any() const noexcept -> bool
+    {
+        return flags_ != 0U;
+    }
+
+    // Call once at the end of the kernel body
+    BOOST_SAFE_NUMBERS_HOST_DEVICE void report(const char* file = "deferred_errors",
+                                               const int line = 0,
+                                               const char* expression = "deferred checked arithmetic") const
+    {
+        if (flags_ != 0U)
+        {
+            detail::report_device_error(detail::exception_type::overflow, file, line, expression);
+        }
+    }
+
+private:
+    unsigned flags_ {0U};
+};
+
+} // namespace boost::safe_numbers
+
+#endif
+
 #endif // BOOST_SAFE_NUMBERS_DEVICE_ERROR_REPORTING_HPP

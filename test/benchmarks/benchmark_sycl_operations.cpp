@@ -280,6 +280,7 @@ int run_int_family(const char* name, sycl::queue& q, boost::safe_numbers::device
         failures += run_stream_op<device_bench::op_mul>(q, ctx, in, a_b, b_b, out_b, a_s, b_s, out_s, cfg);
         failures += run_stream_op<device_bench::op_div>(q, ctx, in, a_b, b_b, out_b, a_s, b_s, out_s, cfg);
         failures += run_stream_op<device_bench::op_mod>(q, ctx, in, a_b, b_b, out_b, a_s, b_s, out_s, cfg);
+        failures += run_stream_op<device_bench::op_sat_add>(q, ctx, in, a_b, b_b, out_b, a_s, b_s, out_s, cfg);
     }
 
     {
@@ -287,6 +288,8 @@ int run_int_family(const char* name, sycl::queue& q, boost::safe_numbers::device
 
         device_bench::print_table_header(name, "register chain of checked ops (compute-bound)");
         failures += run_chain<device_bench::int_mixed_chain>(q, ctx, in, cfg);
+        failures += run_chain<device_bench::int_mixed_sat_chain>(q, ctx, in, cfg);
+        failures += run_chain<device_bench::int_mixed_ovf_chain>(q, ctx, in, cfg);
     }
 
     return failures;
@@ -333,6 +336,11 @@ int run_real_family(const char* name, sycl::queue& q, boost::safe_numbers::devic
 
         const auto div_in {device_bench::gen_real_chain<TB, TS>(cfg.chain_threads, device_bench::real_chain_kind::divisor)};
         failures += run_chain<device_bench::real_div_chain>(q, ctx, div_in, cfg);
+
+        failures += run_chain<device_bench::real_ovf_add_chain>(q, ctx, add_in, cfg);
+        failures += run_chain<device_bench::real_ovf_sub_chain>(q, ctx, add_in, cfg);
+        failures += run_chain<device_bench::real_ovf_mul_chain>(q, ctx, mul_in, cfg);
+        failures += run_chain<device_bench::real_ovf_div_chain>(q, ctx, div_in, cfg);
     }
 
     return failures;

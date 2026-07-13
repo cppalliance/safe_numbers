@@ -120,6 +120,26 @@ struct op_mod
     }
 };
 
+// Saturating addition for the safe type against the raw addition baseline:
+// shows what the noexcept value policy costs relative to unchecked arithmetic
+struct op_sat_add
+{
+    static constexpr const char* name {"sat_add"};
+
+    template <typename T>
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static T apply(const T a, const T b)
+    {
+        if constexpr (requires { typename T::basis_type; })
+        {
+            return boost::safe_numbers::saturating_add(a, b);
+        }
+        else
+        {
+            return static_cast<T>(a + b);
+        }
+    }
+};
+
 // ---------------------------------------------------------------------------
 // Compute-bound chains
 //
@@ -162,6 +182,84 @@ struct int_mixed_chain
         x = static_cast<T>(x + y[6]); // [1, 15]
         x = static_cast<T>(x / y[7]); // [0, 15]
         return x;
+    }
+};
+
+// Saturating variant of the mixed chain. The safe type runs the noexcept
+// saturating_* functions; the basis type runs the raw chain, so the ratio
+// shows the cost of the value policy against unchecked arithmetic. The
+// operand ranges never saturate, so the results match the raw chain exactly.
+template <typename T>
+struct int_mixed_sat_chain
+{
+    static constexpr int ops_per_cycle {8};
+    static constexpr const char* name {"mixed (sat)"};
+
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static T cycle(T x, const T* y, const T aux)
+    {
+        if constexpr (requires { typename T::basis_type; })
+        {
+            static_cast<void>(aux);
+            namespace sn = boost::safe_numbers;
+            x = sn::saturating_mod(x, y[0]);
+            x = sn::saturating_add(x, y[1]);
+            x = sn::saturating_div(x, y[2]);
+            x = sn::saturating_sub(x, y[3]);
+            x = sn::saturating_mul(x, y[4]);
+            x = sn::saturating_mod(x, y[5]);
+            x = sn::saturating_add(x, y[6]);
+            x = sn::saturating_div(x, y[7]);
+            return x;
+        }
+        else
+        {
+            return int_mixed_chain<T>::cycle(x, y, aux);
+        }
+    }
+};
+
+// Overflowing (deferred flag) variant of the mixed chain. Each step keeps its
+// error flag alive by accumulating into an unsigned value that is folded back
+// into the result once per cycle, mirroring how the family is meant to be
+// used in kernels. The flags are always zero here, so the fold adds zero and
+// the results match the raw chain exactly. The fold is not counted in
+// ops_per_cycle, so the reported per-op cost is slightly conservative.
+template <typename T>
+struct int_mixed_ovf_chain
+{
+    static constexpr int ops_per_cycle {8};
+    static constexpr const char* name {"mixed (ovf)"};
+
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static T cycle(T x, const T* y, const T aux)
+    {
+        if constexpr (requires { typename T::basis_type; })
+        {
+            static_cast<void>(aux);
+            namespace sn = boost::safe_numbers;
+            using basis = typename T::basis_type;
+
+            auto flags {0U};
+            const auto step {[&flags](const auto r)
+            {
+                flags |= static_cast<unsigned>(r.second);
+                return r.first;
+            }};
+
+            x = step(sn::overflowing_mod(x, y[0]));
+            x = step(sn::overflowing_add(x, y[1]));
+            x = step(sn::overflowing_div(x, y[2]));
+            x = step(sn::overflowing_sub(x, y[3]));
+            x = step(sn::overflowing_mul(x, y[4]));
+            x = step(sn::overflowing_mod(x, y[5]));
+            x = step(sn::overflowing_add(x, y[6]));
+            x = step(sn::overflowing_div(x, y[7]));
+
+            return boost::safe_numbers::overflowing_add(x, T{static_cast<basis>(flags)}).first;
+        }
+        else
+        {
+            return int_mixed_chain<T>::cycle(x, y, aux);
+        }
     }
 };
 
@@ -251,6 +349,58 @@ struct real_div_chain
         return x;
     }
 };
+
+// Overflowing (deferred flag) variants of the float chains. The safe type
+// runs the noexcept overflowing_* family with the flags accumulated and
+// folded back into the value once per cycle; the basis type runs the raw
+// chain. The values never leave the finite range, so the flags stay zero and
+// the results match the raw chain exactly.
+#define BOOST_SAFE_NUMBERS_BENCH_REAL_OVF_CHAIN(CHAIN_NAME, LABEL, STEP_FN, RESTORE_FN, FALLBACK)  \
+template <typename T>                                                                              \
+struct CHAIN_NAME                                                                                  \
+{                                                                                                  \
+    static constexpr int ops_per_cycle {9};                                                        \
+    static constexpr const char* name {LABEL};                                                     \
+                                                                                                   \
+    BOOST_SAFE_NUMBERS_HOST_DEVICE static T cycle(T x, const T* y, const T aux)                    \
+    {                                                                                              \
+        if constexpr (requires { typename T::basis_type; })                                        \
+        {                                                                                          \
+            namespace sn = boost::safe_numbers;                                                    \
+            using basis = typename T::basis_type;                                                  \
+                                                                                                   \
+            auto flags {0U};                                                                       \
+            const auto step {[&flags](const auto r)                                                \
+            {                                                                                      \
+                flags |= static_cast<unsigned>(r.second);                                          \
+                return r.first;                                                                    \
+            }};                                                                                    \
+                                                                                                   \
+            x = step(sn::STEP_FN(x, y[0]));                                                        \
+            x = step(sn::STEP_FN(x, y[1]));                                                        \
+            x = step(sn::STEP_FN(x, y[2]));                                                        \
+            x = step(sn::STEP_FN(x, y[3]));                                                        \
+            x = step(sn::STEP_FN(x, y[4]));                                                        \
+            x = step(sn::STEP_FN(x, y[5]));                                                        \
+            x = step(sn::STEP_FN(x, y[6]));                                                        \
+            x = step(sn::STEP_FN(x, y[7]));                                                        \
+            x = step(sn::RESTORE_FN(x, aux));                                                      \
+                                                                                                   \
+            return sn::overflowing_add(x, T{static_cast<basis>(flags)}).first;                     \
+        }                                                                                          \
+        else                                                                                       \
+        {                                                                                          \
+            return FALLBACK<T>::cycle(x, y, aux);                                                  \
+        }                                                                                          \
+    }                                                                                              \
+};
+
+BOOST_SAFE_NUMBERS_BENCH_REAL_OVF_CHAIN(real_ovf_add_chain, "add (ovf)", overflowing_add, overflowing_sub, real_add_chain)
+BOOST_SAFE_NUMBERS_BENCH_REAL_OVF_CHAIN(real_ovf_sub_chain, "sub (ovf)", overflowing_sub, overflowing_add, real_sub_chain)
+BOOST_SAFE_NUMBERS_BENCH_REAL_OVF_CHAIN(real_ovf_mul_chain, "mul (ovf)", overflowing_mul, overflowing_div, real_mul_chain)
+BOOST_SAFE_NUMBERS_BENCH_REAL_OVF_CHAIN(real_ovf_div_chain, "div (ovf)", overflowing_div, overflowing_mul, real_div_chain)
+
+#undef BOOST_SAFE_NUMBERS_BENCH_REAL_OVF_CHAIN
 
 // ---------------------------------------------------------------------------
 // Host-side input generation. Every generator fills a builtin vector and a

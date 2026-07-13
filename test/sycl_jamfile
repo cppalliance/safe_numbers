@@ -58,6 +58,7 @@ run test_device_error_context_reuse_sycl.cpp ;
 run test_device_error_single_context_sycl.cpp ;
 run test_device_error_mapping_sycl.cpp ;
 run test_device_error_workitem_id_sycl.cpp ;
+run test_deferred_errors_sycl.cpp ;
 
 # Free functions - bit manipulation
 run test_has_single_bit_sycl.cpp ;

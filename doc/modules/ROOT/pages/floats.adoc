@@ -187,6 +187,53 @@ In every operation, an operand that is a quiet or signaling NaN causes the opera
 
 NOTE: There is no `operator%` for `f32`/`f64`. C++ has no built-in floating-point remainder operator; use the `xref:cmath.adoc[fmod]` function instead.
 
+[#floats_overflowing_arithmetic]
+=== Overflowing Arithmetic
+
+[source,c++]
+----
+// Overflowing arithmetic (raw IEEE result and error flag)
+template <compatible_float_type BasisType>
+constexpr auto overflowing_add(float_basis<BasisType> lhs, float_basis<BasisType> rhs) noexcept
+    -> std::pair<float_basis<BasisType>, bool>;
+
+template <compatible_float_type BasisType>
+constexpr auto overflowing_sub(float_basis<BasisType> lhs, float_basis<BasisType> rhs) noexcept
+    -> std::pair<float_basis<BasisType>, bool>;
+
+template <compatible_float_type BasisType>
+constexpr auto overflowing_mul(float_basis<BasisType> lhs, float_basis<BasisType> rhs) noexcept
+    -> std::pair<float_basis<BasisType>, bool>;
+
+template <compatible_float_type BasisType>
+constexpr auto overflowing_div(float_basis<BasisType> lhs, float_basis<BasisType> rhs) noexcept
+    -> std::pair<float_basis<BasisType>, bool>;
+----
+
+The overflowing family is the non-throwing counterpart of the arithmetic operators, mirroring the integer `overflowing_*` functions.
+The returned value is the raw IEEE result and the flag is `true` exactly when the corresponding operator would have thrown, which for every floating point operation means the result is non-finite.
+The distinction between the exception types is not preserved: the flag only records that an error occurred.
+
+Because the functions are `noexcept` and branch-free, loops over them remain auto-vectorizable, which the throwing operators inherently prevent (a potential throw is an early exit the optimizer must preserve per element).
+Accumulate the flags in an `unsigned` value and test once at a boundary of your choosing:
+
+[source,c++]
+----
+auto flags {0U};
+for (std::size_t i {}; i < n; ++i)
+{
+    const auto r {overflowing_add(out[i], a[i])};
+    out[i] = r.first;
+    flags |= static_cast<unsigned>(r.second);
+}
+if (flags != 0U)
+{
+    // At least one element produced a non-finite result
+}
+----
+
+NOTE: Accumulate the flag in an `unsigned` value rather than a `bool`. Compilers recognize the integer OR reduction reliably; a `bool` accumulator can prevent the loop from vectorizing.
+
 == Exception Behavior
 
 The following table summarizes the exceptional conditions and the exception each one produces.
