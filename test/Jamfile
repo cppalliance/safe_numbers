@@ -61,6 +61,7 @@ run test_float_addition.cpp ;
 run test_float_subtraction.cpp ;
 run test_float_mul.cpp ;
 run test_float_div.cpp ;
+run test_float_overflowing.cpp ;
 run test_float_streaming.cpp ;
 run test_float_std_format.cpp ;
 run test_float_fmt_format.cpp ;
