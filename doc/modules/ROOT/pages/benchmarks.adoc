@@ -86,6 +86,9 @@ That is deliberate: wrapping integer arithmetic is associative, so the optimizer
 Division and modulo cannot be reassociated, and interleaving them forces every step to execute for both contenders.
 The floating point chains are per operation (eight operations plus one restore step of the inverse kind), because IEEE arithmetic is not associative and cannot be folded.
 
+Every family also measures the non-throwing forms against the same raw baseline: a `sat_add` streaming row (xref:unsigned_integers.adoc[`saturating_add`]), `mixed (sat)` and `mixed (ovf)` integer chains built from the `saturating_*` and `overflowing_*` functions, and `(ovf)` float chains built from the xref:floats.adoc#floats_overflowing_arithmetic[deferred float family] with the flags accumulated and folded into the result.
+These rows show what checked arithmetic costs when the error report is deferred to a boundary instead of raised per operation.
+
 Every timed region is verified afterwards: the safe results must match the builtin results bit for bit across all elements, a slice is recomputed on the host, and the process exit code reflects any mismatch.
 Both benchmarks accept optional positional arguments `[stream_elements] [chain_cycles] [launches] [chain_threads]` for scaling the run to slower or faster devices.
 
@@ -125,59 +128,60 @@ NOTE: `icpx` compiles with `-ffp-model=fast` by default, which grants the optimi
 Run on an NVIDIA GeForce RTX 3060 (sm_86, 28 SMs) with CUDA 13.1 on Ubuntu 24.04, compiled at `-O2` with `--expt-relaxed-constexpr`, using the default sizes.
 
 .Streaming, ratio of safe time to basis type time (RTX 3060)
-[cols="1,>1,>1,>1,>1,>1",options="header"]
+[cols="1,>1,>1,>1,>1,>1,>1",options="header"]
 |===
-| Type | Addition | Subtraction | Multiplication | Division | Modulo
-| `u8` | 1.05 | 1.04 | 1.05 | 1.03 | 1.02
-| `u16` | 1.01 | 1.00 | 1.00 | 1.00 | 1.00
-| `u32` | 1.00 | 1.00 | 1.00 | 1.00 | 1.00
-| `u64` | 1.00 | 1.00 | 1.00 | 1.00 | 1.00
-| `u128` | 1.00 | 1.00 | 6.78 | 1.00 | 1.00
-| `i8` | 1.23 | 1.23 | 1.22 | 1.16 | 1.16
-| `i16` | 1.05 | 1.05 | 1.05 | 1.04 | 1.04
-| `i32` | 1.00 | 1.00 | 1.00 | 1.00 | 1.00
-| `i64` | 1.00 | 1.00 | 1.00 | 1.00 | 1.00
-| `i128` | 1.00 | 1.00 | 6.78 | 1.00 | 1.00
-| `f32` | 1.00 | 1.00 | 1.00 | 1.00 | n/a
-| `f64` | 1.00 | 1.00 | 1.00 | 1.44 | n/a
+| Type | Addition | Subtraction | Multiplication | Division | Modulo | Saturating addition
+| `u8` | 1.05 | 1.04 | 1.05 | 1.03 | 1.02 | 1.02
+| `u16` | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 0.99
+| `u32` | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00
+| `u64` | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00
+| `u128` | 1.00 | 1.00 | 6.77 | 1.00 | 1.00 | 1.00
+| `i8` | 1.23 | 1.22 | 1.22 | 1.16 | 1.15 | 1.04
+| `i16` | 1.05 | 1.05 | 1.04 | 1.04 | 1.03 | 1.00
+| `i32` | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00
+| `i64` | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00
+| `i128` | 1.00 | 1.00 | 6.79 | 1.00 | 1.00 | 1.00
+| `f32` | 1.00 | 1.00 | 1.00 | 1.00 | n/a | n/a
+| `f64` | 1.00 | 1.00 | 1.00 | 1.44 | n/a | n/a
 |===
 
 In the streaming regime the checks are essentially free: the kernels are limited by memory bandwidth and the check instructions execute in the shadow of the loads.
-The only rows above parity are the 8-bit types (up to 1.23x, since a byte of traffic buys less time to hide the check), `f64` division (1.44x), and 128-bit multiplication (6.78x).
+The only rows above parity are the 8-bit types (up to 1.23x, since a byte of traffic buys less time to hide the check), `f64` division (1.44x), and 128-bit multiplication (about 6.8x).
 The multiplication overflow check on the 128-bit types is the one genuinely expensive check in the library, since it must be computed from 64-bit limbs.
 
-.Compute-bound integer chain (RTX 3060)
-[cols="1,>1,>1,>1",options="header"]
+.Compute-bound integer chain (RTX 3060): throwing operators and non-throwing forms against the raw chain
+[cols="1,>1,>1,>1,>1,>1,>1,>1",options="header"]
 |===
-| Type | Basis type (ns/op) | Boost.SafeNumbers (ns/op) | Ratio
-| `u8` | 0.0030 | 0.0039 | 1.30
-| `u16` | 0.0030 | 0.0039 | 1.30
-| `u32` | 0.0012 | 0.0034 | 2.82
-| `u64` | 0.0031 | 0.0045 | 1.46
-| `u128` | 0.0094 | 0.0963 | 10.30
-| `i8` | 0.0021 | 0.0056 | 2.68
-| `i16` | 0.0020 | 0.0058 | 2.92
-| `i32` | 0.0018 | 0.0051 | 2.85
-| `i64` | 0.0031 | 0.0068 | 2.22
-| `i128` | 0.0121 | 0.0944 | 7.81
+| Type | Basis type (ns/op) | Throwing (ns/op) | Ratio | Saturating (ns/op) | Ratio | Overflowing (ns/op) | Ratio
+| `u8` | 0.0030 | 0.0039 | 1.30 | 0.0037 | 1.24 | 0.0036 | 1.21
+| `u16` | 0.0030 | 0.0039 | 1.30 | 0.0037 | 1.23 | 0.0037 | 1.23
+| `u32` | 0.0012 | 0.0034 | 2.82 | 0.0030 | 2.55 | 0.0030 | 2.50
+| `u64` | 0.0031 | 0.0045 | 1.46 | 0.0044 | 1.44 | 0.0043 | 1.38
+| `u128` | 0.0094 | 0.0964 | 10.30 | 0.0884 | 9.43 | 0.0925 | 10.28
+| `i8` | 0.0020 | 0.0054 | 2.68 | 0.0056 | 2.78 | 0.0052 | 2.61
+| `i16` | 0.0020 | 0.0058 | 2.93 | 0.0058 | 2.96 | 0.0055 | 2.80
+| `i32` | 0.0018 | 0.0051 | 2.85 | 0.0052 | 2.92 | 0.0051 | 2.83
+| `i64` | 0.0031 | 0.0068 | 2.22 | 0.0071 | 2.31 | 0.0067 | 2.19
+| `i128` | 0.0121 | 0.0940 | 7.78 | 0.0921 | 7.62 | 0.0919 | 7.92
 |===
 
-.Compute-bound floating point chains (RTX 3060)
-[cols="1,1,>1,>1,>1",options="header"]
+.Compute-bound floating point chains (RTX 3060): throwing operators and the deferred (overflowing) family
+[cols="1,1,>1,>1,>1,>1,>1",options="header"]
 |===
-| Type | Operation | Basis type (ns/op) | Boost.SafeNumbers (ns/op) | Ratio
-| `f32` | Addition | 0.0002 | 0.0037 | 17.44
-| `f32` | Subtraction | 0.0002 | 0.0037 | 17.74
-| `f32` | Multiplication | 0.0004 | 0.0038 | 8.73
-| `f32` | Division | 0.0026 | 0.0057 | 2.22
-| `f64` | Addition | 0.0124 | 0.0494 | 4.00
-| `f64` | Subtraction | 0.0133 | 0.0489 | 3.68
-| `f64` | Multiplication | 0.0200 | 0.0561 | 2.80
-| `f64` | Division | 0.0770 | 0.1151 | 1.50
+| Type | Operation | Basis type (ns/op) | Throwing (ns/op) | Ratio | Overflowing (ns/op) | Ratio
+| `f32` | Addition | 0.0002 | 0.0037 | 18.31 | 0.0011 | 5.39
+| `f32` | Subtraction | 0.0002 | 0.0037 | 17.66 | 0.0011 | 5.37
+| `f32` | Multiplication | 0.0004 | 0.0039 | 8.71 | 0.0012 | 2.69
+| `f32` | Division | 0.0026 | 0.0057 | 2.22 | 0.0027 | 1.05
+| `f64` | Addition | 0.0124 | 0.0495 | 4.00 | 0.0501 | 4.21
+| `f64` | Subtraction | 0.0124 | 0.0495 | 4.01 | 0.0501 | 4.21
+| `f64` | Multiplication | 0.0209 | 0.0579 | 2.77 | 0.0593 | 2.94
+| `f64` | Division | 0.0779 | 0.1157 | 1.49 | 0.1196 | 1.55
 |===
 
 With the arithmetic pinned in registers the checked integer types cost 1.3x to 2.9x through 64 bits, and the 128-bit chains are dominated by the multiplication check (7.8x to 10.3x).
-For the floating point chains the baseline operation is a single hardware instruction, so the fixed cost of the checks multiplies it: up to 17.7x for `f32`, and 1.5x to 4.0x for `f64`, whose baseline instruction is already slow on a consumer GPU.
+For the floating point chains the baseline operation is a single hardware instruction, so the fixed cost of the checks multiplies it: up to 18.3x for `f32`, and 1.5x to 4.0x for `f64`, whose baseline instruction is already slow on a consumer GPU.
+On a GPU the non-throwing integer forms buy little, because the throwing operators already compile to a well predicted branch; the deferred float family is the exception, cutting the `f32` chains from 18.3x to 5.4x and `f32` division to parity by dropping the per-operation classification.
 Real kernels sit between the two regimes, and usually much closer to the streaming one.
 
 [#sycl_cpu_benchmarks]
@@ -187,59 +191,63 @@ Run on the OpenCL CPU device of an Intel Core i9-11900K (8 cores) with oneAPI ic
 A CPU device executes a kernel by vectorizing it across work items, and that shapes these results: a branch-free kernel body runs 8 or 16 lanes wide, and the branches of the safety checks inhibit exactly that transformation.
 
 .Streaming, ratio of safe time to basis type time (SYCL CPU device)
-[cols="1,>1,>1,>1,>1,>1",options="header"]
+[cols="1,>1,>1,>1,>1,>1,>1",options="header"]
 |===
-| Type | Addition | Subtraction | Multiplication | Division | Modulo
-| `u8` | 5.86 | 6.59 | 14.80 | 1.08 | 1.01
-| `u16` | 1.05 | 1.07 | 1.78 | 1.27 | 1.28
-| `u32` | 1.04 | 1.05 | 1.04 | 1.02 | 1.00
-| `u64` | 1.03 | 1.03 | 1.03 | 1.00 | 1.00
-| `u128` | 1.00 | 1.01 | 1.05 | 1.01 | 0.99
-| `i8` | 9.48 | 9.61 | 8.75 | 1.15 | 1.16
-| `i16` | 1.58 | 1.46 | 1.60 | 1.75 | 1.64
-| `i32` | 1.05 | 1.05 | 1.05 | 1.03 | 1.07
-| `i64` | 1.04 | 1.03 | 1.03 | 1.01 | 1.01
-| `i128` | 1.00 | 1.01 | 1.11 | 1.00 | 1.00
-| `f32` | 1.37 | 1.36 | 1.38 | 1.72 | n/a
-| `f64` | 1.06 | 1.05 | 1.05 | 1.14 | n/a
+| Type | Addition | Subtraction | Multiplication | Division | Modulo | Saturating addition
+| `u8` | 5.47 | 6.02 | 11.60 | 1.01 | 1.01 | 0.97
+| `u16` | 1.03 | 1.06 | 1.87 | 1.15 | 1.25 | 1.02
+| `u32` | 1.03 | 1.04 | 1.04 | 1.02 | 1.00 | 1.00
+| `u64` | 1.03 | 1.03 | 1.04 | 1.00 | 1.00 | 1.00
+| `u128` | 1.00 | 1.01 | 1.05 | 1.01 | 0.99 | 0.99
+| `i8` | 9.69 | 10.84 | 11.32 | 1.14 | 1.14 | 1.52
+| `i16` | 1.50 | 1.50 | 1.44 | 1.59 | 1.59 | 1.07
+| `i32` | 1.00 | 1.00 | 1.00 | 0.98 | 0.99 | 0.96
+| `i64` | 1.04 | 1.04 | 1.03 | 1.01 | 1.01 | 1.00
+| `i128` | 1.01 | 1.01 | 1.11 | 1.01 | 1.00 | 0.99
+| `f32` | 1.32 | 1.35 | 1.35 | 1.74 | n/a | n/a
+| `f64` | 1.05 | 1.05 | 1.05 | 1.12 | n/a | n/a
 |===
 
 For 32 bits and up the streaming results match the CUDA picture: the arrays no longer fit in cache, the kernels are bound by memory, and the checks cost 0 to 7 percent.
-The 8-bit rows stand out (up to 14.8x) because four million 1-byte elements fit inside the processor's cache: those kernels are compute bound, so they measure the vectorization gap rather than memory bandwidth.
+The 8-bit rows stand out (up to 11.6x) because four million 1-byte elements fit inside the processor's cache: those kernels are compute bound, so they measure the vectorization gap rather than memory bandwidth.
+The saturating addition column shows the escape hatch: `saturating_add` compiles to the native saturating vector instructions, so even the 8-bit rows return to parity.
 
-.Compute-bound integer chain (SYCL CPU device)
-[cols="1,>1,>1,>1",options="header"]
+.Compute-bound integer chain (SYCL CPU device): throwing operators and non-throwing forms against the raw chain
+[cols="1,>1,>1,>1,>1,>1,>1,>1",options="header"]
 |===
-| Type | Basis type (ns/op) | Boost.SafeNumbers (ns/op) | Ratio
-| `u8` | 0.0810 | 0.1229 | 1.52
-| `u16` | 0.0845 | 0.1486 | 1.76
-| `u32` | 0.0220 | 0.0833 | 3.79
-| `u64` | 0.1263 | 0.1431 | 1.13
-| `u128` | 0.3279 | 0.5028 | 1.53
-| `i8` | 0.1300 | 0.2062 | 1.59
-| `i16` | 0.0243 | 0.2057 | 8.48
-| `i32` | 0.0215 | 0.2043 | 9.48
-| `i64` | 0.1266 | 0.1838 | 1.45
-| `i128` | 0.4155 | 0.6179 | 1.49
+| Type | Basis type (ns/op) | Throwing (ns/op) | Ratio | Saturating (ns/op) | Ratio | Overflowing (ns/op) | Ratio
+| `u8` | 0.0803 | 0.1198 | 1.49 | 0.1185 | 1.51 | 0.1149 | 1.43
+| `u16` | 0.0833 | 0.1567 | 1.88 | 0.1224 | 1.46 | 0.1434 | 1.72
+| `u32` | 0.0220 | 0.0941 | 4.27 | 0.0742 | 3.34 | 0.0697 | 3.16
+| `u64` | 0.1259 | 0.1317 | 1.05 | 0.1248 | 0.99 | 0.1271 | 1.00
+| `u128` | 0.3259 | 0.5082 | 1.56 | 0.4989 | 1.55 | 0.5189 | 1.59
+| `i8` | 0.1307 | 0.2153 | 1.65 | 0.1344 | 1.06 | 0.1459 | 1.11
+| `i16` | 0.0233 | 0.2057 | 8.82 | 0.1346 | 5.76 | 0.1406 | 5.90
+| `i32` | 0.0215 | 0.2025 | 9.42 | 0.1332 | 6.05 | 0.1415 | 6.46
+| `i64` | 0.1270 | 0.1858 | 1.46 | 0.1473 | 1.16 | 0.1485 | 1.17
+| `i128` | 0.4167 | 0.6075 | 1.46 | 0.8602 | 2.06 | 0.9172 | 2.22
 |===
 
-.Compute-bound floating point chains (SYCL CPU device)
-[cols="1,1,>1,>1,>1",options="header"]
+.Compute-bound floating point chains (SYCL CPU device): throwing operators and the deferred (overflowing) family
+[cols="1,1,>1,>1,>1,>1,>1",options="header"]
 |===
-| Type | Operation | Basis type (ns/op) | Boost.SafeNumbers (ns/op) | Ratio
-| `f32` | Addition | 0.0035 | 0.6207 | 175.43
-| `f32` | Subtraction | 0.0035 | 0.6072 | 171.47
-| `f32` | Multiplication | 0.0050 | 0.6302 | 126.55
-| `f32` | Division | 0.0149 | 0.7543 | 50.64
-| `f64` | Addition | 0.0036 | 0.6496 | 181.82
-| `f64` | Subtraction | 0.0036 | 0.6516 | 182.26
-| `f64` | Multiplication | 0.0063 | 0.6594 | 104.15
-| `f64` | Division | 0.0451 | 0.7733 | 17.16
+| Type | Operation | Basis type (ns/op) | Throwing (ns/op) | Ratio | Overflowing (ns/op) | Ratio
+| `f32` | Addition | 0.0035 | 0.6126 | 173.03 | 0.0060 | 1.68
+| `f32` | Subtraction | 0.0035 | 0.6066 | 171.30 | 0.0072 | 2.11
+| `f32` | Multiplication | 0.0049 | 0.6275 | 127.59 | 0.0071 | 1.43
+| `f32` | Division | 0.0150 | 0.7521 | 50.01 | 0.0163 | 1.13
+| `f64` | Addition | 0.0036 | 0.6457 | 179.70 | 0.0098 | 2.73
+| `f64` | Subtraction | 0.0036 | 0.8446 | 234.65 | 0.0108 | 2.85
+| `f64` | Multiplication | 0.0064 | 0.6579 | 102.24 | 0.0135 | 2.05
+| `f64` | Division | 0.0450 | 0.7644 | 17.00 | 0.0475 | 1.05
 |===
 
 In the chains the dominant cost on a CPU device is lost vectorization rather than the check instructions themselves.
-Where the baseline cannot vectorize either (the 64-bit and 128-bit chains, and the 8-bit chains whose narrow division defeats the vectorizer), the checked types cost 1.1x to 1.8x, in line with the host benchmarks.
-Where the baseline vectorizes and the checked chain does not (`i16`, `i32`, and every floating point chain), the gap is the SIMD width times the check cost, up to 182x for the `f64` addition chain.
+Where the baseline cannot vectorize either (the 64-bit and 128-bit chains, and the 8-bit chains whose narrow division defeats the vectorizer), the throwing types cost 1.0x to 1.9x, in line with the host benchmarks.
+Where the baseline vectorizes and the throwing chain does not (`i16`, `i32`, and every floating point chain), the gap is the SIMD width times the check cost, up to roughly 235x for the `f64` chains.
+
+The deferred family recovers that gap almost entirely for floats: the branch-free `overflowing_*` operations vectorize with the baseline, so the same chains land at 1.1x to 2.9x, two orders of magnitude better than the throwing operators, while still detecting every error at the boundary (see xref:floats.adoc#floats_overflowing_arithmetic[Overflowing Arithmetic] and the `deferred_errors` accumulator in xref:sycl.adoc[]).
+The integer `saturating_*` and `overflowing_*` chains improve `i16`/`i32` from about 9x to about 6x; the remaining gap is the divide by zero check that division and modulo still raise eagerly, which keeps a reporting branch in the kernel body.
 
 NOTE: The device numbers come from one machine and a single run each, so treat small differences as noise. On a discrete GPU a SYCL build should behave like the CUDA column; this machine only exposes the CPU device.
 

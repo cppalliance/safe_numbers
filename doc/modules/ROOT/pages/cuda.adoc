@@ -345,6 +345,11 @@ Be aware that other threads in the kernel may continue executing with incorrect 
 * xref:examples.adoc#examples_cuda_error_handling[CUDA Error Handling] — shows how to use `device_error_context` to catch device-side overflow on the host and recover gracefully.
 * xref:examples.adoc#examples_cuda_error_handling_without_error_context[CUDA Error Handling Without Error Context] — demonstrates what happens when an overflow occurs on the device *without* `device_error_context`: the CUDA context is irrecoverably corrupted and no further kernels can be launched.
 
+== Deferred Error Reporting
+
+The `deferred_errors` accumulator documented in xref:sycl.adoc#sycl_deferred_errors[the SYCL chapter] works identically under CUDA: accumulate the flags of the `overflowing_*` operations branch-free inside the kernel and call `report()` once per thread, and `device_error_context::synchronize()` surfaces the error on the host as usual.
+On a GPU the throwing operators are already cheap (branches are well predicted), so the deferred mode matters mainly for `f32` heavy compute-bound kernels, where it removes the per-operation result classification.
+
 == Benchmarks
 
-xref:benchmarks.adoc#device_benchmarks[Dedicated device benchmarks] measure the overhead of the safety checks inside CUDA kernels, in both a memory-bound streaming shape and a compute-bound register chain.
+xref:benchmarks.adoc#device_benchmarks[Dedicated device benchmarks] measure the overhead of the safety checks inside CUDA kernels, in both a memory-bound streaming shape and a compute-bound register chain, including the non-throwing `saturating_*` and `overflowing_*` forms.
