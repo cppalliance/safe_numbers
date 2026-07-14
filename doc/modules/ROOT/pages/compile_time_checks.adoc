@@ -18,7 +18,7 @@ The mechanism relies on the optimizer's constant propagation together with the G
 Because it is driven by the optimizer, it is active only in optimized GCC or Clang builds, and only for values the optimizer can prove are constant.
 It is disabled by default and adds nothing to a normal build.
 
-See https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2026/p4021r1.pdf[P4021] and https://github.com/jonnygrant/compile_assert[the reference implementation] thereof both by Jonathan Grant for additional information.
+See https://wg21.link/P4021[P4021] and https://github.com/jonnygrant/compile_assert[the reference implementation] thereof both by Jonathan Grant for additional information.
 
 == What Is Diagnosed
 
