@@ -40,6 +40,11 @@
  * output.
  */
 
+// BOOST_SAFE_NUMBERS_COMPILE_ASSERT() takes an optional message: (expr) or (expr, "why").
+#define BOOST_SAFE_NUMBERS_CA_FIRST(first, ...) first
+#define BOOST_SAFE_NUMBERS_CA_MSG(...) BOOST_SAFE_NUMBERS_CA_MSG_(__VA_ARGS__, "")
+#define BOOST_SAFE_NUMBERS_CA_MSG_(expression, message, ...) message
+
 #ifdef __GNUC__
 
 // The compile-time-error mechanism relies on the GCC/Clang function 'error' attribute.
@@ -75,7 +80,7 @@
  * @def compile_assert
  * @brief Macro for compile-time assertions.
  * @param expression The compile-time condition to be checked.
- * @param message A description of the assertion.
+ * @param message Optional description of the assertion; defaults to "" when omitted.
  */
 #define BOOST_SAFE_NUMBERS_CA_ASSERT_IMPL(expression, message, fn) \
     do { \
@@ -84,8 +89,8 @@
             fn(); \
         } \
     } while (0)
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT(expression, message) \
-    BOOST_SAFE_NUMBERS_CA_ASSERT_IMPL(expression, message, BOOST_SAFE_NUMBERS_CA_CAT(_compile_assert_fail_, __COUNTER__))
+#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT(...) \
+    BOOST_SAFE_NUMBERS_CA_ASSERT_IMPL(BOOST_SAFE_NUMBERS_CA_FIRST(__VA_ARGS__), BOOST_SAFE_NUMBERS_CA_MSG(__VA_ARGS__), BOOST_SAFE_NUMBERS_CA_CAT(_compile_assert_fail_, __COUNTER__))
 
 
 // CONST_P turns a provably-constant precondition violation into a build error. The optional
@@ -135,12 +140,8 @@
         BOOST_SAFE_NUMBERS_CA_CONST_P_GUARD(condition, __VA_ARGS__), \
         BOOST_SAFE_NUMBERS_CA_CAT(_compile_assert_fail_, __COUNTER__))
 
-
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT0(expression) BOOST_SAFE_NUMBERS_COMPILE_ASSERT(expression, NULL)
-
 #else
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT(condition, description)
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT0(expression)
+#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT(...)
 #define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(condition, message, ...)
 #endif
 
@@ -222,22 +223,18 @@ int stop_compile3() __attribute__ ((error("'compile_assert_scalar error detected
 #define BOOST_SAFE_NUMBERS_MERGE1(a,b) BOOST_SAFE_NUMBERS_MERGE2(a,b)
 #define BOOST_SAFE_NUMBERS_MERGE3(a,b,c) BOOST_SAFE_NUMBERS_MERGE1(a, BOOST_SAFE_NUMBERS_MERGE1(b,c))
 
-// The non-active fallback above already defined these as empty; replace them here.
+// The non-active fallback above already defined this as empty
 #undef BOOST_SAFE_NUMBERS_COMPILE_ASSERT
-#undef BOOST_SAFE_NUMBERS_COMPILE_ASSERT0
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT(expr, message) \
+#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT(...) \
 do { \
-    if (!(expr)) { \
+    if (!(BOOST_SAFE_NUMBERS_CA_FIRST(__VA_ARGS__))) { \
       extern void BOOST_SAFE_NUMBERS_MERGE3(_compile_assert, BOOST_SAFE_NUMBERS_COMPILE_FILE, __LINE__)(); \
       BOOST_SAFE_NUMBERS_MERGE3(_compile_assert, BOOST_SAFE_NUMBERS_COMPILE_FILE, __LINE__)(); \
     } \
 } while (0)
-
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT0(expression) BOOST_SAFE_NUMBERS_COMPILE_ASSERT(expression, NULL)
 #else
 
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT(condition, description)
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT0(expression)
+#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT(...)
 #define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_ACTIVE
 
 #endif // defined(BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT)
@@ -252,25 +249,19 @@ do { \
 #if !defined(BOOST_SAFE_NUMBERS_COMPILE_ASSERT)
 #define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_ACTIVE
 
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT(expression, message) \
+#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT(...) \
     do { \
         void _compile_assert_fail(); \
-        if (!(expression)) { \
+        if (!(BOOST_SAFE_NUMBERS_CA_FIRST(__VA_ARGS__))) { \
             _compile_assert_fail(); \
         } \
     } while (0)
-
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT0(expression) BOOST_SAFE_NUMBERS_COMPILE_ASSERT(expression, NULL)
 #endif // !defined(compile_assert)
 #endif // defined(BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT)
 
 
 #ifndef BOOST_SAFE_NUMBERS_COMPILE_ASSERT
 #error "BOOST_SAFE_NUMBERS_COMPILE_ASSERT not defined"
-#endif
-
-#ifndef BOOST_SAFE_NUMBERS_COMPILE_ASSERT0
-#error "BOOST_SAFE_NUMBERS_COMPILE_ASSERT0 not defined"
 #endif
 
 #ifndef BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P
