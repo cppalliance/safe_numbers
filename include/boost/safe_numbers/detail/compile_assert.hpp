@@ -88,47 +88,52 @@
     BOOST_SAFE_NUMBERS_CA_ASSERT_IMPL(expression, message, BOOST_SAFE_NUMBERS_CA_CAT(_compile_assert_fail_, __COUNTER__))
 
 
-#define BOOST_SAFE_NUMBERS_CA_CONST_P_IMPL(expression, message, fn) \
-    do { \
-        if(__builtin_constant_p(expression)) { \
-            if (!(expression)) { \
-                void fn() __attribute__ ((error(message))); \
-                fn(); \
-            } \
-        } \
-    } while (0)
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(expression, message) \
-    BOOST_SAFE_NUMBERS_CA_CONST_P_IMPL(expression, message, BOOST_SAFE_NUMBERS_CA_CAT(_compile_assert_fail_, __COUNTER__))
+// CONST_P turns a provably-constant precondition violation into a build error. The optional
+// trailing arguments name the operands that must be compile-time constants for the check to
+// fire; with none given, the condition itself is the guarded operand:
+//
+//   CONST_P(condition, message)             guard on the condition
+//   CONST_P(condition, message, a)          guard on operand a
+//   CONST_P(condition, message, a, b, ...)  guard on every listed operand (ANDed)
+//
+// GCC before 13 does not fold __builtin_constant_p when it is applied to a value derived from
+// an overflow builtin, or even to a comparison in a deep constexpr call chain, so a guard on
+// the condition is missed and the assertion never fires. Naming the raw operands (plain
+// integers, which fold on every supported GCC) makes the check fire on GCC 11 and 12 as well;
+// the condition is still evaluated by dead-code removal exactly as before.
 
-// GCC before 13 does not fold __builtin_constant_p when it is applied to a value derived
-// from an overflow builtin, or even to a comparison in a deep constexpr call chain, so the
-// guard above is missed and the assertion never fires. Guarding instead on the constness of
-// the raw operands (plain integers, which fold on every supported GCC) makes the check fire
-// on GCC 11 and 12 as well; the condition is still evaluated by dead-code removal exactly as
-// before. CONST_P1 guards one operand, CONST_P2 guards two.
-#define BOOST_SAFE_NUMBERS_CA_CONST_P1_IMPL(a, condition, message, fn) \
+// __builtin_constant_p of every listed operand, ANDed together. The levels chain through
+// distinct names so each re-expands cleanly; up to eight operands are supported.
+#define BOOST_SAFE_NUMBERS_CA_G1(a, ...) __builtin_constant_p(a) __VA_OPT__(&& BOOST_SAFE_NUMBERS_CA_G2(__VA_ARGS__))
+#define BOOST_SAFE_NUMBERS_CA_G2(a, ...) __builtin_constant_p(a) __VA_OPT__(&& BOOST_SAFE_NUMBERS_CA_G3(__VA_ARGS__))
+#define BOOST_SAFE_NUMBERS_CA_G3(a, ...) __builtin_constant_p(a) __VA_OPT__(&& BOOST_SAFE_NUMBERS_CA_G4(__VA_ARGS__))
+#define BOOST_SAFE_NUMBERS_CA_G4(a, ...) __builtin_constant_p(a) __VA_OPT__(&& BOOST_SAFE_NUMBERS_CA_G5(__VA_ARGS__))
+#define BOOST_SAFE_NUMBERS_CA_G5(a, ...) __builtin_constant_p(a) __VA_OPT__(&& BOOST_SAFE_NUMBERS_CA_G6(__VA_ARGS__))
+#define BOOST_SAFE_NUMBERS_CA_G6(a, ...) __builtin_constant_p(a) __VA_OPT__(&& BOOST_SAFE_NUMBERS_CA_G7(__VA_ARGS__))
+#define BOOST_SAFE_NUMBERS_CA_G7(a, ...) __builtin_constant_p(a) __VA_OPT__(&& BOOST_SAFE_NUMBERS_CA_G8(__VA_ARGS__))
+#define BOOST_SAFE_NUMBERS_CA_G8(a) __builtin_constant_p(a)
+#define BOOST_SAFE_NUMBERS_CA_GUARD(...) BOOST_SAFE_NUMBERS_CA_G1(__VA_ARGS__)
+
+// Pick the guard expression: the condition when no operands were given, else the ANDed operands.
+#define BOOST_SAFE_NUMBERS_CA_CONST_P_GUARD_(condition, ...)  __builtin_constant_p(condition)
+#define BOOST_SAFE_NUMBERS_CA_CONST_P_GUARD_1(condition, ...) BOOST_SAFE_NUMBERS_CA_GUARD(__VA_ARGS__)
+#define BOOST_SAFE_NUMBERS_CA_CONST_P_GUARD(condition, ...) \
+    BOOST_SAFE_NUMBERS_CA_CAT(BOOST_SAFE_NUMBERS_CA_CONST_P_GUARD_, __VA_OPT__(1))(condition, __VA_ARGS__)
+
+#define BOOST_SAFE_NUMBERS_CA_CONST_P_IMPL(condition, message, guard, fn) \
     do { \
-        if (__builtin_constant_p(a)) { \
+        if (guard) { \
             if (!(condition)) { \
                 void fn() __attribute__ ((error(message))); \
                 fn(); \
             } \
         } \
     } while (0)
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P1(a, condition, message) \
-    BOOST_SAFE_NUMBERS_CA_CONST_P1_IMPL(a, condition, message, BOOST_SAFE_NUMBERS_CA_CAT(_compile_assert_fail_, __COUNTER__))
-
-#define BOOST_SAFE_NUMBERS_CA_CONST_P2_IMPL(a, b, condition, message, fn) \
-    do { \
-        if (__builtin_constant_p(a) && __builtin_constant_p(b)) { \
-            if (!(condition)) { \
-                void fn() __attribute__ ((error(message))); \
-                fn(); \
-            } \
-        } \
-    } while (0)
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P2(a, b, condition, message) \
-    BOOST_SAFE_NUMBERS_CA_CONST_P2_IMPL(a, b, condition, message, BOOST_SAFE_NUMBERS_CA_CAT(_compile_assert_fail_, __COUNTER__))
+#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(condition, message, ...) \
+    BOOST_SAFE_NUMBERS_CA_CONST_P_IMPL( \
+        condition, message, \
+        BOOST_SAFE_NUMBERS_CA_CONST_P_GUARD(condition, __VA_ARGS__), \
+        BOOST_SAFE_NUMBERS_CA_CAT(_compile_assert_fail_, __COUNTER__))
 
 
 #define BOOST_SAFE_NUMBERS_COMPILE_ASSERT0(expression) BOOST_SAFE_NUMBERS_COMPILE_ASSERT(expression, NULL)
@@ -136,9 +141,7 @@
 #else
 #define BOOST_SAFE_NUMBERS_COMPILE_ASSERT(condition, description)
 #define BOOST_SAFE_NUMBERS_COMPILE_ASSERT0(expression)
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(expression, message)
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P1(a, condition, message)
-#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P2(a, b, condition, message)
+#define BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(condition, message, ...)
 #endif
 
 
@@ -272,14 +275,6 @@ do { \
 
 #ifndef BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P
 #error "BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P not defined"
-#endif
-
-#ifndef BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P1
-#error "BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P1 not defined"
-#endif
-
-#ifndef BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P2
-#error "BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P2 not defined"
 #endif
 
 #endif // BOOST_SAFE_NUMBERS_DETAIL_COMPILE_ASSERT_HPP
