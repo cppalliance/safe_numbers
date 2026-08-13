@@ -5,9 +5,11 @@
 #ifndef BOOST_SAFE_NUMBERS_OVERFLOW_POLICY_HPP
 #define BOOST_SAFE_NUMBERS_OVERFLOW_POLICY_HPP
 
+#include <boost/safe_numbers/detail/config.hpp>
+
 namespace boost::safe_numbers {
 
-enum class overflow_policy
+BOOST_SAFE_NUMBERS_EXPORT enum class overflow_policy
 {
     throw_exception,
     saturate,
