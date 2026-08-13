@@ -33,7 +33,12 @@ namespace boost::safe_numbers {
 using f32 = detail::float_basis<float>;
 using f64 = detail::float_basis<double>;
 
-template <compatible_float_type BasisType>
+// Raw IEEE 754 semantics: overflow saturates to infinity, NaN propagates,
+// and division by zero yields infinity. No checks run.
+using sat_f32 = detail::float_basis<float, overflow_policy::saturate>;
+using sat_f64 = detail::float_basis<double, overflow_policy::saturate>;
+
+template <compatible_float_type BasisType, auto ErrorPolicy = overflow_policy::throw_exception>
 class float_basis {
 
 public:
@@ -276,9 +281,10 @@ The following operations are **not** provided:
 
 Bitwise operators have no meaning for floating-point values, and the remaining operations are omitted to keep the type minimal: every value change goes through one of the five checked binary operators, so there is a single place where IEEE 754 exceptional results are intercepted.
 
-The policy-based free functions offered for the integer types (`saturating_*`, `overflowing_*`, `checked_*`, `strict_*`, and `widening_*`) are likewise **not** provided for floating-point types.
+Most of the policy-based free functions offered for the integer types (`saturating_*`, `checked_*`, `strict_*`, and `widening_*`) are likewise **not** provided for floating-point types; the one exception is the `overflowing_*` family documented above.
 IEEE 754 already defines saturation to infinity and the propagation of NaN; the safe floating-point types intercept exactly those exceptional results and report them, rather than offering alternative numeric policies.
-See xref:policies.adoc[] for the policy model as it applies to the integer types.
+For code that wants the raw IEEE behavior on every operation, the type-level `saturate` policy (`sat_f32`, `sat_f64`) provides it with no per-call ceremony.
+See xref:policies.adoc[] for the full policy model.
 
 == Mixed-Width Operations
 

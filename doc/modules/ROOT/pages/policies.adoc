@@ -11,10 +11,15 @@ https://www.boost.org/LICENSE_1_0.txt
 == Description
 
 The library provides multiple overflow handling policies for arithmetic and shift operations.
-The default arithmetic operators (`+`, `-`, `*`, `/`, `%`) and shift operators (`<<`, `>>`) use the `throw_exception` policy, but alternative free functions and a generic policy-parameterized interface allow selecting different behavior at the call site.
+There are two ways to select a policy:
 
-These policies apply to the integer types.
-The floating-point types `f32` and `f64` follow IEEE 754 semantics instead: they do not participate in the policy model, and their exceptional results (saturation to infinity, invalid operations, and NaN) are reported as exceptions directly.
+* Per call site: named free functions (`saturating_add`, `checked_add`, ...) and a generic policy-parameterized interface (`add<Policy>`).
+* Per type: a second template parameter on the numeric types themselves, with ready-made aliases such as `sat_u8` and `strict_i32`.
+  The default arithmetic operators (`+`, `-`, `*`, `/`, `%`) and shift operators (`<<`, `>>`) follow the type's policy, which is `throw_exception` for the plain aliases (`u8`, `i32`, `f64`, ...).
+
+The call-site families apply to the integer types.
+The floating-point types `f32` and `f64` follow IEEE 754 semantics instead: their exceptional results (saturation to infinity, invalid operations, and NaN) are reported as exceptions directly, and the only call-site family provided for them is `overflowing_*`.
+As a type-level policy, floats additionally support `saturate`, which is raw IEEE 754 arithmetic with no checks at all.
 See xref:floats.adoc[].
 
 == The `overflow_policy` Enum
@@ -73,6 +78,86 @@ enum class overflow_policy
 | N/A (only add/mul supported)
 | Yes
 |===
+
+[#policies_type_level]
+== Policies as Part of the Type
+
+Every numeric basis template takes the policy as a second template parameter, defaulted to `throw_exception`:
+
+[source,c++]
+----
+namespace boost::safe_numbers::detail {
+
+template <fundamental_unsigned_integral BasisType, auto ErrorPolicy = overflow_policy::throw_exception>
+class unsigned_integer_basis;
+
+template <fundamental_signed_integral BasisType, auto ErrorPolicy = overflow_policy::throw_exception>
+class signed_integer_basis;
+
+template <compatible_float_type BasisType, auto ErrorPolicy = overflow_policy::throw_exception>
+class float_basis;
+
+} // namespace boost::safe_numbers::detail
+----
+
+An operator on a policy-carrying type behaves exactly like the corresponding named free function: `sat_u8 + sat_u8` is `saturating_add`, `strict_i32 / strict_i32` is `strict_div`, and so on.
+This includes the edge cases: division and modulo by zero still throw `std::domain_error` under `saturate`, and `sat_i8{-128} / sat_i8{-1}` clamps to `127`.
+Increment, decrement, compound assignment, and (for signed types) unary minus follow the policy as well.
+Conversions and stream extraction always throw regardless of the policy.
+
+Only policies whose result is the operand type can live in the type.
+`overflow_tuple`, `checked`, and `widen` change the result type of every operation, so requesting them as a type-level policy is a compile error that points you at the `overflowing_*`, `checked_*`, and `widening_*` free functions.
+`strict` is integer only.
+
+=== Provided Aliases
+
+|===
+| Policy | Unsigned | Signed | Float
+
+| `throw_exception` (default)
+| `u8`, `u16`, `u32`, `u64`, `u128`
+| `i8`, `i16`, `i32`, `i64`, `i128`
+| `f32`, `f64`
+
+| `saturate`
+| `sat_u8`, `sat_u16`, `sat_u32`, `sat_u64`, `sat_u128`
+| `sat_i8`, `sat_i16`, `sat_i32`, `sat_i64`, `sat_i128`
+| `sat_f32`, `sat_f64`
+
+| `strict`
+| `strict_u8`, `strict_u16`, `strict_u32`, `strict_u64`, `strict_u128`
+| `strict_i8`, `strict_i16`, `strict_i32`, `strict_i64`, `strict_i128`
+| Not available
+|===
+
+The saturating float aliases perform raw IEEE 754 arithmetic: overflow saturates to infinity, NaN propagates, and division by zero yields infinity.
+They run no checks, matching the value component of the `overflowing_*` functions bit for bit.
+
+=== Mixed Policies
+
+Types with different policies do not mix, exactly like types with different widths:
+
+[source,c++]
+----
+sat_u8 a {200};
+u8 b {100};
+
+auto c = a + b; // Compile error: convert explicitly through basis_type first
+auto d = a + sat_u8{static_cast<std::uint8_t>(b)}; // OK
+----
+
+The named free functions accept any policy-carrying type and preserve its policy in the result, so `overflowing_add(sat_u8{200}, sat_u8{100})` returns `std::pair<sat_u8, bool>`.
+A generic call such as `add<overflow_policy::throw_exception>(sat_a, sat_b)` follows the requested call-site policy, not the type's.
+
+=== Behavioral Notes
+
+* `noexcept` follows the policy: `sat_u8` addition is `noexcept`, its division is not (division by zero still throws), and every `strict` operation is `noexcept` because termination is not an exception.
+* Saturating overflow is a defined value, so it works in constant expressions: `constexpr sat_u8 x {sat_u8{255} + sat_u8{1}};` yields `255`.
+  Under `throw_exception` and `strict` the same expression remains a compile error.
+* `strict` types are host only: `std::exit` has no meaning in CUDA or SYCL kernels, so using them in device code fails to compile.
+  The `throw_exception` and `saturate` types work on device, where throwing reports through the device error machinery as usual.
+* The compile-time overflow checks (see xref:compile_time_checks.adoc[]) fire for `throw_exception` and `strict` types and are automatically excluded for `saturate` types, whose results are always defined.
+* The active policy is queryable as a static member: `sat_u8::error_policy == overflow_policy::saturate`.
 
 == Named Arithmetic Functions
 

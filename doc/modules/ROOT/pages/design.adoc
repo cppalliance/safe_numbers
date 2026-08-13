@@ -59,10 +59,11 @@ The programmer writes the same code regardless of whether it will be evaluated a
 
 === Type Safety as a First-Class Concern
 
-The safe types (`u8`, `u16`, `u32`, `u64`, `u128`) are concrete, named types, not template wrappers around a policy.
+The primary vocabulary of the library is a set of concrete, named aliases (`u8`, `u16`, `u32`, `u64`, `u128`, and their signed and floating-point counterparts) with throwing semantics.
 This makes them easy to read, easy to teach, and easy to use as drop-in replacements for builtin types.
-Overflow policies are expressed through named free functions (`saturating_add`, `checked_add`, etc.) rather than through type-level policy parameters.
-This keeps the type system simple (and readable in a debugger) while still allowing full control over overflow behavior at each call site.
+Alternative overflow behavior is available two ways: named free functions (`saturating_add`, `checked_add`, etc.) select the behavior at each call site, and an optional second template parameter on the types selects it for every operation on a value.
+The policy-carrying aliases are just as concrete and named (`sat_u8`, `strict_i32`), the default remains `throw_exception`, and the debugger visualizers understand both forms.
+Policies whose result is not the operand type (`checked`, `overflow_tuple`, `widen`) exist only as free functions, so a value of a safe type is always exactly its numeric value.
 
 [source,c++]
 ----
@@ -92,10 +93,10 @@ clang-darwin.compile.c++ ../../../bin.v2/libs/safe_numbers/test/compile_fail_bas
 ../examples/compile_fail_basic_usage_constexpr.cpp:18:22: error: constexpr variable 'z' must be initialized by a constant expression
    18 |         constexpr u8 z {x + y};
       |                      ^ ~~~~~~~
-../../../boost/safe_numbers/detail/unsigned_integer_basis.hpp:397:17: note: subexpression not valid in a constant expression
-  397 |                 throw std::overflow_error("Overflow detected in u8 addition");
+../../../boost/safe_numbers/detail/unsigned_integer_basis.hpp:790:17: note: subexpression not valid in a constant expression
+  790 |                 throw std::overflow_error("Overflow detected in u8 addition");
       |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-../examples/compile_fail_basic_usage_constexpr.cpp:18:25: note: in call to 'operator+<unsigned char>({255}, {2})'
+../examples/compile_fail_basic_usage_constexpr.cpp:18:25: note: in call to 'operator+<unsigned char, boost::safe_numbers::overflow_policy::throw_exception>({255}, {2})'
    18 |         constexpr u8 z {x + y};
       |                         ^~~~~
 1 error generated.
@@ -185,8 +186,9 @@ What changes is the failure model.
 Integer overflow is a silent wrap that the library must detect, whereas IEEE 754 arithmetic never traps and always yields a value, saturating to a signed infinity on range escape and producing a NaN on an undefined form.
 The safe floating-point types therefore do not detect a wrap: they run the native operation and classify its IEEE 754 result, turning saturation to positive or negative infinity into `std::overflow_error` or `std::underflow_error`, and the invalid operations, a NaN operand, and division by zero into `std::domain_error`.
 
-For this reason the overflow policies described below do not apply to the floating-point types.
-IEEE 754 already defines saturation to infinity and the propagation of NaN, so there is no `saturate` or `checked` variant to select; the safe types simply report those exceptional results rather than offering alternative numeric behavior.
+For this reason most of the overflow policies described below do not apply to the floating-point types.
+IEEE 754 already defines saturation to infinity and the propagation of NaN, so there is no `checked` or `strict` variant to select; the safe types simply report those exceptional results rather than offering alternative numeric behavior.
+The one policy floats do support, as the type-level `saturate` (`sat_f32`, `sat_f64`), embraces that fact: it is raw IEEE 754 arithmetic with no classification at all, matching the value component of the `overflowing_*` functions.
 The operation surface is also deliberately smaller than for the integer types: only `pass:[+]`, `-`, `pass:[*]`, and `/` are provided, with no compound assignment, increment, decrement, unary, bitwise, or remainder operators, so that every value change passes through a single point where the IEEE 754 result is checked.
 The dual compile-time and runtime behavior is unchanged: an exceptional result reached during constant evaluation is a compile-time error, exactly as for the integer types.
 See xref:floats.adoc[] for the full type behavior and xref:verification.adoc[] for the formal verification of the classification logic.
@@ -213,6 +215,10 @@ auto [c, overflow] = overflowing_add(u8{200}, u8{100}); // c == u8{44}, overflow
 ----
 
 This approach is inspired by Rust's primitive type API, where `checked_add` and `saturating_add` are methods on integer types.
+
+When a whole value or algorithm should follow one behavior rather than each call site choosing, the policy can live in the type instead: `sat_u8` saturates on every operator and `strict_u32` terminates on any error, mirroring Rust's `Wrapping<T>`-style wrapper types.
+The value-returning policies remain call-site only because they change the result type.
+See xref:policies.adoc#policies_type_level[Policies as Part of the Type].
 
 For generic code that needs to be parameterized on the overflow policy, the library provides policy-parameterized free functions:
 
