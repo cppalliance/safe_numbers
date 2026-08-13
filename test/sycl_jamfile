@@ -19,6 +19,9 @@ run test_unsigned_mul_sycl.cpp ;
 run test_unsigned_div_sycl.cpp ;
 run test_unsigned_mod_sycl.cpp ;
 
+# Type-level policy smoke (saturating types on device)
+run test_sat_type_sycl.cpp ;
+
 # Arithmetic - signed (i8, i16, i32, i64, i128)
 run test_signed_add_sycl.cpp ;
 run test_signed_sub_sycl.cpp ;
