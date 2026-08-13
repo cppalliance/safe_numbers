@@ -5,6 +5,7 @@
 #ifndef BOOST_SAFENUMBERS_HPP
 #define BOOST_SAFENUMBERS_HPP
 
+#include <boost/safe_numbers/overflow_policy.hpp>
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/signed_integers.hpp>
 #include <boost/safe_numbers/bounded_integers.hpp>
