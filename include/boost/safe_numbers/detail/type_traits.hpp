@@ -7,6 +7,7 @@
 
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/int128/int128.hpp>
+#include <boost/safe_numbers/overflow_policy.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -50,13 +51,64 @@ inline constexpr bool is_compatible_float_type = impl::is_compatible_float_type<
 template <typename T>
 concept compatible_float_type = is_compatible_float_type<T>;
 
-template <fundamental_unsigned_integral BasisType>
+// Which family of basis template a type-level error policy is validated against
+enum class basis_kind
+{
+    unsigned_integer,
+    signed_integer,
+    floating_point
+};
+
+// True when the NTTP is an overflow_policy enumerator. Every comparison against
+// an enumerator must sit behind this check because comparing a non-enum NTTP
+// against overflow_policy would be ill-formed rather than false.
+template <auto Policy>
+inline constexpr bool is_overflow_policy_v = std::is_same_v<std::remove_cv_t<decltype(Policy)>, overflow_policy>;
+
+// Policies whose result is not the operand type (pair, optional, or a wider type)
+// can never live in the type itself; they remain free functions.
+template <auto Policy>
+consteval auto is_value_returning_policy() noexcept -> bool
+{
+    if constexpr (is_overflow_policy_v<Policy>)
+    {
+        return Policy == overflow_policy::overflow_tuple ||
+               Policy == overflow_policy::checked ||
+               Policy == overflow_policy::widen;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+// The subset of overflow_policy values allowed as a type-level policy for the
+// given basis kind: throw_exception and saturate everywhere, strict only for integers.
+template <auto Policy>
+consteval auto is_valid_type_policy(const basis_kind kind) noexcept -> bool
+{
+    if constexpr (is_overflow_policy_v<Policy>)
+    {
+        if (Policy == overflow_policy::throw_exception || Policy == overflow_policy::saturate)
+        {
+            return true;
+        }
+
+        return Policy == overflow_policy::strict && kind != basis_kind::floating_point;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+template <fundamental_unsigned_integral BasisType, auto ErrorPolicy = overflow_policy::throw_exception>
 class unsigned_integer_basis;
 
-template <fundamental_signed_integral BasisType>
+template <fundamental_signed_integral BasisType, auto ErrorPolicy = overflow_policy::throw_exception>
 class signed_integer_basis;
 
-template <compatible_float_type BasisType>
+template <compatible_float_type BasisType, auto ErrorPolicy = overflow_policy::throw_exception>
 class float_basis;
 
 // is_unsigned_library_type (base + unsigned_integer_basis specialization)
@@ -72,14 +124,14 @@ struct is_signed_library_type : std::false_type {};
 template <typename>
 struct is_float_library_type : std::false_type {};
 
-template <typename T>
-struct is_unsigned_library_type<unsigned_integer_basis<T>> : std::true_type {};
+template <typename T, auto ErrorPolicy>
+struct is_unsigned_library_type<unsigned_integer_basis<T, ErrorPolicy>> : std::true_type {};
 
-template <typename T>
-struct is_signed_library_type<signed_integer_basis<T>> : std::true_type {};
+template <typename T, auto ErrorPolicy>
+struct is_signed_library_type<signed_integer_basis<T, ErrorPolicy>> : std::true_type {};
 
-template <typename T>
-struct is_float_library_type<float_basis<T>> : std::true_type {};
+template <typename T, auto ErrorPolicy>
+struct is_float_library_type<float_basis<T, ErrorPolicy>> : std::true_type {};
 
 } // namespace impl
 
@@ -102,20 +154,20 @@ struct underlying
     using type = std::remove_cv_t<std::remove_reference_t<T>>;
 };
 
-template <typename T>
-struct underlying<unsigned_integer_basis<T>>
+template <typename T, auto ErrorPolicy>
+struct underlying<unsigned_integer_basis<T, ErrorPolicy>>
 {
     using type = T;
 };
 
-template <typename T>
-struct underlying<signed_integer_basis<T>>
+template <typename T, auto ErrorPolicy>
+struct underlying<signed_integer_basis<T, ErrorPolicy>>
 {
     using type = T;
 };
 
-template <typename T>
-struct underlying<float_basis<T>>
+template <typename T, auto ErrorPolicy>
+struct underlying<float_basis<T, ErrorPolicy>>
 {
     using type = T;
 };
@@ -289,14 +341,14 @@ namespace impl {
 template <typename>
 struct is_library_type : std::false_type {};
 
-template <typename T>
-struct is_library_type<unsigned_integer_basis<T>> : std::true_type {};
+template <typename T, auto ErrorPolicy>
+struct is_library_type<unsigned_integer_basis<T, ErrorPolicy>> : std::true_type {};
 
-template <typename T>
-struct is_library_type<signed_integer_basis<T>> : std::true_type {};
+template <typename T, auto ErrorPolicy>
+struct is_library_type<signed_integer_basis<T, ErrorPolicy>> : std::true_type {};
 
-template <typename T>
-struct is_library_type<float_basis<T>> : std::true_type {};
+template <typename T, auto ErrorPolicy>
+struct is_library_type<float_basis<T, ErrorPolicy>> : std::true_type {};
 
 template <auto Min, auto Max>
 struct is_library_type<bounded_uint<Min, Max>> : std::true_type {};
@@ -312,11 +364,11 @@ struct is_library_type<bounded_float<Min, Max>> : std::true_type {};
 template <typename>
 struct is_integral_library_type : std::false_type {};
 
-template <typename T>
-struct is_integral_library_type<unsigned_integer_basis<T>> : std::true_type {};
+template <typename T, auto ErrorPolicy>
+struct is_integral_library_type<unsigned_integer_basis<T, ErrorPolicy>> : std::true_type {};
 
-template <typename T>
-struct is_integral_library_type<signed_integer_basis<T>> : std::true_type {};
+template <typename T, auto ErrorPolicy>
+struct is_integral_library_type<signed_integer_basis<T, ErrorPolicy>> : std::true_type {};
 
 template <auto Min, auto Max>
 struct is_integral_library_type<bounded_uint<Min, Max>> : std::true_type {};
