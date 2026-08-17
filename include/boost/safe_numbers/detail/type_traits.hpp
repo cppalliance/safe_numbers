@@ -65,6 +65,90 @@ enum class basis_kind
 template <auto Policy>
 inline constexpr bool is_overflow_policy_v = std::is_same_v<std::remove_cv_t<decltype(Policy)>, overflow_policy>;
 
+// True when the NTTP is a user defined handler object rather than an
+// overflow_policy enumerator. The handler interface is validated separately
+// by the error_handler_for concept.
+template <auto Policy>
+inline constexpr bool is_user_handler_v = std::is_class_v<std::remove_cv_t<decltype(Policy)>>;
+
+// A user defined handler is a stateless class whose on_error is callable on a
+// const object with the error kind, a defined fallback value (the wrapped
+// integer result, the dividend, or the raw IEEE 754 result), and the
+// diagnostic message. Whatever it returns becomes the operation's result.
+template <typename Handler, typename T>
+concept error_handler_for = std::is_empty_v<Handler> &&
+    requires(const Handler handler, const T value, const char* msg)
+    {
+        { handler.on_error(error_kind::overflow, value, msg) } -> std::same_as<T>;
+    };
+
+// Compares a policy NTTP against an enumerator, funneled so that user handler
+// objects compare unequal instead of making the comparison ill-formed.
+// consteval, so uses in runtime conditions fold to a constant.
+template <auto Policy>
+consteval auto policy_equals(const overflow_policy policy) noexcept -> bool
+{
+    if constexpr (is_overflow_policy_v<Policy>)
+    {
+        return Policy == policy;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+// noexcept specification for operations whose only error is overflow or
+// underflow (add, sub, mul, shifts, increment, decrement, unary minus, and
+// every float operator): throwing throws, saturate and strict do not, and a
+// user handler propagates the noexcept of its on_error.
+template <auto Policy, typename T>
+consteval auto policy_is_nothrow_arith() noexcept -> bool
+{
+    if constexpr (is_overflow_policy_v<Policy>)
+    {
+        return Policy != overflow_policy::throw_exception;
+    }
+    else
+    {
+        return noexcept(Policy.on_error(error_kind::overflow, T{}, static_cast<const char*>(nullptr)));
+    }
+}
+
+// noexcept specification for integer division and modulo, where division by
+// zero throws under both throw_exception and saturate.
+template <auto Policy, typename T>
+consteval auto policy_is_nothrow_div() noexcept -> bool
+{
+    if constexpr (is_overflow_policy_v<Policy>)
+    {
+        return Policy == overflow_policy::strict;
+    }
+    else
+    {
+        return noexcept(Policy.on_error(error_kind::divide_by_zero, T{}, static_cast<const char*>(nullptr)));
+    }
+}
+
+// True when two policy NTTPs differ, without requiring comparability between
+// unrelated handler types. Handlers are stateless, so same type means equal.
+template <auto LHSPolicy, auto RHSPolicy>
+consteval auto policies_differ() noexcept -> bool
+{
+    if constexpr (!std::is_same_v<decltype(LHSPolicy), decltype(RHSPolicy)>)
+    {
+        return true;
+    }
+    else if constexpr (is_overflow_policy_v<LHSPolicy>)
+    {
+        return LHSPolicy != RHSPolicy;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 // Policies whose result is not the operand type (pair, optional, or a wider type)
 // can never live in the type itself; they remain free functions.
 template <auto Policy>
@@ -110,6 +194,21 @@ class signed_integer_basis;
 
 template <compatible_float_type BasisType, auto ErrorPolicy = overflow_policy::throw_exception>
 class float_basis;
+
+// Maps the type argument of the basic_* alias templates onto the basis NTTP:
+// the tag types select the built-in enum policies and any other type is a user
+// defined handler passed by value.
+template <typename ErrorHandler>
+inline constexpr auto type_policy_v = ErrorHandler{};
+
+template <>
+inline constexpr auto type_policy_v<throwing> = overflow_policy::throw_exception;
+
+template <>
+inline constexpr auto type_policy_v<saturating> = overflow_policy::saturate;
+
+template <>
+inline constexpr auto type_policy_v<strict> = overflow_policy::strict;
 
 // is_unsigned_library_type (base + unsigned_integer_basis specialization)
 
