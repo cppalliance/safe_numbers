@@ -109,6 +109,93 @@ Only policies whose result is the operand type can live in the type.
 `overflow_tuple`, `checked`, and `widen` change the result type of every operation, so requesting them as a type-level policy is a compile error that points you at the `overflowing_*`, `checked_*`, and `widening_*` free functions.
 `strict` is integer only.
 
+=== The `basic_*` Alias Templates
+
+Spelling the detail template with its underlying type is never necessary.
+Every width has an alias template that selects the policy by type, defaulting to throwing:
+
+[source,c++]
+----
+namespace boost::safe_numbers {
+
+// Tag types selecting the built-in policies
+struct throwing {};
+struct saturating {};
+struct strict {};
+
+template <typename ErrorHandler = throwing>
+using basic_u8 = detail::unsigned_integer_basis<std::uint8_t, detail::type_policy_v<ErrorHandler>>;
+
+// ... basic_u16 through basic_u128, basic_i8 through basic_i128, basic_f32, basic_f64
+
+} // namespace boost::safe_numbers
+----
+
+`basic_u8<>` is exactly `u8`, `basic_u8<saturating>` is exactly `sat_u8`, and `basic_u8<strict>` is exactly `strict_u8`; the same identities hold for every width.
+Any other type argument is a user defined handler.
+
+=== User Defined Handlers
+
+A handler is a stateless class whose `on_error` decides the result of a failed operation:
+
+[source,c++]
+----
+#include <boost/safe_numbers/unsigned_integers.hpp>
+
+// Wrapping semantics, like Rust's Wrapping<T>
+struct wrapping_handler
+{
+    template <typename T>
+    constexpr auto on_error(const boost::safe_numbers::error_kind,
+                            const T value,
+                            const char*) const noexcept -> T
+    {
+        return value;
+    }
+};
+
+using wrap_u32 = boost::safe_numbers::basic_u32<wrapping_handler>;
+
+wrap_u32 a {4294967295U};
+++a; // a == 0, no exception
+----
+
+The handler contract, checked by the `error_handler_for` concept:
+
+* The type must be empty (stateless): the policy is part of the type, so per-value state would be lost.
+* `on_error` must be callable on a `const` object with `(error_kind, BasisType, const char*)` and return `BasisType`.
+* Whatever `on_error` returns becomes the result of the operation. Throwing or terminating instead is equally valid.
+
+The `error_kind` argument identifies the failure (`overflow`, `underflow`, `divide_by_zero`, and for floats `nan_operation` and `invalid_operation`), and the message is the same diagnostic string the throwing policy would have used.
+The value argument is a defined fallback, chosen so that returning it unchanged gives wrapping semantics:
+
+|===
+| Error site | Value handed to `on_error`
+
+| Integer add, sub, mul, increment, decrement, unary minus, `MIN / -1`
+| The two's complement wrapped result
+
+| Integer division or modulo by zero
+| The dividend (left operand)
+
+| Integer `MIN % -1`
+| `0` (the mathematical result)
+
+| Unsigned shifts past the type width
+| The shift with the amount reduced modulo the width
+
+| Every float operator
+| The raw IEEE 754 result (infinity, NaN, ...)
+|===
+
+Behavioral notes:
+
+* `noexcept` of every operator follows the handler: a `noexcept` `on_error` makes the arithmetic `noexcept`.
+* A handler that returns a value works in constant expressions; one that throws makes a constant-evaluated error a compile error, exactly like the throwing policy.
+* Handler-typed values do not mix with other policies or other handlers, and the compile-time overflow checks (xref:compile_time_checks.adoc[]) do not fire for handler types since their results are defined by the handler.
+* On CUDA and SYCL devices the handler is called directly, so it must be usable in device code (a `constexpr` handler generally is).
+* Handlers work with every width, including the 128-bit types.
+
 === Provided Aliases
 
 |===

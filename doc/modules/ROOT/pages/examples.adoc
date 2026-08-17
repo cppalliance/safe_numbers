@@ -272,6 +272,29 @@ sat_f32{FLT_MAX} + sat_f32{FLT_MAX} = inf
 ----
 ====
 
+[#examples_user_defined_handler]
+== User Defined Error Handlers
+
+Any stateless type with a suitable `on_error` can be the policy, selected by name through the `basic_*` alias templates: `basic_u8<my_handler>`.
+See xref:policies.adoc#policies_type_level[Policies as Part of the Type] for the handler contract.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/user_defined_handler.cpp[example] demonstrates a wrapping handler, a logging handler, and the tag types that select the built-in policies.
+====
+[source, c++]
+----
+include::example$user_defined_handler.cpp[]
+----
+
+Output:
+----
+wrap_u8{250} += 10 = 4
+constexpr wrap_u8{255} + wrap_u8{1} = 0
+recovered: Overflow detected in u8 addition
+log_u8{200} + log_u8{200} = 144
+ieee_f32{FLT_MAX} + ieee_f32{FLT_MAX} = inf
+----
+====
+
 [#examples_safety_profile]
 == Integer Safety Profile
 

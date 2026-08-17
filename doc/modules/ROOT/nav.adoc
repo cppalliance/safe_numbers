@@ -12,6 +12,7 @@
 ** xref:examples.adoc#examples_strict[Strict Arithmetic]
 ** xref:examples.adoc#examples_generic[Generic Policy-Parameterized Arithmetic]
 ** xref:examples.adoc#examples_policy_types[Type-Level Policies]
+** xref:examples.adoc#examples_user_defined_handler[User Defined Error Handlers]
 ** xref:examples.adoc#examples_safety_profile[Integer Safety Profile]
 ** xref:examples.adoc#examples_literals[Literals]
 ** xref:examples.adoc#examples_charconv[Character Conversion]

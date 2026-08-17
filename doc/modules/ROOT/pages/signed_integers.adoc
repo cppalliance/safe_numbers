@@ -26,6 +26,7 @@ These types are drop-in replacements for the standard signed integer types with 
 Each type exposes a `basis_type` member type alias that refers to the underlying integer type, allowing conversion back to built-in types when needed.
 
 Every width is also available with a saturating or strict error policy in place of the default throwing one: `sat_i8` through `sat_i128` clamp instead of throwing (including `MIN / -1` and negation of `MIN`) and `strict_i8` through `strict_i128` terminate on error.
+The `basic_i8<H>` through `basic_i128<H>` alias templates select the policy by type, including user defined handlers: `basic_i32<my_handler>`.
 See xref:policies.adoc#policies_type_level[Policies as Part of the Type].
 
 [source,c++]

@@ -26,6 +26,7 @@ These types are drop-in replacements for the standard unsigned integer types wit
 Each type exposes a `basis_type` member type alias that refers to the underlying integer type, allowing conversion back to built-in types when needed.
 
 Every width is also available with a saturating or strict error policy in place of the default throwing one: `sat_u8` through `sat_u128` clamp instead of throwing and `strict_u8` through `strict_u128` terminate on error.
+The `basic_u8<H>` through `basic_u128<H>` alias templates select the policy by type, including user defined handlers: `basic_u8<my_handler>`.
 See xref:policies.adoc#policies_type_level[Policies as Part of the Type].
 
 [source,c++]

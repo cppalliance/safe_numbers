@@ -47,6 +47,9 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:policies.adoc#policies_type_level[`strict_u8` ... `strict_u128`]
 | Strict counterparts of `u8` ... `u128` (terminate on error; host only)
+
+| xref:policies.adoc#policies_type_level[`basic_u8<H>` ... `basic_u128<H>`]
+| Alias templates selecting the policy by type: a tag (`throwing`, `saturating`, `strict`) or a user defined handler
 |===
 
 === Signed Integer Types
@@ -75,6 +78,9 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:policies.adoc#policies_type_level[`strict_i8` ... `strict_i128`]
 | Strict counterparts of `i8` ... `i128` (terminate on error; host only)
+
+| xref:policies.adoc#policies_type_level[`basic_i8<H>` ... `basic_i128<H>`]
+| Alias templates selecting the policy by type: a tag (`throwing`, `saturating`, `strict`) or a user defined handler
 |===
 
 === Floating-Point Types
@@ -91,6 +97,9 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:policies.adoc#policies_type_level[`sat_f32`, `sat_f64`]
 | Raw IEEE 754 counterparts of `f32`, `f64` (no checks; overflow saturates to infinity)
+
+| xref:policies.adoc#policies_type_level[`basic_f32<H>`, `basic_f64<H>`]
+| Alias templates selecting the policy by type: a tag (`throwing`, `saturating`) or a user defined handler
 |===
 
 === Bounded Types
@@ -117,6 +126,9 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:policies.adoc[`overflow_policy`]
 | Enum class specifying the overflow handling policy, at the call site or as the type's second template parameter
+
+| xref:policies.adoc#policies_type_level[`error_kind`]
+| Enum class identifying the failure reported to a user defined handler
 
 | xref:cuda.adoc#cuda_device_exception_mode[`device_exception_mode`]
 | Enum class controlling whether CUDA device errors trap the kernel or defer to the host
