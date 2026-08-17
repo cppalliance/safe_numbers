@@ -36,15 +36,16 @@ public:
     // This is exposed to the user so that they can convert back to built-in
     using basis_type = BasisType;
 
-    static_assert(is_overflow_policy_v<ErrorPolicy>,
-                  "ErrorPolicy must be a boost::safe_numbers::overflow_policy enumerator");
+    static_assert(is_overflow_policy_v<ErrorPolicy> || error_handler_for<decltype(ErrorPolicy), BasisType>,
+                  "ErrorPolicy must be a boost::safe_numbers::overflow_policy enumerator or a stateless "
+                  "handler type providing on_error(error_kind, BasisType, const char*) returning BasisType");
 
     static_assert(!is_value_returning_policy<ErrorPolicy>(),
                   "overflow_tuple, checked, and widen change the result type of every operation, "
                   "so they can not be type-level policies: use the overflowing_*, checked_*, "
                   "and widening_* free functions instead");
 
-    static_assert(is_valid_type_policy<ErrorPolicy>(basis_kind::signed_integer),
+    static_assert(!is_overflow_policy_v<ErrorPolicy> || is_valid_type_policy<ErrorPolicy>(basis_kind::signed_integer),
                   "signed_integer_basis supports overflow_policy::throw_exception, "
                   "overflow_policy::saturate, and overflow_policy::strict");
 
@@ -79,27 +80,27 @@ public:
     BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator+() const noexcept -> signed_integer_basis;
 
     BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto operator-() const
-        noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis;
+        noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis;
 
     template <fundamental_signed_integral OtherBasis, auto OtherPolicy>
     BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator+=(signed_integer_basis<OtherBasis, OtherPolicy> rhs)
-        noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis&;
+        noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis&;
 
     template <fundamental_signed_integral OtherBasis, auto OtherPolicy>
     BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator-=(signed_integer_basis<OtherBasis, OtherPolicy> rhs)
-        noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis&;
+        noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis&;
 
     template <fundamental_signed_integral OtherBasis, auto OtherPolicy>
     BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator*=(signed_integer_basis<OtherBasis, OtherPolicy> rhs)
-        noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis&;
+        noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis&;
 
     template <fundamental_signed_integral OtherBasis, auto OtherPolicy>
     BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator/=(signed_integer_basis<OtherBasis, OtherPolicy> rhs)
-        noexcept(ErrorPolicy == overflow_policy::strict) -> signed_integer_basis&;
+        noexcept(policy_is_nothrow_div<ErrorPolicy, BasisType>()) -> signed_integer_basis&;
 
     template <fundamental_signed_integral OtherBasis, auto OtherPolicy>
     BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator%=(signed_integer_basis<OtherBasis, OtherPolicy> rhs)
-        noexcept(ErrorPolicy == overflow_policy::strict) -> signed_integer_basis&;
+        noexcept(policy_is_nothrow_div<ErrorPolicy, BasisType>()) -> signed_integer_basis&;
 
     BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator&=(signed_integer_basis) -> signed_integer_basis&
     {
@@ -132,16 +133,16 @@ public:
     }
 
     BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator++()
-        noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis&;
+        noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis&;
 
     BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator++(int)
-        noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis;
+        noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis;
 
     BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator--()
-        noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis&;
+        noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis&;
 
     BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto operator--(int)
-        noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis;
+        noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis;
 };
 
 // Helper for diagnostic messages
@@ -372,21 +373,25 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto signed_integer_basis<BasisType, Er
 
 template <fundamental_signed_integral BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto signed_integer_basis<BasisType, ErrorPolicy>::operator-() const
-    noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis
 {
     if (basis_ == std::numeric_limits<BasisType>::min()) [[unlikely]]
     {
-        if constexpr (ErrorPolicy == overflow_policy::throw_exception)
+        if constexpr (policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, signed_unary_minus_overflow_msg<BasisType>());
         }
-        else if constexpr (ErrorPolicy == overflow_policy::saturate)
+        else if constexpr (policy_equals<ErrorPolicy>(overflow_policy::saturate))
         {
             return signed_integer_basis{std::numeric_limits<BasisType>::max()};
         }
-        else
+        else if constexpr (policy_equals<ErrorPolicy>(overflow_policy::strict))
         {
             std::exit(EXIT_FAILURE);
+        }
+        else
+        {
+            return signed_integer_basis{ErrorPolicy.on_error(error_kind::overflow, std::numeric_limits<BasisType>::min(), signed_unary_minus_overflow_msg<BasisType>())};
         }
     }
 
@@ -525,14 +530,14 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto signed_no_intrin_add(const T lhs, 
     return signed_overflow_status::no_error;
 }
 
-template <overflow_policy Policy, fundamental_signed_integral BasisType>
+template <auto Policy, fundamental_signed_integral BasisType>
 struct signed_add_helper
 {
     template <auto TypePolicy>
     BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType, TypePolicy> lhs,
                                               const signed_integer_basis<BasisType, TypePolicy> rhs)
-        noexcept(Policy != overflow_policy::throw_exception)
+        noexcept(policy_is_nothrow_arith<Policy, BasisType>())
         -> signed_integer_basis<BasisType, TypePolicy>
     {
         using result_type = signed_integer_basis<BasisType, TypePolicy>;
@@ -546,7 +551,7 @@ struct signed_add_helper
             #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             // Saturation produces a defined value, so it must keep evaluating at
             // constant evaluation time instead of failing the build with a throw
-            if (std::is_constant_evaluated() && Policy != overflow_policy::saturate)
+            if (std::is_constant_evaluated() && !policy_equals<Policy>(overflow_policy::saturate) && !is_user_handler_v<Policy>)
             {
                 if (status == signed_overflow_status::overflow)
                 {
@@ -598,7 +603,7 @@ struct signed_add_helper
             else
             #endif
             {
-                if constexpr (Policy == overflow_policy::throw_exception)
+                if constexpr (policy_equals<Policy>(overflow_policy::throw_exception))
                 {
                     static_cast<void>(result);
 
@@ -611,7 +616,7 @@ struct signed_add_helper
                         BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, signed_underflow_add_msg<BasisType>());
                     }
                 }
-                else if constexpr (Policy == overflow_policy::saturate)
+                else if constexpr (policy_equals<Policy>(overflow_policy::saturate))
                 {
                     if (status == signed_overflow_status::overflow)
                     {
@@ -622,10 +627,21 @@ struct signed_add_helper
                         result = std::numeric_limits<BasisType>::min();
                     }
                 }
-                else if constexpr (Policy == overflow_policy::strict)
+                else if constexpr (policy_equals<Policy>(overflow_policy::strict))
                 {
                     static_cast<void>(result);
                     std::exit(EXIT_FAILURE);
+                }
+                else if constexpr (is_user_handler_v<Policy>)
+                {
+                    if (status == signed_overflow_status::overflow)
+                    {
+                        result = Policy.on_error(error_kind::overflow, result, signed_overflow_add_msg<BasisType>());
+                    }
+                    else
+                    {
+                        result = Policy.on_error(error_kind::underflow, result, signed_underflow_add_msg<BasisType>());
+                    }
                 }
                 else
                 {
@@ -649,7 +665,7 @@ struct signed_add_helper
                 const auto status {impl::signed_intrin_add(lhs_basis, rhs_basis, result)};
 
                 #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
-                if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+                if constexpr (policy_equals<Policy>(overflow_policy::throw_exception) || policy_equals<Policy>(overflow_policy::strict))
                 {
                     BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(status == signed_overflow_status::no_error, "signed addition overflow");
                 }
@@ -671,7 +687,7 @@ struct signed_add_helper
         const auto status {impl::signed_no_intrin_add(lhs_basis, rhs_basis, result)};
 
         #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
-        if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+        if constexpr (policy_equals<Policy>(overflow_policy::throw_exception) || policy_equals<Policy>(overflow_policy::strict))
         {
             BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(status == signed_overflow_status::no_error, "signed addition overflow");
         }
@@ -753,13 +769,11 @@ struct signed_add_helper<overflow_policy::widen, BasisType>
     }
 };
 
-template <overflow_policy Policy, fundamental_signed_integral BasisType, auto TypePolicy>
+template <auto Policy, fundamental_signed_integral BasisType, auto TypePolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto add_impl(const signed_integer_basis<BasisType, TypePolicy> lhs,
                                       const signed_integer_basis<BasisType, TypePolicy> rhs)
-    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple ||
-             Policy == overflow_policy::checked || Policy == overflow_policy::strict ||
-             Policy == overflow_policy::widen)
+    noexcept(policy_is_nothrow_arith<Policy, BasisType>())
 {
     return signed_add_helper<Policy, BasisType>::apply(lhs,rhs);
 }
@@ -770,11 +784,11 @@ template <fundamental_signed_integral BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator+(const signed_integer_basis<BasisType, ErrorPolicy> lhs,
                                        const signed_integer_basis<BasisType, ErrorPolicy> rhs)
-    noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis<BasisType, ErrorPolicy>
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis<BasisType, ErrorPolicy>
 {
     #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
-    if (std::is_constant_evaluated() && ErrorPolicy == overflow_policy::throw_exception)
+    if (std::is_constant_evaluated() && policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
     {
         BasisType res {};
         const auto status {impl::signed_no_intrin_add(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res)};
@@ -838,7 +852,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 #define BOOST_SAFE_NUMBERS_DEFINE_MIXED_SIGNED_INTEGER_OP(OP_NAME, OP_SYMBOL)                                                                                \
 template <boost::safe_numbers::detail::fundamental_signed_integral LHSBasis, auto LHSPolicy,                                                                                    \
           boost::safe_numbers::detail::fundamental_signed_integral RHSBasis, auto RHSPolicy>                                                                                    \
-    requires (!std::is_same_v<LHSBasis, RHSBasis> || LHSPolicy != RHSPolicy)                                                                                                             \
+    requires (!std::is_same_v<LHSBasis, RHSBasis> || boost::safe_numbers::detail::policies_differ<LHSPolicy, RHSPolicy>())                                                                                                             \
 BOOST_SAFE_NUMBERS_HOST_DEVICE                                                                                                                                 \
 constexpr auto OP_SYMBOL(const boost::safe_numbers::detail::signed_integer_basis<LHSBasis, LHSPolicy>,                                                                    \
                          const boost::safe_numbers::detail::signed_integer_basis<RHSBasis, RHSPolicy>)                                                                    \
@@ -984,7 +998,7 @@ template <fundamental_signed_integral BasisType, auto ErrorPolicy>
 template <fundamental_signed_integral OtherBasisType, auto OtherPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto signed_integer_basis<BasisType, ErrorPolicy>::operator+=(const signed_integer_basis<OtherBasisType, OtherPolicy> rhs)
-    noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis&
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis&
 {
     *this = *this + rhs;
     return *this;
@@ -1140,14 +1154,14 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto signed_no_intrin_sub(const T lhs, 
     return signed_overflow_status::no_error;
 }
 
-template <overflow_policy Policy, fundamental_signed_integral BasisType>
+template <auto Policy, fundamental_signed_integral BasisType>
 struct signed_sub_helper
 {
     template <auto TypePolicy>
     BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType, TypePolicy> lhs,
                                               const signed_integer_basis<BasisType, TypePolicy> rhs)
-        noexcept(Policy != overflow_policy::throw_exception)
+        noexcept(policy_is_nothrow_arith<Policy, BasisType>())
         -> signed_integer_basis<BasisType, TypePolicy>
     {
         using result_type = signed_integer_basis<BasisType, TypePolicy>;
@@ -1161,7 +1175,7 @@ struct signed_sub_helper
             #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             // Saturation produces a defined value, so it must keep evaluating at
             // constant evaluation time instead of failing the build with a throw
-            if (std::is_constant_evaluated() && Policy != overflow_policy::saturate)
+            if (std::is_constant_evaluated() && !policy_equals<Policy>(overflow_policy::saturate) && !is_user_handler_v<Policy>)
             {
                 if (status == signed_overflow_status::overflow)
                 {
@@ -1213,7 +1227,7 @@ struct signed_sub_helper
             else
             #endif
             {
-                if constexpr (Policy == overflow_policy::throw_exception)
+                if constexpr (policy_equals<Policy>(overflow_policy::throw_exception))
                 {
                     static_cast<void>(result);
 
@@ -1226,7 +1240,7 @@ struct signed_sub_helper
                         BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, signed_underflow_sub_msg<BasisType>());
                     }
                 }
-                else if constexpr (Policy == overflow_policy::saturate)
+                else if constexpr (policy_equals<Policy>(overflow_policy::saturate))
                 {
                     if (status == signed_overflow_status::overflow)
                     {
@@ -1237,10 +1251,21 @@ struct signed_sub_helper
                         result = std::numeric_limits<BasisType>::min();
                     }
                 }
-                else if constexpr (Policy == overflow_policy::strict)
+                else if constexpr (policy_equals<Policy>(overflow_policy::strict))
                 {
                     static_cast<void>(result);
                     std::exit(EXIT_FAILURE);
+                }
+                else if constexpr (is_user_handler_v<Policy>)
+                {
+                    if (status == signed_overflow_status::overflow)
+                    {
+                        result = Policy.on_error(error_kind::overflow, result, signed_overflow_sub_msg<BasisType>());
+                    }
+                    else
+                    {
+                        result = Policy.on_error(error_kind::underflow, result, signed_underflow_sub_msg<BasisType>());
+                    }
                 }
                 else
                 {
@@ -1264,7 +1289,7 @@ struct signed_sub_helper
                 const auto status {impl::signed_intrin_sub(lhs_basis, rhs_basis, result)};
 
                 #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
-                if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+                if constexpr (policy_equals<Policy>(overflow_policy::throw_exception) || policy_equals<Policy>(overflow_policy::strict))
                 {
                     BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(status == signed_overflow_status::no_error, "signed subtraction overflow");
                 }
@@ -1286,7 +1311,7 @@ struct signed_sub_helper
         const auto status {impl::signed_no_intrin_sub(lhs_basis, rhs_basis, result)};
 
         #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
-        if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+        if constexpr (policy_equals<Policy>(overflow_policy::throw_exception) || policy_equals<Policy>(overflow_policy::strict))
         {
             BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(status == signed_overflow_status::no_error, "signed subtraction overflow");
         }
@@ -1351,12 +1376,11 @@ struct signed_sub_helper<overflow_policy::checked, BasisType>
     }
 };
 
-template <overflow_policy Policy, fundamental_signed_integral BasisType, auto TypePolicy>
+template <auto Policy, fundamental_signed_integral BasisType, auto TypePolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto sub_impl(const signed_integer_basis<BasisType, TypePolicy> lhs,
                                       const signed_integer_basis<BasisType, TypePolicy> rhs)
-    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple ||
-             Policy == overflow_policy::checked || Policy == overflow_policy::strict)
+    noexcept(policy_is_nothrow_arith<Policy, BasisType>())
 {
     return signed_sub_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -1367,11 +1391,11 @@ template <fundamental_signed_integral BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator-(const signed_integer_basis<BasisType, ErrorPolicy> lhs,
                                        const signed_integer_basis<BasisType, ErrorPolicy> rhs)
-    noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis<BasisType, ErrorPolicy>
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis<BasisType, ErrorPolicy>
 {
     #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
-    if (std::is_constant_evaluated() && ErrorPolicy == overflow_policy::throw_exception)
+    if (std::is_constant_evaluated() && policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
     {
         BasisType res {};
         const auto status {impl::signed_no_intrin_sub(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res)};
@@ -1436,7 +1460,7 @@ template <fundamental_signed_integral BasisType, auto ErrorPolicy>
 template <fundamental_signed_integral OtherBasisType, auto OtherPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto signed_integer_basis<BasisType, ErrorPolicy>::operator-=(const signed_integer_basis<OtherBasisType, OtherPolicy> rhs)
-    noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis&
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis&
 {
     *this = *this - rhs;
     return *this;
@@ -1716,14 +1740,14 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto signed_no_intrin_mul(const T lhs, 
     }
 }
 
-template <overflow_policy Policy, fundamental_signed_integral BasisType>
+template <auto Policy, fundamental_signed_integral BasisType>
 struct signed_mul_helper
 {
     template <auto TypePolicy>
     BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType, TypePolicy> lhs,
                                               const signed_integer_basis<BasisType, TypePolicy> rhs)
-        noexcept(Policy != overflow_policy::throw_exception)
+        noexcept(policy_is_nothrow_arith<Policy, BasisType>())
         -> signed_integer_basis<BasisType, TypePolicy>
     {
         using result_type = signed_integer_basis<BasisType, TypePolicy>;
@@ -1737,7 +1761,7 @@ struct signed_mul_helper
             #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
             // Saturation produces a defined value, so it must keep evaluating at
             // constant evaluation time instead of failing the build with a throw
-            if (std::is_constant_evaluated() && Policy != overflow_policy::saturate)
+            if (std::is_constant_evaluated() && !policy_equals<Policy>(overflow_policy::saturate) && !is_user_handler_v<Policy>)
             {
                 if (status == signed_overflow_status::overflow)
                 {
@@ -1789,7 +1813,7 @@ struct signed_mul_helper
             else
             #endif
             {
-                if constexpr (Policy == overflow_policy::throw_exception)
+                if constexpr (policy_equals<Policy>(overflow_policy::throw_exception))
                 {
                     static_cast<void>(result);
 
@@ -1802,7 +1826,7 @@ struct signed_mul_helper
                         BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, signed_underflow_mul_msg<BasisType>());
                     }
                 }
-                else if constexpr (Policy == overflow_policy::saturate)
+                else if constexpr (policy_equals<Policy>(overflow_policy::saturate))
                 {
                     if (status == signed_overflow_status::overflow)
                     {
@@ -1813,10 +1837,21 @@ struct signed_mul_helper
                         result = std::numeric_limits<BasisType>::min();
                     }
                 }
-                else if constexpr (Policy == overflow_policy::strict)
+                else if constexpr (policy_equals<Policy>(overflow_policy::strict))
                 {
                     static_cast<void>(result);
                     std::exit(EXIT_FAILURE);
+                }
+                else if constexpr (is_user_handler_v<Policy>)
+                {
+                    if (status == signed_overflow_status::overflow)
+                    {
+                        result = Policy.on_error(error_kind::overflow, result, signed_overflow_mul_msg<BasisType>());
+                    }
+                    else
+                    {
+                        result = Policy.on_error(error_kind::underflow, result, signed_underflow_mul_msg<BasisType>());
+                    }
                 }
                 else
                 {
@@ -1844,7 +1879,7 @@ struct signed_mul_helper
                 const auto status {impl::signed_intrin_mul(lhs_basis, rhs_basis, result)};
 
                 #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
-                if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+                if constexpr (policy_equals<Policy>(overflow_policy::throw_exception) || policy_equals<Policy>(overflow_policy::strict))
                 {
                     BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(status == signed_overflow_status::no_error, "signed multiplication overflow");
                 }
@@ -1866,7 +1901,7 @@ struct signed_mul_helper
         const auto status {impl::signed_no_intrin_mul(lhs_basis, rhs_basis, result)};
 
         #ifdef BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT
-        if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+        if constexpr (policy_equals<Policy>(overflow_policy::throw_exception) || policy_equals<Policy>(overflow_policy::strict))
         {
             BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(status == signed_overflow_status::no_error, "signed multiplication overflow");
         }
@@ -1948,13 +1983,11 @@ struct signed_mul_helper<overflow_policy::widen, BasisType>
     }
 };
 
-template <overflow_policy Policy, fundamental_signed_integral BasisType, auto TypePolicy>
+template <auto Policy, fundamental_signed_integral BasisType, auto TypePolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto mul_impl(const signed_integer_basis<BasisType, TypePolicy> lhs,
                                       const signed_integer_basis<BasisType, TypePolicy> rhs)
-    noexcept(Policy == overflow_policy::saturate || Policy == overflow_policy::overflow_tuple ||
-             Policy == overflow_policy::checked || Policy == overflow_policy::strict ||
-             Policy == overflow_policy::widen)
+    noexcept(policy_is_nothrow_arith<Policy, BasisType>())
 {
     return signed_mul_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -1965,11 +1998,11 @@ template <fundamental_signed_integral BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator*(const signed_integer_basis<BasisType, ErrorPolicy> lhs,
                                        const signed_integer_basis<BasisType, ErrorPolicy> rhs)
-    noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis<BasisType, ErrorPolicy>
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis<BasisType, ErrorPolicy>
 {
     #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
-    if (std::is_constant_evaluated() && ErrorPolicy == overflow_policy::throw_exception)
+    if (std::is_constant_evaluated() && policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
     {
         BasisType res {};
         const auto status {impl::signed_no_intrin_mul(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res)};
@@ -2034,7 +2067,7 @@ template <fundamental_signed_integral BasisType, auto ErrorPolicy>
 template <fundamental_signed_integral OtherBasisType, auto OtherPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto signed_integer_basis<BasisType, ErrorPolicy>::operator*=(const signed_integer_basis<OtherBasisType, OtherPolicy> rhs)
-    noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis&
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis&
 {
     *this = *this * rhs;
     return *this;
@@ -2096,14 +2129,14 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto signed_overflow_div_msg() noexcept
     }
 }
 
-template <overflow_policy Policy, fundamental_signed_integral BasisType>
+template <auto Policy, fundamental_signed_integral BasisType>
 struct signed_div_helper
 {
     template <auto TypePolicy>
     BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType, TypePolicy> lhs,
                                               const signed_integer_basis<BasisType, TypePolicy> rhs)
-        noexcept(Policy == overflow_policy::strict)
+        noexcept(policy_is_nothrow_div<Policy, BasisType>())
         -> signed_integer_basis<BasisType, TypePolicy>
     {
         using result_type = signed_integer_basis<BasisType, TypePolicy>;
@@ -2117,7 +2150,7 @@ struct signed_div_helper
         BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(rhs_basis != BasisType{0}, "signed division by zero", rhs_basis);
 
         // min / -1 overflow is an error under throw_exception and strict; saturate returns max.
-        if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+        if constexpr (policy_equals<Policy>(overflow_policy::throw_exception) || policy_equals<Policy>(overflow_policy::strict))
         {
             BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(!(lhs_basis == std::numeric_limits<BasisType>::min() && rhs_basis == static_cast<BasisType>(-1)), "signed division overflow (min / -1)");
         }
@@ -2125,9 +2158,13 @@ struct signed_div_helper
 
         if (rhs_basis == BasisType{0}) [[unlikely]]
         {
-            if constexpr (Policy == overflow_policy::strict)
+            if constexpr (policy_equals<Policy>(overflow_policy::strict))
             {
                 std::exit(EXIT_FAILURE);
+            }
+            else if constexpr (is_user_handler_v<Policy>)
+            {
+                return result_type{Policy.on_error(error_kind::divide_by_zero, lhs_basis, signed_div_by_zero_msg<BasisType>())};
             }
             else
             {
@@ -2173,13 +2210,17 @@ struct signed_div_helper
         if (lhs_basis == std::numeric_limits<BasisType>::min() &&
             rhs_basis == static_cast<BasisType>(-1)) [[unlikely]]
         {
-            if constexpr (Policy == overflow_policy::strict)
+            if constexpr (policy_equals<Policy>(overflow_policy::strict))
             {
                 std::exit(EXIT_FAILURE);
             }
-            else if constexpr (Policy == overflow_policy::saturate)
+            else if constexpr (policy_equals<Policy>(overflow_policy::saturate))
             {
                 return result_type{std::numeric_limits<BasisType>::max()};
+            }
+            else if constexpr (is_user_handler_v<Policy>)
+            {
+                return result_type{Policy.on_error(error_kind::overflow, std::numeric_limits<BasisType>::min(), signed_overflow_div_msg<BasisType>())};
             }
             else
             {
@@ -2295,11 +2336,11 @@ struct signed_div_helper<overflow_policy::checked, BasisType>
     }
 };
 
-template <overflow_policy Policy, fundamental_signed_integral BasisType, auto TypePolicy>
+template <auto Policy, fundamental_signed_integral BasisType, auto TypePolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto div_impl(const signed_integer_basis<BasisType, TypePolicy> lhs,
                                       const signed_integer_basis<BasisType, TypePolicy> rhs)
-    noexcept(Policy == overflow_policy::checked || Policy == overflow_policy::strict)
+    noexcept(policy_equals<Policy>(overflow_policy::checked) || policy_is_nothrow_div<Policy, BasisType>())
 {
     return signed_div_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -2310,7 +2351,7 @@ template <fundamental_signed_integral BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator/(const signed_integer_basis<BasisType, ErrorPolicy> lhs,
                                        const signed_integer_basis<BasisType, ErrorPolicy> rhs)
-    noexcept(ErrorPolicy == overflow_policy::strict) -> signed_integer_basis<BasisType, ErrorPolicy>
+    noexcept(policy_is_nothrow_div<ErrorPolicy, BasisType>()) -> signed_integer_basis<BasisType, ErrorPolicy>
 {
     return impl::signed_div_helper<ErrorPolicy, BasisType>::apply(lhs, rhs);
 }
@@ -2321,7 +2362,7 @@ template <fundamental_signed_integral BasisType, auto ErrorPolicy>
 template <fundamental_signed_integral OtherBasisType, auto OtherPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto signed_integer_basis<BasisType, ErrorPolicy>::operator/=(const signed_integer_basis<OtherBasisType, OtherPolicy> rhs)
-    noexcept(ErrorPolicy == overflow_policy::strict) -> signed_integer_basis&
+    noexcept(policy_is_nothrow_div<ErrorPolicy, BasisType>()) -> signed_integer_basis&
 {
     *this = *this / rhs;
     return *this;
@@ -2383,14 +2424,14 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto signed_overflow_mod_msg() noexcept
     }
 }
 
-template <overflow_policy Policy, fundamental_signed_integral BasisType>
+template <auto Policy, fundamental_signed_integral BasisType>
 struct signed_mod_helper
 {
     template <auto TypePolicy>
     BOOST_SAFE_NUMBERS_HOST_DEVICE
     [[nodiscard]] static constexpr auto apply(const signed_integer_basis<BasisType, TypePolicy> lhs,
                                               const signed_integer_basis<BasisType, TypePolicy> rhs)
-        noexcept(Policy == overflow_policy::strict)
+        noexcept(policy_is_nothrow_div<Policy, BasisType>())
         -> signed_integer_basis<BasisType, TypePolicy>
     {
         using result_type = signed_integer_basis<BasisType, TypePolicy>;
@@ -2404,7 +2445,7 @@ struct signed_mod_helper
         BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(rhs_basis != BasisType{0}, "signed modulo by zero");
 
         // min % -1 overflow is an error under throw_exception and strict; saturate returns 0.
-        if constexpr (Policy == overflow_policy::throw_exception || Policy == overflow_policy::strict)
+        if constexpr (policy_equals<Policy>(overflow_policy::throw_exception) || policy_equals<Policy>(overflow_policy::strict))
         {
             BOOST_SAFE_NUMBERS_COMPILE_ASSERT_CONST_P(!(lhs_basis == std::numeric_limits<BasisType>::min() && rhs_basis == static_cast<BasisType>(-1)), "signed modulo overflow (min % -1)");
         }
@@ -2412,9 +2453,13 @@ struct signed_mod_helper
 
         if (rhs_basis == BasisType{0}) [[unlikely]]
         {
-            if constexpr (Policy == overflow_policy::strict)
+            if constexpr (policy_equals<Policy>(overflow_policy::strict))
             {
                 std::exit(EXIT_FAILURE);
+            }
+            else if constexpr (is_user_handler_v<Policy>)
+            {
+                return result_type{Policy.on_error(error_kind::divide_by_zero, lhs_basis, signed_mod_by_zero_msg<BasisType>())};
             }
             else
             {
@@ -2462,14 +2507,19 @@ struct signed_mod_helper
         if (lhs_basis == std::numeric_limits<BasisType>::min() &&
             rhs_basis == static_cast<BasisType>(-1)) [[unlikely]]
         {
-            if constexpr (Policy == overflow_policy::strict)
+            if constexpr (policy_equals<Policy>(overflow_policy::strict))
             {
                 std::exit(EXIT_FAILURE);
             }
-            else if constexpr (Policy == overflow_policy::saturate)
+            else if constexpr (policy_equals<Policy>(overflow_policy::saturate))
             {
                 // The mathematical result of min % -1 is 0
                 return result_type{BasisType{0}};
+            }
+            else if constexpr (is_user_handler_v<Policy>)
+            {
+                // The mathematical result of min % -1 is 0
+                return result_type{Policy.on_error(error_kind::overflow, BasisType{0}, signed_overflow_mod_msg<BasisType>())};
             }
             else
             {
@@ -2585,11 +2635,11 @@ struct signed_mod_helper<overflow_policy::checked, BasisType>
     }
 };
 
-template <overflow_policy Policy, fundamental_signed_integral BasisType, auto TypePolicy>
+template <auto Policy, fundamental_signed_integral BasisType, auto TypePolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto mod_impl(const signed_integer_basis<BasisType, TypePolicy> lhs,
                                       const signed_integer_basis<BasisType, TypePolicy> rhs)
-    noexcept(Policy == overflow_policy::checked || Policy == overflow_policy::strict)
+    noexcept(policy_equals<Policy>(overflow_policy::checked) || policy_is_nothrow_div<Policy, BasisType>())
 {
     return signed_mod_helper<Policy, BasisType>::apply(lhs, rhs);
 }
@@ -2600,7 +2650,7 @@ template <fundamental_signed_integral BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator%(const signed_integer_basis<BasisType, ErrorPolicy> lhs,
                                        const signed_integer_basis<BasisType, ErrorPolicy> rhs)
-    noexcept(ErrorPolicy == overflow_policy::strict) -> signed_integer_basis<BasisType, ErrorPolicy>
+    noexcept(policy_is_nothrow_div<ErrorPolicy, BasisType>()) -> signed_integer_basis<BasisType, ErrorPolicy>
 {
     return impl::signed_mod_helper<ErrorPolicy, BasisType>::apply(lhs, rhs);
 }
@@ -2611,7 +2661,7 @@ template <fundamental_signed_integral BasisType, auto ErrorPolicy>
 template <fundamental_signed_integral OtherBasisType, auto OtherPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto signed_integer_basis<BasisType, ErrorPolicy>::operator%=(const signed_integer_basis<OtherBasisType, OtherPolicy> rhs)
-    noexcept(ErrorPolicy == overflow_policy::strict) -> signed_integer_basis&
+    noexcept(policy_is_nothrow_div<ErrorPolicy, BasisType>()) -> signed_integer_basis&
 {
     *this = *this % rhs;
     return *this;
@@ -2678,21 +2728,26 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto signed_underflow_dec_msg() noexcep
 template <fundamental_signed_integral BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto signed_integer_basis<BasisType, ErrorPolicy>::operator++()
-    noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis&
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis&
 {
     if (this->basis_ == std::numeric_limits<BasisType>::max()) [[unlikely]]
     {
-        if constexpr (ErrorPolicy == overflow_policy::throw_exception)
+        if constexpr (policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, signed_overflow_inc_msg<BasisType>());
         }
-        else if constexpr (ErrorPolicy == overflow_policy::saturate)
+        else if constexpr (policy_equals<ErrorPolicy>(overflow_policy::saturate))
         {
             return *this;
         }
-        else
+        else if constexpr (policy_equals<ErrorPolicy>(overflow_policy::strict))
         {
             std::exit(EXIT_FAILURE);
+        }
+        else
+        {
+            this->basis_ = ErrorPolicy.on_error(error_kind::overflow, std::numeric_limits<BasisType>::min(), signed_overflow_inc_msg<BasisType>());
+            return *this;
         }
     }
 
@@ -2703,21 +2758,27 @@ constexpr auto signed_integer_basis<BasisType, ErrorPolicy>::operator++()
 template <fundamental_signed_integral BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto signed_integer_basis<BasisType, ErrorPolicy>::operator++(int)
-    noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis
 {
     if (this->basis_ == std::numeric_limits<BasisType>::max()) [[unlikely]]
     {
-        if constexpr (ErrorPolicy == overflow_policy::throw_exception)
+        if constexpr (policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, signed_overflow_inc_msg<BasisType>());
         }
-        else if constexpr (ErrorPolicy == overflow_policy::saturate)
+        else if constexpr (policy_equals<ErrorPolicy>(overflow_policy::saturate))
         {
             return *this;
         }
-        else
+        else if constexpr (policy_equals<ErrorPolicy>(overflow_policy::strict))
         {
             std::exit(EXIT_FAILURE);
+        }
+        else
+        {
+            const auto temp {*this};
+            this->basis_ = ErrorPolicy.on_error(error_kind::overflow, std::numeric_limits<BasisType>::min(), signed_overflow_inc_msg<BasisType>());
+            return temp;
         }
     }
 
@@ -2733,21 +2794,26 @@ constexpr auto signed_integer_basis<BasisType, ErrorPolicy>::operator++(int)
 template <fundamental_signed_integral BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto signed_integer_basis<BasisType, ErrorPolicy>::operator--()
-    noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis&
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis&
 {
     if (this->basis_ == std::numeric_limits<BasisType>::min()) [[unlikely]]
     {
-        if constexpr (ErrorPolicy == overflow_policy::throw_exception)
+        if constexpr (policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, signed_underflow_dec_msg<BasisType>());
         }
-        else if constexpr (ErrorPolicy == overflow_policy::saturate)
+        else if constexpr (policy_equals<ErrorPolicy>(overflow_policy::saturate))
         {
             return *this;
         }
-        else
+        else if constexpr (policy_equals<ErrorPolicy>(overflow_policy::strict))
         {
             std::exit(EXIT_FAILURE);
+        }
+        else
+        {
+            this->basis_ = ErrorPolicy.on_error(error_kind::underflow, std::numeric_limits<BasisType>::max(), signed_underflow_dec_msg<BasisType>());
+            return *this;
         }
     }
 
@@ -2758,21 +2824,27 @@ constexpr auto signed_integer_basis<BasisType, ErrorPolicy>::operator--()
 template <fundamental_signed_integral BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 constexpr auto signed_integer_basis<BasisType, ErrorPolicy>::operator--(int)
-    noexcept(ErrorPolicy != overflow_policy::throw_exception) -> signed_integer_basis
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> signed_integer_basis
 {
     if (this->basis_ == std::numeric_limits<BasisType>::min()) [[unlikely]]
     {
-        if constexpr (ErrorPolicy == overflow_policy::throw_exception)
+        if constexpr (policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
         {
             BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, signed_underflow_dec_msg<BasisType>());
         }
-        else if constexpr (ErrorPolicy == overflow_policy::saturate)
+        else if constexpr (policy_equals<ErrorPolicy>(overflow_policy::saturate))
         {
             return *this;
         }
-        else
+        else if constexpr (policy_equals<ErrorPolicy>(overflow_policy::strict))
         {
             std::exit(EXIT_FAILURE);
+        }
+        else
+        {
+            const auto temp {*this};
+            this->basis_ = ErrorPolicy.on_error(error_kind::underflow, std::numeric_limits<BasisType>::max(), signed_underflow_dec_msg<BasisType>());
+            return temp;
         }
     }
 
@@ -3049,7 +3121,7 @@ template <overflow_policy Policy, detail::fundamental_signed_integral BasisType,
 {
     if constexpr (Policy == overflow_policy::throw_exception)
     {
-        if constexpr (ErrorPolicy == overflow_policy::throw_exception)
+        if constexpr (detail::policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
         {
             return lhs + rhs;
         }
@@ -3091,7 +3163,7 @@ template <overflow_policy Policy, detail::fundamental_signed_integral BasisType,
 {
     if constexpr (Policy == overflow_policy::throw_exception)
     {
-        if constexpr (ErrorPolicy == overflow_policy::throw_exception)
+        if constexpr (detail::policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
         {
             return lhs - rhs;
         }
@@ -3129,7 +3201,7 @@ template <overflow_policy Policy, detail::fundamental_signed_integral BasisType,
 {
     if constexpr (Policy == overflow_policy::throw_exception)
     {
-        if constexpr (ErrorPolicy == overflow_policy::throw_exception)
+        if constexpr (detail::policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
         {
             return lhs * rhs;
         }
@@ -3171,7 +3243,7 @@ template <overflow_policy Policy, detail::fundamental_signed_integral BasisType,
 {
     if constexpr (Policy == overflow_policy::throw_exception)
     {
-        if constexpr (ErrorPolicy == overflow_policy::throw_exception)
+        if constexpr (detail::policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
         {
             return lhs / rhs;
         }
@@ -3209,7 +3281,7 @@ template <overflow_policy Policy, detail::fundamental_signed_integral BasisType,
 {
     if constexpr (Policy == overflow_policy::throw_exception)
     {
-        if constexpr (ErrorPolicy == overflow_policy::throw_exception)
+        if constexpr (detail::policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
         {
             return lhs % rhs;
         }

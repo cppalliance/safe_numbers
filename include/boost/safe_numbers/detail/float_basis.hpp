@@ -37,14 +37,15 @@ public:
     // This is exposed to the user so that they can convert back to built-in
     using basis_type = BasisType;
 
-    static_assert(is_overflow_policy_v<ErrorPolicy>,
-                  "ErrorPolicy must be a boost::safe_numbers::overflow_policy enumerator");
+    static_assert(is_overflow_policy_v<ErrorPolicy> || error_handler_for<decltype(ErrorPolicy), BasisType>,
+                  "ErrorPolicy must be a boost::safe_numbers::overflow_policy enumerator or a stateless "
+                  "handler type providing on_error(error_kind, BasisType, const char*) returning BasisType");
 
     static_assert(!is_value_returning_policy<ErrorPolicy>(),
                   "overflow_tuple, checked, and widen change the result type of every operation, "
                   "so they can not be type-level policies: use the overflowing_* free functions instead");
 
-    static_assert(is_valid_type_policy<ErrorPolicy>(basis_kind::floating_point),
+    static_assert(!is_overflow_policy_v<ErrorPolicy> || is_valid_type_policy<ErrorPolicy>(basis_kind::floating_point),
                   "float_basis supports overflow_policy::throw_exception and overflow_policy::saturate; "
                   "strict is integer only");
 
@@ -783,16 +784,40 @@ template <compatible_float_type BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator+(const float_basis<BasisType, ErrorPolicy> lhs,
                                        const float_basis<BasisType, ErrorPolicy> rhs)
-    noexcept(ErrorPolicy == overflow_policy::saturate) -> float_basis<BasisType, ErrorPolicy>
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> float_basis<BasisType, ErrorPolicy>
 {
     const auto lhs_basis {static_cast<BasisType>(lhs)};
     const auto rhs_basis {static_cast<BasisType>(rhs)};
 
-    if constexpr (ErrorPolicy == overflow_policy::saturate)
+    if constexpr (policy_equals<ErrorPolicy>(overflow_policy::saturate))
     {
         // Raw IEEE 754 semantics: overflow saturates to infinity and NaN propagates.
         // Same expression as the value component of overflowing_add.
         return float_basis<BasisType, ErrorPolicy>{static_cast<BasisType>(lhs_basis + rhs_basis)};
+    }
+    else if constexpr (is_user_handler_v<ErrorPolicy>)
+    {
+        // The classifier stores the raw IEEE 754 result, which is the defined
+        // fallback value handed to the handler
+        BasisType res {};
+        switch (impl::checked_float_addition(lhs_basis, rhs_basis, res))
+        {
+            case impl::error_category::overflow:
+                res = ErrorPolicy.on_error(error_kind::overflow, res, overflow_add_msg<BasisType>());
+                break;
+            case impl::error_category::underflow:
+                res = ErrorPolicy.on_error(error_kind::underflow, res, underflow_add_msg<BasisType>());
+                break;
+            case impl::error_category::nan_op:
+                res = ErrorPolicy.on_error(error_kind::nan_operation, res, nan_add_msg<BasisType>());
+                break;
+            case impl::error_category::invalid_op:
+                res = ErrorPolicy.on_error(error_kind::invalid_operation, res, invalid_add_msg<BasisType>());
+                break;
+            default:
+                break;
+        }
+        return float_basis<BasisType, ErrorPolicy>{res};
     }
     else
     {
@@ -1042,16 +1067,40 @@ template <compatible_float_type BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator-(const float_basis<BasisType, ErrorPolicy> lhs,
                                        const float_basis<BasisType, ErrorPolicy> rhs)
-    noexcept(ErrorPolicy == overflow_policy::saturate) -> float_basis<BasisType, ErrorPolicy>
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> float_basis<BasisType, ErrorPolicy>
 {
     const auto lhs_basis {static_cast<BasisType>(lhs)};
     const auto rhs_basis {static_cast<BasisType>(rhs)};
 
-    if constexpr (ErrorPolicy == overflow_policy::saturate)
+    if constexpr (policy_equals<ErrorPolicy>(overflow_policy::saturate))
     {
         // Raw IEEE 754 semantics: overflow saturates to infinity and NaN propagates.
         // Same expression as the value component of overflowing_sub.
         return float_basis<BasisType, ErrorPolicy>{static_cast<BasisType>(lhs_basis - rhs_basis)};
+    }
+    else if constexpr (is_user_handler_v<ErrorPolicy>)
+    {
+        // The classifier stores the raw IEEE 754 result, which is the defined
+        // fallback value handed to the handler
+        BasisType res {};
+        switch (impl::checked_float_subtraction(lhs_basis, rhs_basis, res))
+        {
+            case impl::error_category::overflow:
+                res = ErrorPolicy.on_error(error_kind::overflow, res, overflow_sub_msg<BasisType>());
+                break;
+            case impl::error_category::underflow:
+                res = ErrorPolicy.on_error(error_kind::underflow, res, underflow_sub_msg<BasisType>());
+                break;
+            case impl::error_category::nan_op:
+                res = ErrorPolicy.on_error(error_kind::nan_operation, res, nan_sub_msg<BasisType>());
+                break;
+            case impl::error_category::invalid_op:
+                res = ErrorPolicy.on_error(error_kind::invalid_operation, res, invalid_sub_msg<BasisType>());
+                break;
+            default:
+                break;
+        }
+        return float_basis<BasisType, ErrorPolicy>{res};
     }
     else
     {
@@ -1311,16 +1360,40 @@ template <compatible_float_type BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator*(const float_basis<BasisType, ErrorPolicy> lhs,
                                        const float_basis<BasisType, ErrorPolicy> rhs)
-    noexcept(ErrorPolicy == overflow_policy::saturate) -> float_basis<BasisType, ErrorPolicy>
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> float_basis<BasisType, ErrorPolicy>
 {
     const auto lhs_basis {static_cast<BasisType>(lhs)};
     const auto rhs_basis {static_cast<BasisType>(rhs)};
 
-    if constexpr (ErrorPolicy == overflow_policy::saturate)
+    if constexpr (policy_equals<ErrorPolicy>(overflow_policy::saturate))
     {
         // Raw IEEE 754 semantics: overflow saturates to infinity and NaN propagates.
         // Same expression as the value component of overflowing_mul.
         return float_basis<BasisType, ErrorPolicy>{static_cast<BasisType>(lhs_basis * rhs_basis)};
+    }
+    else if constexpr (is_user_handler_v<ErrorPolicy>)
+    {
+        // The classifier stores the raw IEEE 754 result, which is the defined
+        // fallback value handed to the handler
+        BasisType res {};
+        switch (impl::checked_float_multiplication(lhs_basis, rhs_basis, res))
+        {
+            case impl::error_category::overflow:
+                res = ErrorPolicy.on_error(error_kind::overflow, res, overflow_mul_msg<BasisType>());
+                break;
+            case impl::error_category::underflow:
+                res = ErrorPolicy.on_error(error_kind::underflow, res, underflow_mul_msg<BasisType>());
+                break;
+            case impl::error_category::nan_op:
+                res = ErrorPolicy.on_error(error_kind::nan_operation, res, nan_mul_msg<BasisType>());
+                break;
+            case impl::error_category::invalid_op:
+                res = ErrorPolicy.on_error(error_kind::invalid_operation, res, invalid_mul_msg<BasisType>());
+                break;
+            default:
+                break;
+        }
+        return float_basis<BasisType, ErrorPolicy>{res};
     }
     else
     {
@@ -1618,16 +1691,43 @@ template <compatible_float_type BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator/(const float_basis<BasisType, ErrorPolicy> lhs,
                                        const float_basis<BasisType, ErrorPolicy> rhs)
-    noexcept(ErrorPolicy == overflow_policy::saturate) -> float_basis<BasisType, ErrorPolicy>
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> float_basis<BasisType, ErrorPolicy>
 {
     const auto lhs_basis {static_cast<BasisType>(lhs)};
     const auto rhs_basis {static_cast<BasisType>(rhs)};
 
-    if constexpr (ErrorPolicy == overflow_policy::saturate)
+    if constexpr (policy_equals<ErrorPolicy>(overflow_policy::saturate))
     {
         // Raw IEEE 754 semantics: overflow saturates to infinity and NaN propagates.
         // Same expression as the value component of overflowing_div.
         return float_basis<BasisType, ErrorPolicy>{static_cast<BasisType>(lhs_basis / rhs_basis)};
+    }
+    else if constexpr (is_user_handler_v<ErrorPolicy>)
+    {
+        // The classifier stores the raw IEEE 754 result, which is the defined
+        // fallback value handed to the handler
+        BasisType res {};
+        switch (impl::checked_float_division(lhs_basis, rhs_basis, res))
+        {
+            case impl::error_category::overflow:
+                res = ErrorPolicy.on_error(error_kind::overflow, res, overflow_div_msg<BasisType>());
+                break;
+            case impl::error_category::underflow:
+                res = ErrorPolicy.on_error(error_kind::underflow, res, underflow_div_msg<BasisType>());
+                break;
+            case impl::error_category::nan_op:
+                res = ErrorPolicy.on_error(error_kind::nan_operation, res, nan_div_msg<BasisType>());
+                break;
+            case impl::error_category::invalid_op:
+                res = ErrorPolicy.on_error(error_kind::invalid_operation, res, invalid_div_msg<BasisType>());
+                break;
+            case impl::error_category::divide_by_zero:
+                res = ErrorPolicy.on_error(error_kind::divide_by_zero, res, divbyzero_div_msg<BasisType>());
+                break;
+            default:
+                break;
+        }
+        return float_basis<BasisType, ErrorPolicy>{res};
     }
     else
     {
@@ -1752,7 +1852,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 #define BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP(OP_NAME, OP_SYMBOL)                                                                                      \
 template <boost::safe_numbers::detail::compatible_float_type LHSBasis, auto LHSPolicy,                                                                                    \
           boost::safe_numbers::detail::compatible_float_type RHSBasis, auto RHSPolicy>                                                                                    \
-    requires (!std::is_same_v<LHSBasis, RHSBasis> || LHSPolicy != RHSPolicy)                                                                                                        \
+    requires (!std::is_same_v<LHSBasis, RHSBasis> || boost::safe_numbers::detail::policies_differ<LHSPolicy, RHSPolicy>())                                                                                                        \
 BOOST_SAFE_NUMBERS_HOST_DEVICE                                                                                                                            \
 constexpr auto OP_SYMBOL(const boost::safe_numbers::detail::float_basis<LHSBasis, LHSPolicy>,                                                                        \
                          const boost::safe_numbers::detail::float_basis<RHSBasis, RHSPolicy>)                                                                        \
