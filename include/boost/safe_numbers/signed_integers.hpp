@@ -54,6 +54,25 @@ BOOST_SAFE_NUMBERS_EXPORT using strict_i64 = detail::signed_integer_basis<std::i
 
 BOOST_SAFE_NUMBERS_EXPORT using strict_i128 = detail::signed_integer_basis<int128::int128_t, overflow_policy::strict>;
 
+// Width-named alias templates selecting the policy by type: basic_i8<> is i8,
+// basic_i8<saturating> is sat_i8, and basic_i8<my_handler> carries a user
+// defined handler (see the error_handler_for concept).
+
+BOOST_SAFE_NUMBERS_EXPORT template <typename ErrorHandler = throwing>
+using basic_i8 = detail::signed_integer_basis<std::int8_t, detail::type_policy_v<ErrorHandler>>;
+
+BOOST_SAFE_NUMBERS_EXPORT template <typename ErrorHandler = throwing>
+using basic_i16 = detail::signed_integer_basis<std::int16_t, detail::type_policy_v<ErrorHandler>>;
+
+BOOST_SAFE_NUMBERS_EXPORT template <typename ErrorHandler = throwing>
+using basic_i32 = detail::signed_integer_basis<std::int32_t, detail::type_policy_v<ErrorHandler>>;
+
+BOOST_SAFE_NUMBERS_EXPORT template <typename ErrorHandler = throwing>
+using basic_i64 = detail::signed_integer_basis<std::int64_t, detail::type_policy_v<ErrorHandler>>;
+
+BOOST_SAFE_NUMBERS_EXPORT template <typename ErrorHandler = throwing>
+using basic_i128 = detail::signed_integer_basis<int128::int128_t, detail::type_policy_v<ErrorHandler>>;
+
 } // namespace boost::safe_numbers
 
 #endif // BOOST_SAFE_NUMBERS_SIGNED_INTEGERS_HPP

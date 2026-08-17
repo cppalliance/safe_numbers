@@ -52,6 +52,25 @@ BOOST_SAFE_NUMBERS_EXPORT using strict_u64 = detail::unsigned_integer_basis<std:
 
 BOOST_SAFE_NUMBERS_EXPORT using strict_u128 = detail::unsigned_integer_basis<int128::uint128_t, overflow_policy::strict>;
 
+// Width-named alias templates selecting the policy by type: basic_u8<> is u8,
+// basic_u8<saturating> is sat_u8, and basic_u8<my_handler> carries a user
+// defined handler (see the error_handler_for concept).
+
+BOOST_SAFE_NUMBERS_EXPORT template <typename ErrorHandler = throwing>
+using basic_u8 = detail::unsigned_integer_basis<std::uint8_t, detail::type_policy_v<ErrorHandler>>;
+
+BOOST_SAFE_NUMBERS_EXPORT template <typename ErrorHandler = throwing>
+using basic_u16 = detail::unsigned_integer_basis<std::uint16_t, detail::type_policy_v<ErrorHandler>>;
+
+BOOST_SAFE_NUMBERS_EXPORT template <typename ErrorHandler = throwing>
+using basic_u32 = detail::unsigned_integer_basis<std::uint32_t, detail::type_policy_v<ErrorHandler>>;
+
+BOOST_SAFE_NUMBERS_EXPORT template <typename ErrorHandler = throwing>
+using basic_u64 = detail::unsigned_integer_basis<std::uint64_t, detail::type_policy_v<ErrorHandler>>;
+
+BOOST_SAFE_NUMBERS_EXPORT template <typename ErrorHandler = throwing>
+using basic_u128 = detail::unsigned_integer_basis<int128::uint128_t, detail::type_policy_v<ErrorHandler>>;
+
 } // namespace boost::safe_numbers
 
 #endif // BOOST_SAFE_NUMBERS_UNSIGNED_INTEGERS_HPP
