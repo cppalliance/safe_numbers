@@ -7,6 +7,15 @@
 
 #include <boost/core/lightweight_test.hpp>
 
+// The saturating results compared here are exact IEEE 754 values
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
 #ifdef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
 import boost.safe_numbers;
@@ -159,3 +168,9 @@ int main()
 
     return boost::report_errors();
 }
+
+#if defined(__clang__)
+#  pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic pop
+#endif
