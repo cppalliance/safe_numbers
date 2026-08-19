@@ -788,58 +788,63 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 {
     #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
-    if (std::is_constant_evaluated() && policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
+    // Only the throwing policy needs the duplicated diagnostics; the test is if constexpr
+    // so the throw is discarded where the operator is noexcept (GCC -Wterminate)
+    if constexpr (policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
     {
-        BasisType res {};
-        const auto status {impl::signed_no_intrin_add(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res)};
-        if (status == impl::signed_overflow_status::overflow)
+        if (std::is_constant_evaluated())
         {
-            if constexpr (std::is_same_v<BasisType, std::int8_t>)
+            BasisType res {};
+            const auto status {impl::signed_no_intrin_add(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res)};
+            if (status == impl::signed_overflow_status::overflow)
             {
-                throw std::overflow_error("Overflow detected in i8 addition"); // LCOV_EXCL_LINE
+                if constexpr (std::is_same_v<BasisType, std::int8_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i8 addition"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i16 addition"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i32 addition"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i64 addition"); // LCOV_EXCL_LINE
+                }
+                else
+                {
+                    throw std::overflow_error("Overflow detected in i128 addition"); // LCOV_EXCL_LINE
+                }
             }
-            else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+            else if (status == impl::signed_overflow_status::underflow)
             {
-                throw std::overflow_error("Overflow detected in i16 addition"); // LCOV_EXCL_LINE
+                if constexpr (std::is_same_v<BasisType, std::int8_t>)
+                {
+                    throw std::underflow_error("Underflow detected in i8 addition"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+                {
+                    throw std::underflow_error("Underflow detected in i16 addition"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+                {
+                    throw std::underflow_error("Underflow detected in i32 addition"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+                {
+                    throw std::underflow_error("Underflow detected in i64 addition"); // LCOV_EXCL_LINE
+                }
+                else
+                {
+                    throw std::underflow_error("Underflow detected in i128 addition"); // LCOV_EXCL_LINE
+                }
             }
-            else if constexpr (std::is_same_v<BasisType, std::int32_t>)
-            {
-                throw std::overflow_error("Overflow detected in i32 addition"); // LCOV_EXCL_LINE
-            }
-            else if constexpr (std::is_same_v<BasisType, std::int64_t>)
-            {
-                throw std::overflow_error("Overflow detected in i64 addition"); // LCOV_EXCL_LINE
-            }
-            else
-            {
-                throw std::overflow_error("Overflow detected in i128 addition"); // LCOV_EXCL_LINE
-            }
-        }
-        else if (status == impl::signed_overflow_status::underflow)
-        {
-            if constexpr (std::is_same_v<BasisType, std::int8_t>)
-            {
-                throw std::underflow_error("Underflow detected in i8 addition"); // LCOV_EXCL_LINE
-            }
-            else if constexpr (std::is_same_v<BasisType, std::int16_t>)
-            {
-                throw std::underflow_error("Underflow detected in i16 addition"); // LCOV_EXCL_LINE
-            }
-            else if constexpr (std::is_same_v<BasisType, std::int32_t>)
-            {
-                throw std::underflow_error("Underflow detected in i32 addition"); // LCOV_EXCL_LINE
-            }
-            else if constexpr (std::is_same_v<BasisType, std::int64_t>)
-            {
-                throw std::underflow_error("Underflow detected in i64 addition"); // LCOV_EXCL_LINE
-            }
-            else
-            {
-                throw std::underflow_error("Underflow detected in i128 addition"); // LCOV_EXCL_LINE
-            }
-        }
 
-        return signed_integer_basis<BasisType, ErrorPolicy>{res};
+            return signed_integer_basis<BasisType, ErrorPolicy>{res};
+        }
     }
 
     #endif
@@ -1395,58 +1400,61 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 {
     #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
-    if (std::is_constant_evaluated() && policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
+    if constexpr (policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
     {
-        BasisType res {};
-        const auto status {impl::signed_no_intrin_sub(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res)};
-        if (status == impl::signed_overflow_status::overflow)
+        if (std::is_constant_evaluated())
         {
-            if constexpr (std::is_same_v<BasisType, std::int8_t>)
+            BasisType res {};
+            const auto status {impl::signed_no_intrin_sub(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res)};
+            if (status == impl::signed_overflow_status::overflow)
             {
-                throw std::overflow_error("Overflow detected in i8 subtraction"); // LCOV_EXCL_LINE
+                if constexpr (std::is_same_v<BasisType, std::int8_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i8 subtraction"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i16 subtraction"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i32 subtraction"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i64 subtraction"); // LCOV_EXCL_LINE
+                }
+                else
+                {
+                    throw std::overflow_error("Overflow detected in i128 subtraction"); // LCOV_EXCL_LINE
+                }
             }
-            else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+            else if (status == impl::signed_overflow_status::underflow)
             {
-                throw std::overflow_error("Overflow detected in i16 subtraction"); // LCOV_EXCL_LINE
+                if constexpr (std::is_same_v<BasisType, std::int8_t>)
+                {
+                    throw std::underflow_error("Underflow detected in i8 subtraction"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+                {
+                    throw std::underflow_error("Underflow detected in i16 subtraction"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+                {
+                    throw std::underflow_error("Underflow detected in i32 subtraction"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+                {
+                    throw std::underflow_error("Underflow detected in i64 subtraction"); // LCOV_EXCL_LINE
+                }
+                else
+                {
+                    throw std::underflow_error("Underflow detected in i128 subtraction"); // LCOV_EXCL_LINE
+                }
             }
-            else if constexpr (std::is_same_v<BasisType, std::int32_t>)
-            {
-                throw std::overflow_error("Overflow detected in i32 subtraction"); // LCOV_EXCL_LINE
-            }
-            else if constexpr (std::is_same_v<BasisType, std::int64_t>)
-            {
-                throw std::overflow_error("Overflow detected in i64 subtraction"); // LCOV_EXCL_LINE
-            }
-            else
-            {
-                throw std::overflow_error("Overflow detected in i128 subtraction"); // LCOV_EXCL_LINE
-            }
-        }
-        else if (status == impl::signed_overflow_status::underflow)
-        {
-            if constexpr (std::is_same_v<BasisType, std::int8_t>)
-            {
-                throw std::underflow_error("Underflow detected in i8 subtraction"); // LCOV_EXCL_LINE
-            }
-            else if constexpr (std::is_same_v<BasisType, std::int16_t>)
-            {
-                throw std::underflow_error("Underflow detected in i16 subtraction"); // LCOV_EXCL_LINE
-            }
-            else if constexpr (std::is_same_v<BasisType, std::int32_t>)
-            {
-                throw std::underflow_error("Underflow detected in i32 subtraction"); // LCOV_EXCL_LINE
-            }
-            else if constexpr (std::is_same_v<BasisType, std::int64_t>)
-            {
-                throw std::underflow_error("Underflow detected in i64 subtraction"); // LCOV_EXCL_LINE
-            }
-            else
-            {
-                throw std::underflow_error("Underflow detected in i128 subtraction"); // LCOV_EXCL_LINE
-            }
-        }
 
-        return signed_integer_basis<BasisType, ErrorPolicy>{res};
+            return signed_integer_basis<BasisType, ErrorPolicy>{res};
+        }
     }
 
     #endif
@@ -2002,58 +2010,61 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 {
     #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
-    if (std::is_constant_evaluated() && policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
+    if constexpr (policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
     {
-        BasisType res {};
-        const auto status {impl::signed_no_intrin_mul(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res)};
-        if (status == impl::signed_overflow_status::overflow)
+        if (std::is_constant_evaluated())
         {
-            if constexpr (std::is_same_v<BasisType, std::int8_t>)
+            BasisType res {};
+            const auto status {impl::signed_no_intrin_mul(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res)};
+            if (status == impl::signed_overflow_status::overflow)
             {
-                throw std::overflow_error("Overflow detected in i8 multiplication"); // LCOV_EXCL_LINE
+                if constexpr (std::is_same_v<BasisType, std::int8_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i8 multiplication"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i16 multiplication"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i32 multiplication"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+                {
+                    throw std::overflow_error("Overflow detected in i64 multiplication"); // LCOV_EXCL_LINE
+                }
+                else
+                {
+                    throw std::overflow_error("Overflow detected in i128 multiplication"); // LCOV_EXCL_LINE
+                }
             }
-            else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+            else if (status == impl::signed_overflow_status::underflow)
             {
-                throw std::overflow_error("Overflow detected in i16 multiplication"); // LCOV_EXCL_LINE
+                if constexpr (std::is_same_v<BasisType, std::int8_t>)
+                {
+                    throw std::underflow_error("Underflow detected in i8 multiplication"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int16_t>)
+                {
+                    throw std::underflow_error("Underflow detected in i16 multiplication"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int32_t>)
+                {
+                    throw std::underflow_error("Underflow detected in i32 multiplication"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::int64_t>)
+                {
+                    throw std::underflow_error("Underflow detected in i64 multiplication"); // LCOV_EXCL_LINE
+                }
+                else
+                {
+                    throw std::underflow_error("Underflow detected in i128 multiplication"); // LCOV_EXCL_LINE
+                }
             }
-            else if constexpr (std::is_same_v<BasisType, std::int32_t>)
-            {
-                throw std::overflow_error("Overflow detected in i32 multiplication"); // LCOV_EXCL_LINE
-            }
-            else if constexpr (std::is_same_v<BasisType, std::int64_t>)
-            {
-                throw std::overflow_error("Overflow detected in i64 multiplication"); // LCOV_EXCL_LINE
-            }
-            else
-            {
-                throw std::overflow_error("Overflow detected in i128 multiplication"); // LCOV_EXCL_LINE
-            }
-        }
-        else if (status == impl::signed_overflow_status::underflow)
-        {
-            if constexpr (std::is_same_v<BasisType, std::int8_t>)
-            {
-                throw std::underflow_error("Underflow detected in i8 multiplication"); // LCOV_EXCL_LINE
-            }
-            else if constexpr (std::is_same_v<BasisType, std::int16_t>)
-            {
-                throw std::underflow_error("Underflow detected in i16 multiplication"); // LCOV_EXCL_LINE
-            }
-            else if constexpr (std::is_same_v<BasisType, std::int32_t>)
-            {
-                throw std::underflow_error("Underflow detected in i32 multiplication"); // LCOV_EXCL_LINE
-            }
-            else if constexpr (std::is_same_v<BasisType, std::int64_t>)
-            {
-                throw std::underflow_error("Underflow detected in i64 multiplication"); // LCOV_EXCL_LINE
-            }
-            else
-            {
-                throw std::underflow_error("Underflow detected in i128 multiplication"); // LCOV_EXCL_LINE
-            }
-        }
 
-        return signed_integer_basis<BasisType, ErrorPolicy>{res};
+            return signed_integer_basis<BasisType, ErrorPolicy>{res};
+        }
     }
 
     #endif

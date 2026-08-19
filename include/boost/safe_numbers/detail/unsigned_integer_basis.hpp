@@ -783,36 +783,39 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 
     #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
-    // Only the throwing policy needs the duplicated diagnostics; saturate produces
-    // a defined value and strict fails constant evaluation inside the helper
-    if (std::is_constant_evaluated() && policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
+    // Only the throwing policy needs the duplicated diagnostics; the test is if constexpr
+    // so the throw is discarded where the operator is noexcept (GCC -Wterminate)
+    if constexpr (policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
     {
-        BasisType res {};
-        if (impl::unsigned_no_intrin_add(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
+        if (std::is_constant_evaluated())
         {
-            if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+            BasisType res {};
+            if (impl::unsigned_no_intrin_add(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
             {
-                throw std::overflow_error("Overflow detected in u8 addition"); // LCOV_EXCL_LINE
+                if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+                {
+                    throw std::overflow_error("Overflow detected in u8 addition"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
+                {
+                    throw std::overflow_error("Overflow detected in u16 addition"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
+                {
+                    throw std::overflow_error("Overflow detected in u32 addition"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
+                {
+                    throw std::overflow_error("Overflow detected in u64 addition"); // LCOV_EXCL_LINE
+                }
+                else
+                {
+                    throw std::overflow_error("Overflow detected in u128 addition"); // LCOV_EXCL_LINE
+                }
             }
-            else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
-            {
-                throw std::overflow_error("Overflow detected in u16 addition"); // LCOV_EXCL_LINE
-            }
-            else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
-            {
-                throw std::overflow_error("Overflow detected in u32 addition"); // LCOV_EXCL_LINE
-            }
-            else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
-            {
-                throw std::overflow_error("Overflow detected in u64 addition"); // LCOV_EXCL_LINE
-            }
-            else
-            {
-                throw std::overflow_error("Overflow detected in u128 addition"); // LCOV_EXCL_LINE
-            }
-        }
 
-        return unsigned_integer_basis<BasisType, ErrorPolicy>{res};
+            return unsigned_integer_basis<BasisType, ErrorPolicy>{res};
+        }
     }
 
     #endif
@@ -1250,34 +1253,37 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 {
     #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
-    if (std::is_constant_evaluated() && policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
+    if constexpr (policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
     {
-        BasisType res {};
-        if (impl::unsigned_no_intrin_sub(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
+        if (std::is_constant_evaluated())
         {
-            if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+            BasisType res {};
+            if (impl::unsigned_no_intrin_sub(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
             {
-                throw std::underflow_error("Underflow detected in u8 subtraction"); // LCOV_EXCL_LINE
+                if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+                {
+                    throw std::underflow_error("Underflow detected in u8 subtraction"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
+                {
+                    throw std::underflow_error("Underflow detected in u16 subtraction"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
+                {
+                    throw std::underflow_error("Underflow detected in u32 subtraction"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
+                {
+                    throw std::underflow_error("Underflow detected in u64 subtraction"); // LCOV_EXCL_LINE
+                }
+                else
+                {
+                    throw std::underflow_error("Underflow detected in u128 subtraction"); // LCOV_EXCL_LINE
+                }
             }
-            else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
-            {
-                throw std::underflow_error("Underflow detected in u16 subtraction"); // LCOV_EXCL_LINE
-            }
-            else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
-            {
-                throw std::underflow_error("Underflow detected in u32 subtraction"); // LCOV_EXCL_LINE
-            }
-            else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
-            {
-                throw std::underflow_error("Underflow detected in u64 subtraction"); // LCOV_EXCL_LINE
-            }
-            else
-            {
-                throw std::underflow_error("Underflow detected in u128 subtraction"); // LCOV_EXCL_LINE
-            }
-        }
 
-        return unsigned_integer_basis<BasisType, ErrorPolicy>{res};
+            return unsigned_integer_basis<BasisType, ErrorPolicy>{res};
+        }
     }
 
     #endif
@@ -1599,34 +1605,37 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 {
     #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
-    if (std::is_constant_evaluated() && policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
+    if constexpr (policy_equals<ErrorPolicy>(overflow_policy::throw_exception))
     {
-        BasisType res {};
-        if (impl::no_intrin_mul(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
+        if (std::is_constant_evaluated())
         {
-            if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+            BasisType res {};
+            if (impl::no_intrin_mul(static_cast<BasisType>(lhs), static_cast<BasisType>(rhs), res))
             {
-                throw std::overflow_error("Overflow detected in u8 multiplication"); // LCOV_EXCL_LINE
+                if constexpr (std::is_same_v<BasisType, std::uint8_t>)
+                {
+                    throw std::overflow_error("Overflow detected in u8 multiplication"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
+                {
+                    throw std::overflow_error("Overflow detected in u16 multiplication"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
+                {
+                    throw std::overflow_error("Overflow detected in u32 multiplication"); // LCOV_EXCL_LINE
+                }
+                else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
+                {
+                    throw std::overflow_error("Overflow detected in u64 multiplication"); // LCOV_EXCL_LINE
+                }
+                else
+                {
+                    throw std::overflow_error("Overflow detected in u128 multiplication"); // LCOV_EXCL_LINE
+                }
             }
-            else if constexpr (std::is_same_v<BasisType, std::uint16_t>)
-            {
-                throw std::overflow_error("Overflow detected in u16 multiplication"); // LCOV_EXCL_LINE
-            }
-            else if constexpr (std::is_same_v<BasisType, std::uint32_t>)
-            {
-                throw std::overflow_error("Overflow detected in u32 multiplication"); // LCOV_EXCL_LINE
-            }
-            else if constexpr (std::is_same_v<BasisType, std::uint64_t>)
-            {
-                throw std::overflow_error("Overflow detected in u64 multiplication"); // LCOV_EXCL_LINE
-            }
-            else
-            {
-                throw std::overflow_error("Overflow detected in u128 multiplication"); // LCOV_EXCL_LINE
-            }
-        }
 
-        return unsigned_integer_basis<BasisType, ErrorPolicy>{res};
+            return unsigned_integer_basis<BasisType, ErrorPolicy>{res};
+        }
     }
 
     #endif
@@ -1792,21 +1801,24 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 
     // Divide-by-zero throws under both throw_exception and saturate,
     // so both keep the clean constant evaluation diagnostic
-    if (std::is_constant_evaluated() && (policy_equals<ErrorPolicy>(overflow_policy::throw_exception) || policy_equals<ErrorPolicy>(overflow_policy::saturate)))
+    if constexpr (policy_equals<ErrorPolicy>(overflow_policy::throw_exception) || policy_equals<ErrorPolicy>(overflow_policy::saturate))
     {
-        const auto divisor {static_cast<BasisType>(rhs)};
-        if (divisor == 0U) [[unlikely]]
+        if (std::is_constant_evaluated())
         {
-            throw std::domain_error("Unsigned division by zero"); // LCOV_EXCL_LINE
-        }
+            const auto divisor {static_cast<BasisType>(rhs)};
+            if (divisor == 0U) [[unlikely]]
+            {
+                throw std::domain_error("Unsigned division by zero"); // LCOV_EXCL_LINE
+            }
 
-        if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
-        {
-            return unsigned_integer_basis<BasisType, ErrorPolicy>{static_cast<BasisType>(static_cast<BasisType>(lhs) / divisor)};
-        }
-        else
-        {
-            return unsigned_integer_basis<BasisType, ErrorPolicy>{static_cast<BasisType>(lhs) / divisor};
+            if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
+            {
+                return unsigned_integer_basis<BasisType, ErrorPolicy>{static_cast<BasisType>(static_cast<BasisType>(lhs) / divisor)};
+            }
+            else
+            {
+                return unsigned_integer_basis<BasisType, ErrorPolicy>{static_cast<BasisType>(lhs) / divisor};
+            }
         }
     }
 
@@ -1973,21 +1985,24 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 
     // Modulo-by-zero throws under both throw_exception and saturate,
     // so both keep the clean constant evaluation diagnostic
-    if (std::is_constant_evaluated() && (policy_equals<ErrorPolicy>(overflow_policy::throw_exception) || policy_equals<ErrorPolicy>(overflow_policy::saturate)))
+    if constexpr (policy_equals<ErrorPolicy>(overflow_policy::throw_exception) || policy_equals<ErrorPolicy>(overflow_policy::saturate))
     {
-        const auto divisor {static_cast<BasisType>(rhs)};
-        if (divisor == 0U) [[unlikely]]
+        if (std::is_constant_evaluated())
         {
-            throw std::domain_error("Unsigned modulo by zero"); // LCOV_EXCL_LINE
-        }
+            const auto divisor {static_cast<BasisType>(rhs)};
+            if (divisor == 0U) [[unlikely]]
+            {
+                throw std::domain_error("Unsigned modulo by zero"); // LCOV_EXCL_LINE
+            }
 
-        if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
-        {
-            return unsigned_integer_basis<BasisType, ErrorPolicy>{static_cast<BasisType>(static_cast<BasisType>(lhs) % divisor)};
-        }
-        else
-        {
-            return unsigned_integer_basis<BasisType, ErrorPolicy>{static_cast<BasisType>(lhs) % divisor};
+            if constexpr (std::is_same_v<BasisType, std::uint8_t> || std::is_same_v<BasisType, std::uint16_t>)
+            {
+                return unsigned_integer_basis<BasisType, ErrorPolicy>{static_cast<BasisType>(static_cast<BasisType>(lhs) % divisor)};
+            }
+            else
+            {
+                return unsigned_integer_basis<BasisType, ErrorPolicy>{static_cast<BasisType>(lhs) % divisor};
+            }
         }
     }
 
