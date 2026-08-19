@@ -1,0 +1,11 @@
+cve,category,nvd_url,reason
+CVE-2016-9377,CWE-682,https://nvd.nist.gov/vuln/detail/CVE-2016-9377,Root cause is x86 software-interrupt emulation on AMD without NRip; not a fixed-width integer arithmetic fault.
+CVE-2017-8905,CWE-682,https://nvd.nist.gov/vuln/detail/CVE-2017-8905,Root cause is mishandling of a 64-bit failsafe callback control flow; not a reducible arithmetic operation.
+CVE-2017-0666,CWE-682,https://nvd.nist.gov/vuln/detail/CVE-2017-0666,Android media framework advisory gives no disclosed arithmetic expression to reduce.
+CVE-2017-5462,CWE-682,https://nvd.nist.gov/vuln/detail/CVE-2017-5462,Root cause is DRBG internal state update in NSS; a cryptographic state defect, not fixed-width integer arithmetic.
+CVE-2017-0342,CWE-682,https://nvd.nist.gov/vuln/detail/CVE-2017-0342,NVIDIA kernel-mode driver advisory discloses no arithmetic expression to reduce.
+CVE-2017-0679,CWE-682,https://nvd.nist.gov/vuln/detail/CVE-2017-0679,Android media framework RCE with no disclosed arithmetic root cause.
+CVE-2017-12134,CWE-682,https://nvd.nist.gov/vuln/detail/CVE-2017-12134,Root cause is Xen block-device page-merge logic (xen_biovec_phys_mergeable); not a fixed-width arithmetic operation.
+CVE-2017-12135,CWE-682,https://nvd.nist.gov/vuln/detail/CVE-2017-12135,Xen grant-table handling defect; not a reducible integer arithmetic fault.
+CVE-2017-13151,CWE-682,https://nvd.nist.gov/vuln/detail/CVE-2017-13151,Android libmpeg2 RCE with no disclosed arithmetic expression to reduce.
+CVE-2019-17514,CWE-682,https://nvd.nist.gov/vuln/detail/CVE-2019-17514,Documentation issue in the Python glob module; not a code arithmetic fault at all.

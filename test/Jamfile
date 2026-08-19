@@ -328,3 +328,148 @@ run ../examples/basic_bounded_usage.cpp ;
 compile-fail ../examples/compile_fail_basic_bounded_usage_constexpr.cpp ;
 run ../examples/safety_profile.cpp : : : : safety_profile_off ;
 run ../examples/safety_profile.cpp : : : <define>BOOST_SAFE_NUMBERS_INTEGER_SAFETY_PROFILE : safety_profile_on ;
+
+# ---------------------------------------------------------------------------
+# CVE corpus. One self-contained translation unit per real-world integer-fault
+# CVE, grouped into per-CWE subdirectories: each proves the native computation
+# silently produces the wrong value and that the identical boost::safe_numbers
+# computation detects the fault. Machine-readable metadata lives in a
+# BOOST_SAFE_NUMBERS_CVE_BEGIN/END comment block at the top of every file;
+# analysis/aggregate.py aggregates it into per-CWE prevention rates. Basenames
+# embed the CVE id so they are globally unique.
+# ---------------------------------------------------------------------------
+# CWE-190
+run cve_corpus/cwe190/cve_2002_0391_cwe190_sunrpc_xdrarray_mul.cpp ;
+run cve_corpus/cwe190/cve_2002_0639_cwe190_openssh_challenge_mul.cpp ;
+run cve_corpus/cwe190/cve_2004_0657_cwe190_ntpd_offset_add.cpp ;
+run cve_corpus/cwe190/cve_2004_0788_cwe190_gdkpixbuf_ico_mul.cpp ;
+run cve_corpus/cwe190/cve_2004_2013_cwe190_kernel_sctp_debug_mul.cpp ;
+run cve_corpus/cwe190/cve_2005_0102_cwe190_evolution_camel_mul.cpp ;
+run cve_corpus/cwe190/cve_2005_1141_cwe190_gocr_pnm_mul.cpp ;
+run cve_corpus/cwe190/cve_2005_1513_cwe190_qmail_stralloc_add.cpp ;
+run cve_corpus/cwe190/cve_2005_2976_cwe190_gtk_xpm_mul.cpp ;
+run cve_corpus/cwe190/cve_2006_3198_cwe190_opera_jpeg_mul.cpp ;
+run cve_corpus/cwe190/cve_2006_4519_cwe190_gimp_dicom_mul.cpp ;
+run cve_corpus/cwe190/cve_2007_0221_cwe190_exchange_imap_add.cpp ;
+run cve_corpus/cwe190/cve_2007_2834_cwe190_ooo_tiff_mul.cpp ;
+run cve_corpus/cwe190/cve_2007_2949_cwe190_gimp_psd_mul.cpp ;
+run cve_corpus/cwe190/cve_2007_3387_cwe190_xpdf_predictor_mul.cpp ;
+run cve_corpus/cwe190/cve_2007_4965_cwe190_python_imageop_mul.cpp ;
+run cve_corpus/cwe190/cve_2007_6353_cwe190_exiv2_exif_mul.cpp ;
+run cve_corpus/cwe190/cve_2008_1374_cwe190_cups_pdftops_mul.cpp ;
+run cve_corpus/cwe190/cve_2008_2663_cwe190_ruby_ary_store_mul.cpp ;
+run cve_corpus/cwe190/cve_2008_2826_cwe190_kernel_sctp_addrs_mul.cpp ;
+run cve_corpus/cwe190/cve_2008_4019_cwe190_excel_rept_mul.cpp ;
+run cve_corpus/cwe190/cve_2009_0723_cwe190_lcms_mul.cpp ;
+run cve_corpus/cwe190/cve_2009_0946_cwe190_freetype_smooth_mul.cpp ;
+run cve_corpus/cwe190/cve_2010_3442_cwe190_kernel_alsa_mul.cpp ;
+run cve_corpus/cwe190/cve_2011_1178_cwe190_gimp_pcx_mul.cpp ;
+run cve_corpus/cwe190/cve_2012_1185_cwe190_imagemagick_profile_add.cpp ;
+run cve_corpus/cwe190/cve_2013_7437_cwe190_potrace_bmp_mul.cpp ;
+run cve_corpus/cwe190/cve_2014_4608_cwe190_kernel_lzo_add.cpp ;
+run cve_corpus/cwe190/cve_2015_1283_cwe190_expat_getbuffer_add.cpp ;
+run cve_corpus/cwe190/cve_2018_13785_cwe190_libpng_width_bounded.cpp ;
+# CWE-191
+run cve_corpus/cwe191/cve_2004_0184_cwe191_tcpdump_isakmp_underflow.cpp ;
+run cve_corpus/cwe191/cve_2004_0816_cwe191_iptables_underflow.cpp ;
+run cve_corpus/cwe191/cve_2004_1002_cwe191_pppd_cbcp_underflow.cpp ;
+run cve_corpus/cwe191/cve_2005_0199_cwe191_ngircd_mask_underflow.cpp ;
+run cve_corpus/cwe191/cve_2009_3301_cwe191_ooo_ww8_underflow.cpp ;
+run cve_corpus/cwe191/cve_2010_2497_cwe191_freetype_glyph_underflow.cpp ;
+run cve_corpus/cwe191/cve_2010_4164_cwe191_kernel_x25_underflow.cpp ;
+run cve_corpus/cwe191/cve_2010_4529_cwe191_kernel_irda_underflow.cpp ;
+run cve_corpus/cwe191/cve_2011_1770_cwe191_kernel_dccp_underflow.cpp ;
+run cve_corpus/cwe191/cve_2011_2497_cwe191_kernel_l2cap_underflow.cpp ;
+run cve_corpus/cwe191/cve_2011_4031_cwe191_ffmpeg_asfrtp_underflow.cpp ;
+run cve_corpus/cwe191/cve_2013_6424_cwe191_xorg_trapezoid_underflow.cpp ;
+run cve_corpus/cwe191/cve_2013_6425_cwe191_pixman_trapezoid_underflow.cpp ;
+run cve_corpus/cwe191/cve_2014_0497_cwe191_flash_underflow.cpp ;
+run cve_corpus/cwe191/cve_2014_8768_cwe191_tcpdump_geonet_underflow.cpp ;
+run cve_corpus/cwe191/cve_2014_9087_cwe191_libksba_oid_underflow.cpp ;
+run cve_corpus/cwe191/cve_2015_0537_cwe191_rsa_bsafe_underflow.cpp ;
+run cve_corpus/cwe191/cve_2015_1208_cwe191_ffmpeg_mov_underflow.cpp ;
+run cve_corpus/cwe191/cve_2015_2311_cwe191_capnproto_underflow.cpp ;
+run cve_corpus/cwe191/cve_2015_5212_cwe191_libreoffice_underflow.cpp ;
+run cve_corpus/cwe191/cve_2016_10166_cwe191_libgd_interp_underflow.cpp ;
+run cve_corpus/cwe191/cve_2016_10268_cwe191_libtiff_tiffcp_underflow.cpp ;
+run cve_corpus/cwe191/cve_2016_1925_cwe191_lha_header_underflow.cpp ;
+run cve_corpus/cwe191/cve_2016_7800_cwe191_graphicsmagick_meta_underflow.cpp ;
+run cve_corpus/cwe191/cve_2017_14496_cwe191_dnsmasq_underflow.cpp ;
+run cve_corpus/cwe191/cve_2017_15874_cwe191_busybox_unlzma_underflow.cpp ;
+run cve_corpus/cwe191/cve_2017_6313_cwe191_gdkpixbuf_icns_underflow.cpp ;
+run cve_corpus/cwe191/cve_2017_8911_cwe191_tnef_underflow.cpp ;
+run cve_corpus/cwe191/cve_2017_8924_cwe191_kernel_io_ti_underflow.cpp ;
+run cve_corpus/cwe191/cve_2017_9214_cwe191_openvswitch_underflow.cpp ;
+# CWE-681
+run cve_corpus/cwe681/cve_2008_3282_cwe681_openoffice_alloc_truncation.cpp ;
+run cve_corpus/cwe681/cve_2017_12140_cwe681_imagemagick_dcm_truncation.cpp ;
+run cve_corpus/cwe681/cve_2017_7308_cwe681_kernel_afpacket_truncation.cpp ;
+run cve_corpus/cwe681/cve_2018_3999_cwe681_atlantis_jpeg_truncation.cpp ;
+run cve_corpus/cwe681/cve_2018_8786_cwe681_freerdp_bitmap_truncation.cpp ;
+run cve_corpus/cwe681/cve_2019_10624_cwe681_libiec_u8_truncation.cpp ;
+run cve_corpus/cwe681/cve_2019_14563_cwe681_edk2_truncation.cpp ;
+run cve_corpus/cwe681/cve_2019_16778_cwe681_tensorflow_index_truncation.cpp ;
+run cve_corpus/cwe681/cve_2019_19958_cwe681_libiec_str_truncation.cpp ;
+run cve_corpus/cwe681/cve_2020_4032_cwe681_freerdp_updaterecv_truncation.cpp ;
+run cve_corpus/cwe681/cve_2021_21860_cwe681_mpeg4_21860_truncation.cpp ;
+run cve_corpus/cwe681/cve_2021_21861_cwe681_mpeg4_21861_truncation.cpp ;
+run cve_corpus/cwe681/cve_2021_36357_cwe681_openpower_ts_truncation.cpp ;
+compile-fail cve_corpus/cwe681/compile_fail_cve_2007_4268_cwe681_apple_net_signedness.cpp ;
+compile-fail cve_corpus/cwe681/compile_fail_cve_2008_1721_cwe681_python_zlib_signedness.cpp ;
+compile-fail cve_corpus/cwe681/compile_fail_cve_2009_0231_cwe681_windows_eot_signedness.cpp ;
+compile-fail cve_corpus/cwe681/compile_fail_cve_2015_3406_cwe681_module_signature_signedness.cpp ;
+compile-fail cve_corpus/cwe681/compile_fail_cve_2016_3074_cwe681_libgd_signedness.cpp ;
+compile-fail cve_corpus/cwe681/compile_fail_cve_2018_1000224_cwe681_godot_signedness.cpp ;
+compile-fail cve_corpus/cwe681/compile_fail_cve_2018_11262_cwe681_android_qrd_signedness.cpp ;
+compile-fail cve_corpus/cwe681/compile_fail_cve_2018_5251_cwe681_libming_sbits_signedness.cpp ;
+compile-fail cve_corpus/cwe681/compile_fail_cve_2018_5711_cwe681_libgd_gif_signedness.cpp ;
+compile-fail cve_corpus/cwe681/compile_fail_cve_2019_1010204_cwe681_binutils_gold_signedness.cpp ;
+compile-fail cve_corpus/cwe681/compile_fail_cve_2019_14842_cwe681_nbd_signedness.cpp ;
+compile-fail cve_corpus/cwe681/compile_fail_cve_2019_19945_cwe681_openwrt_uhttpd_signedness.cpp ;
+compile-fail cve_corpus/cwe681/compile_fail_cve_2019_7310_cwe681_poppler_xref_signedness.cpp ;
+compile-fail cve_corpus/cwe681/compile_fail_cve_2020_13545_cwe681_textmaker_signedness.cpp ;
+compile-fail cve_corpus/cwe681/compile_fail_cve_2020_1913_cwe681_hermes_signedness.cpp ;
+compile-fail cve_corpus/cwe681/compile_fail_cve_2021_27219_cwe681_glib_bytearray_signedness.cpp ;
+compile-fail cve_corpus/cwe681/compile_fail_cve_2022_27882_cwe681_openbsd_slaacd_signedness.cpp ;
+# CWE-369
+run cve_corpus/cwe369/cve_2004_0804_cwe369_libtiff_dirread_divzero.cpp ;
+run cve_corpus/cwe369/cve_2009_1887_cwe369_netsnmp_divzero.cpp ;
+run cve_corpus/cwe369/cve_2011_1012_cwe369_kernel_ldm_modzero.cpp ;
+run cve_corpus/cwe369/cve_2012_0207_cwe369_kernel_igmp_modzero.cpp ;
+run cve_corpus/cwe369/cve_2014_9756_cwe369_libsndfile_divzero.cpp ;
+run cve_corpus/cwe369/cve_2015_3418_cwe369_xorg_putimage_divzero.cpp ;
+run cve_corpus/cwe369/cve_2015_6855_cwe369_qemu_ide_divzero.cpp ;
+run cve_corpus/cwe369/cve_2015_7513_cwe369_kernel_kvm_divzero.cpp ;
+run cve_corpus/cwe369/cve_2016_10053_cwe369_imagemagick_tiff_divzero.cpp ;
+run cve_corpus/cwe369/cve_2016_10219_cwe369_ghostscript_intersect_divzero.cpp ;
+run cve_corpus/cwe369/cve_2016_10266_cwe369_libtiff_10266_divzero.cpp ;
+run cve_corpus/cwe369/cve_2016_10267_cwe369_libtiff_10267_divzero.cpp ;
+run cve_corpus/cwe369/cve_2016_3622_cwe369_libtiff_predict_divzero.cpp ;
+run cve_corpus/cwe369/cve_2016_3623_cwe369_libtiff_rgb2ycbcr_divzero.cpp ;
+run cve_corpus/cwe369/cve_2016_4797_cwe369_openjpeg_tcd_divzero.cpp ;
+run cve_corpus/cwe369/cve_2016_5323_cwe369_libtiff_fax3_divzero.cpp ;
+run cve_corpus/cwe369/cve_2016_6505_cwe369_wireshark_packetbb_divzero.cpp ;
+run cve_corpus/cwe369/cve_2016_7499_cwe369_libav_aacsbr_divzero.cpp ;
+run cve_corpus/cwe369/cve_2016_8667_cwe369_qemu_rc4030_divzero.cpp ;
+run cve_corpus/cwe369/cve_2016_8669_cwe369_qemu_serial_divzero.cpp ;
+run cve_corpus/cwe369/cve_2016_8691_cwe369_jasper_siz_divzero.cpp ;
+run cve_corpus/cwe369/cve_2016_8697_cwe369_potrace_bmnew_divzero.cpp ;
+run cve_corpus/cwe369/cve_2016_9112_cwe369_openjpeg_divzero.cpp ;
+run cve_corpus/cwe369/cve_2016_9265_cwe369_libming_mp3_divzero.cpp ;
+run cve_corpus/cwe369/cve_2016_9922_cwe369_qemu_cirrus_divzero.cpp ;
+run cve_corpus/cwe369/cve_2017_6833_cwe369_audiofile_runpull_divzero.cpp ;
+run cve_corpus/cwe369/cve_2017_6835_cwe369_audiofile_reset1_divzero.cpp ;
+run cve_corpus/cwe369/cve_2017_7448_cwe369_lepton_fb_divzero.cpp ;
+run cve_corpus/cwe369/cve_2017_7595_cwe369_libtiff_jpeg_divzero.cpp ;
+run cve_corpus/cwe369/cve_2017_7962_cwe369_imageworsener_gif_divzero.cpp ;
+# CWE-682
+run cve_corpus/cwe682/cve_2011_1573_cwe682_kernel_sctp_bounded.cpp ;
+run cve_corpus/cwe682/cve_2011_3062_cwe682_ots_offbyone_bounded.cpp ;
+run cve_corpus/cwe682/cve_2016_7433_cwe682_ntp_calc_notprevented.cpp ;
+run cve_corpus/cwe682/cve_2017_11537_cwe682_imagemagick_palm_divzero.cpp ;
+run cve_corpus/cwe682/cve_2017_8326_cwe682_imageworsener_shl_shl.cpp ;
+run cve_corpus/cwe682/cve_2017_8932_cwe682_go_p256_notprevented.cpp ;
+run cve_corpus/cwe682/cve_2018_11790_cwe682_apache_oo_bounded.cpp ;
+run cve_corpus/cwe682/cve_2018_14439_cwe682_eos4j_notprevented.cpp ;
+run cve_corpus/cwe682/cve_2018_16781_cwe682_ffjpeg_divzero.cpp ;
+run cve_corpus/cwe682/cve_2018_20999_cwe682_orion_notprevented.cpp ;

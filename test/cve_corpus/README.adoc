@@ -1,0 +1,199 @@
+= boost.safe_numbers CVE corpus
+:toc: left
+:idprefix: cve_
+
+An empirical corpus that measures how often adopting `boost::safe_numbers` would have
+converted the arithmetic fault at the root of a real, publicly disclosed CVE into a
+detected, controlled failure. It complements the Why3 verification: the proofs establish
+that the checked operations are correct for all inputs (soundness), while this corpus
+estimates how often that mechanism, had it been adopted, would have engaged on real
+historical faults (coverage and relevance).
+
+== The claim, stated carefully
+
+We reproduce the arithmetic fault. We do not re run the original programs. For each in
+scope CVE we extract the specific integer computation that the public disclosure and its
+patch identify as the root cause, and we show under identical inputs that:
+
+. the native fixed width computation silently produces the same incorrect value the
+  disclosure attributes the vulnerability to, and
+. the identical computation written with `boost::safe_numbers` halts at the faulting
+  operation with a typed, catchable fault (a thrown exception at runtime, or a build error).
+
+We do not claim the entire original program would have been immune. The library acts at the
+arithmetic root, upstream of the downstream memory safety consequence.
+
+== Layout
+
+[source]
+----
+test/cve_corpus/
+  README.adoc                 this file
+  cve_corpus_util.hpp         warning clean ground truth widening helpers
+  cve_<year>_<num>_cwe<NNN>_<vendor>_<tag>.cpp            run tests
+  compile_fail_cve_<year>_<num>_cwe<NNN>_<vendor>_<tag>.cpp   compile-fail tests
+  analysis/
+    aggregate.py              pure stdlib parser, statistics, report generator
+    out_of_scope.csv          examined CVEs judged out of scope, with reasons
+    corpus.csv                generated: one row per CVE (auditable manifest)
+    results_by_cwe.csv        generated: the per-CWE table
+    results.adoc              generated: the rendered results section
+----
+
+Each file counts under the CWE encoded in its name (`cwe<NNN>`), which must be one of the
+NVD CWE tags recorded in its metadata. Basenames embed the CVE id so they are globally
+unique across the test tree.
+
+== File structure
+
+Every entry carries a machine readable metadata block delimited by
+`BOOST_SAFE_NUMBERS_CVE_BEGIN` and `BOOST_SAFE_NUMBERS_CVE_END`, one `key: value` per line:
+
+[source,cpp]
+----
+// BOOST_SAFE_NUMBERS_CVE_BEGIN
+// cve-id:             CVE-2002-0639
+// cwe:                CWE-190
+// product:            OpenSSH
+// version:            2.9.9 through 3.3
+// summary:            Integer overflow in sshd challenge-response auth allows RCE.
+// root-cause:         unsigned multiplication (nresp * sizeof(char*))
+// root-cause-width:   u32
+// trigger:            nresp=1073741824, element_size=4
+// consequence:        heap buffer overflow
+// classification:     PREVENTED_RUNTIME
+// expected-exception: std::overflow_error
+// tier-form:          run
+// reference:          https://nvd.nist.gov/vuln/detail/CVE-2002-0639
+// nvd-cwe-source:     primary
+// sampled-on:         2026-08-19
+// sample-query:       cweId=CWE-190&resultsPerPage=200&startIndex=0
+// notes:              modeling notes and fidelity caveats
+// BOOST_SAFE_NUMBERS_CVE_END
+----
+
+A run test has a `native_reproduction()` that computes the vulnerable expression with
+builtin fixed width types and asserts the silent wrong value deterministically (the true
+value is computed in a wider type from `cve_corpus_util.hpp`), plus a `safe_reproduction()`
+that computes the identical expression with the library types and asserts the fault with
+`BOOST_TEST_THROWS`. Both arms use `boost::core` lightweight_test and `main` returns
+`boost::report_errors()`.
+
+== Classifications
+
+[cols="1,4",options="header"]
+|===
+|Classification |Meaning
+|`PREVENTED_RUNTIME` |the safe computation throws at the faulting operation
+|`PREVENTED_COMPILETIME` |porting to safe types makes the expression ill formed (mixed width, mixed signedness, implicit builtin conversion, bool construction, or a constexpr overflow); a `compile-fail` test
+|`PREVENTED_BOUNDED` |the value domain is expressed with a bounded type that rejects the out of domain input at construction
+|`NOT_PREVENTED` |a genuine integer arithmetic CVE whose faulting value is representable and in range, so the library cannot detect it; counts in the denominator
+|`OUT_OF_SCOPE` |on reduction, not a fixed width integer arithmetic fault; recorded in `analysis/out_of_scope.csv`, removed from the denominator
+|===
+
+== Bounded types and the CWE-682 control
+
+A calculation error whose arithmetic does not overflow is invisible to the default checked
+types: the operation is representable, so nothing fires. But when the wrong result is used
+as an index, offset, or length into a buffer of independently known size, declaring that
+domain with a bounded type turns the fault into a caught `std::domain_error` at the point
+the value is formed. For example, an off-by-one index of 150 into a 150-element buffer is
+rejected by `bounded_uint<0, 149>` even though the addition 100 + 50 is perfectly correct
+arithmetic. Three of the CWE-682 control cases (an off-by-one index, an over long SCTP
+length, and an out-of-bounds file offset) are prevented this way and are classified
+`PREVENTED_BOUNDED`; the control's prevented count rises from three (by default) to six once
+domains are declared. The bound must come from an independent quantity (the real buffer
+size), never from the correct answer. The remaining four control cases stay `NOT_PREVENTED`
+because their wrong result is in range: a rounded time value, a wrong cryptographic result,
+a mishandled floating point value, and a wrong cipher-reset output. No bound applies to
+these, which is exactly why the negative control still demonstrates the library's limits.
+
+== Sampling protocol (anti cherry pick)
+
+. Enumerate CVEs from the NVD REST API 2.0 by CWE, for example
+  `https://services.nvd.nist.gov/rest/json/cves/2.0?cweId=CWE-190`. Because we sample by
+  CWE, every entry sits in a category the NVD itself assigned, not one we reassigned.
+. Record the query, the retrieval date, and the disposition of every examined CVE. Nothing
+  is silently dropped: an examined CVE is either in scope (one of the prevented classes or
+  `NOT_PREVENTED`) or `OUT_OF_SCOPE` with a recorded reason.
+. `NOT_PREVENTED` counts in the in scope denominator. `OUT_OF_SCOPE` is reported separately
+  in the disposition funnel, so a high out of scope rate is visible rather than hidden.
+. CWE-682 (Incorrect Calculation) is included as a negative control, a category where we
+  expect a distinctly lower prevention rate because many of its defects are logic errors
+  the library cannot catch. A study that also measures where the library does not help is
+  a measurement, not an advertisement.
+
+Reproduction fidelity: we port only the operation the patch cites, with the disclosed
+operand widths and a triggering input, and we assert the specific wrong value the
+disclosure describes, not merely some wrong value. Where the original was C and mixed
+platform dependent widths (`int`, `size_t`, `long`), we model the width the advisory
+assumes and record it in `root-cause-width`, which makes the reproduction deterministic and
+architecture independent.
+
+Purposive sample, not a random draw: the current corpus is CURATED. From the NVD by-CWE
+pools we selected CVEs whose arithmetic root cause is reducible to a self contained snippet,
+so the primary-category prevention rate should be read as conditional on that reducibility,
+"among CVEs whose root cause reduces to a fixed-width integer arithmetic fault," not "among
+all CVEs tagged with the CWE." The `out_of_scope.csv` entries illustrate the exclusion
+category (they are concentrated in CWE-682, the noisiest category) but are not a complete
+random-sample funnel. The credibility of the result rests on the CWE-682 negative control
+(where the mechanism demonstrably does not fire on in-range logic errors) and on the honest
+`NOT_PREVENTED` cases, not on a claim of random sampling. Converting this to a fully random
+draw with complete classification of every drawn id is the natural next step.
+
+== Statistics
+
+The primary metric per category is the prevention rate, prevented divided by in scope,
+reported with a 95% Wilson score confidence interval (Wilson, not Wald, because Wald
+degenerates to zero width at a perfect observed rate, exactly the regime here). We also
+report the stricter prevented by default rate that excludes `PREVENTED_BOUNDED`.
+
+The native baseline detects zero faults by construction, since every CVE shipped in native
+integer code. Every prevented case is therefore a discordant pair favoring safe_numbers, so
+the exact McNemar test reduces to a binomial tail, two sided p = min(1, 2 * 0.5^b) for b
+prevented. This p is ceilinged by design: it certifies the asymmetry is not chance, and it
+is not an effect size. Foreground the prevention rate and its interval, which are bounded by
+the real failure mode in the not prevented cases and the negative control.
+
+== Threats to validity
+
+* Reproduction fidelity: we reduce a CVE to its arithmetic; port only the patched
+  expression, with disclosed widths and trigger, and assert the specific disclosed wrong
+  value.
+* Construct validity: a thrown exception converts silent memory corruption into a
+  controlled, localized, typed failure at the faulting operation. That is the intended and
+  strictly superior trade, and the library also offers non throwing facilities
+  (`checked_*` returning `std::optional`) for builds that cannot use exceptions.
+* Selection bias: sampling is by NVD CWE with recorded provenance, every examined CVE is
+  classified, the out of scope funnel is reported, and a negative control is included.
+* Small n: report Wilson intervals, never a bare point estimate.
+* External validity: the counterfactual concerns the arithmetic root in isolation, not the
+  whole program, and the results transfer to new code adopting the library at the
+  arithmetic site rather than to arbitrary vulnerability classes.
+
+== Building and reproducing
+
+[source,bash]
+----
+# build and run the corpus with the rest of the test suite
+b2 libs/safe_numbers/test
+
+# regenerate corpus.csv, results_by_cwe.csv, results.adoc and the doc partial
+python3 test/cve_corpus/analysis/aggregate.py
+
+# optionally cross check against test outcomes: pass a TSV of "stem<TAB>PASS|FAIL"
+python3 test/cve_corpus/analysis/aggregate.py --results results.tsv
+----
+
+`aggregate.py` validates every metadata block and exits nonzero on any schema or
+consistency error, so the corpus can be gated in continuous integration.
+
+== Extending the corpus
+
+Add one `.cpp` per CVE under the appropriate `cwe<NNN>/` subdirectory following the
+templates and the metadata schema, add a `run` or `compile-fail` line to `../Jamfile`, and
+re run `aggregate.py`. The corpus is at the robust tier: thirty in scope CVEs per primary
+category (CWE-190, CWE-191, CWE-681, CWE-369) plus a smaller CWE-682 negative control. At
+that size each primary category clears per category significance and its 95% Wilson lower
+bound sits near ninety percent. The schema, the analysis, and the Jamfile pattern scale
+further without change.

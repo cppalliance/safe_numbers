@@ -1,0 +1,177 @@
+= Empirical Evaluation Against Real CVEs
+:idprefix: empirical_
+
+[#empirical_motivation]
+== Motivation
+
+The xref:design.adoc[design rationale] argues that arithmetic safety is a dangerous
+and under discussed class of bugs, and the xref:verification.adoc[verification] page
+establishes that the fundamental operations are correct for all inputs by transcription
+from Why3 proofs. Those two arguments answer "is the mechanism sound." This page answers
+a different and complementary question: "how often would the mechanism, if adopted, have
+engaged on real historical vulnerabilities."
+
+To answer it we assembled a corpus of real, publicly disclosed CVEs whose root cause is an
+integer arithmetic fault, grouped by CWE, and for each one we reproduced the specific
+faulting computation that the disclosure and its patch identify. Each corpus entry is a
+self contained test that proves two things under identical inputs: the native fixed width
+computation silently produces the same incorrect value the vulnerability is attributed to,
+and the identical computation written with `boost::safe_numbers` detects the fault at the
+faulting operation, either by throwing at runtime or by failing to compile.
+
+The corpus, its per file metadata, the analysis script, and the machine generated tables
+live in
+https://github.com/cppalliance/safe_numbers/tree/develop/test/cve_corpus[test/cve_corpus].
+The full methodology, inclusion and exclusion criteria, and threats to validity are in the
+corpus README.
+
+[#empirical_claim]
+== The claim, stated carefully
+
+We reproduce the arithmetic fault. We do not re run the original programs. The defensible
+claim is therefore a counterfactual about the arithmetic mechanism in isolation:
+
+[quote]
+For each in scope CVE the native fixed width computation silently produces the incorrect
+value the disclosure attributes the vulnerability to, whereas the identical computation
+written with boost::safe_numbers halts at the faulting operation with a typed, catchable
+fault. Had that computation been written with the library under its default policy, the
+specific silent miscalculation identified as the root cause would have been converted into
+a controlled, observable failure rather than propagating as a valid looking value.
+
+We do not claim that the entire original program, with its full state and control flow,
+would have been immune. The library acts at the arithmetic root, upstream of the downstream
+memory safety consequence.
+
+[#empirical_method]
+== Method in brief
+
+CVEs are sourced from the NVD by CWE, so each entry sits in a category the National
+Vulnerability Database itself assigned, not one we reassigned. Every examined CVE is placed
+in exactly one disposition, and nothing is silently dropped:
+
+* `PREVENTED_RUNTIME`: the safe computation throws at the faulting operation.
+* `PREVENTED_COMPILETIME`: porting to safe types makes the faulting expression ill formed
+  (for example a mixed signedness comparison or a mixed width operation).
+* `PREVENTED_BOUNDED`: the value's legal domain is expressed with a bounded type, which
+  rejects the out of domain input before any arithmetic runs.
+* `NOT_PREVENTED`: a genuine integer arithmetic CVE whose faulting value is representable
+  and in range, so the library cannot detect it. These count in the denominator.
+* `OUT_OF_SCOPE`: on reduction, not a fixed width integer arithmetic fault. Recorded and
+  reported separately, removed from the denominator.
+
+To guard against a result that only looks good because the categories were chosen to
+flatter the library, the study includes CWE-682 (Incorrect Calculation) as a negative
+control, a category where many defects are logic errors the library cannot catch and where
+we therefore expect a distinctly lower prevention rate.
+
+The current corpus is a curated (purposive) sample: from the by-CWE pools we selected CVEs
+whose arithmetic root cause is reducible to a self contained snippet. The per category
+prevention rate should therefore be read as conditional on that reducibility, and the
+credibility of the result rests on the negative control and the honest not prevented cases
+rather than on a claim of random sampling. The corpus README documents the sampling
+methodology and the threats to validity in full.
+
+include::partial$cve_results.adoc[leveloffset=+1]
+
+[#empirical_bounded]
+== Bounded types: a precondition layer
+
+Beyond the default checked types, every primary-category entry in the corpus carries a third
+arm that declares the value's legal domain with a bounded type. This models the common case
+where a valid range is known independently of the computation: a length that must be at least
+a header size, a divisor that must be non zero, an index into a buffer of known size.
+Declaring that domain rejects a malicious input at the boundary, before the arithmetic runs
+at all, which is a second and earlier line of defense than the operation-level check.
+
+For example, an index into a 150-element buffer has the domain 0 through 149:
+
+[source,cpp]
+----
+using boost::safe_numbers::bounded_uint;
+using boost::safe_numbers::u8;
+
+using table_index = bounded_uint<0U, 149U>;   // valid indices for a 150-element buffer
+
+const u8 base   {100U};
+const u8 length {50U};
+const u8 end_index {base + length};            // 150: correct arithmetic, no overflow
+
+// The default checked type does not object: 100 + 50 is representable. It is the declared
+// index domain that catches the off-by-one when the value is materialized as an index:
+(void) table_index{end_index};                 // throws std::domain_error
+----
+
+The addition is correct and does not overflow, so the default check stays silent. The
+declared index domain is what catches the off-by-one.
+
+[NOTE]
+====
+One primary-category case is prevented only through a bounded type, which is why the CWE-190
+row reads 29 prevented by default and 30 including bounded. In CVE-2018-13785 (libpng) an
+oversized image width flows into a `row_factor` calculation that overflows and then divides
+by zero. The oversized width is itself a representable `u32` value, so the default checked
+type has no reason to reject it at construction; prevention comes from declaring the width's
+documented domain (libpng enforces a user width limit, one million by default) as a
+`bounded_uint`, which rejects the value at the boundary before the calculation runs.
+
+This is a modeling choice that mirrors libpng's own fix. The downstream `row_factor`
+overflow and the divide-by-zero would each be caught by the default checked types as well, so
+the same CVE could have been reproduced as a runtime-prevented case. It is classified as
+bounded on purpose, to show the domain-precondition path on a primary-category CVE rather
+than only on the CWE-682 control.
+====
+
+=== Where bounded types change the outcome: the CWE-682 control
+
+The negative control makes the effect concrete. Of its ten in-scope cases, three are
+prevented by the default checked types (they are divide-by-zero or shift faults that the NVD
+happened to tag as calculation errors). Declaring domains with bounded types prevents three
+more, raising the control from three prevented to six:
+
+* an off-by-one index used against a fixed-size table (the example above, CVE-2011-3062),
+* a length that omits a padding term and exceeds the real available space (CVE-2011-1573), and
+* a file offset that lands past a known line buffer (CVE-2018-11790).
+
+In each, the wrong result is used as an index, offset, or length into a buffer of
+independently known size, so the out-of-domain value is caught when it is formed. The bound
+must come from an independent quantity, the real buffer size, never from the correct answer.
+
+The remaining four control cases stay unprevented because their wrong result is a valid
+in-domain value: a rounded time value (CVE-2016-7433), a wrong elliptic-curve point
+(CVE-2017-8932), a mishandled floating point number (CVE-2018-14439), and a wrong
+cipher-reset output (CVE-2018-20999). No bound applies to these, which is exactly why the
+negative control still marks the library's limit. The "by default" and "incl. bounded"
+columns in the table above quantify this split: three by default, six once domains are
+declared, four beyond reach of either.
+
+[#empirical_reproduce]
+== Reproducing these numbers
+
+The corpus is built and run like any other test in the suite, and the statistics are
+regenerated from the metadata by a dependency free Python script:
+
+[source,bash]
+----
+# build and run the corpus (and confirm the compile-fail entries fail to compile)
+b2 libs/safe_numbers/test
+
+# regenerate corpus.csv, results_by_cwe.csv, results.adoc, and the doc partial
+python3 libs/safe_numbers/test/cve_corpus/analysis/aggregate.py
+----
+
+The script validates every metadata block, cross checks the recorded classification against
+the test outcome when a results file is supplied, and exits nonzero on any inconsistency, so
+the corpus can be gated in continuous integration.
+
+[#empirical_validity]
+== How to read the significance
+
+The native baseline detects zero of these faults by construction, since every CVE shipped
+in native integer code. Every prevented case is therefore a discordant pair favoring
+safe_numbers, so the paired McNemar test is ceilinged by design: it certifies that the
+asymmetry is not chance, and it is not an effect size. The scientifically meaningful
+quantity is the prevention rate and its Wilson confidence interval, which is bounded by the
+genuine failure mode visible in the not prevented cases and in the negative control. This
+empirical coverage result complements, and does not replace, the soundness result on the
+xref:verification.adoc[verification] page.
