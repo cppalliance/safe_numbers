@@ -173,12 +173,11 @@ consteval auto is_valid_type_policy(const basis_kind kind) noexcept -> bool
 {
     if constexpr (is_overflow_policy_v<Policy>)
     {
-        if (Policy == overflow_policy::throw_exception || Policy == overflow_policy::saturate)
-        {
-            return true;
-        }
-
-        return Policy == overflow_policy::strict && kind != basis_kind::floating_point;
+        // One expression rather than an if on a constant condition, which MSVC rejects
+        // under /W4 /WX (C4127)
+        return Policy == overflow_policy::throw_exception ||
+               Policy == overflow_policy::saturate ||
+               (Policy == overflow_policy::strict && kind != basis_kind::floating_point);
     }
     else
     {
