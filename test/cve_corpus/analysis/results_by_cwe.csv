@@ -1,0 +1,7 @@
+category,title,n_total,n_out_of_scope,n_in_scope,n_prevented,n_prevented_default,n_not_prevented,prevention_rate,wilson_lo,wilson_hi,prevented_default_rate,mcnemar_two_sided_p
+CWE-190,Integer Overflow or Wraparound,30,0,30,30,29,0,1.0000,0.8865,1.0000,0.9667,1.86e-09
+CWE-191,Integer Underflow,30,0,30,30,30,0,1.0000,0.8865,1.0000,1.0000,1.86e-09
+CWE-681,Incorrect Conversion between Numeric Types,30,0,30,30,30,0,1.0000,0.8865,1.0000,1.0000,1.86e-09
+CWE-369,Divide By Zero,30,0,30,30,30,0,1.0000,0.8865,1.0000,1.0000,1.86e-09
+CWE-682,Incorrect Calculation (negative control),20,10,10,6,3,4,0.6000,0.3127,0.8318,0.3000,0.0312
+POOLED,All categories,140,10,130,126,,,0.9692,0.9236,0.9880,,2.35e-38
