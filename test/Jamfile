@@ -200,6 +200,28 @@ run-fail test_signed_strict_multiplication.cpp ;
 run-fail test_signed_strict_division.cpp ;
 run-fail test_signed_strict_mod.cpp ;
 
+# Type-level policy tests (second template parameter on the basis templates)
+run test_unsigned_sat_type_arithmetic.cpp ;
+run test_signed_sat_type_arithmetic.cpp ;
+run test_float_sat_type_arithmetic.cpp ;
+run test_policy_type_traits.cpp ;
+run-fail test_unsigned_strict_type_addition.cpp ;
+run-fail test_unsigned_strict_type_division.cpp ;
+run-fail test_signed_strict_type_addition.cpp ;
+run-fail test_signed_strict_type_division.cpp ;
+run test_user_defined_handler.cpp ;
+compile-fail compile_fail_handler_stateful.cpp ;
+compile-fail compile_fail_handler_bad_signature.cpp ;
+compile-fail compile_fail_handler_mixed_policy.cpp ;
+compile-fail compile_fail_handler_tag_nttp.cpp ;
+compile-fail compile_fail_mixed_policy_ops.cpp ;
+compile-fail compile_fail_mixed_policy_compare.cpp ;
+compile-fail compile_fail_policy_checked_type.cpp ;
+compile-fail compile_fail_policy_overflow_tuple_type.cpp ;
+compile-fail compile_fail_policy_widen_type.cpp ;
+compile-fail compile_fail_strict_float_type.cpp ;
+compile-fail compile_fail_policy_wrong_kind.cpp ;
+
 # Exhaustive verification tests
 run test_exhaustive_u8_arithmetic.cpp ;
 run test_boundary_arithmetic.cpp ;
@@ -310,6 +332,8 @@ run ../examples/strict_arithmetic.cpp ;
 run ../examples/generic_arithmetic.cpp ;
 run ../examples/literals.cpp ;
 run ../examples/fmt_format.cpp ;
+run ../examples/policy_types.cpp ;
+run ../examples/user_defined_handler.cpp ;
 run ../examples/iostream.cpp ;
 run ../examples/charconv.cpp ;
 run ../examples/bit.cpp ;

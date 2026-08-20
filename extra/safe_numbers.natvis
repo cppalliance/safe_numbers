@@ -22,7 +22,7 @@
   <!-- ============================================================ -->
   <!-- Unsigned integers: u8, u16, u32, u64                         -->
   <!-- ============================================================ -->
-  <Type Name="boost::safe_numbers::detail::unsigned_integer_basis&lt;*&gt;">
+  <Type Name="boost::safe_numbers::detail::unsigned_integer_basis&lt;*,*&gt;">
     <DisplayString>{basis_,u}</DisplayString>
     <Expand>
       <Item Name="basis_">basis_</Item>
@@ -30,7 +30,7 @@
   </Type>
 
   <!-- u128: delegate to the uint128_t visualizer below -->
-  <Type Name="boost::safe_numbers::detail::unsigned_integer_basis&lt;boost::int128::uint128_t&gt;">
+  <Type Name="boost::safe_numbers::detail::unsigned_integer_basis&lt;boost::int128::uint128_t,*&gt;">
     <DisplayString>{basis_}</DisplayString>
     <Expand>
       <Item Name="basis_">basis_</Item>
@@ -40,7 +40,7 @@
   <!-- ============================================================ -->
   <!-- Signed integers: i8, i16, i32, i64                           -->
   <!-- ============================================================ -->
-  <Type Name="boost::safe_numbers::detail::signed_integer_basis&lt;*&gt;">
+  <Type Name="boost::safe_numbers::detail::signed_integer_basis&lt;*,*&gt;">
     <DisplayString>{basis_,d}</DisplayString>
     <Expand>
       <Item Name="basis_">basis_</Item>
@@ -48,7 +48,7 @@
   </Type>
 
   <!-- i128: delegate to the int128_t visualizer below -->
-  <Type Name="boost::safe_numbers::detail::signed_integer_basis&lt;boost::int128::int128_t&gt;">
+  <Type Name="boost::safe_numbers::detail::signed_integer_basis&lt;boost::int128::int128_t,*&gt;">
     <DisplayString>{basis_}</DisplayString>
     <Expand>
       <Item Name="basis_">basis_</Item>
@@ -58,7 +58,7 @@
   <!-- ============================================================ -->
   <!-- Floats: f32, f64                                             -->
   <!-- ============================================================ -->
-  <Type Name="boost::safe_numbers::detail::float_basis&lt;*&gt;">
+  <Type Name="boost::safe_numbers::detail::float_basis&lt;*,*&gt;">
     <DisplayString>{basis_}</DisplayString>
     <Expand>
       <Item Name="basis_">basis_</Item>

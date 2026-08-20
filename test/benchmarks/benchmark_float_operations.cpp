@@ -40,8 +40,8 @@ using namespace boost::safe_numbers;
 template <typename T>
 struct underlying_for_bench { using type = T; };
 
-template <typename T>
-struct underlying_for_bench<detail::float_basis<T>> { using type = T; };
+template <typename T, auto P>
+struct underlying_for_bench<detail::float_basis<T, P>> { using type = T; };
 
 template <typename T>
 using underlying_for_bench_t = typename underlying_for_bench<T>::type;

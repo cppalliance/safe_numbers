@@ -43,11 +43,18 @@ class i128;
 class f32;
 class f64;
 
+// Every width is also available with a saturating or strict error policy
+// in place of the default throwing one, e.g.:
+
+class sat_u8;    // clamps to the numeric limits instead of throwing
+class strict_i32; // terminates on any error
+class sat_f64;   // raw IEEE 754 arithmetic with no checks
+
 } // namespace boost::safe_numbers
 ```
 
 These types operate much like the built-in numeric types but with far stricter behavior to enforce correctness.
-This includes no implicit conversions, no mixed type operations, and throwing an exception on underflow, overflow, or other incorrect operation.
+This includes no implicit conversions, no mixed type operations, and (by default) throwing an exception on underflow, overflow, or other incorrect operation.
 A fully featured implementation analogous to the STL is included with `<cmath>`, `<charconv>`, `<format>`, etc. support.
 
 Using these types is straightforward and can be learned by [example](https://develop.safe-numbers.cpp.al/examples.html). 

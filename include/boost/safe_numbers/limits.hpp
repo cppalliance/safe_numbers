@@ -74,53 +74,17 @@ namespace std {
 #  pragma clang diagnostic ignored "-Wmismatched-tags"
 #endif
 
-template <>
-class numeric_limits<boost::safe_numbers::u8> :
-    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::u8> {};
+template <typename BasisType, auto ErrorPolicy>
+class numeric_limits<boost::safe_numbers::detail::unsigned_integer_basis<BasisType, ErrorPolicy>> :
+    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::detail::unsigned_integer_basis<BasisType, ErrorPolicy>> {};
 
-template <>
-class numeric_limits<boost::safe_numbers::u16> :
-    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::u16> {};
+template <typename BasisType, auto ErrorPolicy>
+class numeric_limits<boost::safe_numbers::detail::signed_integer_basis<BasisType, ErrorPolicy>> :
+    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::detail::signed_integer_basis<BasisType, ErrorPolicy>> {};
 
-template <>
-class numeric_limits<boost::safe_numbers::u32> :
-    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::u32> {};
-
-template <>
-class numeric_limits<boost::safe_numbers::u64> :
-    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::u64> {};
-
-template <>
-class numeric_limits<boost::safe_numbers::u128> :
-    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::u128> {};
-
-template <>
-class numeric_limits<boost::safe_numbers::i8> :
-    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::i8> {};
-
-template <>
-class numeric_limits<boost::safe_numbers::i16> :
-    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::i16> {};
-
-template <>
-class numeric_limits<boost::safe_numbers::i32> :
-    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::i32> {};
-
-template <>
-class numeric_limits<boost::safe_numbers::i64> :
-    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::i64> {};
-
-template <>
-class numeric_limits<boost::safe_numbers::i128> :
-    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::i128> {};
-
-template <>
-class numeric_limits<boost::safe_numbers::f32> :
-    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::f32> {};
-
-template <>
-class numeric_limits<boost::safe_numbers::f64> :
-    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::f64> {};
+template <typename BasisType, auto ErrorPolicy>
+class numeric_limits<boost::safe_numbers::detail::float_basis<BasisType, ErrorPolicy>> :
+    public boost::safe_numbers::detail::numeric_limits_impl<boost::safe_numbers::detail::float_basis<BasisType, ErrorPolicy>> {};
 
 template <auto Min, auto Max>
 class numeric_limits<boost::safe_numbers::bounded_uint<Min, Max>>

@@ -25,6 +25,10 @@ These types are drop-in replacements for the standard signed integer types with 
 
 Each type exposes a `basis_type` member type alias that refers to the underlying integer type, allowing conversion back to built-in types when needed.
 
+Every width is also available with a saturating or strict error policy in place of the default throwing one: `sat_i8` through `sat_i128` clamp instead of throwing (including `MIN / -1` and negation of `MIN`) and `strict_i8` through `strict_i128` terminate on error.
+The `basic_i8<H>` through `basic_i128<H>` alias templates select the policy by type, including user defined handlers: `basic_i32<my_handler>`.
+See xref:policies.adoc#policies_type_level[Policies as Part of the Type].
+
 [source,c++]
 ----
 #include <boost/safe_numbers/signed_integers.hpp>
@@ -37,7 +41,13 @@ using i32  = detail::signed_integer_basis<std::int32_t>;
 using i64  = detail::signed_integer_basis<std::int64_t>;
 using i128 = detail::signed_integer_basis<int128::int128_t>;
 
-template <signed_integral BasisType>
+using sat_i8   = detail::signed_integer_basis<std::int8_t, overflow_policy::saturate>;
+// ... sat_i16, sat_i32, sat_i64, sat_i128
+
+using strict_i8   = detail::signed_integer_basis<std::int8_t, overflow_policy::strict>;
+// ... strict_i16, strict_i32, strict_i64, strict_i128
+
+template <signed_integral BasisType, auto ErrorPolicy = overflow_policy::throw_exception>
 class signed_integer_basis {
 
 public:

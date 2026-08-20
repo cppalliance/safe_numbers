@@ -79,8 +79,8 @@ using namespace boost::safe_numbers;
 template <typename T>
 struct underlying_for_bench { using type = T; };
 
-template <typename T>
-struct underlying_for_bench<detail::unsigned_integer_basis<T>> { using type = T; };
+template <typename T, auto P>
+struct underlying_for_bench<detail::unsigned_integer_basis<T, P>> { using type = T; };
 
 template <typename T, typename PP, typename EP>
 struct underlying_for_bench<boost::safe_numerics::safe<T, PP, EP>> { using type = T; };

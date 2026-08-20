@@ -12,6 +12,7 @@ https://www.boost.org/LICENSE_1_0.txt
 
 The library ships with debugger pretty printers in the `extra/` directory: Python scripts for GDB and LLDB, and a NATVIS visualizer for the Visual Studio (MSVC) debugger.
 When loaded, they display safe number types as human-readable values instead of showing the internal class layout.
+The policy-carrying aliases (`sat_u8`, `strict_i32`, `sat_f64`, ...) display exactly like their throwing counterparts, since the stored value is identical.
 
 == Loading the Printers
 

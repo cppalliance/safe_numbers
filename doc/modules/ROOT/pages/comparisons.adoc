@@ -42,7 +42,7 @@ The matrix below compares Boost.SafeNumbers against the closest C++ libraries (B
 | Panics in debug, wraps in release; `checked_` / `saturating_` / `wrapping_` methods are explicit.
 
 | *Alternative overflow handling*
-| Per-operation functions: `saturating_*`, `checked_*`, `overflowing_*`, plus the throwing default.
+| Both forms: per-operation functions (`saturating_*`, `checked_*`, `overflowing_*`) and opt-in policy-carrying types (`sat_u8`, `strict_i32`), plus the throwing default.
 | Selected as a template parameter on the type (`safe<T, PP, EP>`); no per-operation functions.
 | Prevented by construction; explicit clamp / wrap helpers.
 | Arithmetic policy (undefined or checked) selectable.

@@ -249,6 +249,52 @@ add<saturate>(max, 1)          = 4294967295
 ----
 ====
 
+[#examples_policy_types]
+== Type-Level Policies
+
+The overflow policy can also be part of the type itself: every operator on `sat_u8` saturates and every operator on `strict_u32` terminates on error, with no per-call ceremony.
+See xref:policies.adoc#policies_type_level[Policies as Part of the Type] for the full model.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/policy_types.cpp[example] demonstrates the saturating type aliases, their equivalence with the named free functions, and their constexpr behavior.
+====
+[source, c++]
+----
+include::example$policy_types.cpp[]
+----
+
+Output:
+----
+sum of 100 tens in a sat_u8 = 255
+sat_u8{200} + sat_u8{100}          = 255
+saturating_add(u8{200}, u8{100})   = 255
+constexpr sat_u8{255} + sat_u8{1}  = 255
+sat_f32{FLT_MAX} + sat_f32{FLT_MAX} = inf
+----
+====
+
+[#examples_user_defined_handler]
+== User Defined Error Handlers
+
+Any stateless type with a suitable `on_error` can be the policy, selected by name through the `basic_*` alias templates: `basic_u8<my_handler>`.
+See xref:policies.adoc#policies_type_level[Policies as Part of the Type] for the handler contract.
+
+.This https://github.com/boostorg/safe_numbers/blob/develop/examples/user_defined_handler.cpp[example] demonstrates a wrapping handler, a logging handler, and the tag types that select the built-in policies.
+====
+[source, c++]
+----
+include::example$user_defined_handler.cpp[]
+----
+
+Output:
+----
+wrap_u8{250} += 10 = 4
+constexpr wrap_u8{255} + wrap_u8{1} = 0
+recovered: Overflow detected in u8 addition
+log_u8{200} + log_u8{200} = 144
+ieee_f32{FLT_MAX} + ieee_f32{FLT_MAX} = inf
+----
+====
+
 [#examples_safety_profile]
 == Integer Safety Profile
 

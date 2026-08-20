@@ -35,6 +35,9 @@ run test_cuda_u32_mul.cu ;
 run test_cuda_u32_div.cu ;
 run test_cuda_u32_mod.cu ;
 
+# Type-level policy smoke (saturating types on device)
+run test_cuda_sat_type_add.cu ;
+
 # u64 tests
 run test_cuda_u64_add.cu ;
 run test_cuda_u64_sub.cu ;

@@ -7,6 +7,7 @@
 
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/int128/int128.hpp>
+#include <boost/safe_numbers/overflow_policy.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -50,14 +51,163 @@ inline constexpr bool is_compatible_float_type = impl::is_compatible_float_type<
 template <typename T>
 concept compatible_float_type = is_compatible_float_type<T>;
 
-template <fundamental_unsigned_integral BasisType>
+// Which family of basis template a type-level error policy is validated against
+enum class basis_kind
+{
+    unsigned_integer,
+    signed_integer,
+    floating_point
+};
+
+// True when the NTTP is an overflow_policy enumerator. Every comparison against
+// an enumerator must sit behind this check because comparing a non-enum NTTP
+// against overflow_policy would be ill-formed rather than false.
+template <auto Policy>
+inline constexpr bool is_overflow_policy_v = std::is_same_v<std::remove_cv_t<decltype(Policy)>, overflow_policy>;
+
+// True when the NTTP is a user defined handler object rather than an
+// overflow_policy enumerator. The handler interface is validated separately
+// by the error_handler_for concept.
+template <auto Policy>
+inline constexpr bool is_user_handler_v = std::is_class_v<std::remove_cv_t<decltype(Policy)>>;
+
+// A user defined handler is a stateless class whose on_error is callable on a
+// const object with the error kind, a defined fallback value (the wrapped
+// integer result, the dividend, or the raw IEEE 754 result), and the
+// diagnostic message. Whatever it returns becomes the operation's result.
+template <typename Handler, typename T>
+concept error_handler_for = std::is_empty_v<Handler> &&
+    requires(const Handler handler, const T value, const char* msg)
+    {
+        { handler.on_error(error_kind::overflow, value, msg) } -> std::same_as<T>;
+    };
+
+// Compares a policy NTTP against an enumerator, funneled so that user handler
+// objects compare unequal instead of making the comparison ill-formed.
+// consteval, so uses in runtime conditions fold to a constant.
+template <auto Policy>
+consteval auto policy_equals(const overflow_policy policy) noexcept -> bool
+{
+    if constexpr (is_overflow_policy_v<Policy>)
+    {
+        return Policy == policy;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+// noexcept specification for operations whose only error is overflow or
+// underflow (add, sub, mul, shifts, increment, decrement, unary minus, and
+// every float operator): throwing throws, saturate and strict do not, and a
+// user handler propagates the noexcept of its on_error.
+template <auto Policy, typename T>
+consteval auto policy_is_nothrow_arith() noexcept -> bool
+{
+    if constexpr (is_overflow_policy_v<Policy>)
+    {
+        return Policy != overflow_policy::throw_exception;
+    }
+    else
+    {
+        return noexcept(Policy.on_error(error_kind::overflow, T{}, static_cast<const char*>(nullptr)));
+    }
+}
+
+// noexcept specification for integer division and modulo, where division by
+// zero throws under both throw_exception and saturate.
+template <auto Policy, typename T>
+consteval auto policy_is_nothrow_div() noexcept -> bool
+{
+    if constexpr (is_overflow_policy_v<Policy>)
+    {
+        return Policy == overflow_policy::strict;
+    }
+    else
+    {
+        return noexcept(Policy.on_error(error_kind::divide_by_zero, T{}, static_cast<const char*>(nullptr)));
+    }
+}
+
+// True when two policy NTTPs differ, without requiring comparability between
+// unrelated handler types. Handlers are stateless, so same type means equal.
+template <auto LHSPolicy, auto RHSPolicy>
+consteval auto policies_differ() noexcept -> bool
+{
+    if constexpr (!std::is_same_v<decltype(LHSPolicy), decltype(RHSPolicy)>)
+    {
+        return true;
+    }
+    else if constexpr (is_overflow_policy_v<LHSPolicy>)
+    {
+        return LHSPolicy != RHSPolicy;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+// Policies whose result is not the operand type (pair, optional, or a wider type)
+// can never live in the type itself; they remain free functions.
+template <auto Policy>
+consteval auto is_value_returning_policy() noexcept -> bool
+{
+    if constexpr (is_overflow_policy_v<Policy>)
+    {
+        return Policy == overflow_policy::overflow_tuple ||
+               Policy == overflow_policy::checked ||
+               Policy == overflow_policy::widen;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+// The subset of overflow_policy values allowed as a type-level policy for the
+// given basis kind: throw_exception and saturate everywhere, strict only for integers.
+template <auto Policy>
+consteval auto is_valid_type_policy(const basis_kind kind) noexcept -> bool
+{
+    if constexpr (is_overflow_policy_v<Policy>)
+    {
+        // One expression rather than an if on a constant condition, which MSVC rejects
+        // under /W4 /WX (C4127)
+        return Policy == overflow_policy::throw_exception ||
+               Policy == overflow_policy::saturate ||
+               (Policy == overflow_policy::strict && kind != basis_kind::floating_point);
+    }
+    else
+    {
+        return false;
+    }
+}
+
+template <fundamental_unsigned_integral BasisType, auto ErrorPolicy = overflow_policy::throw_exception>
 class unsigned_integer_basis;
 
-template <fundamental_signed_integral BasisType>
+template <fundamental_signed_integral BasisType, auto ErrorPolicy = overflow_policy::throw_exception>
 class signed_integer_basis;
 
-template <compatible_float_type BasisType>
+template <compatible_float_type BasisType, auto ErrorPolicy = overflow_policy::throw_exception>
 class float_basis;
+
+// Maps the type argument of the basic_* alias templates onto the basis NTTP:
+// the tag types select the built-in enum policies and any other type is a user
+// defined handler passed by value.
+template <typename ErrorHandler>
+inline constexpr auto type_policy_v = ErrorHandler{};
+
+template <>
+inline constexpr auto type_policy_v<throwing> = overflow_policy::throw_exception;
+
+template <>
+inline constexpr auto type_policy_v<saturating> = overflow_policy::saturate;
+
+template <>
+inline constexpr auto type_policy_v<strict> = overflow_policy::strict;
 
 // is_unsigned_library_type (base + unsigned_integer_basis specialization)
 
@@ -72,14 +222,14 @@ struct is_signed_library_type : std::false_type {};
 template <typename>
 struct is_float_library_type : std::false_type {};
 
-template <typename T>
-struct is_unsigned_library_type<unsigned_integer_basis<T>> : std::true_type {};
+template <typename T, auto ErrorPolicy>
+struct is_unsigned_library_type<unsigned_integer_basis<T, ErrorPolicy>> : std::true_type {};
 
-template <typename T>
-struct is_signed_library_type<signed_integer_basis<T>> : std::true_type {};
+template <typename T, auto ErrorPolicy>
+struct is_signed_library_type<signed_integer_basis<T, ErrorPolicy>> : std::true_type {};
 
-template <typename T>
-struct is_float_library_type<float_basis<T>> : std::true_type {};
+template <typename T, auto ErrorPolicy>
+struct is_float_library_type<float_basis<T, ErrorPolicy>> : std::true_type {};
 
 } // namespace impl
 
@@ -102,20 +252,20 @@ struct underlying
     using type = std::remove_cv_t<std::remove_reference_t<T>>;
 };
 
-template <typename T>
-struct underlying<unsigned_integer_basis<T>>
+template <typename T, auto ErrorPolicy>
+struct underlying<unsigned_integer_basis<T, ErrorPolicy>>
 {
     using type = T;
 };
 
-template <typename T>
-struct underlying<signed_integer_basis<T>>
+template <typename T, auto ErrorPolicy>
+struct underlying<signed_integer_basis<T, ErrorPolicy>>
 {
     using type = T;
 };
 
-template <typename T>
-struct underlying<float_basis<T>>
+template <typename T, auto ErrorPolicy>
+struct underlying<float_basis<T, ErrorPolicy>>
 {
     using type = T;
 };
@@ -289,14 +439,14 @@ namespace impl {
 template <typename>
 struct is_library_type : std::false_type {};
 
-template <typename T>
-struct is_library_type<unsigned_integer_basis<T>> : std::true_type {};
+template <typename T, auto ErrorPolicy>
+struct is_library_type<unsigned_integer_basis<T, ErrorPolicy>> : std::true_type {};
 
-template <typename T>
-struct is_library_type<signed_integer_basis<T>> : std::true_type {};
+template <typename T, auto ErrorPolicy>
+struct is_library_type<signed_integer_basis<T, ErrorPolicy>> : std::true_type {};
 
-template <typename T>
-struct is_library_type<float_basis<T>> : std::true_type {};
+template <typename T, auto ErrorPolicy>
+struct is_library_type<float_basis<T, ErrorPolicy>> : std::true_type {};
 
 template <auto Min, auto Max>
 struct is_library_type<bounded_uint<Min, Max>> : std::true_type {};
@@ -312,11 +462,11 @@ struct is_library_type<bounded_float<Min, Max>> : std::true_type {};
 template <typename>
 struct is_integral_library_type : std::false_type {};
 
-template <typename T>
-struct is_integral_library_type<unsigned_integer_basis<T>> : std::true_type {};
+template <typename T, auto ErrorPolicy>
+struct is_integral_library_type<unsigned_integer_basis<T, ErrorPolicy>> : std::true_type {};
 
-template <typename T>
-struct is_integral_library_type<signed_integer_basis<T>> : std::true_type {};
+template <typename T, auto ErrorPolicy>
+struct is_integral_library_type<signed_integer_basis<T, ErrorPolicy>> : std::true_type {};
 
 template <auto Min, auto Max>
 struct is_integral_library_type<bounded_uint<Min, Max>> : std::true_type {};

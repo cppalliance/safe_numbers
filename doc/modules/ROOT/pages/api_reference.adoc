@@ -41,6 +41,15 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:unsigned_integers.adoc[`u128`]
 | Safe unsigned 128-bit integer
+
+| xref:policies.adoc#policies_type_level[`sat_u8` ... `sat_u128`]
+| Saturating counterparts of `u8` ... `u128` (clamp instead of throwing)
+
+| xref:policies.adoc#policies_type_level[`strict_u8` ... `strict_u128`]
+| Strict counterparts of `u8` ... `u128` (terminate on error; host only)
+
+| xref:policies.adoc#policies_type_level[`basic_u8<H>` ... `basic_u128<H>`]
+| Alias templates selecting the policy by type: a tag (`throwing`, `saturating`, `strict`) or a user defined handler
 |===
 
 === Signed Integer Types
@@ -63,6 +72,15 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:signed_integers.adoc[`i128`]
 | Safe signed 128-bit integer
+
+| xref:policies.adoc#policies_type_level[`sat_i8` ... `sat_i128`]
+| Saturating counterparts of `i8` ... `i128` (clamp instead of throwing)
+
+| xref:policies.adoc#policies_type_level[`strict_i8` ... `strict_i128`]
+| Strict counterparts of `i8` ... `i128` (terminate on error; host only)
+
+| xref:policies.adoc#policies_type_level[`basic_i8<H>` ... `basic_i128<H>`]
+| Alias templates selecting the policy by type: a tag (`throwing`, `saturating`, `strict`) or a user defined handler
 |===
 
 === Floating-Point Types
@@ -76,6 +94,12 @@ https://www.boost.org/LICENSE_1_0.txt
 
 | xref:floats.adoc[`f64`]
 | Safe double-precision (binary64) floating-point type
+
+| xref:policies.adoc#policies_type_level[`sat_f32`, `sat_f64`]
+| Raw IEEE 754 counterparts of `f32`, `f64` (no checks; overflow saturates to infinity)
+
+| xref:policies.adoc#policies_type_level[`basic_f32<H>`, `basic_f64<H>`]
+| Alias templates selecting the policy by type: a tag (`throwing`, `saturating`) or a user defined handler
 |===
 
 === Bounded Types
@@ -101,7 +125,10 @@ https://www.boost.org/LICENSE_1_0.txt
 | Type | Description
 
 | xref:policies.adoc[`overflow_policy`]
-| Enum class specifying the overflow handling policy for arithmetic operations
+| Enum class specifying the overflow handling policy, at the call site or as the type's second template parameter
+
+| xref:policies.adoc#policies_type_level[`error_kind`]
+| Enum class identifying the failure reported to a user defined handler
 
 | xref:cuda.adoc#cuda_device_exception_mode[`device_exception_mode`]
 | Enum class controlling whether CUDA device errors trap the kernel or defer to the host

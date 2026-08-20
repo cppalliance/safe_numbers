@@ -29,13 +29,28 @@
 
 namespace boost::safe_numbers::detail {
 
-template <compatible_float_type BasisType>
+template <compatible_float_type BasisType, auto ErrorPolicy>
 class float_basis
 {
 public:
 
     // This is exposed to the user so that they can convert back to built-in
     using basis_type = BasisType;
+
+    static_assert(is_overflow_policy_v<ErrorPolicy> || error_handler_for<decltype(ErrorPolicy), BasisType>,
+                  "ErrorPolicy must be a boost::safe_numbers::overflow_policy enumerator or a stateless "
+                  "handler type providing on_error(error_kind, BasisType, const char*) returning BasisType");
+
+    static_assert(!is_value_returning_policy<ErrorPolicy>(),
+                  "overflow_tuple, checked, and widen change the result type of every operation, "
+                  "so they can not be type-level policies: use the overflowing_* free functions instead");
+
+    static_assert(!is_overflow_policy_v<ErrorPolicy> || is_valid_type_policy<ErrorPolicy>(basis_kind::floating_point),
+                  "float_basis supports overflow_policy::throw_exception and overflow_policy::saturate; "
+                  "strict is integer only");
+
+    // Exposed so that generic code and tests can query the type-level policy
+    static constexpr auto error_policy {ErrorPolicy};
 
 private:
 
@@ -765,107 +780,152 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_invalid_add() -> void
 
 } // namespace impl
 
-template <compatible_float_type BasisType>
+// The saturating policy is raw IEEE 754, so overflow to infinity is the intended result
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable:4756)
+#endif
+
+template <compatible_float_type BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
-[[nodiscard]] constexpr auto operator+(const float_basis<BasisType> lhs,
-                                       const float_basis<BasisType> rhs) -> float_basis<BasisType>
+[[nodiscard]] constexpr auto operator+(const float_basis<BasisType, ErrorPolicy> lhs,
+                                       const float_basis<BasisType, ErrorPolicy> rhs)
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> float_basis<BasisType, ErrorPolicy>
 {
     const auto lhs_basis {static_cast<BasisType>(lhs)};
     const auto rhs_basis {static_cast<BasisType>(rhs)};
-    [[maybe_unused]] BasisType res {};
 
-    // The throw branches are inlined here (rather than calling impl::throw_*_add)
-    // so BOOST_THROW_EXCEPTION captures operator+ as the source location of the throw.
-    switch (impl::checked_float_addition(lhs_basis, rhs_basis, res))
+    if constexpr (policy_equals<ErrorPolicy>(overflow_policy::saturate))
     {
-        case impl::error_category::no_error:
-            break;
-        case impl::error_category::overflow:
-            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-            if (std::is_constant_evaluated())
-            {
-                if constexpr (std::is_same_v<BasisType, float>)
-                {
-                    throw std::overflow_error("Overflow detected in f32 addition"); // LCOV_EXCL_LINE
-                }
-                else
-                {
-                    throw std::overflow_error("Overflow detected in f64 addition"); // LCOV_EXCL_LINE
-                }
-            }
-            else
-            #endif
-            {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, overflow_add_msg<BasisType>());
-            }
-            break;
-        case impl::error_category::underflow:
-            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-            if (std::is_constant_evaluated())
-            {
-                if constexpr (std::is_same_v<BasisType, float>)
-                {
-                    throw std::underflow_error("Underflow detected in f32 addition"); // LCOV_EXCL_LINE
-                }
-                else
-                {
-                    throw std::underflow_error("Underflow detected in f64 addition"); // LCOV_EXCL_LINE
-                }
-            }
-            else
-            #endif
-            {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, underflow_add_msg<BasisType>());
-            }
-            break;
-        case impl::error_category::nan_op:
-            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-            if (std::is_constant_evaluated())
-            {
-                if constexpr (std::is_same_v<BasisType, float>)
-                {
-                    throw std::domain_error("Operation with NAN detected in f32 addition"); // LCOV_EXCL_LINE
-                }
-                else
-                {
-                    throw std::domain_error("Operation with NAN detected in f64 addition"); // LCOV_EXCL_LINE
-                }
-            }
-            else
-            #endif
-            {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, nan_add_msg<BasisType>());
-            }
-            break;
-        case impl::error_category::invalid_op:
-            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-            if (std::is_constant_evaluated())
-            {
-                if constexpr (std::is_same_v<BasisType, float>)
-                {
-                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 addition"); // LCOV_EXCL_LINE
-                }
-                else
-                {
-                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 addition"); // LCOV_EXCL_LINE
-                }
-            }
-            else
-            #endif
-            {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, invalid_add_msg<BasisType>());
-            }
-            break;
-        case impl::error_category::divide_by_zero:
-            BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
-            break;                          // LCOV_EXCL_LINE
-        default:
-            BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
-            break;                          // LCOV_EXCL_LINE
+        // Raw IEEE 754 semantics: overflow saturates to infinity and NaN propagates.
+        // Same expression as the value component of overflowing_add.
+        return float_basis<BasisType, ErrorPolicy>{static_cast<BasisType>(lhs_basis + rhs_basis)};
     }
+    else if constexpr (is_user_handler_v<ErrorPolicy>)
+    {
+        // The classifier stores the raw IEEE 754 result, which is the defined
+        // fallback value handed to the handler
+        BasisType res {};
+        switch (impl::checked_float_addition(lhs_basis, rhs_basis, res))
+        {
+            case impl::error_category::overflow:
+                res = ErrorPolicy.on_error(error_kind::overflow, res, overflow_add_msg<BasisType>());
+                break;
+            case impl::error_category::underflow:
+                res = ErrorPolicy.on_error(error_kind::underflow, res, underflow_add_msg<BasisType>());
+                break;
+            case impl::error_category::nan_op:
+                res = ErrorPolicy.on_error(error_kind::nan_operation, res, nan_add_msg<BasisType>());
+                break;
+            case impl::error_category::invalid_op:
+                res = ErrorPolicy.on_error(error_kind::invalid_operation, res, invalid_add_msg<BasisType>());
+                break;
+            default:
+                break;
+        }
+        return float_basis<BasisType, ErrorPolicy>{res};
+    }
+    else
+    {
+        [[maybe_unused]] BasisType res {};
 
-    return float_basis<BasisType>{res};
+        // The throw branches are inlined here (rather than calling impl::throw_*_add)
+        // so BOOST_THROW_EXCEPTION captures operator+ as the source location of the throw.
+        switch (impl::checked_float_addition(lhs_basis, rhs_basis, res))
+        {
+            case impl::error_category::no_error:
+                break;
+            case impl::error_category::overflow:
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
+                if (std::is_constant_evaluated())
+                {
+                    if constexpr (std::is_same_v<BasisType, float>)
+                    {
+                        throw std::overflow_error("Overflow detected in f32 addition"); // LCOV_EXCL_LINE
+                    }
+                    else
+                    {
+                        throw std::overflow_error("Overflow detected in f64 addition"); // LCOV_EXCL_LINE
+                    }
+                }
+                else
+                #endif
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, overflow_add_msg<BasisType>());
+                }
+                break;
+            case impl::error_category::underflow:
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
+                if (std::is_constant_evaluated())
+                {
+                    if constexpr (std::is_same_v<BasisType, float>)
+                    {
+                        throw std::underflow_error("Underflow detected in f32 addition"); // LCOV_EXCL_LINE
+                    }
+                    else
+                    {
+                        throw std::underflow_error("Underflow detected in f64 addition"); // LCOV_EXCL_LINE
+                    }
+                }
+                else
+                #endif
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, underflow_add_msg<BasisType>());
+                }
+                break;
+            case impl::error_category::nan_op:
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
+                if (std::is_constant_evaluated())
+                {
+                    if constexpr (std::is_same_v<BasisType, float>)
+                    {
+                        throw std::domain_error("Operation with NAN detected in f32 addition"); // LCOV_EXCL_LINE
+                    }
+                    else
+                    {
+                        throw std::domain_error("Operation with NAN detected in f64 addition"); // LCOV_EXCL_LINE
+                    }
+                }
+                else
+                #endif
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, nan_add_msg<BasisType>());
+                }
+                break;
+            case impl::error_category::invalid_op:
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
+                if (std::is_constant_evaluated())
+                {
+                    if constexpr (std::is_same_v<BasisType, float>)
+                    {
+                        throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 addition"); // LCOV_EXCL_LINE
+                    }
+                    else
+                    {
+                        throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 addition"); // LCOV_EXCL_LINE
+                    }
+                }
+                else
+                #endif
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, invalid_add_msg<BasisType>());
+                }
+                break;
+            case impl::error_category::divide_by_zero:
+                BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
+                break;                          // LCOV_EXCL_LINE
+            default:
+                BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
+                break;                          // LCOV_EXCL_LINE
+        }
+
+        return float_basis<BasisType, ErrorPolicy>{res};
+    }
 }
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 
 // ------------------------------
 // Subtraction
@@ -1013,107 +1073,152 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_invalid_sub() -> void
 
 } // namespace impl
 
-template <compatible_float_type BasisType>
+// The saturating policy is raw IEEE 754, so overflow to infinity is the intended result
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable:4756)
+#endif
+
+template <compatible_float_type BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
-[[nodiscard]] constexpr auto operator-(const float_basis<BasisType> lhs,
-                                       const float_basis<BasisType> rhs) -> float_basis<BasisType>
+[[nodiscard]] constexpr auto operator-(const float_basis<BasisType, ErrorPolicy> lhs,
+                                       const float_basis<BasisType, ErrorPolicy> rhs)
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> float_basis<BasisType, ErrorPolicy>
 {
     const auto lhs_basis {static_cast<BasisType>(lhs)};
     const auto rhs_basis {static_cast<BasisType>(rhs)};
-    [[maybe_unused]] BasisType res {};
 
-    // The throw branches are inlined here (rather than calling impl::throw_*_sub)
-    // so BOOST_THROW_EXCEPTION captures operator- as the source location of the throw.
-    switch (impl::checked_float_subtraction(lhs_basis, rhs_basis, res))
+    if constexpr (policy_equals<ErrorPolicy>(overflow_policy::saturate))
     {
-        case impl::error_category::no_error:
-            break;
-        case impl::error_category::overflow:
-            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-            if (std::is_constant_evaluated())
-            {
-                if constexpr (std::is_same_v<BasisType, float>)
-                {
-                    throw std::overflow_error("Overflow detected in f32 subtraction"); // LCOV_EXCL_LINE
-                }
-                else
-                {
-                    throw std::overflow_error("Overflow detected in f64 subtraction"); // LCOV_EXCL_LINE
-                }
-            }
-            else
-            #endif
-            {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, overflow_sub_msg<BasisType>());
-            }
-            break;
-        case impl::error_category::underflow:
-            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-            if (std::is_constant_evaluated())
-            {
-                if constexpr (std::is_same_v<BasisType, float>)
-                {
-                    throw std::underflow_error("Underflow detected in f32 subtraction"); // LCOV_EXCL_LINE
-                }
-                else
-                {
-                    throw std::underflow_error("Underflow detected in f64 subtraction"); // LCOV_EXCL_LINE
-                }
-            }
-            else
-            #endif
-            {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, underflow_sub_msg<BasisType>());
-            }
-            break;
-        case impl::error_category::nan_op:
-            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-            if (std::is_constant_evaluated())
-            {
-                if constexpr (std::is_same_v<BasisType, float>)
-                {
-                    throw std::domain_error("Operation with NAN detected in f32 subtraction"); // LCOV_EXCL_LINE
-                }
-                else
-                {
-                    throw std::domain_error("Operation with NAN detected in f64 subtraction"); // LCOV_EXCL_LINE
-                }
-            }
-            else
-            #endif
-            {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, nan_sub_msg<BasisType>());
-            }
-            break;
-        case impl::error_category::invalid_op:
-            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-            if (std::is_constant_evaluated())
-            {
-                if constexpr (std::is_same_v<BasisType, float>)
-                {
-                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 subtraction"); // LCOV_EXCL_LINE
-                }
-                else
-                {
-                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 subtraction"); // LCOV_EXCL_LINE
-                }
-            }
-            else
-            #endif
-            {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, invalid_sub_msg<BasisType>());
-            }
-            break;
-        case impl::error_category::divide_by_zero:
-            BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
-            break;                          // LCOV_EXCL_LINE
-        default:
-            BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
-            break;                          // LCOV_EXCL_LINE
+        // Raw IEEE 754 semantics: overflow saturates to infinity and NaN propagates.
+        // Same expression as the value component of overflowing_sub.
+        return float_basis<BasisType, ErrorPolicy>{static_cast<BasisType>(lhs_basis - rhs_basis)};
     }
+    else if constexpr (is_user_handler_v<ErrorPolicy>)
+    {
+        // The classifier stores the raw IEEE 754 result, which is the defined
+        // fallback value handed to the handler
+        BasisType res {};
+        switch (impl::checked_float_subtraction(lhs_basis, rhs_basis, res))
+        {
+            case impl::error_category::overflow:
+                res = ErrorPolicy.on_error(error_kind::overflow, res, overflow_sub_msg<BasisType>());
+                break;
+            case impl::error_category::underflow:
+                res = ErrorPolicy.on_error(error_kind::underflow, res, underflow_sub_msg<BasisType>());
+                break;
+            case impl::error_category::nan_op:
+                res = ErrorPolicy.on_error(error_kind::nan_operation, res, nan_sub_msg<BasisType>());
+                break;
+            case impl::error_category::invalid_op:
+                res = ErrorPolicy.on_error(error_kind::invalid_operation, res, invalid_sub_msg<BasisType>());
+                break;
+            default:
+                break;
+        }
+        return float_basis<BasisType, ErrorPolicy>{res};
+    }
+    else
+    {
+        [[maybe_unused]] BasisType res {};
 
-    return float_basis<BasisType>{res};
+        // The throw branches are inlined here (rather than calling impl::throw_*_sub)
+        // so BOOST_THROW_EXCEPTION captures operator- as the source location of the throw.
+        switch (impl::checked_float_subtraction(lhs_basis, rhs_basis, res))
+        {
+            case impl::error_category::no_error:
+                break;
+            case impl::error_category::overflow:
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
+                if (std::is_constant_evaluated())
+                {
+                    if constexpr (std::is_same_v<BasisType, float>)
+                    {
+                        throw std::overflow_error("Overflow detected in f32 subtraction"); // LCOV_EXCL_LINE
+                    }
+                    else
+                    {
+                        throw std::overflow_error("Overflow detected in f64 subtraction"); // LCOV_EXCL_LINE
+                    }
+                }
+                else
+                #endif
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, overflow_sub_msg<BasisType>());
+                }
+                break;
+            case impl::error_category::underflow:
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
+                if (std::is_constant_evaluated())
+                {
+                    if constexpr (std::is_same_v<BasisType, float>)
+                    {
+                        throw std::underflow_error("Underflow detected in f32 subtraction"); // LCOV_EXCL_LINE
+                    }
+                    else
+                    {
+                        throw std::underflow_error("Underflow detected in f64 subtraction"); // LCOV_EXCL_LINE
+                    }
+                }
+                else
+                #endif
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, underflow_sub_msg<BasisType>());
+                }
+                break;
+            case impl::error_category::nan_op:
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
+                if (std::is_constant_evaluated())
+                {
+                    if constexpr (std::is_same_v<BasisType, float>)
+                    {
+                        throw std::domain_error("Operation with NAN detected in f32 subtraction"); // LCOV_EXCL_LINE
+                    }
+                    else
+                    {
+                        throw std::domain_error("Operation with NAN detected in f64 subtraction"); // LCOV_EXCL_LINE
+                    }
+                }
+                else
+                #endif
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, nan_sub_msg<BasisType>());
+                }
+                break;
+            case impl::error_category::invalid_op:
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
+                if (std::is_constant_evaluated())
+                {
+                    if constexpr (std::is_same_v<BasisType, float>)
+                    {
+                        throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 subtraction"); // LCOV_EXCL_LINE
+                    }
+                    else
+                    {
+                        throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 subtraction"); // LCOV_EXCL_LINE
+                    }
+                }
+                else
+                #endif
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, invalid_sub_msg<BasisType>());
+                }
+                break;
+            case impl::error_category::divide_by_zero:
+                BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
+                break;                          // LCOV_EXCL_LINE
+            default:
+                BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
+                break;                          // LCOV_EXCL_LINE
+        }
+
+        return float_basis<BasisType, ErrorPolicy>{res};
+    }
 }
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 
 // ------------------------------
 // Multiplication
@@ -1271,107 +1376,152 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_invalid_mul() -> void
 
 } // namespace impl
 
-template <compatible_float_type BasisType>
+// The saturating policy is raw IEEE 754, so overflow to infinity is the intended result
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable:4756)
+#endif
+
+template <compatible_float_type BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
-[[nodiscard]] constexpr auto operator*(const float_basis<BasisType> lhs,
-                                       const float_basis<BasisType> rhs) -> float_basis<BasisType>
+[[nodiscard]] constexpr auto operator*(const float_basis<BasisType, ErrorPolicy> lhs,
+                                       const float_basis<BasisType, ErrorPolicy> rhs)
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> float_basis<BasisType, ErrorPolicy>
 {
     const auto lhs_basis {static_cast<BasisType>(lhs)};
     const auto rhs_basis {static_cast<BasisType>(rhs)};
-    [[maybe_unused]] BasisType res {};
 
-    // The throw branches are inlined here (rather than calling impl::throw_*_mul)
-    // so BOOST_THROW_EXCEPTION captures operator* as the source location of the throw.
-    switch (impl::checked_float_multiplication(lhs_basis, rhs_basis, res))
+    if constexpr (policy_equals<ErrorPolicy>(overflow_policy::saturate))
     {
-        case impl::error_category::no_error:
-            break;
-        case impl::error_category::overflow:
-            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-            if (std::is_constant_evaluated())
-            {
-                if constexpr (std::is_same_v<BasisType, float>)
-                {
-                    throw std::overflow_error("Overflow detected in f32 multiplication"); // LCOV_EXCL_LINE
-                }
-                else
-                {
-                    throw std::overflow_error("Overflow detected in f64 multiplication"); // LCOV_EXCL_LINE
-                }
-            }
-            else
-            #endif
-            {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, overflow_mul_msg<BasisType>());
-            }
-            break;
-        case impl::error_category::underflow:
-            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-            if (std::is_constant_evaluated())
-            {
-                if constexpr (std::is_same_v<BasisType, float>)
-                {
-                    throw std::underflow_error("Underflow detected in f32 multiplication"); // LCOV_EXCL_LINE
-                }
-                else
-                {
-                    throw std::underflow_error("Underflow detected in f64 multiplication"); // LCOV_EXCL_LINE
-                }
-            }
-            else
-            #endif
-            {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, underflow_mul_msg<BasisType>());
-            }
-            break;
-        case impl::error_category::nan_op:
-            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-            if (std::is_constant_evaluated())
-            {
-                if constexpr (std::is_same_v<BasisType, float>)
-                {
-                    throw std::domain_error("Operation with NAN detected in f32 multiplication"); // LCOV_EXCL_LINE
-                }
-                else
-                {
-                    throw std::domain_error("Operation with NAN detected in f64 multiplication"); // LCOV_EXCL_LINE
-                }
-            }
-            else
-            #endif
-            {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, nan_mul_msg<BasisType>());
-            }
-            break;
-        case impl::error_category::invalid_op:
-            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-            if (std::is_constant_evaluated())
-            {
-                if constexpr (std::is_same_v<BasisType, float>)
-                {
-                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 multiplication"); // LCOV_EXCL_LINE
-                }
-                else
-                {
-                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 multiplication"); // LCOV_EXCL_LINE
-                }
-            }
-            else
-            #endif
-            {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, invalid_mul_msg<BasisType>());
-            }
-            break;
-        case impl::error_category::divide_by_zero:
-            BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
-            break;                          // LCOV_EXCL_LINE
-        default:
-            BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
-            break;                          // LCOV_EXCL_LINE
+        // Raw IEEE 754 semantics: overflow saturates to infinity and NaN propagates.
+        // Same expression as the value component of overflowing_mul.
+        return float_basis<BasisType, ErrorPolicy>{static_cast<BasisType>(lhs_basis * rhs_basis)};
     }
+    else if constexpr (is_user_handler_v<ErrorPolicy>)
+    {
+        // The classifier stores the raw IEEE 754 result, which is the defined
+        // fallback value handed to the handler
+        BasisType res {};
+        switch (impl::checked_float_multiplication(lhs_basis, rhs_basis, res))
+        {
+            case impl::error_category::overflow:
+                res = ErrorPolicy.on_error(error_kind::overflow, res, overflow_mul_msg<BasisType>());
+                break;
+            case impl::error_category::underflow:
+                res = ErrorPolicy.on_error(error_kind::underflow, res, underflow_mul_msg<BasisType>());
+                break;
+            case impl::error_category::nan_op:
+                res = ErrorPolicy.on_error(error_kind::nan_operation, res, nan_mul_msg<BasisType>());
+                break;
+            case impl::error_category::invalid_op:
+                res = ErrorPolicy.on_error(error_kind::invalid_operation, res, invalid_mul_msg<BasisType>());
+                break;
+            default:
+                break;
+        }
+        return float_basis<BasisType, ErrorPolicy>{res};
+    }
+    else
+    {
+        [[maybe_unused]] BasisType res {};
 
-    return float_basis<BasisType>{res};
+        // The throw branches are inlined here (rather than calling impl::throw_*_mul)
+        // so BOOST_THROW_EXCEPTION captures operator* as the source location of the throw.
+        switch (impl::checked_float_multiplication(lhs_basis, rhs_basis, res))
+        {
+            case impl::error_category::no_error:
+                break;
+            case impl::error_category::overflow:
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
+                if (std::is_constant_evaluated())
+                {
+                    if constexpr (std::is_same_v<BasisType, float>)
+                    {
+                        throw std::overflow_error("Overflow detected in f32 multiplication"); // LCOV_EXCL_LINE
+                    }
+                    else
+                    {
+                        throw std::overflow_error("Overflow detected in f64 multiplication"); // LCOV_EXCL_LINE
+                    }
+                }
+                else
+                #endif
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, overflow_mul_msg<BasisType>());
+                }
+                break;
+            case impl::error_category::underflow:
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
+                if (std::is_constant_evaluated())
+                {
+                    if constexpr (std::is_same_v<BasisType, float>)
+                    {
+                        throw std::underflow_error("Underflow detected in f32 multiplication"); // LCOV_EXCL_LINE
+                    }
+                    else
+                    {
+                        throw std::underflow_error("Underflow detected in f64 multiplication"); // LCOV_EXCL_LINE
+                    }
+                }
+                else
+                #endif
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, underflow_mul_msg<BasisType>());
+                }
+                break;
+            case impl::error_category::nan_op:
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
+                if (std::is_constant_evaluated())
+                {
+                    if constexpr (std::is_same_v<BasisType, float>)
+                    {
+                        throw std::domain_error("Operation with NAN detected in f32 multiplication"); // LCOV_EXCL_LINE
+                    }
+                    else
+                    {
+                        throw std::domain_error("Operation with NAN detected in f64 multiplication"); // LCOV_EXCL_LINE
+                    }
+                }
+                else
+                #endif
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, nan_mul_msg<BasisType>());
+                }
+                break;
+            case impl::error_category::invalid_op:
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
+                if (std::is_constant_evaluated())
+                {
+                    if constexpr (std::is_same_v<BasisType, float>)
+                    {
+                        throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 multiplication"); // LCOV_EXCL_LINE
+                    }
+                    else
+                    {
+                        throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 multiplication"); // LCOV_EXCL_LINE
+                    }
+                }
+                else
+                #endif
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, invalid_mul_msg<BasisType>());
+                }
+                break;
+            case impl::error_category::divide_by_zero:
+                BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
+                break;                          // LCOV_EXCL_LINE
+            default:
+                BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
+                break;                          // LCOV_EXCL_LINE
+        }
+
+        return float_basis<BasisType, ErrorPolicy>{res};
+    }
 }
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 
 // ------------------------------
 // Division
@@ -1567,123 +1717,171 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_divbyzero_div() -> void
 
 } // namespace impl
 
-template <compatible_float_type BasisType>
+// The saturating policy is raw IEEE 754, so overflow to infinity is the intended result
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable:4756)
+#endif
+
+template <compatible_float_type BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
-[[nodiscard]] constexpr auto operator/(const float_basis<BasisType> lhs,
-                                       const float_basis<BasisType> rhs) -> float_basis<BasisType>
+[[nodiscard]] constexpr auto operator/(const float_basis<BasisType, ErrorPolicy> lhs,
+                                       const float_basis<BasisType, ErrorPolicy> rhs)
+    noexcept(policy_is_nothrow_arith<ErrorPolicy, BasisType>()) -> float_basis<BasisType, ErrorPolicy>
 {
     const auto lhs_basis {static_cast<BasisType>(lhs)};
     const auto rhs_basis {static_cast<BasisType>(rhs)};
-    [[maybe_unused]] BasisType res {};
 
-    // The throw branches are inlined here (rather than calling impl::throw_*_div)
-    // so BOOST_THROW_EXCEPTION captures operator/ as the source location of the throw.
-    switch (impl::checked_float_division(lhs_basis, rhs_basis, res))
+    if constexpr (policy_equals<ErrorPolicy>(overflow_policy::saturate))
     {
-        case impl::error_category::no_error:
-            break;
-        case impl::error_category::overflow:
-            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-            if (std::is_constant_evaluated())
-            {
-                if constexpr (std::is_same_v<BasisType, float>)
-                {
-                    throw std::overflow_error("Overflow detected in f32 division"); // LCOV_EXCL_LINE
-                }
-                else
-                {
-                    throw std::overflow_error("Overflow detected in f64 division"); // LCOV_EXCL_LINE
-                }
-            }
-            else
-            #endif
-            {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, overflow_div_msg<BasisType>());
-            }
-            break;
-        case impl::error_category::underflow:
-            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-            if (std::is_constant_evaluated())
-            {
-                if constexpr (std::is_same_v<BasisType, float>)
-                {
-                    throw std::underflow_error("Underflow detected in f32 division"); // LCOV_EXCL_LINE
-                }
-                else
-                {
-                    throw std::underflow_error("Underflow detected in f64 division"); // LCOV_EXCL_LINE
-                }
-            }
-            else
-            #endif
-            {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, underflow_div_msg<BasisType>());
-            }
-            break;
-        case impl::error_category::nan_op:
-            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-            if (std::is_constant_evaluated())
-            {
-                if constexpr (std::is_same_v<BasisType, float>)
-                {
-                    throw std::domain_error("Operation with NAN detected in f32 division"); // LCOV_EXCL_LINE
-                }
-                else
-                {
-                    throw std::domain_error("Operation with NAN detected in f64 division"); // LCOV_EXCL_LINE
-                }
-            }
-            else
-            #endif
-            {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, nan_div_msg<BasisType>());
-            }
-            break;
-        case impl::error_category::invalid_op:
-            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-            if (std::is_constant_evaluated())
-            {
-                if constexpr (std::is_same_v<BasisType, float>)
-                {
-                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 division"); // LCOV_EXCL_LINE
-                }
-                else
-                {
-                    throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 division"); // LCOV_EXCL_LINE
-                }
-            }
-            else
-            #endif
-            {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, invalid_div_msg<BasisType>());
-            }
-            break;
-        case impl::error_category::divide_by_zero:
-            #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
-            if (std::is_constant_evaluated())
-            {
-                if constexpr (std::is_same_v<BasisType, float>)
-                {
-                    throw std::domain_error("Division by zero detected in f32 division"); // LCOV_EXCL_LINE
-                }
-                else
-                {
-                    throw std::domain_error("Division by zero detected in f64 division"); // LCOV_EXCL_LINE
-                }
-            }
-            else
-            #endif
-            {
-                BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, divbyzero_div_msg<BasisType>());
-            }
-            break;
-        default:
-            BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
-            break;                          // LCOV_EXCL_LINE
+        // Raw IEEE 754 semantics: overflow saturates to infinity and NaN propagates.
+        // Same expression as the value component of overflowing_div.
+        return float_basis<BasisType, ErrorPolicy>{static_cast<BasisType>(lhs_basis / rhs_basis)};
     }
+    else if constexpr (is_user_handler_v<ErrorPolicy>)
+    {
+        // The classifier stores the raw IEEE 754 result, which is the defined
+        // fallback value handed to the handler
+        BasisType res {};
+        switch (impl::checked_float_division(lhs_basis, rhs_basis, res))
+        {
+            case impl::error_category::overflow:
+                res = ErrorPolicy.on_error(error_kind::overflow, res, overflow_div_msg<BasisType>());
+                break;
+            case impl::error_category::underflow:
+                res = ErrorPolicy.on_error(error_kind::underflow, res, underflow_div_msg<BasisType>());
+                break;
+            case impl::error_category::nan_op:
+                res = ErrorPolicy.on_error(error_kind::nan_operation, res, nan_div_msg<BasisType>());
+                break;
+            case impl::error_category::invalid_op:
+                res = ErrorPolicy.on_error(error_kind::invalid_operation, res, invalid_div_msg<BasisType>());
+                break;
+            case impl::error_category::divide_by_zero:
+                res = ErrorPolicy.on_error(error_kind::divide_by_zero, res, divbyzero_div_msg<BasisType>());
+                break;
+            default:
+                break;
+        }
+        return float_basis<BasisType, ErrorPolicy>{res};
+    }
+    else
+    {
+        [[maybe_unused]] BasisType res {};
 
-    return float_basis<BasisType>{res};
+        // The throw branches are inlined here (rather than calling impl::throw_*_div)
+        // so BOOST_THROW_EXCEPTION captures operator/ as the source location of the throw.
+        switch (impl::checked_float_division(lhs_basis, rhs_basis, res))
+        {
+            case impl::error_category::no_error:
+                break;
+            case impl::error_category::overflow:
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
+                if (std::is_constant_evaluated())
+                {
+                    if constexpr (std::is_same_v<BasisType, float>)
+                    {
+                        throw std::overflow_error("Overflow detected in f32 division"); // LCOV_EXCL_LINE
+                    }
+                    else
+                    {
+                        throw std::overflow_error("Overflow detected in f64 division"); // LCOV_EXCL_LINE
+                    }
+                }
+                else
+                #endif
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, overflow_div_msg<BasisType>());
+                }
+                break;
+            case impl::error_category::underflow:
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
+                if (std::is_constant_evaluated())
+                {
+                    if constexpr (std::is_same_v<BasisType, float>)
+                    {
+                        throw std::underflow_error("Underflow detected in f32 division"); // LCOV_EXCL_LINE
+                    }
+                    else
+                    {
+                        throw std::underflow_error("Underflow detected in f64 division"); // LCOV_EXCL_LINE
+                    }
+                }
+                else
+                #endif
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, underflow_div_msg<BasisType>());
+                }
+                break;
+            case impl::error_category::nan_op:
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
+                if (std::is_constant_evaluated())
+                {
+                    if constexpr (std::is_same_v<BasisType, float>)
+                    {
+                        throw std::domain_error("Operation with NAN detected in f32 division"); // LCOV_EXCL_LINE
+                    }
+                    else
+                    {
+                        throw std::domain_error("Operation with NAN detected in f64 division"); // LCOV_EXCL_LINE
+                    }
+                }
+                else
+                #endif
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, nan_div_msg<BasisType>());
+                }
+                break;
+            case impl::error_category::invalid_op:
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
+                if (std::is_constant_evaluated())
+                {
+                    if constexpr (std::is_same_v<BasisType, float>)
+                    {
+                        throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f32 division"); // LCOV_EXCL_LINE
+                    }
+                    else
+                    {
+                        throw std::domain_error("Invalid operation (IEEE 754-2008 section 7.2) detected in f64 division"); // LCOV_EXCL_LINE
+                    }
+                }
+                else
+                #endif
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, invalid_div_msg<BasisType>());
+                }
+                break;
+            case impl::error_category::divide_by_zero:
+                #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
+                if (std::is_constant_evaluated())
+                {
+                    if constexpr (std::is_same_v<BasisType, float>)
+                    {
+                        throw std::domain_error("Division by zero detected in f32 division"); // LCOV_EXCL_LINE
+                    }
+                    else
+                    {
+                        throw std::domain_error("Division by zero detected in f64 division"); // LCOV_EXCL_LINE
+                    }
+                }
+                else
+                #endif
+                {
+                    BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, divbyzero_div_msg<BasisType>());
+                }
+                break;
+            default:
+                BOOST_SAFE_NUMBERS_UNREACHABLE; // LCOV_EXCL_LINE
+                break;                          // LCOV_EXCL_LINE
+        }
+
+        return float_basis<BasisType, ErrorPolicy>{res};
+    }
 }
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 
 } // namespace boost::safe_numbers::detail
 
@@ -1692,14 +1890,20 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
 // outside the namespace so the generated operators are plain free functions.
 
 #define BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP(OP_NAME, OP_SYMBOL)                                                                                      \
-template <boost::safe_numbers::detail::compatible_float_type LHSBasis,                                                                                    \
-          boost::safe_numbers::detail::compatible_float_type RHSBasis>                                                                                    \
-    requires (!std::is_same_v<LHSBasis, RHSBasis>)                                                                                                        \
+template <boost::safe_numbers::detail::compatible_float_type LHSBasis, auto LHSPolicy,                                                                                    \
+          boost::safe_numbers::detail::compatible_float_type RHSBasis, auto RHSPolicy>                                                                                    \
+    requires (!std::is_same_v<LHSBasis, RHSBasis> || boost::safe_numbers::detail::policies_differ<LHSPolicy, RHSPolicy>())                                                                                                        \
 BOOST_SAFE_NUMBERS_HOST_DEVICE                                                                                                                            \
-constexpr auto OP_SYMBOL(const boost::safe_numbers::detail::float_basis<LHSBasis>,                                                                        \
-                         const boost::safe_numbers::detail::float_basis<RHSBasis>)                                                                        \
+constexpr auto OP_SYMBOL(const boost::safe_numbers::detail::float_basis<LHSBasis, LHSPolicy>,                                                                        \
+                         const boost::safe_numbers::detail::float_basis<RHSBasis, RHSPolicy>)                                                                        \
 {                                                                                                                                                         \
-    if constexpr (std::is_same_v<LHSBasis, float>)                                                                                                        \
+    if constexpr (std::is_same_v<LHSBasis, RHSBasis>)                                                                                                     \
+    {                                                                                                                                                     \
+        static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>,                                                                   \
+                      "Can not perform " OP_NAME " between same width types with different overflow policies "                                            \
+                      "(e.g. f32 and sat_f32): convert explicitly through basis_type first");                                                             \
+    }                                                                                                                                                     \
+    else if constexpr (std::is_same_v<LHSBasis, float>)                                                                                                        \
     {                                                                                                                                                     \
         if constexpr (std::is_same_v<RHSBasis, double>)                                                                                                   \
         {                                                                                                                                                 \
@@ -1726,7 +1930,7 @@ constexpr auto OP_SYMBOL(const boost::safe_numbers::detail::float_basis<LHSBasis
         static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " on mixed floating point types");     \
     }                                                                                                                                                     \
                                                                                                                                                           \
-    return boost::safe_numbers::detail::float_basis<LHSBasis>{LHSBasis{0}};                                                                               \
+    return boost::safe_numbers::detail::float_basis<LHSBasis, LHSPolicy>{LHSBasis{0}};                                                                               \
 }
 
 namespace boost::safe_numbers::detail {
@@ -1760,54 +1964,64 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto nonfinite_result(con
 
 } // namespace detail::impl
 
+// These return the raw IEEE result alongside the flag, so overflow is expected here
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable:4756)
+#endif
+
 // Non-throwing counterparts of the checked float operators for hot loops. The
 // value is the raw IEEE result and the bool is true exactly when the checked
 // operator would have thrown. The branch-free form keeps loops vectorizable:
 // accumulate the flags in an unsigned value and test once at a boundary.
 
-template <detail::compatible_float_type BasisType>
-BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto overflowing_add(const detail::float_basis<BasisType> lhs,
-                                                                            const detail::float_basis<BasisType> rhs) noexcept
-    -> std::pair<detail::float_basis<BasisType>, bool>
+template <detail::compatible_float_type BasisType, auto ErrorPolicy>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto overflowing_add(const detail::float_basis<BasisType, ErrorPolicy> lhs,
+                                                                            const detail::float_basis<BasisType, ErrorPolicy> rhs) noexcept
+    -> std::pair<detail::float_basis<BasisType, ErrorPolicy>, bool>
 {
     const auto res {static_cast<BasisType>(static_cast<BasisType>(lhs) + static_cast<BasisType>(rhs))};
-    return std::make_pair(detail::float_basis<BasisType>{res}, detail::impl::nonfinite_result(res));
+    return std::make_pair(detail::float_basis<BasisType, ErrorPolicy>{res}, detail::impl::nonfinite_result(res));
 }
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP("overflowing addition", overflowing_add)
 
-template <detail::compatible_float_type BasisType>
-BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto overflowing_sub(const detail::float_basis<BasisType> lhs,
-                                                                            const detail::float_basis<BasisType> rhs) noexcept
-    -> std::pair<detail::float_basis<BasisType>, bool>
+template <detail::compatible_float_type BasisType, auto ErrorPolicy>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto overflowing_sub(const detail::float_basis<BasisType, ErrorPolicy> lhs,
+                                                                            const detail::float_basis<BasisType, ErrorPolicy> rhs) noexcept
+    -> std::pair<detail::float_basis<BasisType, ErrorPolicy>, bool>
 {
     const auto res {static_cast<BasisType>(static_cast<BasisType>(lhs) - static_cast<BasisType>(rhs))};
-    return std::make_pair(detail::float_basis<BasisType>{res}, detail::impl::nonfinite_result(res));
+    return std::make_pair(detail::float_basis<BasisType, ErrorPolicy>{res}, detail::impl::nonfinite_result(res));
 }
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP("overflowing subtraction", overflowing_sub)
 
-template <detail::compatible_float_type BasisType>
-BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto overflowing_mul(const detail::float_basis<BasisType> lhs,
-                                                                            const detail::float_basis<BasisType> rhs) noexcept
-    -> std::pair<detail::float_basis<BasisType>, bool>
+template <detail::compatible_float_type BasisType, auto ErrorPolicy>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto overflowing_mul(const detail::float_basis<BasisType, ErrorPolicy> lhs,
+                                                                            const detail::float_basis<BasisType, ErrorPolicy> rhs) noexcept
+    -> std::pair<detail::float_basis<BasisType, ErrorPolicy>, bool>
 {
     const auto res {static_cast<BasisType>(static_cast<BasisType>(lhs) * static_cast<BasisType>(rhs))};
-    return std::make_pair(detail::float_basis<BasisType>{res}, detail::impl::nonfinite_result(res));
+    return std::make_pair(detail::float_basis<BasisType, ErrorPolicy>{res}, detail::impl::nonfinite_result(res));
 }
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP("overflowing multiplication", overflowing_mul)
 
-template <detail::compatible_float_type BasisType>
-BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto overflowing_div(const detail::float_basis<BasisType> lhs,
-                                                                            const detail::float_basis<BasisType> rhs) noexcept
-    -> std::pair<detail::float_basis<BasisType>, bool>
+template <detail::compatible_float_type BasisType, auto ErrorPolicy>
+BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto overflowing_div(const detail::float_basis<BasisType, ErrorPolicy> lhs,
+                                                                            const detail::float_basis<BasisType, ErrorPolicy> rhs) noexcept
+    -> std::pair<detail::float_basis<BasisType, ErrorPolicy>, bool>
 {
     const auto res {static_cast<BasisType>(static_cast<BasisType>(lhs) / static_cast<BasisType>(rhs))};
-    return std::make_pair(detail::float_basis<BasisType>{res}, detail::impl::nonfinite_result(res));
+    return std::make_pair(detail::float_basis<BasisType, ErrorPolicy>{res}, detail::impl::nonfinite_result(res));
 }
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP("overflowing division", overflowing_div)
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 
 } // namespace boost::safe_numbers
 
