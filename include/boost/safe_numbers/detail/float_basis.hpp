@@ -780,6 +780,12 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_invalid_add() -> void
 
 } // namespace impl
 
+// The saturating policy is raw IEEE 754, so overflow to infinity is the intended result
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable:4756)
+#endif
+
 template <compatible_float_type BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator+(const float_basis<BasisType, ErrorPolicy> lhs,
@@ -916,6 +922,10 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
         return float_basis<BasisType, ErrorPolicy>{res};
     }
 }
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 
 // ------------------------------
 // Subtraction
@@ -1063,6 +1073,12 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_invalid_sub() -> void
 
 } // namespace impl
 
+// The saturating policy is raw IEEE 754, so overflow to infinity is the intended result
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable:4756)
+#endif
+
 template <compatible_float_type BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator-(const float_basis<BasisType, ErrorPolicy> lhs,
@@ -1199,6 +1215,10 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
         return float_basis<BasisType, ErrorPolicy>{res};
     }
 }
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 
 // ------------------------------
 // Multiplication
@@ -1356,6 +1376,12 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_invalid_mul() -> void
 
 } // namespace impl
 
+// The saturating policy is raw IEEE 754, so overflow to infinity is the intended result
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable:4756)
+#endif
+
 template <compatible_float_type BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator*(const float_basis<BasisType, ErrorPolicy> lhs,
@@ -1492,6 +1518,10 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
         return float_basis<BasisType, ErrorPolicy>{res};
     }
 }
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 
 // ------------------------------
 // Division
@@ -1687,6 +1717,12 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_divbyzero_div() -> void
 
 } // namespace impl
 
+// The saturating policy is raw IEEE 754, so overflow to infinity is the intended result
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable:4756)
+#endif
+
 template <compatible_float_type BasisType, auto ErrorPolicy>
 BOOST_SAFE_NUMBERS_HOST_DEVICE
 [[nodiscard]] constexpr auto operator/(const float_basis<BasisType, ErrorPolicy> lhs,
@@ -1843,6 +1879,10 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE
     }
 }
 
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
+
 } // namespace boost::safe_numbers::detail
 
 // Block any mixed floating point type operation (e.g. f32 and f64) with a
@@ -1924,6 +1964,12 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto nonfinite_result(con
 
 } // namespace detail::impl
 
+// These return the raw IEEE result alongside the flag, so overflow is expected here
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable:4756)
+#endif
+
 // Non-throwing counterparts of the checked float operators for hot loops. The
 // value is the raw IEEE result and the bool is true exactly when the checked
 // operator would have thrown. The branch-free form keeps loops vectorizable:
@@ -1972,6 +2018,10 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto overflowing_div(cons
 }
 
 BOOST_SAFE_NUMBERS_DEFINE_MIXED_FLOAT_OP("overflowing division", overflowing_div)
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 
 } // namespace boost::safe_numbers
 
