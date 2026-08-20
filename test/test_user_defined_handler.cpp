@@ -14,6 +14,10 @@
 #elif defined(__GNUC__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wfloat-equal"
+#elif defined(_MSC_VER)
+#  pragma warning (push)
+#  pragma warning (disable: 4702) // Unreachable code. The throwing handler never returns a value
+#  pragma warning (disable: 4723) // Potential divide by 0. We need to test this
 #endif
 
 #include <boost/core/lightweight_test.hpp>

@@ -14,6 +14,9 @@
 #elif defined(__GNUC__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wfloat-equal"
+#elif defined(_MSC_VER)
+#  pragma warning (push)
+#  pragma warning (disable: 4723) // Potential divide by 0. The saturating policy is raw IEEE 754
 #endif
 
 #ifdef BOOST_SAFE_NUMBERS_BUILD_MODULE
@@ -173,4 +176,6 @@ int main()
 #  pragma clang diagnostic pop
 #elif defined(__GNUC__)
 #  pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#  pragma warning (pop)
 #endif
