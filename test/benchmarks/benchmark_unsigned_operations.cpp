@@ -212,7 +212,7 @@ int main(int argc, char** argv)
     register_width<std::uint16_t, u16, safe<std::uint16_t>>("unsigned", 16);
     register_width<std::uint32_t, u32, safe<std::uint32_t>>("unsigned", 32);
     register_width<std::uint64_t, u64, safe<std::uint64_t>>("unsigned", 64);
-    register_width_no_safe<boost::int128::uint128_t, u128>("unsigned", 128);
+    register_width_no_safe<boost::int128::uint128, u128>("unsigned", 128);
 
     benchmark::Initialize(&argc, argv);
     benchmark::RunSpecifiedBenchmarks();

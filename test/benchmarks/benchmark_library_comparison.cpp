@@ -28,6 +28,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <stdexcept>
 
 #if defined(__clang__)
 #  pragma clang diagnostic push
@@ -163,6 +164,39 @@ struct intel_contender
         {
             return static_cast<Builtin>(raw_op<K>(x, y).unsafe_value());
         }, []() { return Builtin {}; })(a, b);
+    }
+};
+
+// Same checks as intel_contender, but the fallback throws: the response becomes an
+// early exit, which is the class the throwing libraries are in.
+template <typename Builtin>
+struct intel_throw_contender
+{
+    using storage = Builtin;
+    using interval = safe::var<Builtin, safe::ival<1, operand_max<Builtin>>>;
+
+    template <op_kind K>
+    static Builtin apply(const storage a, const storage b)
+    {
+        return safe::match([](const interval x, const interval y)
+        {
+            return static_cast<Builtin>(raw_op<K>(x, y).unsafe_value());
+        }, []() -> Builtin { throw std::domain_error("operand outside the declared interval"); })(a, b);
+    }
+};
+
+// No runtime check at all: the operands are asserted into the interval, so this is
+// the cost of the compile-time proof alone.
+template <typename Builtin>
+struct intel_unchecked_contender
+{
+    using storage = Builtin;
+    using interval = safe::var<Builtin, safe::ival<1, operand_max<Builtin>>>;
+
+    template <op_kind K>
+    static Builtin apply(const storage a, const storage b)
+    {
+        return static_cast<Builtin>(raw_op<K>(interval {safe::unsafe_cast_ferry {a}}, interval {safe::unsafe_cast_ferry {b}}).unsafe_value());
     }
 };
 
@@ -303,6 +337,8 @@ void register_width(const std::string& category, const int bits)
     register_ops<safe_numerics_contender<Builtin>, Builtin>(category, bits, "safe_numerics");
     register_ops<safeint_contender<Builtin>, Builtin>(category, bits, "safeint");
     register_ops<intel_contender<Builtin>, Builtin, std::is_signed_v<Builtin>>(category, bits, "intel");
+    register_ops<intel_throw_contender<Builtin>, Builtin, std::is_signed_v<Builtin>>(category, bits, "intel_throw");
+    register_ops<intel_unchecked_contender<Builtin>, Builtin, std::is_signed_v<Builtin>>(category, bits, "intel_unchecked");
 }
 
 int main(int argc, char** argv)

@@ -17,6 +17,7 @@
 
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/signed_integers.hpp>
+#include <boost/safe_numbers/bounded_integers.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
 #include <benchmark/benchmark.h>
 #include <cstdint>
@@ -131,6 +132,43 @@ struct checked_form
     }
 };
 
+// Domain declared at ingress: the operands are stored as bounded values and widened
+// to the operation's type per element. The widening hands the declared domain to the
+// optimizer, so the default operators' checks that the domain makes impossible can be
+// deleted before the loop is vectorized.
+template <typename Wide>
+struct bounded_ingress
+{
+    template <op_kind K>
+    struct form
+    {
+        template <typename B>
+        static auto apply(const B a, const B b, unsigned& flags)
+        {
+            const Wide x {static_cast<Wide>(a)};
+            const Wide y {static_cast<Wide>(b)};
+            return operator_form<K>::apply(x, y, flags);
+        }
+    };
+};
+
+// Control for the ingress rows: the same one-byte operands widened to the operation's
+// built-in type with no checks, so the bounded ingress row can be read against a loop
+// with identical memory traffic rather than against the four- or eight-byte baseline.
+template <typename Wide>
+struct byte_ingress
+{
+    template <op_kind K>
+    struct form
+    {
+        template <typename B>
+        static auto apply(const B a, const B b, unsigned& flags)
+        {
+            return operator_form<K>::apply(static_cast<Wide>(a), static_cast<Wide>(b), flags);
+        }
+    };
+};
+
 // Operands are drawn small and positive so every operation stays on the
 // non-violating path for every policy; a[i] >= b[i] keeps subtraction in range.
 template <typename Builtin>
@@ -140,13 +178,28 @@ std::pair<std::vector<Builtin>, std::vector<Builtin>> generate_operands()
     values.reserve(N);
 
     std::mt19937_64 rng(42);
-    using dist_type = std::conditional_t<sizeof(Builtin) == 1U,
-        std::conditional_t<std::is_signed_v<Builtin>, std::int16_t, std::uint16_t>, Builtin>;
-    std::uniform_int_distribution<dist_type> dist {1, static_cast<dist_type>(sizeof(Builtin) * 8U - 1U)};
 
-    for (std::size_t i {}; i < N; ++i)
+    if constexpr (sizeof(Builtin) == 16U)
     {
-        values.emplace_back(static_cast<Builtin>(dist(rng)));
+        // The 128-bit class types are not valid distribution result types, so
+        // draw 64-bit values in the same range and widen them
+        std::uniform_int_distribution<std::uint64_t> dist {1U, 127U};
+
+        for (std::size_t i {}; i < N; ++i)
+        {
+            values.emplace_back(static_cast<Builtin>(dist(rng)));
+        }
+    }
+    else
+    {
+        using dist_type = std::conditional_t<sizeof(Builtin) == 1U,
+            std::conditional_t<std::is_signed_v<Builtin>, std::int16_t, std::uint16_t>, Builtin>;
+        std::uniform_int_distribution<dist_type> dist {1, static_cast<dist_type>(sizeof(Builtin) * 8U - 1U)};
+
+        for (std::size_t i {}; i < N; ++i)
+        {
+            values.emplace_back(static_cast<Builtin>(dist(rng)));
+        }
     }
 
     std::sort(values.begin(), values.end(), std::greater<>());
@@ -157,6 +210,15 @@ std::pair<std::vector<Builtin>, std::vector<Builtin>> generate_operands()
     return {lhs, rhs};
 }
 
+template <typename T>
+struct is_bounded : std::false_type {};
+
+template <auto Min, auto Max>
+struct is_bounded<bounded_uint<Min, Max>> : std::true_type {};
+
+template <auto Min, auto Max>
+struct is_bounded<bounded_int<Min, Max>> : std::true_type {};
+
 template <typename T, typename Builtin>
 std::vector<T> convert(const std::vector<Builtin>& src)
 {
@@ -165,7 +227,14 @@ std::vector<T> convert(const std::vector<Builtin>& src)
 
     for (const auto value : src)
     {
-        result.emplace_back(static_cast<T>(value));
+        if constexpr (is_bounded<T>::value)
+        {
+            result.emplace_back(static_cast<detail::underlying_type_t<typename T::basis_type>>(value));
+        }
+        else
+        {
+            result.emplace_back(static_cast<T>(value));
+        }
     }
 
     return result;
@@ -188,10 +257,9 @@ const std::pair<std::vector<T>, std::vector<T>>& operands()
 }
 
 // The per element shape of the host grid
-template <typename T, typename Form>
+template <typename T, typename value_type, typename Form>
 void run_scalar(benchmark::State& state)
 {
-    using value_type = underlying_for_bench_t<T>;
 
     const auto& [a, b] {operands<T, value_type>()};
     const std::size_t n {a.size()};
@@ -216,10 +284,9 @@ void run_scalar(benchmark::State& state)
 }
 
 // The element wise array shape, which the optimizer may vectorize
-template <typename T, typename Form>
+template <typename T, typename value_type, typename Form>
 void run_stream(benchmark::State& state)
 {
-    using value_type = underlying_for_bench_t<T>;
 
     const auto& [a, b] {operands<T, value_type>()};
     const std::size_t n {a.size()};
@@ -245,14 +312,14 @@ void run_stream(benchmark::State& state)
     state.SetItemsProcessed(static_cast<std::int64_t>(state.iterations()) * static_cast<std::int64_t>(n));
 }
 
-template <typename T, template <op_kind> class Form, op_kind K>
+template <typename T, typename Builtin, template <op_kind> class Form, op_kind K>
 void register_shapes(const std::string& base)
 {
-    benchmark::RegisterBenchmark("scalar_" + base, run_scalar<T, Form<K>>);
-    benchmark::RegisterBenchmark("stream_" + base, run_stream<T, Form<K>>);
+    benchmark::RegisterBenchmark("scalar_" + base, run_scalar<T, Builtin, Form<K>>);
+    benchmark::RegisterBenchmark("stream_" + base, run_stream<T, Builtin, Form<K>>);
 }
 
-template <typename T, template <op_kind> class Form>
+template <typename T, template <op_kind> class Form, typename Builtin = underlying_for_bench_t<T>>
 void register_ops(const std::string& category, const int bits, const char* role)
 {
     const auto name {[&](const op_kind k)
@@ -260,11 +327,11 @@ void register_ops(const std::string& category, const int bits, const char* role)
         return category + "_" + std::to_string(bits) + "_" + op_names[static_cast<int>(k)] + "_" + role;
     }};
 
-    register_shapes<T, Form, op_kind::add>(name(op_kind::add));
-    register_shapes<T, Form, op_kind::sub>(name(op_kind::sub));
-    register_shapes<T, Form, op_kind::mul>(name(op_kind::mul));
-    register_shapes<T, Form, op_kind::div>(name(op_kind::div));
-    register_shapes<T, Form, op_kind::mod>(name(op_kind::mod));
+    register_shapes<T, Builtin, Form, op_kind::add>(name(op_kind::add));
+    register_shapes<T, Builtin, Form, op_kind::sub>(name(op_kind::sub));
+    register_shapes<T, Builtin, Form, op_kind::mul>(name(op_kind::mul));
+    register_shapes<T, Builtin, Form, op_kind::div>(name(op_kind::div));
+    register_shapes<T, Builtin, Form, op_kind::mod>(name(op_kind::mod));
 }
 
 // One width, every response the library offers
@@ -279,6 +346,16 @@ void register_width(const std::string& category, const int bits)
     register_ops<Basic<throwing_handler>, operator_form>(category, bits, "throwing_handler");
     register_ops<Basic<throwing>, overflowing_form>(category, bits, "overflowing");
     register_ops<Basic<throwing>, checked_form>(category, bits, "checked");
+
+    // Operands validated into [1, bits - 1] at ingress, computed with the default
+    // operators of the width; the bounded types' basis is u8 or i8 for every width here
+    constexpr auto hi {sizeof(Builtin) * 8U - 1U};
+    using bounded = std::conditional_t<std::is_signed_v<Builtin> || std::is_same_v<Builtin, detail::underlying_type_t<i128>>,
+        bounded_int<1, static_cast<int>(hi)>, bounded_uint<1U, static_cast<unsigned>(hi)>>;
+    register_ops<bounded, bounded_ingress<Basic<throwing>>::template form, Builtin>(category, bits, "throwing_bounded_ingress");
+
+    using byte = std::conditional_t<std::is_signed_v<Builtin> || std::is_same_v<Builtin, detail::underlying_type_t<i128>>, std::int8_t, std::uint8_t>;
+    register_ops<byte, byte_ingress<Builtin>::template form, Builtin>(category, bits, "builtin_byte_ingress");
 }
 
 int main(int argc, char** argv)
@@ -291,6 +368,11 @@ int main(int argc, char** argv)
     register_width<std::uint32_t, basic_u32>("unsigned", 32);
     register_width<std::uint64_t, basic_u64>("unsigned", 64);
     register_width<std::int32_t, basic_i32>("signed", 32);
+
+    // The 128-bit basis types are spelled through the library so the benchmark
+    // does not depend on the name of the underlying int128 type
+    register_width<detail::underlying_type_t<u128>, basic_u128>("unsigned", 128);
+    register_width<detail::underlying_type_t<i128>, basic_i128>("signed", 128);
 
     benchmark::Initialize(&argc, argv);
     benchmark::RunSpecifiedBenchmarks();
