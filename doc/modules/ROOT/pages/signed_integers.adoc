@@ -20,7 +20,7 @@ These types are drop-in replacements for the standard signed integer types with 
 | `i16`  | `std::int16_t`  | 16 bits  | -32,768 | 32,767
 | `i32`  | `std::int32_t`  | 32 bits  | -2,147,483,648 | 2,147,483,647
 | `i64`  | `std::int64_t`  | 64 bits  | -9,223,372,036,854,775,808 | 9,223,372,036,854,775,807
-| `i128` | `int128_t`      | 128 bits | -170,141,183,460,469,231,731,687,303,715,884,105,728 | 170,141,183,460,469,231,731,687,303,715,884,105,727
+| `i128` | `int128`      | 128 bits | -170,141,183,460,469,231,731,687,303,715,884,105,728 | 170,141,183,460,469,231,731,687,303,715,884,105,727
 |===
 
 Each type exposes a `basis_type` member type alias that refers to the underlying integer type, allowing conversion back to built-in types when needed.
@@ -39,7 +39,7 @@ using i8   = detail::signed_integer_basis<std::int8_t>;
 using i16  = detail::signed_integer_basis<std::int16_t>;
 using i32  = detail::signed_integer_basis<std::int32_t>;
 using i64  = detail::signed_integer_basis<std::int64_t>;
-using i128 = detail::signed_integer_basis<int128::int128_t>;
+using i128 = detail::signed_integer_basis<int128::int128>;
 
 using sat_i8   = detail::signed_integer_basis<std::int8_t, overflow_policy::saturate>;
 // ... sat_i16, sat_i32, sat_i64, sat_i128

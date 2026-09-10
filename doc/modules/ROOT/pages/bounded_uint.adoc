@@ -120,6 +120,10 @@ Conversion to other unsigned integral types is explicit.
 Widening conversions always succeed.
 Narrowing conversions perform a runtime bounds check: if the value exceeds the maximum representable value of the target type, `std::domain_error` is thrown.
 
+Every conversion out of the type also hands the declared domain to the optimizer as an assumption (see the xref:design.adoc[design rationale]).
+A value validated into `bounded_uint<1, 31>` and then widened to `u32` carries the fact that it lies in `[1, 31]`, so the overflow check of a following `u32` addition or multiplication is deleted and the surrounding loop can vectorize.
+This is a runtime optimization only; constant evaluation and the checks of the bounded type itself are unaffected.
+
 === Conversion to Other Bounded Types
 
 [source,c++]

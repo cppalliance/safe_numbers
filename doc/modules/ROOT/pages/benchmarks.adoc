@@ -12,7 +12,7 @@ This section reports the runtime overhead of the Boost.SafeNumbers types relativ
 
 Each table compares three contenders at a fixed width:
 
-- the built-in C++ type, which is the baseline (`std::uint32_t`, `int128_t`, `double`, and so on),
+- the built-in C++ type, which is the baseline (`std::uint32_t`, `int128`, `double`, and so on),
 - Boost.SafeNumbers (`boost::sn::u32`, `boost::sn::i128`, `boost::sn::f64`, and so on), and
 - Boost.SafeNumerics (`safe<uint32_t>` and similar) for the integer benchmarks.
 
@@ -45,7 +45,7 @@ The `benchmarks.yml` GitHub Actions workflow runs the same build across a spread
 Two further host benchmarks are built alongside the three above but are not part of the CI grid:
 
 * `benchmark_policy_operations` runs one width under every response policy the types can carry (the default throwing operators, the `sat_*` and `strict_*` aliases, user defined handlers selected through `basic_*`, and the `overflowing_*` and `checked_*` families), in two kernel shapes: the per-element shape of the grid and a streaming `out[i] = a[i] op b[i]` shape that lets the optimizer vectorize whichever contenders it can.
-* `benchmark_library_comparison` runs the built-in type, Boost.SafeNumbers, Boost.SafeNumerics, Microsoft SafeInt, and Intel safe-arithmetic on the same operands and shapes. It is opt-in with `-DBOOST_SAFE_NUMBERS_BENCHMARK_EXTERNAL=ON`, which fetches the two external header-only libraries at pinned commits.
+* `benchmark_library_comparison` runs the built-in type, Boost.SafeNumbers, Boost.SafeNumerics, Microsoft SafeInt, and Intel safe-arithmetic on the same operands and shapes, with two extra Intel variants (a throwing fallback and no runtime check) that separate the cost of its interval checks from the class of its response. It is opt-in with `-DBOOST_SAFE_NUMBERS_BENCHMARK_EXTERNAL=ON`, which fetches the two external header-only libraries at pinned commits.
 
 Both are summarized by `doc/paper/ablation_summary.py`.
 
@@ -258,6 +258,79 @@ The integer `saturating_*` and `overflowing_*` chains improve `i16`/`i32` from a
 
 NOTE: The device numbers come from one machine and a single run each, so treat small differences as noise. On a discrete GPU a SYCL build should behave like the CUDA column; this machine only exposes the CPU device.
 
+[#policy_ablation]
+== Response Policies and Other Libraries
+
+The grid above measures the default throwing types against the built-in types across platforms.
+Two further benchmarks, run on one machine, answer two narrower questions: how much of the cost depends on the *response* to a fault rather than on the detection, and how the library compares with the other checked-integer libraries for C++ when all of them run the same loop.
+
+Both were run on an Apple M4 Max (macOS 26.6) with Apple Clang 21 at `-O2`, five repetitions of at least 0.1 s each, median reported, on one million operands per array.
+Operands are drawn from `[1, bits - 1]` with `a[i] >= b[i]`, exactly as in the grid, so every contender stays on the non-violating path.
+
+[#policy_ablation_shapes]
+=== Two Kernel Shapes
+
+Every case is timed in two shapes:
+
+Scalar::
+The shape of the grid above: each element's result is passed through `benchmark::DoNotOptimize`, which forces a register or memory round trip per element and prevents vectorization for every contender alike.
+
+Stream::
+`out[i] = a[i] op b[i]` into an output array with a single memory clobber after the pass.
+This is the shape real element-wise loops have, and it lets the optimizer vectorize whichever contenders it can.
+
+The stream shape is the one to read for policy and library comparisons.
+The scalar shape's per-element spill has a micro-architectural cost that depends on stack layout: in one build on this machine the default throwing `u32` and `u64` measured 4.3x to 4.9x while a user handler that also throws measured parity, because the throwing variant's spill slots happened to be adjacent and the AArch64 load/store optimizer merged their reloads into one `ldp` straddling two prior stores, which defeats store-to-load forwarding.
+Disabling that pass (`-mllvm -aarch64-enable-ldst-opt=false`) returned the type to parity with no change to the checks, and in a later build the built-in loop was the one hit.
+Any single cell of a scalar table, including the grid above, can carry such an artifact; read those tables by their medians.
+
+[#policy_ablation_roles]
+=== The Ablation
+
+`benchmark_policy_operations` runs one width under every response the types can carry.
+All rows run the same detection code; only what happens on a fault differs:
+
+* *throwing (default)*: the plain aliases (`u32`, `i32`, ...), which throw.
+* *saturating* and *strict*: the `sat_*` and `strict_*` aliases.
+* *user handler, wrapping*: `basic_u32<Handler>` with a `noexcept` handler that returns the wrapped fallback (Rust's `Wrapping<T>`).
+* *user handler, throwing*: a handler that throws a user exception type from inside `on_error`.
+* *overflowing (deferred flag)*: the `overflowing_*` functions with the flag folded into an accumulator without a branch, the form the device xref:sycl.adoc#sycl_deferred_errors[`deferred_errors`] accumulator uses.
+* *checked*: the `checked_*` functions unwrapped with `value_or`.
+* *throwing, bounded ingress*: the operands are stored as `bounded_uint<1, bits - 1>` (or `bounded_int`), widened to the operation's type per element, and combined with the default throwing operators.
+  The widening hands the declared domain to the optimizer (see xref:design.adoc[]), so the checks that domain makes impossible are deleted before the loop is vectorized.
+  Because the bounded storage is one byte, this row is read against *built-in, one-byte operands widened*, an unchecked loop with identical memory traffic, rather than against the wider built-in row.
+
+The stream results split the responses into two classes, and the compiler's own diagnostics say why.
+Every response that must act at the exact faulting element (throw, a throwing handler, or `std::exit`) is an early exit from the loop, for which Clang reports "cannot vectorize early exit loop with writes to memory"; at 32 bits these cost about 3x to 5x on addition, subtraction, and multiplication.
+Every response whose result is a value keeps the loop straight-line and vectorizes: the wrapping handler, saturating addition and subtraction (which lower to the native saturating vector instructions), the deferred `overflowing_*` form, and `checked_*` all sit near parity.
+Multiplication is the exception in every checked form at 32 bits, because the overflow test needs the high half of the product, which has no vector form on this target.
+A declared domain removes exactly the checks it justifies: with operands validated into `bounded_uint<1, 31>`, the throwing multiplication returns to parity, while unsigned subtraction keeps its check because `[1, 31] - [1, 31]` can underflow.
+
+Two practical consequences follow.
+`strict`, modelled on Rust's panic on overflow, does not vectorize either, because termination at the faulting element is an early exit exactly as a throw is.
+And a user handler that throws should call a cold, non-inlined function rather than writing the `throw` inline: the inline form pushes the larger signed operators over Clang's inline cost threshold, and the loop then pays a call per element (about 10x on `i32`).
+
+include::partial$ablation_results.adoc[leveloffset=+2]
+
+[#library_comparison]
+=== Comparison With Other Libraries
+
+`benchmark_library_comparison` runs the built-in type, Boost.SafeNumbers (default throwing policy), Boost.SafeNumerics (default `native` promotion and exception policies), Microsoft SafeInt (default `SafeIntException` policy), and Intel safe-arithmetic on the same operands and shapes at 32 and 64 bits.
+It is opt-in with `-DBOOST_SAFE_NUMBERS_BENCHMARK_EXTERNAL=ON`, which fetches the two external header-only libraries at pinned commits.
+The semantics the four libraries implement are compared in xref:comparisons.adoc#comparisons_probes[Semantic Probes].
+
+Intel safe-arithmetic has a different model from the other three.
+Its `safe::var<T, ival<lo, hi>>` carries an interval in the type and proves at compile time that every result fits; a runtime check happens only where a raw value enters an interval type through `safe::match`, whose fallback supplies a value when the check fails.
+Its per-element form here therefore admits both operands through `match` (two range checks) and performs the operation unchecked.
+Unsigned subtraction on equal intervals cannot be expressed without a proof that `a >= b`, so that cell is absent.
+Two variants isolate what its speed comes from: *throwing fallback* keeps the same checks but throws when an operand is outside the interval, and *no runtime check* asserts the operands into the interval so only the compile-time proof remains.
+
+The three libraries that detect at the declared width and throw form one class, about 3x to 4.6x on 32-bit addition, subtraction, and multiplication and 1.3x to 1.6x at 64 bits, all at parity on division and modulo.
+Intel's default form is near parity because its response is a value, not because it checks less: with a throwing fallback it lands in the same class as the throwing libraries, and without any runtime check it is at parity, so its checks cost about 0.1x to 0.3x, the same as this library's `checked_*` family on addition and subtraction.
+Where interval reasoning is genuinely cheaper is multiplication, where a bound check on two inputs vectorizes and a check on the high half of the product does not; the bounded ingress row of the ablation recovers the same effect inside this library when a domain is declared.
+
+include::partial$library_comparison_results.adoc[leveloffset=+2]
+
 // The per-platform sections below are generated from the JSON artifacts in
 // doc/modules/ROOT/data by test/benchmarks/render_results.py. Do not edit them
 // by hand; re-run that script to refresh them.
@@ -338,10 +411,10 @@ Run on the GitHub Actions `ubuntu-latest` runner using GCC 14 in release mode (`
 | Modulo | 2.19 | 2.19 | 1.00 | 2.18 | 1.00
 |===
 
-.128-bit signed (ratio relative to `int128_t`)
+.128-bit signed (ratio relative to `int128`)
 [cols="1,>1,>1,>1",options="header"]
 |===
-| Operation | `int128_t` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
+| Operation | `int128` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
 | Addition | 2.20 | 2.11 | 0.96
 | Subtraction | 1.88 | 2.05 | 1.10
 | Multiplication | 2.90 | 3.13 | 1.08
@@ -396,10 +469,10 @@ Run on the GitHub Actions `ubuntu-latest` runner using GCC 14 in release mode (`
 | Modulo | 2.18 | 2.18 | 1.00 | 2.18 | 1.00
 |===
 
-.128-bit unsigned (ratio relative to `uint128_t`)
+.128-bit unsigned (ratio relative to `uint128`)
 [cols="1,>1,>1,>1",options="header"]
 |===
-| Operation | `uint128_t` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
+| Operation | `uint128` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
 | Addition | 1.93 | 2.70 | 1.40
 | Subtraction | 1.89 | 3.42 | 1.81
 | Multiplication | 2.83 | 2.32 | 0.82
@@ -482,10 +555,10 @@ Run on the GitHub Actions `ubuntu-latest` runner using GCC 14 targeting 32-bit x
 | Modulo | 5.03 | 6.25 | 1.24 | 5.21 | 1.04
 |===
 
-.128-bit signed (ratio relative to `int128_t`)
+.128-bit signed (ratio relative to `int128`)
 [cols="1,>1,>1,>1",options="header"]
 |===
-| Operation | `int128_t` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
+| Operation | `int128` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
 | Addition | 6.33 | 7.77 | 1.23
 | Subtraction | 6.92 | 7.58 | 1.10
 | Multiplication | 13.80 | 37.51 | 2.72
@@ -540,10 +613,10 @@ Run on the GitHub Actions `ubuntu-latest` runner using GCC 14 targeting 32-bit x
 | Modulo | 4.19 | 4.50 | 1.07 | 4.45 | 1.06
 |===
 
-.128-bit unsigned (ratio relative to `uint128_t`)
+.128-bit unsigned (ratio relative to `uint128`)
 [cols="1,>1,>1,>1",options="header"]
 |===
-| Operation | `uint128_t` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
+| Operation | `uint128` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
 | Addition | 5.88 | 7.31 | 1.24
 | Subtraction | 6.55 | 7.75 | 1.18
 | Multiplication | 10.40 | 36.02 | 3.46
@@ -626,10 +699,10 @@ Run on the GitHub Actions `ubuntu-24.04-arm` runner using GCC 14 in release mode
 | Modulo | 2.04 | 2.04 | 1.00 | 2.04 | 1.00
 |===
 
-.128-bit signed (ratio relative to `int128_t`)
+.128-bit signed (ratio relative to `int128`)
 [cols="1,>1,>1,>1",options="header"]
 |===
-| Operation | `int128_t` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
+| Operation | `int128` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
 | Addition | 1.83 | 1.90 | 1.04
 | Subtraction | 1.85 | 1.92 | 1.04
 | Multiplication | 1.99 | 1.93 | 0.97
@@ -684,10 +757,10 @@ Run on the GitHub Actions `ubuntu-24.04-arm` runner using GCC 14 in release mode
 | Modulo | 2.04 | 2.04 | 1.00 | 2.04 | 1.00
 |===
 
-.128-bit unsigned (ratio relative to `uint128_t`)
+.128-bit unsigned (ratio relative to `uint128`)
 [cols="1,>1,>1,>1",options="header"]
 |===
-| Operation | `uint128_t` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
+| Operation | `uint128` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
 | Addition | 1.85 | 1.91 | 1.03
 | Subtraction | 1.85 | 1.92 | 1.04
 | Multiplication | 2.01 | 1.90 | 0.95
@@ -770,10 +843,10 @@ Run on the GitHub Actions `macos-latest` runner (Apple Silicon) using Apple Clan
 | Modulo | 2.21 | 2.73 | 1.24 | 2.19 | 0.99
 |===
 
-.128-bit signed (ratio relative to `int128_t`)
+.128-bit signed (ratio relative to `int128`)
 [cols="1,>1,>1,>1",options="header"]
 |===
-| Operation | `int128_t` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
+| Operation | `int128` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
 | Addition | 2.40 | 2.62 | 1.09
 | Subtraction | 2.53 | 2.38 | 0.94
 | Multiplication | 2.51 | 7.64 | 3.05
@@ -828,10 +901,10 @@ Run on the GitHub Actions `macos-latest` runner (Apple Silicon) using Apple Clan
 | Modulo | 2.22 | 2.70 | 1.21 | 2.21 | 0.99
 |===
 
-.128-bit unsigned (ratio relative to `uint128_t`)
+.128-bit unsigned (ratio relative to `uint128`)
 [cols="1,>1,>1,>1",options="header"]
 |===
-| Operation | `uint128_t` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
+| Operation | `uint128` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
 | Addition | 2.57 | 2.43 | 0.94
 | Subtraction | 2.67 | 2.61 | 0.98
 | Multiplication | 2.55 | 2.65 | 1.04
@@ -914,10 +987,10 @@ Run on the GitHub Actions `windows-latest` runner using MSVC in release mode (`/
 | Modulo | 2.10 | 2.78 | 1.32 | 2.33 | 1.11
 |===
 
-.128-bit signed (ratio relative to `int128_t`)
+.128-bit signed (ratio relative to `int128`)
 [cols="1,>1,>1,>1",options="header"]
 |===
-| Operation | `int128_t` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
+| Operation | `int128` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
 | Addition | 9.77 | 3.13 | 0.32
 | Subtraction | 9.62 | 3.13 | 0.33
 | Multiplication | 2.78 | 13.89 | 5.00
@@ -972,10 +1045,10 @@ Run on the GitHub Actions `windows-latest` runner using MSVC in release mode (`/
 | Modulo | 2.33 | 2.26 | 0.97 | 2.33 | 1.00
 |===
 
-.128-bit unsigned (ratio relative to `uint128_t`)
+.128-bit unsigned (ratio relative to `uint128`)
 [cols="1,>1,>1,>1",options="header"]
 |===
-| Operation | `uint128_t` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
+| Operation | `uint128` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
 | Addition | 2.43 | 3.13 | 1.29
 | Subtraction | 2.60 | 3.13 | 1.20
 | Multiplication | 3.47 | 12.15 | 3.50
@@ -1058,10 +1131,10 @@ Run on the GitHub Actions `windows-latest` runner using MSVC targeting 32-bit x8
 | Modulo | 4.97 | 6.39 | 1.29 | 5.68 | 1.14
 |===
 
-.128-bit signed (ratio relative to `int128_t`)
+.128-bit signed (ratio relative to `int128`)
 [cols="1,>1,>1,>1",options="header"]
 |===
-| Operation | `int128_t` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
+| Operation | `int128` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
 | Addition | 8.68 | 12.15 | 1.40
 | Subtraction | 8.79 | 12.15 | 1.38
 | Multiplication | 19.10 | 62.50 | 3.27
@@ -1116,10 +1189,10 @@ Run on the GitHub Actions `windows-latest` runner using MSVC targeting 32-bit x8
 | Modulo | 4.69 | 4.97 | 1.06 | 4.69 | 1.00
 |===
 
-.128-bit unsigned (ratio relative to `uint128_t`)
+.128-bit unsigned (ratio relative to `uint128`)
 [cols="1,>1,>1,>1",options="header"]
 |===
-| Operation | `uint128_t` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
+| Operation | `uint128` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
 | Addition | 7.03 | 15.63 | 2.22
 | Subtraction | 7.81 | 17.36 | 2.22
 | Multiplication | 15.63 | 70.31 | 4.50
@@ -1202,10 +1275,10 @@ Run on the GitHub Actions `windows-11-arm` runner using MSVC in release mode (`/
 | Modulo | 2.08 | 2.08 | 1.00 | 2.08 | 1.00
 |===
 
-.128-bit signed (ratio relative to `int128_t`)
+.128-bit signed (ratio relative to `int128`)
 [cols="1,>1,>1,>1",options="header"]
 |===
-| Operation | `int128_t` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
+| Operation | `int128` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
 | Addition | 2.78 | 3.13 | 1.12
 | Subtraction | 2.78 | 2.78 | 1.00
 | Multiplication | 4.17 | 22.57 | 5.42
@@ -1260,10 +1333,10 @@ Run on the GitHub Actions `windows-11-arm` runner using MSVC in release mode (`/
 | Modulo | 2.12 | 2.12 | 1.00 | 2.08 | 0.98
 |===
 
-.128-bit unsigned (ratio relative to `uint128_t`)
+.128-bit unsigned (ratio relative to `uint128`)
 [cols="1,>1,>1,>1",options="header"]
 |===
-| Operation | `uint128_t` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
+| Operation | `uint128` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
 | Addition | 2.26 | 2.60 | 1.15
 | Subtraction | 2.26 | 2.43 | 1.08
 | Multiplication | 2.43 | 19.10 | 7.86

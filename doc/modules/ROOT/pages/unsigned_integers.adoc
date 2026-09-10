@@ -20,7 +20,7 @@ These types are drop-in replacements for the standard unsigned integer types wit
 | `u16`  | `std::uint16_t`  | 16 bits  | 0 | 65,535
 | `u32`  | `std::uint32_t`  | 32 bits  | 0 | 4,294,967,295
 | `u64`  | `std::uint64_t`  | 64 bits  | 0 | 18,446,744,073,709,551,615
-| `u128` | `uint128_t`      | 128 bits | 0 | 340,282,366,920,938,463,463,374,607,431,768,211,455
+| `u128` | `uint128`      | 128 bits | 0 | 340,282,366,920,938,463,463,374,607,431,768,211,455
 |===
 
 Each type exposes a `basis_type` member type alias that refers to the underlying integer type, allowing conversion back to built-in types when needed.
@@ -39,7 +39,7 @@ using u8   = detail::unsigned_integer_basis<std::uint8_t>;
 using u16  = detail::unsigned_integer_basis<std::uint16_t>;
 using u32  = detail::unsigned_integer_basis<std::uint32_t>;
 using u64  = detail::unsigned_integer_basis<std::uint64_t>;
-using u128 = detail::unsigned_integer_basis<int128::uint128_t>;
+using u128 = detail::unsigned_integer_basis<int128::uint128>;
 
 using sat_u8   = detail::unsigned_integer_basis<std::uint8_t, overflow_policy::saturate>;
 // ... sat_u16, sat_u32, sat_u64, sat_u128

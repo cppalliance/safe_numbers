@@ -84,7 +84,7 @@ When debugging with the C/C++ extension's `cppvsdbg` engine on Windows, point yo
 
 [NOTE]
 ====
-The NATVIS file is self-contained: it also visualizes the underlying `boost::int128::uint128_t` and `boost::int128::int128_t`, so `u128` and `i128` are readable without any additional file.
+The NATVIS file is self-contained: it also visualizes the underlying `boost::int128::uint128` and `boost::int128::int128`, so `u128` and `i128` are readable without any additional file.
 
 Two display differences from the GDB and LLDB scripts are worth noting:
 

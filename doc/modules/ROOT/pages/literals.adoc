@@ -19,7 +19,7 @@ The behavior of each literal depends on the target type:
 - The `_u128` literal accepts an integer-form token, parses the digit string, and throws `std::overflow_error` on overflow or `std::invalid_argument` on invalid input.
 - For `_i8`, `_i16`, `_i32`, and `_i64`, the literal magnitude is range-checked against the signed maximum and throws `std::overflow_error` if it exceeds it.
   Negative values are formed by applying the wrapper's unary `operator-` to the positive literal: the expression `-42_i32` parses as `-(42_i32)`.
-- The `_i128` literal mirrors `_u128`: it parses an integer-form digit string into `int128_t` and throws on overflow or invalid input.
+- The `_i128` literal mirrors `_u128`: it parses an integer-form digit string into `int128` and throws on overflow or invalid input.
 - For `_f32` and `_f64`, the literal is taken as `long double` and range-checked against the target's maximum, throwing `std::overflow_error` on overflow.
 
 [source,c++]
