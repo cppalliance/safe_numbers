@@ -479,7 +479,7 @@ def lookup_safe_numbers_type(val):
         r"^(boost::safe_numbers::detail::unsigned_integer_basis<unsigned long(, [^>]+)?>|boost::safe_numbers::detail::unsigned_integer_basis<unsigned long long(, [^>]+)?>|(\w+::)*(sat_|strict_)?u64)( &| \*)?$"
     )
     u128_pattern = re.compile(
-        r"^(boost::safe_numbers::detail::unsigned_integer_basis<boost::int128::uint128_t(, [^>]+)?>|(\w+::)*(sat_|strict_)?u128)( &| \*)?$"
+        r"^(boost::safe_numbers::detail::unsigned_integer_basis<boost::int128::uint128(, [^>]+)?>|(\w+::)*(sat_|strict_)?u128)( &| \*)?$"
     )
     bounded_uint_pattern = re.compile(
         r"^boost::safe_numbers::bounded_uint<[^>]+>( &| \*)?$"
@@ -497,7 +497,7 @@ def lookup_safe_numbers_type(val):
         r"^(boost::safe_numbers::detail::signed_integer_basis<long(, [^>]+)?>|boost::safe_numbers::detail::signed_integer_basis<long long(, [^>]+)?>|(\w+::)*(sat_|strict_)?i64)( &| \*)?$"
     )
     i128_pattern = re.compile(
-        r"^(boost::safe_numbers::detail::signed_integer_basis<boost::int128::int128_t(, [^>]+)?>|(\w+::)*(sat_|strict_)?i128)( &| \*)?$"
+        r"^(boost::safe_numbers::detail::signed_integer_basis<boost::int128::int128(, [^>]+)?>|(\w+::)*(sat_|strict_)?i128)( &| \*)?$"
     )
     bounded_int_pattern = re.compile(
         r"^boost::safe_numbers::bounded_int<[^>]+>( &| \*)?$"
