@@ -1,0 +1,178 @@
+#!/usr/bin/env python3
+# Copyright 2026 Matt Borland
+# Distributed under the Boost Software License, Version 1.0.
+# https://www.boost.org/LICENSE_1_0.txt
+#
+# Render the response policy ablation (benchmark_policy_operations) and the cross
+# library comparison (benchmark_library_comparison) from their Google Benchmark JSON
+# output into AsciiDoc partials for the manual.
+#
+# Benchmark names are "{shape}_{category}_{bits}_{op}_{role}" where shape is "scalar"
+# or "stream". Every table reports the built-in time per element on its first row and
+# the ratio of each contender to the built-in type on the remaining rows, taken from
+# the median aggregate. Pure standard library only.
+#
+# Usage:
+#   python3 render_ablation.py --data-dir DIR --out-dir DIR
+#
+# DIR/policy_*.json feed ablation_results.adoc and DIR/library_*.json feed
+# library_comparison_results.adoc; several files per benchmark are merged (the stream
+# and scalar halves are usually run separately).
+
+import argparse
+import collections
+import glob
+import json
+import math
+import os
+import re
+
+RUN_NAME = re.compile(r"(scalar|stream)_(unsigned|signed)_(\d+)_(add|sub|mul|div|mod)_(.+)$")
+OPS = ["add", "sub", "mul", "div", "mod"]
+OP_TITLES = ["Add", "Sub", "Mul", "Div", "Mod"]
+
+ROLE_LABELS = {
+    "throwing": "throwing (default)",
+    "saturating": "saturating (`sat_*`)",
+    "strict": "strict (`strict_*`)",
+    "wrapping_handler": "user handler, wrapping",
+    "throwing_handler": "user handler, throwing",
+    "overflowing": "overflowing (deferred flag)",
+    "checked": "checked (`std::optional`)",
+    "builtin_byte_ingress": "built-in, one-byte operands widened",
+    "throwing_bounded_ingress": "throwing, bounded ingress",
+    "safe_numbers": "Boost.SafeNumbers",
+    "safe_numerics": "Boost.SafeNumerics",
+    "safeint": "Microsoft SafeInt",
+    "intel": "Intel safe-arithmetic (value fallback)",
+    "intel_throw": "Intel safe-arithmetic (throwing fallback)",
+    "intel_unchecked": "Intel safe-arithmetic (no runtime check)",
+}
+
+ROLE_ORDER = ["throwing", "saturating", "strict", "wrapping_handler", "throwing_handler",
+              "overflowing", "checked", "builtin_byte_ingress", "throwing_bounded_ingress",
+              "safe_numbers", "safe_numerics", "safeint", "intel", "intel_throw", "intel_unchecked"]
+
+
+def builtin_label(kind, bits):
+    if bits == 128:
+        return "boost::int128::uint128" if kind == "unsigned" else "boost::int128::int128"
+    return "std::{}int{}_t".format("u" if kind == "unsigned" else "", bits)
+
+
+def alias(kind, bits):
+    return ("u" if kind == "unsigned" else "i") + str(bits)
+
+
+def load_medians(paths):
+    medians = {}
+    for path in paths:
+        with open(path) as f:
+            data = json.load(f)
+        for entry in data["benchmarks"]:
+            if entry.get("aggregate_name") == "median":
+                medians[entry["run_name"]] = entry["real_time"]
+    return medians
+
+
+def geometric_mean(values):
+    return math.exp(sum(math.log(v) for v in values) / len(values))
+
+
+def collect(medians):
+    # (shape, kind, bits) -> role -> op -> ratio, plus the built-in ns per element
+    table = collections.defaultdict(lambda: collections.defaultdict(dict))
+    builtin = collections.defaultdict(dict)
+    for name, value in medians.items():
+        match = RUN_NAME.match(name)
+        if not match:
+            continue
+        shape, kind, bits, op, role = match.groups()
+        bits = int(bits)
+        base = medians.get("{}_{}_{}_{}_builtin".format(shape, kind, bits, op))
+        if not base:
+            continue
+        if role == "builtin":
+            builtin[(shape, kind, bits)][op] = base / 1e6
+            continue
+        table[(shape, kind, bits)][role][op] = value / base
+    return table, builtin
+
+
+def emit_table(out, shape, kind, bits, roles, builtin_ns, note):
+    label = builtin_label(kind, bits)
+    out.append(".`{}`, {} shape (ratio relative to `{}`){}".format(alias(kind, bits), shape, label, note))
+    out.append('[cols="3,>1,>1,>1,>1,>1,>1",options="header"]')
+    out.append("|===")
+    out.append("| Contender | {} | Gmean".format(" | ".join(OP_TITLES)))
+    ns_cells = ["{:.3f}".format(builtin_ns[op]) if op in builtin_ns else "n/a" for op in OPS]
+    out.append("| `{}` (ns/op) | {} | ".format(label, " | ".join(ns_cells)))
+    for role, ratios in roles:
+        cells = [ratios.get(op) for op in OPS]
+        present = [c for c in cells if c is not None]
+        gm = geometric_mean(present) if present else None
+        out.append("| {} | {} | {}".format(
+            ROLE_LABELS.get(role, role),
+            " | ".join("{:.2f}".format(c) if c is not None else "n/a" for c in cells),
+            "{:.2f}".format(gm) if gm is not None else "n/a"))
+    out.append("|===")
+    out.append("")
+
+
+def render(medians, title, out_path, data_dir, note_for):
+    table, builtin = collect(medians)
+    out = []
+    out.append("// Generated by test/benchmarks/render_ablation.py from {}. Do not edit by hand.".format(
+        data_dir.replace(os.sep, "/")))
+    out.append("= {}".format(title))
+    out.append("")
+    for shape, heading in (("stream", "Stream shape"), ("scalar", "Scalar shape")):
+        keys = sorted((k for k in table if k[0] == shape), key=lambda k: (k[1] != "unsigned", k[2]))
+        if not keys:
+            continue
+        out.append("== {}".format(heading))
+        out.append("")
+        if shape == "scalar":
+            out.append("The scalar shape passes every element's result through `benchmark::DoNotOptimize`, as the host grid does; see the note on spill artifacts above before reading single cells.")
+            out.append("")
+            out.append("[%collapsible]")
+            out.append("====")
+        for key in keys:
+            roles = [(r, table[key][r]) for r in ROLE_ORDER if r in table[key]]
+            roles += [(r, table[key][r]) for r in sorted(table[key]) if r not in ROLE_ORDER]
+            emit_table(out, shape, key[1], key[2], roles, builtin[key], note_for(table[key]))
+        if shape == "scalar":
+            out.append("====")
+            out.append("")
+    with open(out_path, "w") as f:
+        f.write("\n".join(out).rstrip() + "\n")
+    return len(table)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data-dir", required=True)
+    parser.add_argument("--out-dir", required=True)
+    args = parser.parse_args()
+
+    policy = sorted(glob.glob(os.path.join(args.data_dir, "policy_*.json")))
+    library = sorted(glob.glob(os.path.join(args.data_dir, "library_*.json")))
+
+    def ingress_note(roles):
+        if "throwing_bounded_ingress" in roles:
+            return ("; the two ingress rows store one-byte operands and are read against each other")
+        return ""
+
+    if policy:
+        n = render(load_medians(policy), "Response policy ablation results",
+                   os.path.join(args.out_dir, "ablation_results.adoc"), args.data_dir, ingress_note)
+        print("ablation_results.adoc:", n, "tables")
+    if library:
+        n = render(load_medians(library), "Cross-library comparison results",
+                   os.path.join(args.out_dir, "library_comparison_results.adoc"), args.data_dir,
+                   lambda roles: "")
+        print("library_comparison_results.adoc:", n, "tables")
+
+
+if __name__ == "__main__":
+    main()
