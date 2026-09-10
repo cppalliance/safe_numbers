@@ -21,7 +21,7 @@ import boost.safe_numbers;
 #endif
 
 using namespace boost::safe_numbers;
-using boost::int128::uint128_t;
+using boost::int128::uint128;
 
 // ============================================
 // Boundary value generators
@@ -87,14 +87,14 @@ struct wider_type<std::uint32_t>
 template <>
 struct wider_type<std::uint64_t>
 {
-    using type = uint128_t;
+    using type = uint128;
 };
 
 // For u128, we use the same type but handle overflow detection differently
 template <>
-struct wider_type<uint128_t>
+struct wider_type<uint128>
 {
-    using type = uint128_t;
+    using type = uint128;
 };
 
 template <typename T>
@@ -172,7 +172,7 @@ void test_boundary_checked_add()
             const auto wide_sum {static_cast<wider>(lhs_val) + static_cast<wider>(rhs_val)};
 
             bool should_overflow {};
-            if constexpr (std::is_same_v<BasisType, uint128_t>)
+            if constexpr (std::is_same_v<BasisType, uint128>)
             {
                 // For u128, overflow if wrap-around occurred
                 should_overflow = wide_sum < lhs_val;
@@ -343,7 +343,7 @@ void test_boundary_checked_mul()
             const auto wide_product {static_cast<wider>(lhs_val) * static_cast<wider>(rhs_val)};
 
             bool should_overflow {};
-            if constexpr (std::is_same_v<BasisType, uint128_t>)
+            if constexpr (std::is_same_v<BasisType, uint128>)
             {
                 // For u128, overflow if rhs != 0 and lhs > max/rhs
                 should_overflow = rhs_val != BasisType{0U} && lhs_val > max_val / rhs_val;
@@ -437,8 +437,8 @@ void test_boundary_checked_mod()
 
 void test_boundary_u128_saturating_add()
 {
-    const auto boundary_vals {get_boundary_values<uint128_t>()};
-    constexpr auto max_val {std::numeric_limits<uint128_t>::max()};
+    const auto boundary_vals {get_boundary_values<uint128>()};
+    constexpr auto max_val {std::numeric_limits<uint128>::max()};
 
     for (const auto lhs_val : boundary_vals)
     {
@@ -448,19 +448,19 @@ void test_boundary_u128_saturating_add()
             const u128 rhs {rhs_val};
 
             // Detect overflow: sum would wrap if sum < lhs
-            const auto sum {static_cast<uint128_t>(lhs_val + rhs_val)};
+            const auto sum {static_cast<uint128>(lhs_val + rhs_val)};
             const auto would_overflow {sum < lhs_val};
             const auto expected {would_overflow ? max_val : sum};
 
             const auto result {saturating_add(lhs, rhs)};
-            BOOST_TEST_EQ(static_cast<uint128_t>(result), expected);
+            BOOST_TEST_EQ(static_cast<uint128>(result), expected);
         }
     }
 }
 
 void test_boundary_u128_overflowing_add()
 {
-    const auto boundary_vals {get_boundary_values<uint128_t>()};
+    const auto boundary_vals {get_boundary_values<uint128>()};
 
     for (const auto lhs_val : boundary_vals)
     {
@@ -469,11 +469,11 @@ void test_boundary_u128_overflowing_add()
             const u128 lhs {lhs_val};
             const u128 rhs {rhs_val};
 
-            const auto sum {static_cast<uint128_t>(lhs_val + rhs_val)};
+            const auto sum {static_cast<uint128>(lhs_val + rhs_val)};
             const auto expected_overflow {sum < lhs_val};
 
             const auto [result, overflowed] {overflowing_add(lhs, rhs)};
-            BOOST_TEST_EQ(static_cast<uint128_t>(result), sum);
+            BOOST_TEST_EQ(static_cast<uint128>(result), sum);
             BOOST_TEST_EQ(overflowed, expected_overflow);
         }
     }
@@ -481,8 +481,8 @@ void test_boundary_u128_overflowing_add()
 
 void test_boundary_u128_saturating_mul()
 {
-    const auto boundary_vals {get_boundary_values<uint128_t>()};
-    constexpr auto max_val {std::numeric_limits<uint128_t>::max()};
+    const auto boundary_vals {get_boundary_values<uint128>()};
+    constexpr auto max_val {std::numeric_limits<uint128>::max()};
 
     for (const auto lhs_val : boundary_vals)
     {
@@ -493,19 +493,19 @@ void test_boundary_u128_saturating_mul()
 
             // Detect overflow: if rhs != 0 and lhs > max/rhs, overflow
             const auto would_overflow {rhs_val != 0U && lhs_val > max_val / rhs_val};
-            const auto product {static_cast<uint128_t>(lhs_val * rhs_val)};
+            const auto product {static_cast<uint128>(lhs_val * rhs_val)};
             const auto expected {would_overflow ? max_val : product};
 
             const auto result {saturating_mul(lhs, rhs)};
-            BOOST_TEST_EQ(static_cast<uint128_t>(result), expected);
+            BOOST_TEST_EQ(static_cast<uint128>(result), expected);
         }
     }
 }
 
 void test_boundary_u128_overflowing_mul()
 {
-    const auto boundary_vals {get_boundary_values<uint128_t>()};
-    constexpr auto max_val {std::numeric_limits<uint128_t>::max()};
+    const auto boundary_vals {get_boundary_values<uint128>()};
+    constexpr auto max_val {std::numeric_limits<uint128>::max()};
 
     for (const auto lhs_val : boundary_vals)
     {
@@ -515,10 +515,10 @@ void test_boundary_u128_overflowing_mul()
             const u128 rhs {rhs_val};
 
             const auto expected_overflow {rhs_val != 0U && lhs_val > max_val / rhs_val};
-            const auto product {static_cast<uint128_t>(lhs_val * rhs_val)};
+            const auto product {static_cast<uint128>(lhs_val * rhs_val)};
 
             const auto [result, overflowed] {overflowing_mul(lhs, rhs)};
-            BOOST_TEST_EQ(static_cast<uint128_t>(result), product);
+            BOOST_TEST_EQ(static_cast<uint128>(result), product);
             BOOST_TEST_EQ(overflowed, expected_overflow);
         }
     }
@@ -558,17 +558,17 @@ void run_u128_boundary_tests()
     // u128 needs special handling since there's no wider type
     test_boundary_u128_saturating_add();
     test_boundary_u128_overflowing_add();
-    test_boundary_saturating_sub<u128, uint128_t>();
-    test_boundary_overflowing_sub<u128, uint128_t>();
-    test_boundary_checked_sub<u128, uint128_t>();
+    test_boundary_saturating_sub<u128, uint128>();
+    test_boundary_overflowing_sub<u128, uint128>();
+    test_boundary_checked_sub<u128, uint128>();
     test_boundary_u128_saturating_mul();
     test_boundary_u128_overflowing_mul();
-    test_boundary_checked_div<u128, uint128_t>();
-    test_boundary_checked_mod<u128, uint128_t>();
+    test_boundary_checked_div<u128, uint128>();
+    test_boundary_checked_mod<u128, uint128>();
 
     // These use the generic templates which work for subtraction, div, mod
-    test_boundary_checked_add<u128, uint128_t>();
-    test_boundary_checked_mul<u128, uint128_t>();
+    test_boundary_checked_add<u128, uint128>();
+    test_boundary_checked_mul<u128, uint128>();
 }
 
 int main()

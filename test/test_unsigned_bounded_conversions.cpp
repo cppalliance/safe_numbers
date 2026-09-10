@@ -24,7 +24,7 @@
 #include <cstdint>
 
 using namespace boost::safe_numbers;
-using boost::int128::uint128_t;
+using boost::int128::uint128;
 
 // -----------------------------------------------
 // Same basis type, different bounds
@@ -200,18 +200,18 @@ void test_u32_to_u64()
 void test_u64_to_u128()
 {
     // [0, UINT64_MAX] -> [0, 2^64]: value fits
-    constexpr auto max_128 = uint128_t{1, 0};
-    using b128 = bounded_uint<uint128_t{0}, max_128>;
+    constexpr auto max_128 = uint128{1, 0};
+    using b128 = bounded_uint<uint128{0}, max_128>;
 
     constexpr bounded_uint<0ULL, UINT64_MAX> a {u64{1'000'000ULL}};
     const auto b {static_cast<b128>(a)};
-    const b128 expected {u128{uint128_t{1'000'000}}};
+    const b128 expected {u128{uint128{1'000'000}}};
     BOOST_TEST(b == expected);
 
     // Max u64 value -> u128 range
     constexpr bounded_uint<0ULL, UINT64_MAX> c {u64{UINT64_MAX}};
     const auto d {static_cast<b128>(c)};
-    const b128 expected_d {u128{uint128_t{UINT64_MAX}}};
+    const b128 expected_d {u128{uint128{UINT64_MAX}}};
     BOOST_TEST(d == expected_d);
 }
 
@@ -346,30 +346,30 @@ void test_constexpr_conversions()
 
 void test_u128_conversions()
 {
-    constexpr auto max_128 = uint128_t{1, 0};
-    constexpr auto u128_max = uint128_t{UINT64_MAX, UINT64_MAX};
+    constexpr auto max_128 = uint128{1, 0};
+    constexpr auto u128_max = uint128{UINT64_MAX, UINT64_MAX};
 
     // Narrower u128 range -> wider u128 range
-    using b128_narrow = bounded_uint<uint128_t{1000}, max_128>;
-    using b128_wide = bounded_uint<uint128_t{0}, u128_max>;
+    using b128_narrow = bounded_uint<uint128{1000}, max_128>;
+    using b128_wide = bounded_uint<uint128{0}, u128_max>;
 
-    const b128_narrow a {u128{uint128_t{5000}}};
+    const b128_narrow a {u128{uint128{5000}}};
     const auto b {static_cast<b128_wide>(a)};
-    const b128_wide expected {u128{uint128_t{5000}}};
+    const b128_wide expected {u128{uint128{5000}}};
     BOOST_TEST(b == expected);
 
     // Wider -> narrower, value in range
-    const b128_wide c {u128{uint128_t{5000}}};
+    const b128_wide c {u128{uint128{5000}}};
     const auto d {static_cast<b128_narrow>(c)};
-    const b128_narrow expected_d {u128{uint128_t{5000}}};
+    const b128_narrow expected_d {u128{uint128{5000}}};
     BOOST_TEST(d == expected_d);
 
     // Wider -> narrower, value below min: 500 < 1000
-    const b128_wide e {u128{uint128_t{500}}};
+    const b128_wide e {u128{uint128{500}}};
     BOOST_TEST_THROWS((static_cast<b128_narrow>(e)), std::domain_error);
 
     // Wider -> narrower, value above max: max_128 + 1 > max_128
-    const b128_wide f {u128{uint128_t{1, 1}}};
+    const b128_wide f {u128{uint128{1, 1}}};
     BOOST_TEST_THROWS((static_cast<b128_narrow>(f)), std::domain_error);
 }
 

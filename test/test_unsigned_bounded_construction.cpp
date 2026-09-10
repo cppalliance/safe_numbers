@@ -11,7 +11,7 @@
 #include <cstdint>
 
 using namespace boost::safe_numbers;
-using boost::int128::uint128_t;
+using boost::int128::uint128;
 
 // -----------------------------------------------
 // Static assertions on basis_type selection
@@ -38,8 +38,8 @@ static_assert(std::is_same_v<bounded_uint<0ULL, 5'000'000'000ULL>::basis_type, u
 static_assert(std::is_same_v<bounded_uint<0ULL, UINT64_MAX>::basis_type, u64>);
 
 // Max exceeds uint64_t -> basis_type should be u128
-static_assert(std::is_same_v<bounded_uint<uint128_t{0}, uint128_t{1, 0}>::basis_type, u128>);
-static_assert(std::is_same_v<bounded_uint<uint128_t{0}, uint128_t{UINT64_MAX, UINT64_MAX}>::basis_type, u128>);
+static_assert(std::is_same_v<bounded_uint<uint128{0}, uint128{1, 0}>::basis_type, u128>);
+static_assert(std::is_same_v<bounded_uint<uint128{0}, uint128{UINT64_MAX, UINT64_MAX}>::basis_type, u128>);
 
 // -----------------------------------------------
 // sizeof checks - bounded_uint should be the same
@@ -50,7 +50,7 @@ static_assert(sizeof(bounded_uint<0u, 200u>) == sizeof(u8));
 static_assert(sizeof(bounded_uint<0u, 40000u>) == sizeof(u16));
 static_assert(sizeof(bounded_uint<0u, 100000u>) == sizeof(u32));
 static_assert(sizeof(bounded_uint<0ULL, 5'000'000'000ULL>) == sizeof(u64));
-static_assert(sizeof(bounded_uint<uint128_t{0}, uint128_t{1, 0}>) == sizeof(u128));
+static_assert(sizeof(bounded_uint<uint128{0}, uint128{1, 0}>) == sizeof(u128));
 
 // -----------------------------------------------
 // Construction and comparison tests
@@ -138,25 +138,25 @@ void test_u64_range()
 void test_u128_range()
 {
     // Min = 0, Max = 2^64 (one beyond uint64_t max)
-    constexpr auto max_val = uint128_t{1, 0};
-    using b128 = bounded_uint<uint128_t{0}, max_val>;
+    constexpr auto max_val = uint128{1, 0};
+    using b128 = bounded_uint<uint128{0}, max_val>;
 
-    constexpr b128 a {u128{uint128_t{0}}};
-    constexpr b128 b {u128{uint128_t{42}}};
-    constexpr b128 c {u128{uint128_t{1000}}};
+    constexpr b128 a {u128{uint128{0}}};
+    constexpr b128 b {u128{uint128{42}}};
+    constexpr b128 c {u128{uint128{1000}}};
     BOOST_TEST(a < b);
     BOOST_TEST(b < c);
     BOOST_TEST(a < c);
     BOOST_TEST(a == a);
     BOOST_TEST(b == b);
 
-    // Max = uint128_t maximum, test values spanning both halves
-    constexpr auto u128_max = uint128_t{UINT64_MAX, UINT64_MAX};
-    using b128_full = bounded_uint<uint128_t{0}, u128_max>;
+    // Max = uint128 maximum, test values spanning both halves
+    constexpr auto u128_max = uint128{UINT64_MAX, UINT64_MAX};
+    using b128_full = bounded_uint<uint128{0}, u128_max>;
 
-    constexpr b128_full d {u128{uint128_t{0}}};
-    constexpr b128_full e {u128{uint128_t{1'000'000}}};
-    constexpr b128_full f {u128{uint128_t{1, 0}}};
+    constexpr b128_full d {u128{uint128{0}}};
+    constexpr b128_full e {u128{uint128{1'000'000}}};
+    constexpr b128_full f {u128{uint128{1, 0}}};
     constexpr b128_full g {u128{u128_max}};
     BOOST_TEST(d < e);
     BOOST_TEST(e < f);
@@ -272,31 +272,31 @@ void test_u64_bounds_checking()
 void test_u128_bounds_checking()
 {
     // Exact boundary values should NOT throw
-    constexpr auto max_val = uint128_t{1, 0};
-    using b128 = bounded_uint<uint128_t{0}, max_val>;
+    constexpr auto max_val = uint128{1, 0};
+    using b128 = bounded_uint<uint128{0}, max_val>;
 
-    b128 a {u128{uint128_t{0}}};
+    b128 a {u128{uint128{0}}};
     b128 b {u128{max_val}};
     (void)a;
     (void)b;
 
     // Above maximum should throw
-    constexpr auto above_max = uint128_t{1, 1};
+    constexpr auto above_max = uint128{1, 1};
     BOOST_TEST_THROWS((b128{u128{above_max}}), std::domain_error);
 
     // Non-zero minimum range
-    constexpr auto min_val = uint128_t{1000};
-    constexpr auto max_val2 = uint128_t{1, 0};
+    constexpr auto min_val = uint128{1000};
+    constexpr auto max_val2 = uint128{1, 0};
     using b128_ranged = bounded_uint<min_val, max_val2>;
 
-    b128_ranged c {u128{uint128_t{1000}}};
+    b128_ranged c {u128{uint128{1000}}};
     b128_ranged d {u128{max_val2}};
     (void)c;
     (void)d;
 
     // Below minimum should throw
-    BOOST_TEST_THROWS((b128_ranged{u128{uint128_t{999}}}), std::domain_error);
-    BOOST_TEST_THROWS((b128_ranged{u128{uint128_t{0}}}), std::domain_error);
+    BOOST_TEST_THROWS((b128_ranged{u128{uint128{999}}}), std::domain_error);
+    BOOST_TEST_THROWS((b128_ranged{u128{uint128{0}}}), std::domain_error);
 }
 
 void test_constexpr_construction()

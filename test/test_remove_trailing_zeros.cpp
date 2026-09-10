@@ -155,25 +155,25 @@ void test_rtz_u64_large()
 
 void test_rtz_u128_large()
 {
-    using boost::int128::uint128_t;
+    using boost::int128::uint128;
 
     {
-        auto result = remove_trailing_zeros(u128{uint128_t{UINT64_C(1000000000000)}});
-        BOOST_TEST_EQ(result.trimmed_number, uint128_t{1});
+        auto result = remove_trailing_zeros(u128{uint128{UINT64_C(1000000000000)}});
+        BOOST_TEST_EQ(result.trimmed_number, uint128{1});
         BOOST_TEST_EQ(result.number_of_removed_zeros, static_cast<std::size_t>(12));
     }
     {
         // 10^20 = 10^10 * 10^10
-        const auto ten_pow_20 = uint128_t{UINT64_C(10000000000)} * uint128_t{UINT64_C(10000000000)};
+        const auto ten_pow_20 = uint128{UINT64_C(10000000000)} * uint128{UINT64_C(10000000000)};
         auto result = remove_trailing_zeros(u128{ten_pow_20});
-        BOOST_TEST_EQ(result.trimmed_number, uint128_t{1});
+        BOOST_TEST_EQ(result.trimmed_number, uint128{1});
         BOOST_TEST_EQ(result.number_of_removed_zeros, static_cast<std::size_t>(20));
     }
     {
         // 42 * 10^10
-        const auto val = uint128_t{42} * uint128_t{UINT64_C(10000000000)};
+        const auto val = uint128{42} * uint128{UINT64_C(10000000000)};
         auto result = remove_trailing_zeros(u128{val});
-        BOOST_TEST_EQ(result.trimmed_number, uint128_t{42});
+        BOOST_TEST_EQ(result.trimmed_number, uint128{42});
         BOOST_TEST_EQ(result.number_of_removed_zeros, static_cast<std::size_t>(10));
     }
 }

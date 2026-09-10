@@ -58,18 +58,18 @@ void test_is_power_10_true_u64()
 
 void test_is_power_10_true_u128()
 {
-    using boost::int128::uint128_t;
+    using boost::int128::uint128;
 
-    BOOST_TEST(is_power_10(u128{uint128_t{1}}));
-    BOOST_TEST(is_power_10(u128{uint128_t{10}}));
-    BOOST_TEST(is_power_10(u128{uint128_t{UINT64_C(1000000000000)}}));
+    BOOST_TEST(is_power_10(u128{uint128{1}}));
+    BOOST_TEST(is_power_10(u128{uint128{10}}));
+    BOOST_TEST(is_power_10(u128{uint128{UINT64_C(1000000000000)}}));
 
     // 10^20
-    const auto ten_pow_20 = uint128_t{UINT64_C(10000000000)} * uint128_t{UINT64_C(10000000000)};
+    const auto ten_pow_20 = uint128{UINT64_C(10000000000)} * uint128{UINT64_C(10000000000)};
     BOOST_TEST(is_power_10(u128{ten_pow_20}));
 
     // 10^30
-    const auto ten_pow_30 = ten_pow_20 * uint128_t{UINT64_C(10000000000)};
+    const auto ten_pow_30 = ten_pow_20 * uint128{UINT64_C(10000000000)};
     BOOST_TEST(is_power_10(u128{ten_pow_30}));
 }
 
@@ -113,17 +113,17 @@ void test_is_power_10_false_u64()
 
 void test_is_power_10_false_u128()
 {
-    using boost::int128::uint128_t;
+    using boost::int128::uint128;
 
-    BOOST_TEST(!is_power_10(u128{uint128_t{2}}));
-    BOOST_TEST(!is_power_10(u128{uint128_t{UINT64_C(9999999999999)}}));
+    BOOST_TEST(!is_power_10(u128{uint128{2}}));
+    BOOST_TEST(!is_power_10(u128{uint128{UINT64_C(9999999999999)}}));
 
     // 10^20 + 1
-    const auto ten_pow_20 = uint128_t{UINT64_C(10000000000)} * uint128_t{UINT64_C(10000000000)};
-    BOOST_TEST(!is_power_10(u128{ten_pow_20 + uint128_t{1}}));
+    const auto ten_pow_20 = uint128{UINT64_C(10000000000)} * uint128{UINT64_C(10000000000)};
+    BOOST_TEST(!is_power_10(u128{ten_pow_20 + uint128{1}}));
 
     // 2 * 10^20
-    BOOST_TEST(!is_power_10(u128{ten_pow_20 * uint128_t{2}}));
+    BOOST_TEST(!is_power_10(u128{ten_pow_20 * uint128{2}}));
 }
 
 // =============================================================================

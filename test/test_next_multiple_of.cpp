@@ -132,21 +132,21 @@ void test_next_multiple_of_u64()
 
 void test_next_multiple_of_u128()
 {
-    using boost::int128::uint128_t;
+    using boost::int128::uint128;
 
     // Small values
-    BOOST_TEST_EQ(next_multiple_of(u128{uint128_t{0}}, u128{uint128_t{1}}), u128{uint128_t{0}});
-    BOOST_TEST_EQ(next_multiple_of(u128{uint128_t{10}}, u128{uint128_t{3}}), u128{uint128_t{12}});
-    BOOST_TEST_EQ(next_multiple_of(u128{uint128_t{10}}, u128{uint128_t{5}}), u128{uint128_t{10}});
-    BOOST_TEST_EQ(next_multiple_of(u128{uint128_t{7}}, u128{uint128_t{7}}), u128{uint128_t{7}});
+    BOOST_TEST_EQ(next_multiple_of(u128{uint128{0}}, u128{uint128{1}}), u128{uint128{0}});
+    BOOST_TEST_EQ(next_multiple_of(u128{uint128{10}}, u128{uint128{3}}), u128{uint128{12}});
+    BOOST_TEST_EQ(next_multiple_of(u128{uint128{10}}, u128{uint128{5}}), u128{uint128{10}});
+    BOOST_TEST_EQ(next_multiple_of(u128{uint128{7}}, u128{uint128{7}}), u128{uint128{7}});
 
     // Large values
-    const auto two_pow_64 = uint128_t{UINT64_C(1)} << 64U;
+    const auto two_pow_64 = uint128{UINT64_C(1)} << 64U;
     BOOST_TEST_EQ(next_multiple_of(u128{two_pow_64}, u128{two_pow_64}), u128{two_pow_64});
-    BOOST_TEST_EQ(next_multiple_of(u128{uint128_t{1}}, u128{two_pow_64}), u128{two_pow_64});
+    BOOST_TEST_EQ(next_multiple_of(u128{uint128{1}}, u128{two_pow_64}), u128{two_pow_64});
 
     // Equal large values
-    const auto big_val = uint128_t{UINT64_C(1000000000000)} * uint128_t{UINT64_C(1000000000000)};
+    const auto big_val = uint128{UINT64_C(1000000000000)} * uint128{UINT64_C(1000000000000)};
     BOOST_TEST_EQ(next_multiple_of(u128{big_val}, u128{big_val}), u128{big_val});
 }
 

@@ -198,21 +198,21 @@ void test_narrowing_i64_to_i32_fits()
 
 void test_narrowing_i128_to_smaller_fits()
 {
-    using int128_t = boost::int128::int128_t;
+    using int128 = boost::int128::int128;
 
-    const i128 a {int128_t{0, 127}};
+    const i128 a {int128{0, 127}};
     BOOST_TEST_EQ(static_cast<std::int8_t>(a), static_cast<std::int8_t>(127));
 
-    const i128 b {int128_t{0, 32767}};
+    const i128 b {int128{0, 32767}};
     BOOST_TEST_EQ(static_cast<std::int16_t>(b), static_cast<std::int16_t>(32767));
 
-    const i128 c {int128_t{0, 2'147'483'647}};
+    const i128 c {int128{0, 2'147'483'647}};
     BOOST_TEST_EQ(static_cast<std::int32_t>(c), static_cast<std::int32_t>(2'147'483'647));
 
-    const i128 d {int128_t{0, static_cast<std::uint64_t>(INT64_MAX)}};
+    const i128 d {int128{0, static_cast<std::uint64_t>(INT64_MAX)}};
     BOOST_TEST_EQ(static_cast<std::int64_t>(d), INT64_MAX);
 
-    const i128 zero {int128_t{0, 0}};
+    const i128 zero {int128{0, 0}};
     BOOST_TEST_EQ(static_cast<std::int8_t>(zero), static_cast<std::int8_t>(0));
     BOOST_TEST_EQ(static_cast<std::int16_t>(zero), static_cast<std::int16_t>(0));
     BOOST_TEST_EQ(static_cast<std::int32_t>(zero), static_cast<std::int32_t>(0));
@@ -287,29 +287,29 @@ void test_narrowing_i64_to_i32_positive_overflow()
 
 void test_narrowing_i128_to_smaller_positive_overflow()
 {
-    using int128_t = boost::int128::int128_t;
+    using int128 = boost::int128::int128;
 
     // Large i128 value that overflows all smaller types
-    const i128 big {int128_t{1, 0}};
+    const i128 big {int128{1, 0}};
     BOOST_TEST_THROWS((static_cast<std::int8_t>(big)), std::domain_error);
     BOOST_TEST_THROWS((static_cast<std::int16_t>(big)), std::domain_error);
     BOOST_TEST_THROWS((static_cast<std::int32_t>(big)), std::domain_error);
     BOOST_TEST_THROWS((static_cast<std::int64_t>(big)), std::domain_error);
 
     // Just above i8 max in i128
-    const i128 over_i8 {int128_t{0, 128}};
+    const i128 over_i8 {int128{0, 128}};
     BOOST_TEST_THROWS((static_cast<std::int8_t>(over_i8)), std::domain_error);
 
     // Just above i16 max in i128
-    const i128 over_i16 {int128_t{0, 32768}};
+    const i128 over_i16 {int128{0, 32768}};
     BOOST_TEST_THROWS((static_cast<std::int16_t>(over_i16)), std::domain_error);
 
     // Just above i32 max in i128
-    const i128 over_i32 {int128_t{0, 2'147'483'648ULL}};
+    const i128 over_i32 {int128{0, 2'147'483'648ULL}};
     BOOST_TEST_THROWS((static_cast<std::int32_t>(over_i32)), std::domain_error);
 
     // Just above i64 max in i128
-    const i128 over_i64 {int128_t{0, static_cast<std::uint64_t>(INT64_MAX) + 1}};
+    const i128 over_i64 {int128{0, static_cast<std::uint64_t>(INT64_MAX) + 1}};
     BOOST_TEST_THROWS((static_cast<std::int64_t>(over_i64)), std::domain_error);
 }
 
@@ -381,24 +381,24 @@ void test_narrowing_i64_to_i32_negative_overflow()
 
 void test_narrowing_i128_to_smaller_negative_overflow()
 {
-    using int128_t = boost::int128::int128_t;
+    using int128 = boost::int128::int128;
 
     // Large negative i128 value
-    const i128 big_neg {int128_t{-1, 0}};
+    const i128 big_neg {int128{-1, 0}};
     BOOST_TEST_THROWS((static_cast<std::int8_t>(big_neg)), std::domain_error);
     BOOST_TEST_THROWS((static_cast<std::int16_t>(big_neg)), std::domain_error);
     BOOST_TEST_THROWS((static_cast<std::int32_t>(big_neg)), std::domain_error);
 
     // Just below i8 min in i128
-    const i128 under_i8 {int128_t{-1, static_cast<std::uint64_t>(-129)}};
+    const i128 under_i8 {int128{-1, static_cast<std::uint64_t>(-129)}};
     BOOST_TEST_THROWS((static_cast<std::int8_t>(under_i8)), std::domain_error);
 
     // Just below i16 min in i128
-    const i128 under_i16 {int128_t{-1, static_cast<std::uint64_t>(-32769)}};
+    const i128 under_i16 {int128{-1, static_cast<std::uint64_t>(-32769)}};
     BOOST_TEST_THROWS((static_cast<std::int16_t>(under_i16)), std::domain_error);
 
     // Just below i32 min in i128
-    const i128 under_i32 {int128_t{-1, static_cast<std::uint64_t>(-2'147'483'649LL)}};
+    const i128 under_i32 {int128{-1, static_cast<std::uint64_t>(-2'147'483'649LL)}};
     BOOST_TEST_THROWS((static_cast<std::int32_t>(under_i32)), std::domain_error);
 }
 

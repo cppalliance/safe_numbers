@@ -117,7 +117,7 @@ void test<i128>()
 {
     // _i128 is the raw-integer UDL form, the same as _u128: it dispatches on
     // an integer-form token and receives the digits as a null-terminated
-    // string. Parsing is delegated to from_chars on int128_t.
+    // string. Parsing is delegated to from_chars on int128.
     constexpr auto good_value {42_i128};
     BOOST_TEST_EQ(good_value, i128{42});
 

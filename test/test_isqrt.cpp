@@ -87,34 +87,34 @@ void test_isqrt_u64_large()
 
 void test_isqrt_u128_large()
 {
-    using boost::int128::uint128_t;
+    using boost::int128::uint128;
 
     // Perfect squares
-    BOOST_TEST_EQ(isqrt(u128{uint128_t{0}}), u128{uint128_t{0}});
-    BOOST_TEST_EQ(isqrt(u128{uint128_t{1}}), u128{uint128_t{1}});
-    BOOST_TEST_EQ(isqrt(u128{uint128_t{4}}), u128{uint128_t{2}});
-    BOOST_TEST_EQ(isqrt(u128{uint128_t{100}}), u128{uint128_t{10}});
-    BOOST_TEST_EQ(isqrt(u128{uint128_t{10000}}), u128{uint128_t{100}});
-    BOOST_TEST_EQ(isqrt(u128{uint128_t{1000000}}), u128{uint128_t{1000}});
+    BOOST_TEST_EQ(isqrt(u128{uint128{0}}), u128{uint128{0}});
+    BOOST_TEST_EQ(isqrt(u128{uint128{1}}), u128{uint128{1}});
+    BOOST_TEST_EQ(isqrt(u128{uint128{4}}), u128{uint128{2}});
+    BOOST_TEST_EQ(isqrt(u128{uint128{100}}), u128{uint128{10}});
+    BOOST_TEST_EQ(isqrt(u128{uint128{10000}}), u128{uint128{100}});
+    BOOST_TEST_EQ(isqrt(u128{uint128{1000000}}), u128{uint128{1000}});
 
     // Non-perfect squares
-    BOOST_TEST_EQ(isqrt(u128{uint128_t{2}}), u128{uint128_t{1}});
-    BOOST_TEST_EQ(isqrt(u128{uint128_t{3}}), u128{uint128_t{1}});
-    BOOST_TEST_EQ(isqrt(u128{uint128_t{10}}), u128{uint128_t{3}});
-    BOOST_TEST_EQ(isqrt(u128{uint128_t{200}}), u128{uint128_t{14}});
+    BOOST_TEST_EQ(isqrt(u128{uint128{2}}), u128{uint128{1}});
+    BOOST_TEST_EQ(isqrt(u128{uint128{3}}), u128{uint128{1}});
+    BOOST_TEST_EQ(isqrt(u128{uint128{10}}), u128{uint128{3}});
+    BOOST_TEST_EQ(isqrt(u128{uint128{200}}), u128{uint128{14}});
 
     // Large values beyond u64 range
     // 10^20 = (10^10)^2, so isqrt(10^20) == 10^10
-    const auto ten_pow_20 = uint128_t{10000000000ULL} * uint128_t{10000000000ULL};
-    BOOST_TEST_EQ(isqrt(u128{ten_pow_20}), u128{uint128_t{10000000000ULL}});
+    const auto ten_pow_20 = uint128{10000000000ULL} * uint128{10000000000ULL};
+    BOOST_TEST_EQ(isqrt(u128{ten_pow_20}), u128{uint128{10000000000ULL}});
 
     // 10^20 + 1 is not a perfect square, floor(sqrt) should still be 10^10
-    const auto ten_pow_20_plus_1 = ten_pow_20 + uint128_t{1};
-    BOOST_TEST_EQ(isqrt(u128{ten_pow_20_plus_1}), u128{uint128_t{10000000000ULL}});
+    const auto ten_pow_20_plus_1 = ten_pow_20 + uint128{1};
+    BOOST_TEST_EQ(isqrt(u128{ten_pow_20_plus_1}), u128{uint128{10000000000ULL}});
 
     // (2^64)^2 = 2^128 doesn't fit, but (2^64 - 1)^2 does:
     // isqrt((2^64-1)^2) == 2^64-1
-    const auto max_u64_val = uint128_t{UINT64_MAX};
+    const auto max_u64_val = uint128{UINT64_MAX};
     const auto max_u64_squared = max_u64_val * max_u64_val;
     BOOST_TEST_EQ(isqrt(u128{max_u64_squared}), u128{max_u64_val});
 }
