@@ -75,6 +75,7 @@ set(BOOST_SAFE_NUMBERS_BENCHMARK_TARGETS
     benchmark_unsigned_operations
     benchmark_signed_operations
     benchmark_float_operations
+    benchmark_policy_operations
 )
 
 foreach(bench ${BOOST_SAFE_NUMBERS_BENCHMARK_TARGETS})
@@ -92,3 +93,46 @@ foreach(bench ${BOOST_SAFE_NUMBERS_BENCHMARK_TARGETS})
     target_compile_features(${bench} PRIVATE cxx_std_20)
 
 endforeach()
+
+# Cross library comparison against Boost.SafeNumerics, Microsoft SafeInt, and
+# Intel safe-arithmetic. The two external libraries are header only and are
+# fetched at pinned commits; their own CMake projects (tests) are not built.
+option(BOOST_SAFE_NUMBERS_BENCHMARK_EXTERNAL "Build the cross library comparison benchmark (fetches Intel safe-arithmetic and Microsoft SafeInt)" OFF)
+
+if(BOOST_SAFE_NUMBERS_BENCHMARK_EXTERNAL)
+
+    FetchContent_Declare(
+        intel_safe_arithmetic
+        GIT_REPOSITORY https://github.com/intel/safe-arithmetic.git
+        GIT_TAG c3b6e94b367a1d722b14688b44e867ed7b50f0f2
+        SOURCE_SUBDIR cmake_not_used
+    )
+
+    FetchContent_Declare(
+        safeint
+        GIT_REPOSITORY https://github.com/dcleblanc/SafeInt.git
+        GIT_TAG 72f0745e26091af6d1186fd91426377f16688ba7
+        SOURCE_SUBDIR cmake_not_used
+    )
+
+    FetchContent_MakeAvailable(intel_safe_arithmetic safeint)
+
+    add_executable(benchmark_library_comparison benchmark_library_comparison.cpp)
+
+    target_include_directories(benchmark_library_comparison
+        PRIVATE
+        ${intel_safe_arithmetic_SOURCE_DIR}/include
+        ${safeint_SOURCE_DIR}
+    )
+
+    target_link_libraries(benchmark_library_comparison
+        PRIVATE
+        Boost::safe_numbers
+        Boost::safe_numerics
+        Boost::mp11
+        benchmark::benchmark
+    )
+
+    target_compile_features(benchmark_library_comparison PRIVATE cxx_std_20)
+
+endif()
