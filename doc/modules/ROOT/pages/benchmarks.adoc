@@ -42,6 +42,13 @@ cmake --build __build__ --config Release \
 
 The `benchmarks.yml` GitHub Actions workflow runs the same build across a spread of native runners, emits each suite's JSON, and renders the per-platform sections below with `test/benchmarks/render_results.py`.
 
+Two further host benchmarks are built alongside the three above but are not part of the CI grid:
+
+* `benchmark_policy_operations` runs one width under every response policy the types can carry (the default throwing operators, the `sat_*` and `strict_*` aliases, user defined handlers selected through `basic_*`, and the `overflowing_*` and `checked_*` families), in two kernel shapes: the per-element shape of the grid and a streaming `out[i] = a[i] op b[i]` shape that lets the optimizer vectorize whichever contenders it can.
+* `benchmark_library_comparison` runs the built-in type, Boost.SafeNumbers, Boost.SafeNumerics, Microsoft SafeInt, and Intel safe-arithmetic on the same operands and shapes. It is opt-in with `-DBOOST_SAFE_NUMBERS_BENCHMARK_EXTERNAL=ON`, which fetches the two external header-only libraries at pinned commits.
+
+Both are summarized by `doc/paper/ablation_summary.py`.
+
 [#benchmarks_methodology]
 == Methodology
 
