@@ -119,4 +119,18 @@ inline constexpr auto dependent_false {false};
 
 #endif // GPU backends
 
+// BOOST_SAFE_NUMBERS_NOINLINE and BOOST_SAFE_NUMBERS_COLD mark the outlined error
+// paths, so that the operators' hot paths stay small enough for the compiler to
+// inline them into the calling loop.
+#if defined(__GNUC__) || defined(__clang__)
+#  define BOOST_SAFE_NUMBERS_NOINLINE __attribute__((__noinline__))
+#  define BOOST_SAFE_NUMBERS_COLD __attribute__((__cold__))
+#elif defined(_MSC_VER)
+#  define BOOST_SAFE_NUMBERS_NOINLINE __declspec(noinline)
+#  define BOOST_SAFE_NUMBERS_COLD
+#else
+#  define BOOST_SAFE_NUMBERS_NOINLINE
+#  define BOOST_SAFE_NUMBERS_COLD
+#endif
+
 #endif // BOOST_SAFENUMBERS_CONFIG_HPP
