@@ -11,7 +11,8 @@ constant boost_dependencies :
     /boost/charconv//boost_charconv
     /boost/core//boost_core
     /boost/random//boost_random
-    /boost/throw_exception//boost_throw_exception ;
+    /boost/throw_exception//boost_throw_exception
+    /boost/int128//boost_int128 ;
 
 project /boost/safe_numbers ;
 
