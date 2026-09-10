@@ -82,8 +82,8 @@ inline constexpr auto dependent_false {false};
 // expands to "__host__ __device__" (CUDA), "SYCL_EXTERNAL" (SYCL), or nothing.
 #if defined(__CUDACC__) && defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA)
 
-#ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_ENABLE_CUDA
-#  define BOOST_SAFE_NUMBERS_DETAIL_INT128_ENABLE_CUDA
+#ifndef BOOST_INT128_ENABLE_CUDA
+#  define BOOST_INT128_ENABLE_CUDA
 #endif
 
 #ifndef BOOST_CHARCONV_ENABLE_CUDA
@@ -102,8 +102,8 @@ inline constexpr auto dependent_false {false};
 #  error "Include <sycl/sycl.hpp> before any Boost.safe_numbers header when BOOST_SAFE_NUMBERS_ENABLE_SYCL is defined"
 #endif
 
-#ifndef BOOST_SAFE_NUMBERS_DETAIL_INT128_ENABLE_SYCL
-#  define BOOST_SAFE_NUMBERS_DETAIL_INT128_ENABLE_SYCL
+#ifndef BOOST_INT128_ENABLE_SYCL
+#  define BOOST_INT128_ENABLE_SYCL
 #endif
 
 #ifndef BOOST_CHARCONV_ENABLE_SYCL
@@ -118,6 +118,22 @@ inline constexpr auto dependent_false {false};
 #define BOOST_SAFE_NUMBERS_HOST_DEVICE
 
 #endif // GPU backends
+
+// BOOST_SAFE_NUMBERS_ASSUME(cond) hands an invariant the library has already established
+// to the optimizer, which can then delete downstream checks the invariant makes
+// impossible. The condition is never evaluated for its side effects. It is a no-op on
+// the device backends and on compilers without an assumption form.
+#if defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
+#  define BOOST_SAFE_NUMBERS_ASSUME(cond) static_cast<void>(sizeof((cond)))
+#elif defined(__clang__)
+#  define BOOST_SAFE_NUMBERS_ASSUME(cond) __builtin_assume(cond)
+#elif defined(__GNUC__)
+#  define BOOST_SAFE_NUMBERS_ASSUME(cond) do { if (!(cond)) { __builtin_unreachable(); } } while (false)
+#elif defined(_MSC_VER)
+#  define BOOST_SAFE_NUMBERS_ASSUME(cond) __assume(cond)
+#else
+#  define BOOST_SAFE_NUMBERS_ASSUME(cond) static_cast<void>(sizeof((cond)))
+#endif
 
 // BOOST_SAFE_NUMBERS_NOINLINE and BOOST_SAFE_NUMBERS_COLD mark the outlined error
 // paths, so that the operators' hot paths stay small enough for the compiler to

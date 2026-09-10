@@ -6,7 +6,7 @@
 #define BOOST_SAFE_NUMBERS_RANDOM_HPP
 
 #include <boost/safe_numbers/detail/config.hpp>
-#include <boost/safe_numbers/detail/int128/random.hpp>
+#include <boost/int128/random.hpp>
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/bounded_integers.hpp>
 #include <boost/safe_numbers/signed_integers.hpp>

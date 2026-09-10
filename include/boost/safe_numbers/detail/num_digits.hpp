@@ -8,8 +8,8 @@
 // https://stackoverflow.com/questions/1489830/efficient-way-to-determine-number-of-digits-in-an-integer
 // https://graphics.stanford.edu/~seander/bithacks.html
 
-#include <boost/safe_numbers/detail/int128/bit.hpp>
-#include <boost/safe_numbers/detail/int128/detail/config.hpp>
+#include <boost/int128/bit.hpp>
+#include <boost/int128/detail/config.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -54,7 +54,7 @@ consteval auto make_powers_of_10() noexcept
 
 inline constexpr auto powers_of_10_u32 {make_powers_of_10<std::uint32_t>()};
 inline constexpr auto powers_of_10_u64 {make_powers_of_10<std::uint64_t>()};
-inline constexpr auto powers_of_10_u128 {make_powers_of_10<int128::uint128_t>()};
+inline constexpr auto powers_of_10_u128 {make_powers_of_10<int128::uint128>()};
 
 #endif
 
@@ -142,12 +142,12 @@ constexpr auto num_digits(const std::uint64_t x) noexcept -> int
     return estimated_digits;
 }
 
-// Overload for uint128_t
-constexpr auto num_digits(const boost::int128::uint128_t& x) noexcept -> int
+// Overload for uint128
+constexpr auto num_digits(const boost::int128::uint128& x) noexcept -> int
 {
     #if (defined(BOOST_SAFE_NUMBERS_ENABLE_CUDA) && defined(__CUDACC__))
 
-    constexpr auto powers_of_10_u128 {make_powers_of_10<int128::uint128_t>()};
+    constexpr auto powers_of_10_u128 {make_powers_of_10<int128::uint128>()};
 
     #endif
 

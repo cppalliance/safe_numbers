@@ -8,7 +8,7 @@
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
 #include <boost/safe_numbers/detail/throw_exception.hpp>
-#include <boost/safe_numbers/detail/int128/string.hpp>
+#include <boost/int128/string.hpp>
 #include <boost/safe_numbers/overflow_policy.hpp>
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/signed_integers.hpp>
@@ -84,6 +84,40 @@ private:
     using underlying_type = detail::underlying_type_t<basis_type>;
     basis_type basis_ {};
 
+    // Hands the declared domain to the optimizer whenever a value leaves the type, so
+    // that a check on the receiving type which the domain makes impossible (the overflow
+    // check of a wider addition or multiplication, for example) can be deleted. Runtime
+    // only: constant evaluation already knows the value.
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr void assume_domain() const noexcept
+    {
+        if constexpr (std::is_integral_v<underlying_type>)
+        {
+            if (!std::is_constant_evaluated())
+            {
+                // The bounds are folded to constants first so the assumption is a pure
+                // comparison; a bound equal to the type's own limit is left out
+                constexpr auto lo {static_cast<underlying_type>(detail::raw_value(Min))};
+                constexpr auto hi {static_cast<underlying_type>(detail::raw_value(Max))};
+                constexpr bool has_lo {lo > std::numeric_limits<underlying_type>::min()};
+                constexpr bool has_hi {hi < std::numeric_limits<underlying_type>::max()};
+                const auto raw {static_cast<underlying_type>(basis_)};
+
+                if constexpr (has_lo && has_hi)
+                {
+                    BOOST_SAFE_NUMBERS_ASSUME(raw >= lo && raw <= hi);
+                }
+                else if constexpr (has_lo)
+                {
+                    BOOST_SAFE_NUMBERS_ASSUME(raw >= lo);
+                }
+                else if constexpr (has_hi)
+                {
+                    BOOST_SAFE_NUMBERS_ASSUME(raw <= hi);
+                }
+            }
+        }
+    }
+
 public:
 
     BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr bounded_uint(const basis_type val)
@@ -116,6 +150,7 @@ public:
         requires (detail::is_unsigned_library_type_v<OtherBasis> || detail::is_fundamental_unsigned_integral_v<OtherBasis>)
     BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator OtherBasis() const
     {
+        assume_domain();
         const auto raw {static_cast<detail::underlying_type_t<basis_type>>(basis_)};
 
         if constexpr (sizeof(OtherBasis) < sizeof(basis_type))
@@ -146,14 +181,15 @@ public:
     template <auto Min2, auto Max2>
     BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator bounded_uint<Min2, Max2>() const
     {
+        assume_domain();
         using target_basis = typename bounded_uint<Min2, Max2>::basis_type;
         const auto raw {static_cast<detail::underlying_type_t<basis_type>>(basis_)};
         return bounded_uint<Min2, Max2>{static_cast<target_basis>(raw)};
     }
 
-    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator basis_type() const noexcept { return basis_; }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator basis_type() const noexcept { assume_domain(); return basis_; }
 
-    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator underlying_type() const noexcept { return static_cast<underlying_type>(basis_); }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator underlying_type() const noexcept { assume_domain(); return static_cast<underlying_type>(basis_); }
 
     BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] friend constexpr auto operator<=>(bounded_uint lhs, bounded_uint rhs) noexcept
         -> std::strong_ordering = default;
@@ -591,6 +627,40 @@ private:
     using underlying_type = detail::underlying_type_t<basis_type>;
     basis_type basis_ {};
 
+    // Hands the declared domain to the optimizer whenever a value leaves the type, so
+    // that a check on the receiving type which the domain makes impossible (the overflow
+    // check of a wider addition or multiplication, for example) can be deleted. Runtime
+    // only: constant evaluation already knows the value.
+    BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr void assume_domain() const noexcept
+    {
+        if constexpr (std::is_integral_v<underlying_type>)
+        {
+            if (!std::is_constant_evaluated())
+            {
+                // The bounds are folded to constants first so the assumption is a pure
+                // comparison; a bound equal to the type's own limit is left out
+                constexpr auto lo {static_cast<underlying_type>(detail::signed_raw_value(Min))};
+                constexpr auto hi {static_cast<underlying_type>(detail::signed_raw_value(Max))};
+                constexpr bool has_lo {lo > std::numeric_limits<underlying_type>::min()};
+                constexpr bool has_hi {hi < std::numeric_limits<underlying_type>::max()};
+                const auto raw {static_cast<underlying_type>(basis_)};
+
+                if constexpr (has_lo && has_hi)
+                {
+                    BOOST_SAFE_NUMBERS_ASSUME(raw >= lo && raw <= hi);
+                }
+                else if constexpr (has_lo)
+                {
+                    BOOST_SAFE_NUMBERS_ASSUME(raw >= lo);
+                }
+                else if constexpr (has_hi)
+                {
+                    BOOST_SAFE_NUMBERS_ASSUME(raw <= hi);
+                }
+            }
+        }
+    }
+
 public:
 
     BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr bounded_int(const basis_type val)
@@ -623,6 +693,7 @@ public:
         requires (detail::is_signed_library_type_v<OtherBasis> || detail::is_fundamental_signed_integral_v<OtherBasis>)
     BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator OtherBasis() const
     {
+        assume_domain();
         const auto raw {static_cast<detail::underlying_type_t<basis_type>>(basis_)};
 
         if constexpr (sizeof(OtherBasis) < sizeof(basis_type))
@@ -654,15 +725,16 @@ public:
     template <auto Min2, auto Max2>
     BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator bounded_int<Min2, Max2>() const
     {
+        assume_domain();
         using target_basis = typename bounded_int<Min2, Max2>::basis_type;
         using target_underlying = detail::underlying_type_t<target_basis>;
         const auto raw {static_cast<detail::underlying_type_t<basis_type>>(basis_)};
         return bounded_int<Min2, Max2>{target_basis{static_cast<target_underlying>(raw)}};
     }
 
-    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator basis_type() const noexcept { return basis_; }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator basis_type() const noexcept { assume_domain(); return basis_; }
 
-    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator underlying_type() const noexcept { return static_cast<underlying_type>(basis_); }
+    BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator underlying_type() const noexcept { assume_domain(); return static_cast<underlying_type>(basis_); }
 
     BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] friend constexpr auto operator<=>(bounded_int lhs, bounded_int rhs) noexcept
         -> std::strong_ordering = default;

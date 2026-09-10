@@ -6,7 +6,7 @@
 #define BOOST_SAFE_NUMBERS_NUMERIC_HPP
 
 #include <boost/safe_numbers/detail/type_traits.hpp>
-#include <boost/safe_numbers/detail/int128/numeric.hpp>
+#include <boost/int128/numeric.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 
@@ -25,7 +25,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto gcd(const T m, const
 {
     using underlying_type = detail::underlying_type_t<T>;
 
-    if constexpr (std::is_same_v<underlying_type, int128::uint128_t> || std::is_same_v<underlying_type, int128::int128_t>)
+    if constexpr (std::is_same_v<underlying_type, int128::uint128> || std::is_same_v<underlying_type, int128::int128>)
     {
         return T{int128::gcd(static_cast<underlying_type>(m), static_cast<underlying_type>(n))};
     }
@@ -44,7 +44,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto lcm(const T m, const
 {
     using underlying_type = detail::underlying_type_t<T>;
 
-    if constexpr (std::is_same_v<underlying_type, int128::uint128_t> || std::is_same_v<underlying_type, int128::int128_t>)
+    if constexpr (std::is_same_v<underlying_type, int128::uint128> || std::is_same_v<underlying_type, int128::int128>)
     {
         return T{int128::lcm(static_cast<underlying_type>(m), static_cast<underlying_type>(n))};
     }
@@ -63,7 +63,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto midpoint(const T a, 
 {
     using underlying_type = detail::underlying_type_t<T>;
 
-    if constexpr (std::is_same_v<underlying_type, int128::uint128_t> || std::is_same_v<underlying_type, int128::int128_t>)
+    if constexpr (std::is_same_v<underlying_type, int128::uint128> || std::is_same_v<underlying_type, int128::int128>)
     {
         return T{int128::midpoint(static_cast<underlying_type>(a), static_cast<underlying_type>(b))};
     }

@@ -8,7 +8,7 @@
 #include <boost/safe_numbers/detail/config.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
 #include <boost/safe_numbers/detail/compile_assert.hpp>
-#include <boost/safe_numbers/detail/int128/bit.hpp>
+#include <boost/int128/bit.hpp>
 #include <boost/safe_numbers/detail/throw_exception.hpp>
 #include <boost/safe_numbers/overflow_policy.hpp>
 
@@ -275,19 +275,19 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto signed_overflow_conversion_msg() n
     {
         return "Overflow in i64 to i32 conversion";
     }
-    else if constexpr (std::is_same_v<BasisType, int128::int128_t> && std::is_same_v<OtherBasis, std::int8_t>)
+    else if constexpr (std::is_same_v<BasisType, int128::int128> && std::is_same_v<OtherBasis, std::int8_t>)
     {
         return "Overflow in i128 to i8 conversion";
     }
-    else if constexpr (std::is_same_v<BasisType, int128::int128_t> && std::is_same_v<OtherBasis, std::int16_t>)
+    else if constexpr (std::is_same_v<BasisType, int128::int128> && std::is_same_v<OtherBasis, std::int16_t>)
     {
         return "Overflow in i128 to i16 conversion";
     }
-    else if constexpr (std::is_same_v<BasisType, int128::int128_t> && std::is_same_v<OtherBasis, std::int32_t>)
+    else if constexpr (std::is_same_v<BasisType, int128::int128> && std::is_same_v<OtherBasis, std::int32_t>)
     {
         return "Overflow in i128 to i32 conversion";
     }
-    else if constexpr (std::is_same_v<BasisType, int128::int128_t> && std::is_same_v<OtherBasis, std::int64_t>)
+    else if constexpr (std::is_same_v<BasisType, int128::int128> && std::is_same_v<OtherBasis, std::int64_t>)
     {
         return "Overflow in i128 to i64 conversion";
     }
@@ -324,19 +324,19 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto signed_underflow_conversion_msg() 
     {
         return "Underflow in i64 to i32 conversion";
     }
-    else if constexpr (std::is_same_v<BasisType, int128::int128_t> && std::is_same_v<OtherBasis, std::int8_t>)
+    else if constexpr (std::is_same_v<BasisType, int128::int128> && std::is_same_v<OtherBasis, std::int8_t>)
     {
         return "Underflow in i128 to i8 conversion";
     }
-    else if constexpr (std::is_same_v<BasisType, int128::int128_t> && std::is_same_v<OtherBasis, std::int16_t>)
+    else if constexpr (std::is_same_v<BasisType, int128::int128> && std::is_same_v<OtherBasis, std::int16_t>)
     {
         return "Underflow in i128 to i16 conversion";
     }
-    else if constexpr (std::is_same_v<BasisType, int128::int128_t> && std::is_same_v<OtherBasis, std::int32_t>)
+    else if constexpr (std::is_same_v<BasisType, int128::int128> && std::is_same_v<OtherBasis, std::int32_t>)
     {
         return "Underflow in i128 to i32 conversion";
     }
-    else if constexpr (std::is_same_v<BasisType, int128::int128_t> && std::is_same_v<OtherBasis, std::int64_t>)
+    else if constexpr (std::is_same_v<BasisType, int128::int128> && std::is_same_v<OtherBasis, std::int64_t>)
     {
         return "Underflow in i128 to i64 conversion";
     }
@@ -418,9 +418,9 @@ struct make_unsigned_helper
 };
 
 template <>
-struct make_unsigned_helper<int128::int128_t>
+struct make_unsigned_helper<int128::int128>
 {
-    using type = int128::uint128_t;
+    using type = int128::uint128;
 };
 
 template <fundamental_signed_integral T>
@@ -656,7 +656,7 @@ struct signed_add_helper
         // and are excluded. The assert reuses the status the runtime path already computes.
         #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_add_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
-        if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
+        if constexpr (!std::is_same_v<BasisType, int128::int128>)
         {
             #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
@@ -762,7 +762,7 @@ struct signed_add_helper<overflow_policy::widen, BasisType>
                                               const signed_integer_basis<BasisType, TypePolicy> rhs) noexcept
     {
         using promoted = signed_promoted_type<BasisType>;
-        static_assert(!std::is_same_v<promoted, bool>, "Widening policy with int128_t is not supported");
+        static_assert(!std::is_same_v<promoted, bool>, "Widening policy with int128 is not supported");
 
         using result_type = signed_integer_basis<promoted, TypePolicy>;
         return result_type{static_cast<promoted>(static_cast<promoted>(static_cast<BasisType>(lhs)) + static_cast<BasisType>(rhs))};
@@ -882,7 +882,7 @@ constexpr auto OP_SYMBOL(const boost::safe_numbers::detail::signed_integer_basis
         {                                                                                                                                                      \
             static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between i8 and i64");                 \
         }                                                                                                                                                      \
-        else if constexpr (std::is_same_v<RHSBasis, boost::int128::int128_t>)                                                                                 \
+        else if constexpr (std::is_same_v<RHSBasis, boost::int128::int128>)                                                                                 \
         {                                                                                                                                                      \
             static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between i8 and i128");                \
         }                                                                                                                                                      \
@@ -905,7 +905,7 @@ constexpr auto OP_SYMBOL(const boost::safe_numbers::detail::signed_integer_basis
         {                                                                                                                                                      \
             static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between i16 and i64");                \
         }                                                                                                                                                      \
-        else if constexpr (std::is_same_v<RHSBasis, boost::int128::int128_t>)                                                                                 \
+        else if constexpr (std::is_same_v<RHSBasis, boost::int128::int128>)                                                                                 \
         {                                                                                                                                                      \
             static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between i16 and i128");               \
         }                                                                                                                                                      \
@@ -928,7 +928,7 @@ constexpr auto OP_SYMBOL(const boost::safe_numbers::detail::signed_integer_basis
         {                                                                                                                                                      \
             static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between i32 and i64");                \
         }                                                                                                                                                      \
-        else if constexpr (std::is_same_v<RHSBasis, boost::int128::int128_t>)                                                                                 \
+        else if constexpr (std::is_same_v<RHSBasis, boost::int128::int128>)                                                                                 \
         {                                                                                                                                                      \
             static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between i32 and i128");               \
         }                                                                                                                                                      \
@@ -951,7 +951,7 @@ constexpr auto OP_SYMBOL(const boost::safe_numbers::detail::signed_integer_basis
         {                                                                                                                                                      \
             static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between i64 and i32");                \
         }                                                                                                                                                      \
-        else if constexpr (std::is_same_v<RHSBasis, boost::int128::int128_t>)                                                                                 \
+        else if constexpr (std::is_same_v<RHSBasis, boost::int128::int128>)                                                                                 \
         {                                                                                                                                                      \
             static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between i64 and i128");               \
         }                                                                                                                                                      \
@@ -960,7 +960,7 @@ constexpr auto OP_SYMBOL(const boost::safe_numbers::detail::signed_integer_basis
             static_assert(boost::safe_numbers::detail::dependent_false<LHSBasis, RHSBasis>, "Can not perform " OP_NAME " between i64 and unknown type");       \
         }                                                                                                                                                      \
     }                                                                                                                                                          \
-    else if constexpr (std::is_same_v<LHSBasis, boost::int128::int128_t>)                                                                                     \
+    else if constexpr (std::is_same_v<LHSBasis, boost::int128::int128>)                                                                                     \
     {                                                                                                                                                          \
         if constexpr (std::is_same_v<RHSBasis, std::int8_t>)                                                                                                  \
         {                                                                                                                                                      \
@@ -1285,7 +1285,7 @@ struct signed_sub_helper
         // and are excluded. The assert reuses the status the runtime path already computes.
         #if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_sub_overflow) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X64_INTRIN) || defined(BOOST_SAFENUMBERS_HAS_WINDOWS_X86_INTRIN)
 
-        if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
+        if constexpr (!std::is_same_v<BasisType, int128::int128>)
         {
             #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
 
@@ -1533,7 +1533,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto signed_underflow_mul_msg() noexcep
 // clang lowers signed __builtin_mul_overflow on __int128 to __muloti4 (compiler-rt
 // only), which is missing when linking libgcc on clang-13. Limit the fast path to
 // GCC and clang >= 14; everything else uses signed_no_intrin_mul for int128.
-#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) && defined(BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_INT128) && (!defined(__clang__) || __clang_major__ >= 14)
+#if BOOST_SAFE_NUMBERS_HAS_BUILTIN(__builtin_mul_overflow) && defined(BOOST_INT128_HAS_INT128) && (!defined(__clang__) || __clang_major__ >= 14)
 #  define BOOST_SAFE_NUMBERS_HAS_INT128_SIGNED_INTRIN_MUL
 #endif
 
@@ -1552,7 +1552,7 @@ auto signed_intrin_mul(const T lhs, const T rhs, T& result) -> signed_overflow_s
 
 #ifdef BOOST_SAFE_NUMBERS_HAS_INT128_SIGNED_INTRIN_MUL
 
-inline auto signed_intrin_mul(const int128::int128_t lhs, const int128::int128_t rhs, int128::int128_t& result) -> signed_overflow_status
+inline auto signed_intrin_mul(const int128::int128 lhs, const int128::int128 rhs, int128::int128& result) -> signed_overflow_status
 {
     __int128_t builtin_result;
     const auto overflow {__builtin_mul_overflow(static_cast<__int128_t>(lhs), static_cast<__int128_t>(rhs), &builtin_result)};
@@ -1662,7 +1662,7 @@ auto signed_intrin_mul(const T lhs, const T rhs, T& result) -> signed_overflow_s
 template <fundamental_signed_integral T>
 BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto signed_no_intrin_mul(const T lhs, const T rhs, T& result) noexcept -> signed_overflow_status
 {
-    if constexpr (std::is_same_v<T, int128::int128_t>)
+    if constexpr (std::is_same_v<T, int128::int128>)
     {
         if (lhs == 0 || rhs == 0)
         {
@@ -1732,14 +1732,14 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto signed_no_intrin_mul(const T lhs, 
     }
     else // std::int64_t
     {
-        const auto wide {static_cast<int128::int128_t>(lhs) * static_cast<int128::int128_t>(rhs)};
+        const auto wide {static_cast<int128::int128>(lhs) * static_cast<int128::int128>(rhs)};
         result = static_cast<T>(wide);
 
-        if (wide > static_cast<int128::int128_t>(std::numeric_limits<T>::max()))
+        if (wide > static_cast<int128::int128>(std::numeric_limits<T>::max()))
         {
             return signed_overflow_status::overflow;
         }
-        if (wide < static_cast<int128::int128_t>(std::numeric_limits<T>::min()))
+        if (wide < static_cast<int128::int128>(std::numeric_limits<T>::min()))
         {
             return signed_overflow_status::underflow;
         }
@@ -1877,7 +1877,7 @@ struct signed_mul_helper
         // Route int128 through the intrin path only where the signed 128-bit
         // fast path links (GCC, clang >= 14); elsewhere it uses no_intrin.
         #if !defined(BOOST_SAFE_NUMBERS_HAS_INT128_SIGNED_INTRIN_MUL)
-        if constexpr (!std::is_same_v<BasisType, int128::int128_t>)
+        if constexpr (!std::is_same_v<BasisType, int128::int128>)
         #endif
         {
             #if !defined(BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT)
@@ -1984,7 +1984,7 @@ struct signed_mul_helper<overflow_policy::widen, BasisType>
                                               const signed_integer_basis<BasisType, TypePolicy> rhs) noexcept
     {
         using promoted = signed_promoted_type<BasisType>;
-        static_assert(!std::is_same_v<promoted, bool>, "Widening policy with int128_t is not supported");
+        static_assert(!std::is_same_v<promoted, bool>, "Widening policy with int128 is not supported");
 
         using result_type = signed_integer_basis<promoted, TypePolicy>;
         return result_type{static_cast<promoted>(static_cast<promoted>(static_cast<BasisType>(lhs)) * static_cast<BasisType>(rhs))};
