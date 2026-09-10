@@ -32,7 +32,7 @@ ROLE_LABELS = {
     "checked": "checked (optional)",
     "throwing_bounded_ingress": "throwing, bounded ingress",
     "builtin_byte_ingress": "built-in, byte ingress",
-    "safe_numbers": "Boost.SafeNumbers",
+    "safe_numbers": "SafeNumbers",
     "safe_numerics": "Boost.SafeNumerics",
     "safeint": "Microsoft SafeInt",
     "intel": "Intel safe-arithmetic",
