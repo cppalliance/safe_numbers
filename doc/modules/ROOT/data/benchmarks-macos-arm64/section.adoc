@@ -71,10 +71,10 @@ Run on the GitHub Actions `macos-latest` runner (Apple Silicon) using Apple Clan
 | Modulo | 2.21 | 2.73 | 1.24 | 2.19 | 0.99
 |===
 
-.128-bit signed (ratio relative to `int128_t`)
+.128-bit signed (ratio relative to `boost::int128::int128`)
 [cols="1,>1,>1,>1",options="header"]
 |===
-| Operation | `int128_t` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
+| Operation | `boost::int128::int128` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
 | Addition | 2.40 | 2.62 | 1.09
 | Subtraction | 2.53 | 2.38 | 0.94
 | Multiplication | 2.51 | 7.64 | 3.05
@@ -128,10 +128,10 @@ Run on the GitHub Actions `macos-latest` runner (Apple Silicon) using Apple Clan
 | Modulo | 2.22 | 2.70 | 1.21 | 2.21 | 0.99
 |===
 
-.128-bit unsigned (ratio relative to `uint128_t`)
+.128-bit unsigned (ratio relative to `boost::int128::uint128`)
 [cols="1,>1,>1,>1",options="header"]
 |===
-| Operation | `uint128_t` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
+| Operation | `boost::int128::uint128` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
 | Addition | 2.57 | 2.43 | 0.94
 | Subtraction | 2.67 | 2.61 | 0.98
 | Multiplication | 2.55 | 2.65 | 1.04

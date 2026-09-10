@@ -71,10 +71,10 @@ Run on the GitHub Actions  runner using MSVC in release mode (, pass:[C++]20).
 | Modulo | 2.10 | 2.78 | 1.32 | 2.33 | 1.11
 |===
 
-.128-bit signed (ratio relative to `int128_t`)
+.128-bit signed (ratio relative to `boost::int128::int128`)
 [cols="1,>1,>1,>1",options="header"]
 |===
-| Operation | `int128_t` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
+| Operation | `boost::int128::int128` (ns/op) | `boost::sn::i128` (ns/op) | Ratio
 | Addition | 9.77 | 3.13 | 0.32
 | Subtraction | 9.62 | 3.13 | 0.33
 | Multiplication | 2.78 | 13.89 | 5.00
@@ -128,10 +128,10 @@ Run on the GitHub Actions  runner using MSVC in release mode (, pass:[C++]20).
 | Modulo | 2.33 | 2.26 | 0.97 | 2.33 | 1.00
 |===
 
-.128-bit unsigned (ratio relative to `uint128_t`)
+.128-bit unsigned (ratio relative to `boost::int128::uint128`)
 [cols="1,>1,>1,>1",options="header"]
 |===
-| Operation | `uint128_t` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
+| Operation | `boost::int128::uint128` (ns/op) | `boost::sn::u128` (ns/op) | Ratio
 | Addition | 2.43 | 3.13 | 1.29
 | Subtraction | 2.60 | 3.13 | 1.20
 | Multiplication | 3.47 | 12.15 | 3.50
