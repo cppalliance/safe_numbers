@@ -79,27 +79,23 @@ mainstream mitigations are diagnostic tools rather than production types.
 This paper reports an industrial evaluation of \lib{}, a header-only C++20 library
 of checked fixed-width numeric types that ships with three properties we set out to
 measure rather than assert.
-First, relevance: we assembled a corpus of 140 CVEs drawn from the National
-Vulnerability Database by weakness class, reproduced each arithmetic root cause as
-a self-contained test, and classified every entry into one of five dispositions.
-The library prevents 126 of 130 in-scope faults (96.9\%, 95\% Wilson interval
-92.4\% to 98.8\%), with every primary category at 100\% and a deliberately
-included negative control at 60\%.
-Second, cost: a per-operation benchmark grid across seven operating-system and
-architecture targets places the median overhead of the checked types between
-1.00x and 1.18x of native arithmetic through 64 bits, with division and modulo at
-parity, while the existing Boost library absorbs narrow-width overflow silently
-under its default policy; a semantic probe matrix and a cost comparison against three
+First, we assembled a corpus of 140 CVEs drawn from the National
+Vulnerability Database (NVD) drawn from four weakness class.
+We reproduced each arithmetic root cause as a self-contained test,
+and found that the library prevents 126 of 130 in-scope faults (96.9\%, or a 95\% Wilson confidence interval of 92.4\% to 98.8\%),
+with every primary category at 100\% and a deliberately included negative control at 60\%.
+Second, we analyzed the cost.
+A per-operation benchmark grid across seven operating-system
+and architecture targets places the median overhead of the checked types between
+1.00x and 1.18x of native arithmetic.
+We also include a semantic probe matrix and a cost comparison against three
 other checked-integer libraries, together with an ablation over eight response policies,
-show that on vectorizable loops the cost is set by whether the response is a value or an
-early exit, not by the library.
-Third, reach: the same types execute in CUDA and SYCL kernels, where a
-decoupling of fault detection from fault response lets a branch-free deferred
-family recover compute-bound floating-point chains from two orders of magnitude
-slower than native to between 1.1x and 2.9x while still reporting every error.
-We describe the design decisions that made these results possible, the
-methodological choices that keep them honest, and the lessons for practitioners
-adopting checked arithmetic in performance-sensitive code.
+that show on vectorizable loops the cost is set by whether the response is a value or an early exit, not by the library.
+Third we studied the reach by including the same types in CUDA and SYCL heterogeneous compute kernels.
+A decoupling of fault detection from fault response lets a branch-free deferred response policy have an overhead
+between 1.1x and 2.9x while still reporting every error.
+We describe the design decisions that made these results possible, our methodology, and recommendations for practitioners
+wishing to adopted checked arithmetic in their code.
 \end{abstract}
 
 \begin{IEEEkeywords}
