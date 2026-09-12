@@ -129,30 +129,26 @@ diagnostics, the \code{\_\_builtin\_*\_overflow} intrinsics~\cite{gccmanual} mus
 at every call site and are non-portable, and the existing Boost library \cmp{}~\cite{ramey2019}, follows
 native promotion by default which lets \code{safe<uint8\_t>(255) + 1} evaluate to 256.
 
-\lib{}~\cite{safenumbers} is a header-only C++20 library developed at the C++ Alliance and
-intended for proposal to Boost; it is not a Boost library at the time of writing, although
+\lib{}~\cite{safenumbers} is a header-only C++20 library developed with support from The C++ Alliance,
+and intended for proposal to Boost.
+it is not an official Boost library at the time of writing, although
 its namespace, \code{boost::safe\_numbers}, anticipates that step.
-It provides concrete, named, checked numeric types (\code{u8} through \code{u128},
-\code{i8} through \code{i128}, with the 128-bit types built on Boost.int128, and
-\code{f32}, \code{f64}) and range-constrained bounded types, checked at the declared
-width, with
-implicit conversion and mixed-width arithmetic rejected at compile time and a typed
-exception as the default response.
-Its central design decision separates the \emph{detection} of a fault from the
-\emph{response} to it: the same checked operation can throw, saturate, return an
-optional, return a wrapped value with a flag, terminate, or invoke a user-defined
-handler, per call site or per type, and that decision is what lets the types execute
+It provides concrete, checked numeric types (\code{u8} through \code{u128},
+\code{i8} through \code{i128}, \code{f32}, \code{f64}) and range-constrained bounded types.
+The arithmetic is checked, implicit conversion and mixed-width arithmetic rejected at compile time,
+and a typed exception thrown as the default response.
+Its central design decision separates the \emph{detection} of a fault from the \emph{response} to it.
+The same checked operation can throw, saturate, return an optional, return a wrapped value with a flag, terminate, or invoke a user-defined handler.
+This decision on response can be applied per call site or per type, and that decision is what lets the types execute
 unchanged inside CUDA and SYCL kernels.
 
-This paper is an evaluation of an engineered artifact against measurable claims, in the
-spirit of the Software Engineering in Practice track.
-We ask three questions.
+This paper is an evaluation of an engineered artifact against measurable claims.
+To this end we ask three questions.
 
 \begin{itemize}
 \item \textbf{RQ1 (Relevance).} To what extent do checked fixed-width and domain-bounded
 types prevent the integer-arithmetic weaknesses behind real, disclosed CVEs?
-\item \textbf{RQ2 (Cost).} What runtime overhead does always-on checking at the declared
-width impose, relative to native arithmetic and to \cmp{}?
+\item \textbf{RQ2 (Cost).} What runtime overhead does always-on checking impose, relative to native arithmetic and to \cmp{}?
 \item \textbf{RQ3 (Reach).} Which error-response mechanisms let the same checked types
 execute in exception-free, massively parallel device code, and at what cost?
 \end{itemize}
