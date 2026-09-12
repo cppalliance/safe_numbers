@@ -156,34 +156,30 @@ execute in exception-free, massively parallel device code, and at what cost?
 Our contributions are:
 \begin{enumerate}
 \item A reproducible CVE corpus of 140 NVD-sourced vulnerabilities across five CWE
-classes, each reduced to a self-contained test with a machine-readable metadata block,
-a five-way disposition that drops nothing silently, and an analysis script that
-regenerates every statistic in this paper (Section~\ref{sec:design-rq1}).
+classes, each reduced to a self-contained test with a machine-readable metadata block, and a python script that
+programmatically regenerates every statistic in this paper (Section~\ref{sec:design-rq1}).
 \item A per-operation cost model for checked arithmetic across seven host targets and
-two accelerator back ends, measured on the non-violating path against a native baseline,
-together with a semantic probe matrix and a cost comparison against three other
-checked-integer libraries and an ablation over the library's own response policies
+two heterogeneous compute back ends, measured on the non-violating path against a native baseline.
+We also include a semantic probe matrix and a cost comparison against three other
+checked-integer libraries as well as an ablation over the library's own response policies
 (Sections~\ref{sec:results-rq2} and~\ref{sec:results-rq3}).
 \item Evidence that decoupling detection from response is not a convenience but the
 enabling mechanism for checked arithmetic on devices, a measurement showing that
-replacing the response leaves the non-violating path unchanged, and an articulation of
-how that architecture aligns with the violation-handling model standardized for C++26
-contracts~\cite{p2900} (Sections~\ref{sec:library-policy}, \ref{sec:results-rq2},
+replacing the response leaves the non-violating path unchanged (Sections~\ref{sec:library-policy},~\ref{sec:results-rq2},
 and~\ref{sec:discussion}).
 \item Lessons for practitioners on where checked arithmetic is free and how to choose a
 response (Section~\ref{sec:discussion}).
 \end{enumerate}
 
-The library, the corpus, the benchmark sources, and the Why3 proofs are open source
+The library, the test corpus, the benchmark sources, and the Why3 proofs are all open source and distributed freely
 under the Boost Software License~\cite{safenumbers}.
 
 \section{Background and Motivation}
 \label{sec:background}
 
-\subsection{Integer Weaknesses as Root Causes}
+\subsection{Integer Weaknesses as Root Causes}\label{subsec:integer-weaknesses-as-root-causes}
 
-We consider four weakness classes whose root cause is a fixed-width integer
-computation.
+We consider four weakness classes whose root cause is a fixed-width integer computation.
 \emph{CWE-190, Integer Overflow or Wraparound}, is the classic allocation-size fault: in
 CVE-2002-0639 the OpenSSH challenge-response handler computed
 \code{nresp * sizeof(char*)} in 32 bits, an attacker-controlled \code{nresp} of $2^{30}$
