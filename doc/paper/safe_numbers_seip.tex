@@ -226,47 +226,45 @@ The full reference is available online~\cite{safenumbers}.
 \subsection{Explicit Over Implicit}
 
 The library prohibits implicit conversion in every direction: between safe and built-in
-types, between safe types of different widths, and between signed and unsigned safe
-types.
-Mixed-width arithmetic and mixed-width comparison are compile-time errors.
-Construction from \code{bool} and unary minus on unsigned types are rejected with a
+types, between safe types of different widths, and between signed and unsigned safe types.
+These are all handled as compile-time errors.
+Construction from \code{bool} and unary minus on unsigned types are also rejected at compile-time with a
 \code{static\_assert}.
-The cost is verbosity at type boundaries, where a \code{static\_cast} must state the
-intended width; the benefit is that every conversion is visible in the source.
-It also has a verification payoff: every operation is an endomorphism on one residue class
-$\mathbb{Z}/2^n\mathbb{Z}$, which removes widening and narrowing from the proof
-obligations.
+The cost is verbosity at type boundaries.
+A \code{static\_cast} is required, but the benefit is that every conversion is obvious in the source.
+It also has a verification payoff.
+Every operation is simply an endomorphism on one residue class $\mathbb{Z}/2^n\mathbb{Z}$,
+which removes widening and narrowing from the proof obligations.
 
 \subsection{Fail as Early as Possible}
 
 Every operation is \code{constexpr} or \code{consteval}.
-The error path contains a \code{throw} expression, which is not permitted in a constant
-expression, so an overflow that occurs during constant evaluation is a compile-time
-error and the same overflow at runtime is an exception.
-The programmer writes one expression and receives the strongest guarantee the context
-allows.
+The error path by default contains a \code{throw} expression, which is not permitted in a constant
+expression.
+An overflow that occurs during constant evaluation then becomes a compile-time error rather than a run-time exception.
+This allows the developer to write one expression and in return receive the strongest guarantee the context allows.
 
 \subsection{Detection Decoupled from Response}
 \label{sec:library-policy}
 
-An arithmetic fault has two halves: deciding that it occurred and deciding what to do
-about it.
+An arithmetic fault can be divided into two parts: detection and handling.
 The library implements detection once per operation, classifying the outcome into an
-\code{error\_kind} (\code{overflow}, \code{underflow}, \code{divide\_by\_zero}, and for
+\code{error\_kind} (\code{overflow}, \code{underflow}, \code{divide\_by\_zero}, and additionally for
 floating point \code{nan\_operation} and \code{invalid\_operation}), and routes the
 classification to a response chosen independently.
-Three surfaces expose that choice.
+Three API surfaces expose that choice to the developer.
 
 \emph{Default operators} throw a typed standard exception
-(\code{std::overflow\_error}, \code{std::underflow\_error}, \code{std::domain\_error});
-the throw itself is outlined into a cold, non-inlined function so that an operator's body
+(\code{std::overflow\_error}, \code{std::underflow\_error}, \code{std::domain\_error}).
+The throw itself is contained in a function annotated as cold, and forced non-inline so that an operator's body
 is only the arithmetic, the check, and a branch.
 
 \emph{Call-site families}, named after Rust's primitive-type methods~\cite{rustnum},
 select the response per operation without changing the type:
 \code{checked\_add} returns \code{std::optional}, \code{saturating\_add} clamps,
-\code{overflowing\_add} returns the wrapped value with a flag, \code{strict\_add}
-terminates, and \code{widening\_add} promotes to the next width.
+\code{overflowing\_add} returns a tuple with the (possibly wrapped) value with a flag,
+\code{strict\_add} immediately terminates with \code{std::abort},
+and \code{widening\_add} promotes to the next width (e.g. \code{u32 + u32} yield \code{u64}).
 
 \emph{Type-level policies} carry the response in the type for every operator:
 \code{sat\_u8} saturates, \code{strict\_i32} terminates, and
@@ -278,58 +276,29 @@ safe type is always exactly its numeric value.
 The \code{noexcept} specification of every operator follows the handler, so a
 non-throwing handler yields non-throwing arithmetic.
 
-User-replaceable violation handling is prior art, from \cmp{}'s exception-policy templates
-to Rust's panic hook; the narrower claim we make is that the response spectrum is
-congruent with the evaluation semantics of C++26 contracts~\cite{p2900}, finalized in 2026
-but not yet broadly implemented (Table~\ref{tab:contracts}), so a program adopting the
-library obtains the contracts violation model for arithmetic in C++20, ahead of compiler
-support.
-
-\begin{table}[t]
-\centering
-\caption{Correspondence between the library's response surfaces and the C++26 contracts
-evaluation semantics of P2900R14~\cite{p2900}.}
-\label{tab:contracts}
-\begin{tabular}{@{}p{0.22\columnwidth}p{0.70\columnwidth}@{}}
-\toprule
-Semantic & Library surface \\
-\midrule
-\code{ignore} & Raw arithmetic with no classification: the \code{sat\_f32}/\code{sat\_f64}
-types, the value component of \code{overflowing\_*}, a handler that returns the wrapped
-fallback. \\
-\code{observe} & Detect, record, continue: \code{overflowing\_*} flags, the
-\code{deferred\_errors} accumulator, a logging handler. \\
-\code{enforce} & Detect and invoke a replaceable handler that may throw: the default
-throwing operators, \code{checked\_*}, any user handler. \\
-\code{quick\_enforce} & Detect and terminate without a handler: the \code{strict}
-family, CUDA \code{trapped} mode. \\
-\bottomrule
-\end{tabular}
-\end{table}
-
 \subsection{Bounded Domains as a Precondition Layer}
 
 \code{bounded\_uint<Min, Max>}, \code{bounded\_int}, and \code{bounded\_float} express a
-value's legal domain in the type and enforce it on construction and on every arithmetic
-result, an earlier line of defense modeled on Ada's range subtypes~\cite{spark}.
+value's legal domain in the type and enforce it on construction and on every arithmetic result.
+This provides an earlier line of defense modeled on Ada's range subtypes~\cite{spark}.
 A correct addition whose result is one past the end of a 150-element table does not
-overflow, so an operation-level check stays silent, but \code{bounded\_uint<0, 149>}
-rejects it when the value is formed.
-Whenever a bounded value is converted out of its type, the declared domain is also handed
+overflow, but \code{bounded\_uint<0, 149>} rejects it when the value is formed,
+before a bad-memory access could even occur.
+Whenever a bounded value is converted out of its type, the declared domain is still provided
 to the optimizer as an assumption, so checks on the receiving type that the domain makes
 impossible are deleted (Section~\ref{sec:results-rq2}).
 
 \subsection{Device Execution}
 \label{sec:library-device}
 
-All integer, floating-point, and bounded types compile with NVCC and with the Intel
-oneAPI DPC++ compiler and execute inside CUDA and SYCL kernels.
-Device code cannot throw, so only the response half changes: a
-\code{device\_error\_context} owns a shared error record (CUDA \code{\_\_managed\_\_}
+All integer, floating-point, and bounded types compile with NVCC and with the Intel's
+oneAPI DPC++ compiler for execution inside CUDA and SYCL kernels.
+Device code cannot throw, so only the response half of handling a fault changes.
+A \code{device\_error\_context} contains a shared error record (CUDA \code{\_\_managed\_\_}
 memory; a SYCL \code{device\_global}) into which the first faulting work item writes the
-file, line, thread identifier, expression, and exception type, and \code{synchronize()}
-on the host waits for the kernel and throws the same standard exception the operation
-would have thrown there.
+file, line, thread identifier, expression, and exception type.
+A subsequent call to \code{synchronize()} on the host waits for the kernel,
+and throws the same standard exception as if the operation had been executed on the host.
 CUDA also offers a \code{trapped} mode that calls \code{\_\_trap()} for a hard stop.
 For hot kernels a second response exists: the \code{overflowing\_*} families produce a
 value and a flag with no branch, and a \code{deferred\_errors} accumulator collects the
