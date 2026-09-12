@@ -119,14 +119,15 @@ and CWE-369, and integer overflow has appeared in the CWE Top 25 for years~\cite
 Dietz et al.\ showed more than a decade ago that integer overflow is pervasive even in
 mature, well-tested C and C++ code bases~\cite{dietz2012}.
 
-C++ makes these faults easy to write and hard to see: unsigned overflow is defined to
-wrap, so no undefined-behavior tool reports it; signed overflow is undefined, so the
-optimizer assumes it never happens; and integer promotion silently widens narrow operands.
+C++ makes these faults easy to write and hard to find.
+Unsigned overflow is defined to wrap, so no undefined-behavior tool will report it.
+Signed overflow is undefined behavior, so the optimizer assumes it never happens.
+Integer promotion silently widens narrow operands and can even add a sign to resultant type.
 Existing mitigations are partial.
-UndefinedBehaviorSanitizer~\cite{ubsan} and \code{-ftrapv}~\cite{gccmanual} are test-time
+UndefinedBehaviorSanitizer~\cite{ubsan} and \code{-ftrapv}~\cite{gccmanual} are run-time
 diagnostics, the \code{\_\_builtin\_*\_overflow} intrinsics~\cite{gccmanual} must be written
-at every call site, and the existing Boost wrapper, \cmp{}~\cite{ramey2019}, follows
-native promotion by default and lets \code{safe<uint8\_t>(255) + 1} evaluate to 256.
+at every call site and are non-portable, and the existing Boost library \cmp{}~\cite{ramey2019}, follows
+native promotion by default which lets \code{safe<uint8\_t>(255) + 1} evaluate to 256.
 
 \lib{}~\cite{safenumbers} is a header-only C++20 library developed at the C++ Alliance and
 intended for proposal to Boost; it is not a Boost library at the time of writing, although
