@@ -180,20 +180,19 @@ under the Boost Software License~\cite{safenumbers}.
 \subsection{Integer Weaknesses as Root Causes}\label{subsec:integer-weaknesses-as-root-causes}
 
 We consider four weakness classes whose root cause is a fixed-width integer computation.
-\emph{CWE-190, Integer Overflow or Wraparound}, is the classic allocation-size fault: in
-CVE-2002-0639 the OpenSSH challenge-response handler computed
+\emph{CWE-190, Integer Overflow or Wraparound}, leads to the classic allocation-size fault.
+In CVE-2002-0639 the OpenSSH challenge-response handler computed
 \code{nresp * sizeof(char*)} in 32 bits, an attacker-controlled \code{nresp} of $2^{30}$
 wrapped the product to zero, and the subsequent writes overflowed the heap.
-\emph{CWE-191, Integer Underflow}, is the mirror image, typically a length minus a header
-size that goes below zero and wraps to a huge unsigned value.
+\emph{CWE-191, Integer Underflow}, goes the other way.
+Typically a length minus a header size that wraps from zero to a huge value.
 \emph{CWE-681, Incorrect Conversion Between Numeric Types}, covers signedness confusion
-and truncation: a negative signed length compared against an unsigned bound passes the
-check because the comparison converts it to a large positive value.
-\emph{CWE-369, Divide by Zero}, is a denial-of-service fault where an untrusted divisor
-reaches a division or modulo.
+and truncation.
+A negative signed length compared against an unsigned bound passes the check because the comparison converts it to a large positive value.
+\emph{CWE-369, Divide by Zero}, generally occurs where an untrusted divisor reaches a division or modulo.
 
-In each, a representable but wrong value propagates to the memory operation that gets the
-CVE number; the arithmetic upstream is the root cause.
+In each, a representable, but wrong value propagates to a memory operation that gets assigned the
+CVE number, however; the arithmetic upstream is the root cause.
 
 \subsection{Why the Language Does Not Help}
 
@@ -203,27 +202,26 @@ Consider the comparison below.
 -99 < 340282366920938463463374607431768211408
 \end{lstlisting}
 
-Intuitively the result is \code{true}; in C++ the signed operand converts to the unsigned
-128-bit type of the literal and the result is \code{false}, legally and without a warning.
-The hardware already computes carry and overflow flags on every arithmetic instruction;
-what is missing is a type that consults them.
+Intuitively the result is \code{true}.
+In C++ the signed operand converts to the unsigned 128-bit type of the literal and the result is \code{false}, legally and without a warning.
+The hardware already computes carry and overflow flags on every arithmetic instruction; what is missing is a type that consults them.
 
-\subsection{The Incumbent: \cmp{}}
+\subsection{The Incumbent Library: \cmp{}}
 
 \cmp{}~\cite{ramey2019} is the Boost library in this space and the natural comparator.
 Under its default \code{native} promotion policy operands follow C++ promotion rules
 before the check, so \code{safe<uint8\_t>(255) + safe<uint8\_t>(1)} yields 256 as an
-\code{int}; its range types enforce bounds on construction but not on arithmetic results,
-and it has no floating-point or 128-bit types.
-That semantics gap motivated a fixed-width design and makes RQ2 a question of
-cost-effectiveness rather than cost alone.
+\code{int}.
+Its range types enforce bounds on construction but not on arithmetic results, and it has neither floating-point nor 128-bit types.
+That semantics gap motivated our rigid fixed-width design,
+and makes RQ2 a question of cost-effectiveness rather than cost alone.
 
 \section{\lib{}}
 \label{sec:library}
 
 This section describes the library as the engineered artifact under evaluation.
-We focus on the decisions that bear on the research questions; the full reference is
-online~\cite{safenumbers}.
+We focus on the decisions that impact the responses to the research questions.
+The full reference is available online~\cite{safenumbers}.
 
 \subsection{Explicit Over Implicit}
 
