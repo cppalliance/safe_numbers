@@ -55,8 +55,8 @@
 
 \begin{document}
 
-\title{Checked Arithmetic in Practice:\\
-An Empirical Evaluation of Fixed-Width Safe Numeric Types Against Disclosed CVEs, Across Platforms, and on Accelerators}
+\title{Checked C++ Arithmetic in Practice:\\
+An Empirical Evaluation of Fixed-Width Safe Numeric Types Against Disclosed CVEs, Across Platforms Including Heterogeneous Accelerators}
 
 \author{\IEEEauthorblockN{Matt Borland\thanks{Corresponding author: Matt Borland (matt@mattborland.com).}}
 \IEEEauthorblockA{Purdue University, West Lafayette, IN, USA\\
@@ -390,26 +390,23 @@ This $p$ value is the ceiling by design.
 \subsubsection{The Claim with Caveat}
 We reproduce the arithmetic fault, but we do not re-run the original programs.
 Our tests are done over the reductions to root-cause computations.
-Had these computations been written with our library under its default policy, the fault would have surfaced differently. 
+Had these computations been written with our library under its default policy, the fault would have surfaced differently.
 We make no claim the whole program would have executed without fault when using our library.
 
 \subsection{RQ2: Host Benchmark Grid}
 \label{sec:design-rq2}
 
-The benchmarks use Google Benchmark~\cite{gbench}.
-Each fills a vector of one million random values once, outside the timed region, and then
-for every operation evaluates \code{op(vec[i], vec[i+1])} across the vector, passing each
-result through \code{DoNotOptimize} so the work cannot be elided while inlining remains
-intact.
-Code is compiled at \code{-O2} (or the MSVC Release equivalent), since unoptimized code
-would turn the inline operators into calls and overstate their cost.
-Integer operands are drawn uniformly from $[1, w-1]$ for width $w$ and sorted in
+The benchmarks are running using Google Benchmark~\cite{gbench}.
+Each benchmark first fills a vector of one million random values once, and then
+for every operation evaluates \code{op(vec[i], vec[i+1])} across this vector, passing each
+result through \code{DoNotOptimize} so the work is not elided, and still contains the same inlining.
+Code is compiled at \code{-O2}, or the MSVC Release equivalent.
+Integer operands are drawn for a uniform distribution covering $[1, w-1]$ for width $w$ and sorted in
 descending order so that addition, subtraction, multiplication, division, and modulo all
-stay on the non-overflowing, non-throwing path; floating-point operands are drawn from
-$[1, 100]$.
-The measurement is therefore the cost of the checks, not the cost of throwing.
-Google Benchmark chooses the iteration count, runs five repetitions, and we report the
-median time per element.
+stay on the non-overflowing, non-throwing path.
+For simplicity, floating-point operands are drawn from a uniform distribution spanning $[1, 100]$.
+These choices allow the measurement to reflect the cost of the checks, not the cost of throwing (which is known to be high).
+We then runs five repetitions to smooth out any small variances, and we report the median time per element.
 
 Three contenders are compared at each width: the built-in type as baseline, the library
 type, and \cmp{}'s \code{safe<T>} with its default template arguments, that is, the
