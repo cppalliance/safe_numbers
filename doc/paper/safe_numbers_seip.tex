@@ -15,7 +15,7 @@
 %%   RQ3  doc/modules/ROOT/pages/benchmarks.adoc (device sections)
 %% Do not edit a number here without re-deriving it from those sources.
 
-\documentclass[conference]{IEEEtran}
+\documentclass[10pt,conference]{IEEEtran}
 \IEEEoverridecommandlockouts % allow \thanks in conference mode for the corresponding author note
 
 \usepackage{cite}
@@ -177,10 +177,9 @@ In this paper we design and implement \lib{}~\cite{safenumbers}, a header-only C
 library of checked numeric types (\code{u8} through \code{u128}, \code{i8} through
 \code{i128}, \code{f32}, \code{f64}) and range-constrained bounded types built on the
 decisions above.
-Together those decisions change when and where an arithmetic fault is caught.
-A fault that a sanitizer finds only if a test happens to reach it is caught in the shipped
-program on whatever input an attacker supplies, and a conversion fault is caught by the
-compiler before the program ships at all.
+Together those decisions change when and where an arithmetic fault is caught: in the
+shipped program on whatever input an attacker supplies, rather than only when a test
+reaches it, and for conversion faults by the compiler before the program ships at all.
 Because the check belongs to the type, adoption changes declarations and the conversions
 at type boundaries rather than every arithmetic expression, and the width the programmer
 wrote is the width that is checked.
@@ -193,17 +192,12 @@ algorithms sound in Why3~\cite{why3}.
 The library was developed with support from The C++ Alliance and is intended for proposal
 to Boost; it is not an official Boost library at the time of writing, although its
 namespace, \code{boost::safe\_numbers}, anticipates that step.
-Section~\ref{sec:library} details its design.
 
-Each of these benefits is a claim that must hold in practice for \lib{} to improve on the
-existing mitigations, and each research question tests one.
-Catching a fault in the shipped program matters only if the faults the types detect are
-the ones behind real vulnerabilities, not the synthetic overflows a test suite would write.
-Leaving checks on in production matters only if they are cheap enough that developers keep
-them in release builds; a check that is too slow gets disabled, which returns it to the
-test-only position of a sanitizer.
-Separating detection from response matters only if the responses it enables run inside
-device kernels at an acceptable cost.
+Each of these benefits is a claim that must hold in practice, and each research question
+tests one: the faults the types detect must be the ones behind real vulnerabilities, the
+checks must be cheap enough that developers keep them in release builds rather than
+disabling them back to the test-only position of a sanitizer, and the responses that
+decoupling enables must run inside device kernels at an acceptable cost.
 
 \begin{itemize}
 \item \textbf{RQ1 (Relevance).} To what extent do checked fixed-width and domain-bounded
@@ -234,7 +228,8 @@ On the GPU's memory-bound streaming kernels the checks are free above 8 bits apa
 device the branch-free deferred response brings compute-bound floating-point chains from
 up to 235x of native to 1.1x to 2.9x.
 
-Our contributions are:
+Our contributions, all open source under the Boost Software License~\cite{safenumbers},
+are:
 \begin{enumerate}
 \item \lib{}, an open-source, header-only C++20 library of checked 8- to 128-bit integer,
 floating-point, and bounded types whose detection of a fault is decoupled from the response
@@ -255,9 +250,6 @@ makes the decoupling the enabling mechanism for vectorized loops and device kern
 \item Lessons for practitioners on where checked arithmetic is free and how to choose a
 response (Section~\ref{sec:discussion}).
 \end{enumerate}
-
-The library, corpus, benchmarks, and Why3 proofs are open source under the Boost Software
-License~\cite{safenumbers}.
 
 \section{Background and Motivation}
 \label{sec:background}
@@ -280,12 +272,7 @@ filed against that operation; the arithmetic upstream is the root cause.
 
 \subsection{Why the Language Does Not Help}
 
-Consider the comparison below.
-
-\begin{lstlisting}
--1 < 1U
-\end{lstlisting}
-
+Consider the comparison \code{-1 < 1U}.
 Intuitively the result is \code{true}.
 In C++ the signed operand converts to \code{unsigned int}, so the expression is
 \code{false}: the conversion is well defined, and it is diagnosed only when
@@ -383,7 +370,6 @@ memory; a SYCL \code{device\_global}) into which the first faulting work item wr
 file, line, thread identifier, expression, and exception type.
 A subsequent call to \code{synchronize()} on the host waits for the kernel,
 and throws the same standard exception as if the operation had been executed on the host.
-CUDA also offers a \code{trapped} mode that calls \code{\_\_trap()} for a hard stop.
 For hot kernels a second response exists: the \code{overflowing\_*} families produce a
 value and a flag with no branch, and a \code{deferred\_errors} accumulator collects the
 flags across a chain and raises them once per work item (Listing~\ref{lst:deferred}),
@@ -445,10 +431,9 @@ disclosure describes, a safe part that computes the identical expression with th
 types and asserts the fault (a thrown exception of the expected type, or a compile
 failure), and a bounded part that declares the value's documented domain with a bounded
 type and asserts rejection at construction.
-Where the original used platform-dependent widths we model the width the advisory
-publishes and record it.
-96 of the 130 in-scope entries model a 32-bit width, and the 30 CWE-681 entries use a
-variety of mixed signed and unsigned operands.
+Where the original width was platform dependent we model the width the advisory
+publishes; 96 of the 130 in-scope entries model 32 bits, and the 30 CWE-681 entries mix
+signed and unsigned operands.
 
 \subsubsection{Outcome categories}
 Each examined CVE receives one outcome: prevented at run time (the safe computation throws
@@ -467,7 +452,6 @@ The primary metric per category is the prevention rate, prevented over in scope,
 The native baseline detects zero faults as expected, so every prevented case is a
 discordant pair and the exact McNemar test~\cite{mcnemar1947} reduces to
 $p = \min(1, 2 \cdot 0.5^{b})$ for $b$ prevented.
-This $p$ value is the ceiling by design.
 We reproduce the root-cause computation, not the original program, so the claim is that
 the fault would have surfaced at the faulting operation, not that the whole program would
 have run correctly (Section~\ref{sec:threats}).
@@ -617,8 +601,7 @@ truncating conversions that throw on the explicit narrowing cast.
 One CWE-190 entry is prevented only through the bounded arm: in CVE-2018-13785 (libpng)
 an oversized but representable image width overflows a row-factor calculation, and
 declaring libpng's documented width limit as a \code{bounded\_uint} rejects it at the
-boundary; the downstream faults would also have been caught at runtime, but the entry is
-classified as bounded to keep the ``default'' column strict.
+boundary, before the downstream faults the runtime checks would also have caught.
 
 \subsubsection{The negative control}
 CWE-682 behaves as a control should.
@@ -643,10 +626,9 @@ The explicit-conversion rule catches 17 of the conversion faults with no test in
 \subsection{RQ2: Host Overhead}
 \label{sec:results-rq2}
 
-Table~\ref{tab:host} summarizes the grid.
-For each platform and each type class we report the geometric mean, median, and maximum
-of the per-operation ratio of wrapper time to built-in time across all operations and
-widths in the class; the full 58-row tables per platform are in the documentation.
+Table~\ref{tab:host} summarizes the grid as the geometric mean, median, and maximum of
+the per-operation ratio across each type class; the full 58-row tables per platform are
+in the documentation.
 
 \begin{table*}[t]
 \centering
@@ -765,14 +747,13 @@ known, which is what this benchmark constructs.
 
 Signed 32-bit arithmetic is where the comparison improved the library.
 In our first run \lib{} cost 10.1x to 13.3x on signed addition, subtraction, and
-multiplication, against 4.5x for SafeInt.
-Clang had declined to inline every signed throwing operator (cost 320 against a threshold
-of 225), because constructing the exception, its message, and its source location inline
-enlarged the body.
+multiplication, against 4.5x for SafeInt, because Clang declined to inline every signed
+throwing operator (cost 320 against a threshold of 225) once the exception, its message,
+and its source location were constructed inline.
 Outlining that error path into the cold, non-inlined function of
 Section~\ref{sec:library-policy} restored inlining for all twenty signed operators;
-Table~\ref{tab:libs} reports the library after the fix, 4.0x to 6.1x on signed 32-bit, the
-class of SafeInt (3.4x to 4.5x), while \cmp{} remains at 10.0x to 13.1x.
+Table~\ref{tab:libs} reports the library after the fix, 4.0x to 6.1x, the class of
+SafeInt (3.4x to 4.5x), while \cmp{} remains at 10.0x to 13.1x.
 
 \begin{table}[t]
 \centering
@@ -889,8 +870,6 @@ On 64-bit hosts, always-on checking at the declared width costs a median of 1.00
 1.16x per operation through 64 bits, with division and modulo free and multiplication the
 most expensive; the exceptions (32-bit targets, 128-bit multiplication, and floating-point
 classification on some ARM64 compilers) are quantified above.
-That cost supports leaving the checks on in release builds, the premise of placing them in
-the type.
 Relative to \cmp{} the cost is comparable where the semantics are comparable, and \lib{}
 detects faults that library's default configuration silently absorbs.
 On a vectorizable loop the class of the response sets the cost regardless of library: a
@@ -966,6 +945,7 @@ better, while still detecting every error at the boundary.
 \caption{Compute-bound floating-point chains, ratio to the basis type, throwing
 operators versus the deferred (overflowing) family.}
 \label{tab:fchain}
+\footnotesize
 \begin{tabular}{@{}llcccc@{}}
 \toprule
 & & \multicolumn{2}{c}{CUDA (RTX 3060)} & \multicolumn{2}{c}{SYCL (CPU device)} \\
@@ -985,8 +965,6 @@ Type & Op & Throwing & Deferred & Throwing & Deferred \\
 \end{table}
 
 \subsubsection{Answer to RQ3}
-No comparator we surveyed runs in CUDA or SYCL code, so the baseline is the raw basis
-type.
 Two responses built on the same detection code make device execution possible: a shared
 device-side error record with host-side rethrow, which preserves the throwing model across
 the kernel boundary, and a branch-free deferred family, which preserves vectorization.
@@ -1011,8 +989,7 @@ SafeInt, the other fixed-width comparator, agrees with the library on every runt
 Practitioners choosing a checked type should ask at which width the check is applied,
 not only how fast it is.
 Within a width, division and modulo are free, addition and subtraction cost one predictable
-branch (about 20\% on GCC, nothing measurable on MSVC), and multiplication, which needs a
-wide product or a division, is the check to watch.
+branch, and multiplication, which needs a wide product or a division, is the check to watch.
 
 \subsection{Decoupling Detection from Response Is the Enabling Mechanism}
 On the host, offering saturating, checked, and overflowing families beside the throwing
@@ -1039,8 +1016,7 @@ the correct answer.
 \subsection{Alignment with the Contracts Model}
 Replaceable handlers are not new; the claim is that a library adopted today will not need
 redesign when contracts arrive, because the response spectrum already has the shape
-P2900~\cite{p2900} standardizes and a program-wide handler policy can be expressed as a
-type-level handler now.
+P2900~\cite{p2900} standardizes and a program-wide handler policy is a type-level handler.
 Table~\ref{tab:ablation} shows the cost is set by the class of the response rather than
 by who wrote the handler, so a team can change the response without re-measuring the code
 that never faults.
@@ -1061,7 +1037,6 @@ A thrown exception is strictly better than silent corruption but is a denial of 
 if unhandled, and we do not claim the original program would have been immune.
 For RQ2 and RQ3, the ratio measures the non-violating path by construction; the cost of
 actually throwing is not measured and is deliberately out of scope.
-The comparators were measured in their default configurations.
 
 \subsubsection{Internal validity}
 Reproduction fidelity is the central threat to RQ1: we do not re-run the original
@@ -1073,9 +1048,8 @@ the variance of a shared virtual machine, so differences of a few percent should
 as noise.
 The grid's scalar shape forces a per-element spill whose cost depends on stack layout: in
 one build the throwing \code{u32} and \code{u64} measured 4.3x to 4.9x because the AArch64
-load/store optimizer merged two adjacent spill reloads into one \code{ldp} straddling two
-prior stores, defeating store-to-load forwarding, and disabling that pass returned them to
-1.01x.
+load/store optimizer merged two spill reloads into one \code{ldp} straddling two prior
+stores, defeating store-to-load forwarding; disabling that pass returned them to 1.01x.
 An isolated outlier cell of Table~\ref{tab:host} may therefore reflect the harness rather
 than a check; the stream-shape comparisons do not share this exposure.
 The stream-shape ratios on vectorized 32-bit loops rest on baselines near 0.1 ns per
@@ -1103,12 +1077,10 @@ checks~\cite{ubsan}.
 KINT~\cite{wang2012}, RICH~\cite{brumley2007}, and SmartFuzz~\cite{molnar2009} find
 integer errors statically, by binary instrumentation, and by test generation; Coker and
 Hafiz~\cite{coker2013} and IntPatch~\cite{zhang2010} repair them by transformation.
-These tools find or repair faults in code that is already written; \lib{} is a type whose
-checks stay on in the shipped program, and we evaluate it against the CVE record those
-studies characterized.
+These tools find or repair faults in code already written; \lib{} keeps its checks on in
+the shipped program, and we evaluate it against the CVE record those studies characterized.
 
 \subsubsection{Compiler and language mechanisms}
-Section~\ref{sec:intro} discusses \code{-ftrapv}, UBSan, and the overflow intrinsics.
 Rust~\cite{rustnum} panics on overflow in debug builds and wraps in release, with the
 \code{checked\_}, \code{saturating\_}, \code{wrapping\_}, and \code{overflowing\_} methods
 the library's call-site families follow by name; Ada and SPARK~\cite{spark} provide range
@@ -1149,16 +1121,17 @@ It prevents 126 of 130 in-scope CVEs; its median per-operation cost on 64-bit ho
 with a branch-free deferred response bringing compute-bound floating-point chains on a
 vectorizing SYCL device from two orders of magnitude slower than native to under 3x.
 Building and evaluating the library together improved both: the evaluation exposed an
-inlining failure in the signed throwing operators, now fixed, and an artifact in the
-per-element benchmark shape, and it led the bounded types to hand their declared domain to
-the optimizer.
-Future work is a random corpus draw with complete classification, a controlled-machine
-replication of the host grid with dispersion statistics, and a discrete-GPU SYCL run.
+inlining failure in the signed throwing operators, now fixed, and led the bounded types to
+hand their declared domain to the optimizer.
+Future work is a random corpus draw, a controlled-machine replication of the host grid
+with dispersion statistics, and a discrete-GPU SYCL run.
 
 \section*{Acknowledgment}
 The first author is an employee of The C++ Alliance, which funded the development of
 \lib{} and the evaluation reported here.
 The authors thank the Alliance for its continued support of open-source C++ libraries and tools.
+Anthropic's Claude (Opus and Fable models) were used to draft and edit prose throughout this paper.
+The authors verified every claim and number against the artifacts cited in Section~\ref{sec:design}.
 
 \balance
 
