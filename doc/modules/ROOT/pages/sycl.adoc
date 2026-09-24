@@ -26,6 +26,7 @@ Build with `icpx -fsycl -DBOOST_SAFE_NUMBERS_ENABLE_SYCL=1`.
 [NOTE]
 ====
 Unsigned multiplication of the small integer types (`u8`, `u16`, `u32`) lowers to the `llvm.umul.with.overflow` intrinsic. The Intel oneAPI DPC++ range-rounding wrapper that a plain `parallel_for` over a non-round global range generates cannot materialize that intrinsic and aborts the kernel at JIT time. If you multiply small unsigned safe types inside such a kernel, either launch over an `nd_range` (which does not use the wrapper) or compile with `-D__SYCL_DISABLE_PARALLEL_FOR_RANGE_ROUNDING__=1`. The library's own SYCL tests use the latter.
+Very large kernels can still hit the same JIT failure with range rounding disabled: on icpx 2026.0.0 and 2026.1.0 it is kernel-size dependent, which is why the library's `ipow` SYCL test (every width from `u8` to `u128` in one translation unit) is disabled while the plain multiplication tests pass.
 ====
 
 Because a SYCL device kernel cannot `throw`, an error that would raise an exception on the host is instead recorded on the device and re-raised on the host by a `device_error_context`. Unlike a raw kernel launch, where you would call `queue::wait()` yourself, you wrap the launch in a context:
@@ -65,7 +66,7 @@ int main()
 An exception thrown by `ctx.synchronize()` will have an `e.what()` that looks something like:
 
 ----
-Device error on thread 1234 at /path/to/boost/safe_numbers/include/boost/safe_numbers/detail/unsigned_integer_basis.hpp:1067: Underflow detected in u16 subtraction
+Device error on thread 1234 at /path/to/boost/safe_numbers/include/boost/safe_numbers/detail/unsigned_integer_basis.hpp:1122: Underflow detected in u16 subtraction
 ----
 
 The reported thread id is the failing work-item's dimension-0 global linear id (the analog of the CUDA backend's `blockIdx.x * blockDim.x + threadIdx.x`), so a single bad input element can be narrowed down exactly as on CUDA.
@@ -277,7 +278,7 @@ void run(sycl::queue& q, const u32* in, u32* out, const int n)
 ----
 
 The trade against the throwing operators is precision of the report: the error surfaces at the report() call rather than at the exact operation, and the individual categories are not preserved (a deferred error is always raised as overflow).
-In exchange the kernel body stays vectorizable, which on CPU devices is the difference between roughly 2x and roughly 200x for floating point chains (see the benchmarks below).
+In exchange the kernel body stays vectorizable, which on the benchmarked CPU device is the difference between 1.1x to 2.9x and 17x to 235x for floating point chains (see the benchmarks below).
 
 == Benchmarks
 

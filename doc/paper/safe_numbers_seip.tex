@@ -25,7 +25,7 @@
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage{xcolor}
-\usepackage{url}
+\usepackage[hyphens]{url}
 \usepackage{balance}
 
 \lstset{
@@ -55,8 +55,8 @@
 
 \begin{document}
 
-\title{Checked C++ Arithmetic in Practice:\\
-An Empirical Evaluation of Fixed-Width Safe Numeric Types Against Disclosed CVEs, Across Platforms Including Heterogeneous Accelerators}
+\title{\lib{}: Design and Empirical Evaluation of Checked Fixed-Width Numeric Types for C++,\\
+from Disclosed CVEs to Heterogeneous Accelerators}
 
 \author{\IEEEauthorblockN{Matt Borland\thanks{Corresponding author: Matt Borland (matt@mattborland.com).}}
 \IEEEauthorblockA{Purdue University, West Lafayette, IN, USA\\
@@ -74,28 +74,34 @@ Email: jennad@purdue.edu}
 
 \begin{abstract}
 Integer overflow, underflow, truncating conversion, and division by zero remain
-recurring root causes of disclosed vulnerabilities in C and C++ software, yet the
-mainstream mitigations are diagnostic tools rather than production types.
-This paper reports an industrial evaluation of \lib{}, a header-only C++20 library
-of checked fixed-width numeric types that ships with three properties we set out to
-measure rather than assert.
-First, we assembled a corpus of 140 CVEs drawn from the National
-Vulnerability Database (NVD) drawn from four weakness class.
-We reproduced each arithmetic root cause as a self-contained test,
-and found that the library prevents 126 of 130 in-scope faults (96.9\%, or a 95\% Wilson confidence interval of 92.4\% to 98.8\%),
-with every primary category at 100\% and a deliberately included negative control at 60\%.
-Second, we analyzed the cost.
-A per-operation benchmark grid across seven operating-system
-and architecture targets places the median overhead of the checked types between
-1.00x and 1.18x of native arithmetic.
-We also include a semantic probe matrix and a cost comparison against three
-other checked-integer libraries, together with an ablation over eight response policies,
-that show on vectorizable loops the cost is set by whether the response is a value or an early exit, not by the library.
-Third we studied the reach by including the same types in CUDA and SYCL heterogeneous compute kernels.
-A decoupling of fault detection from fault response lets a branch-free deferred response policy have an overhead
-between 1.1x and 2.9x while still reporting every error.
-We describe the design decisions that made these results possible, our methodology, and recommendations for practitioners
-wishing to adopted checked arithmetic in their code.
+recurring root causes of disclosed vulnerabilities in C and C++ software.
+The mainstream mitigations fall short.
+Sanitizers and trapping compiler flags are diagnostics: they typically run only in test
+builds, and their only response is to abort, with no path to recovery.
+Overflow intrinsics are non-portable and must be manually added at the relevant call sites.
+The checked-integer library in Boost follows C++ promotion rules by default, so a checked
+8-bit addition can evaluate to 256.
+No existing library offers checked floating point, 128-bit types, or execution inside GPU
+kernels.
+We present \lib{}, a header-only C++20 library of checked fixed-width integer,
+floating-point, and range-bounded types.
+It rejects implicit and mixed-width conversions at compile time, and every operation is
+\code{constexpr}, so a fault during constant evaluation fails the build.
+Its central design decision decouples the detection of a fault, implemented once per
+operation, from the response to it.
+The same check can throw, saturate, return an optional or a flagged value, terminate,
+or invoke a user handler, chosen per call site or per type.
+That decoupling lets the types run in CUDA and SYCL kernels, where a device
+fault is recorded and rethrown on the host.
+The detection logic, shared by every response, is proven sound in Why3.
+We evaluate the library against a corpus of 140 CVEs from the National Vulnerability
+Database (NVD) covering four integer weakness classes and a negative control.
+It prevents 126 of the 130 in-scope faults (96.9\%, 95\% Wilson interval 92.4\% to 98.8\%),
+including every entry in the four primary classes.
+Across seven host targets the median per-operation overhead is 1.00x to 1.18x of native
+arithmetic, and on a vectorizing SYCL device a branch-free deferred response brings
+compute-bound floating-point chains from up to 235x of native to 1.1x to 2.9x while still
+reporting every error.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -106,6 +112,7 @@ benchmarking; GPU computing; formal verification
 \IEEEpeerreviewmaketitle
 
 \section{Introduction}
+\label{sec:intro}
 
 The recent push toward memory-safe software, including guidance from national
 cybersecurity agencies to migrate away from memory-unsafe languages~\cite{cisa2024},
@@ -122,28 +129,81 @@ mature, well-tested C and C++ code bases~\cite{dietz2012}.
 C++ makes these faults easy to write and hard to find.
 Unsigned overflow is defined to wrap, so no undefined-behavior tool will report it.
 Signed overflow is undefined behavior, so the optimizer assumes it never happens.
-Integer promotion silently widens narrow operands and can even add a sign to resultant type.
-Existing mitigations are partial.
-UndefinedBehaviorSanitizer~\cite{ubsan} and \code{-ftrapv}~\cite{gccmanual} are run-time
-diagnostics, the \code{\_\_builtin\_*\_overflow} intrinsics~\cite{gccmanual} must be written
-at every call site and are non-portable, and the existing Boost library \cmp{}~\cite{ramey2019}, follows
-native promotion by default which lets \code{safe<uint8\_t>(255) + 1} evaluate to 256.
+Integer promotion silently widens narrow operands and can even make an unsigned operand signed.
+Existing mitigations each address part of this problem, and the part each leaves open
+motivated a design decision in \lib{}.
 
-\lib{}~\cite{safenumbers} is a header-only C++20 library developed with support from The C++ Alliance,
-and intended for proposal to Boost.
-it is not an official Boost library at the time of writing, although
-its namespace, \code{boost::safe\_numbers}, anticipates that step.
-It provides concrete, checked numeric types (\code{u8} through \code{u128},
-\code{i8} through \code{i128}, \code{f32}, \code{f64}) and range-constrained bounded types.
-The arithmetic is checked, implicit conversion and mixed-width arithmetic rejected at compile time,
-and a typed exception thrown as the default response.
-Its central design decision separates the \emph{detection} of a fault from the \emph{response} to it.
-The same checked operation can throw, saturate, return an optional, return a wrapped value with a flag, terminate, or invoke a user-defined handler.
-This decision on response can be applied per call site or per type, and that decision is what lets the types execute
-unchanged inside CUDA and SYCL kernels.
+\emph{Sanitizers and trapping flags only see the faults that testing reaches.}
+UndefinedBehaviorSanitizer~\cite{ubsan} instruments a build to report faults as they
+occur, but it is a testing configuration: it finds a fault only when a test input
+reaches it, while the input behind a CVE is chosen by an attacker after the software ships.
+Its unsigned-overflow check is opt-in because wrapping is defined behavior, and
+\code{-ftrapv}~\cite{gccmanual} covers signed overflow only, yet many allocation-size
+faults, including the OpenSSH example in Section~\ref{sec:background}, are unsigned.
+Where \code{-ftrapv} is deployed its only response is to abort the process, which turns a
+memory-corruption vulnerability into a denial of service and leaves no way to recover.
+\lib{} instead places the check in the type, so it is present in every build and on every
+input, and rejects implicit conversions at compile time, so a truncation or sign change
+(CWE-681) is found before any test runs.
 
-This paper is an evaluation of an engineered artifact against measurable claims.
-To this end we ask three questions.
+\emph{Overflow intrinsics are correct but manual.}
+The GCC and Clang overflow intrinsics (\code{\_\_builtin\_*\_overflow})~\cite{gccmanual}
+compile to the processor's carry and overflow flags, and \lib{} uses them internally.
+Used directly, they must be written at every operation that could fault, so one forgotten
+call site is the vulnerability, and they are compiler extensions rather than portable C++.
+\lib{} applies the check to every operation of a type, so a checked value cannot be used
+unchecked.
+
+\emph{\cmp{} checks the promoted type rather than the declared one.}
+The existing Boost library~\cite{ramey2019} is a checked type, but under its default
+policy operands follow C++ promotion before the check, so \code{safe<uint8\_t>(255) + 1}
+evaluates to 256 as an \code{int} and the 8-bit overflow is not reported where it occurs.
+Its range types check construction but not arithmetic results, and it has no
+floating-point or 128-bit types.
+\lib{} fixes the result type to the operand type, so every operation is checked at the
+width the programmer declared, and its bounded types check every arithmetic result.
+
+\emph{No mitigation lets the response vary.}
+The sanitizer, the trapping flag, and \cmp{} each fix the response to a fault (report,
+abort, or throw), and the intrinsics leave it to the programmer at each call site.
+A throwing response cannot run inside a CUDA or SYCL kernel, where exceptions are
+unavailable, and an early exit prevents a hot loop from vectorizing.
+\lib{} separates the \emph{detection} of a fault, written once per operation, from the
+\emph{response} to it, which can throw, saturate, return an optional or a flagged value,
+terminate, or invoke a user-defined handler, chosen per call site or per type.
+That separation is what lets the same types execute unchanged inside device kernels.
+
+In this paper we design and implement \lib{}~\cite{safenumbers}, a header-only C++20
+library of checked numeric types (\code{u8} through \code{u128}, \code{i8} through
+\code{i128}, \code{f32}, \code{f64}) and range-constrained bounded types built on the
+decisions above.
+Together those decisions change when and where an arithmetic fault is caught.
+A fault that a sanitizer finds only if a test happens to reach it is caught in the shipped
+program on whatever input an attacker supplies, and a conversion fault is caught by the
+compiler before the program ships at all.
+Because the check belongs to the type, adoption changes declarations and the conversions
+at type boundaries rather than every arithmetic expression, and the width the programmer
+wrote is the width that is checked.
+Because the response is separate from detection, a program can recover where
+\code{-ftrapv} could only abort, a hot loop can use a branch-free response that still
+vectorizes, and the same type moves into a CUDA or SYCL kernel without a rewrite.
+A checked type that misses an edge case such as \code{INT\_MIN / -1} gives false assurance,
+and no test suite can enumerate 128-bit operands, so we also prove the detection
+algorithms sound in Why3~\cite{why3}.
+The library was developed with support from The C++ Alliance and is intended for proposal
+to Boost; it is not an official Boost library at the time of writing, although its
+namespace, \code{boost::safe\_numbers}, anticipates that step.
+Section~\ref{sec:library} details its design.
+
+Each of these benefits is a claim that must hold in practice for \lib{} to improve on the
+existing mitigations, and each research question tests one.
+Catching a fault in the shipped program matters only if the faults the types detect are
+the ones behind real vulnerabilities, not the synthetic overflows a test suite would write.
+Leaving checks on in production matters only if they are cheap enough that developers keep
+them in release builds; a check that is too slow gets disabled, which returns it to the
+test-only position of a sanitizer.
+Separating detection from response matters only if the responses it enables run inside
+device kernels at an acceptable cost.
 
 \begin{itemize}
 \item \textbf{RQ1 (Relevance).} To what extent do checked fixed-width and domain-bounded
@@ -153,26 +213,51 @@ types prevent the integer-arithmetic weaknesses behind real, disclosed CVEs?
 execute in exception-free, massively parallel device code, and at what cost?
 \end{itemize}
 
+To answer RQ1 we sourced 140 CVEs from the NVD across the four weakness classes of
+Section~\ref{sec:background} and a CWE-682 negative control, reduced each to its
+root-cause computation, and wrote that computation once with built-in types and once with
+\lib{}.
+The library prevents 126 of the 130 in-scope faults (96.9\%), including every entry in the
+four primary classes, and rejects 17 of the 30 conversion faults at compile time.
+To answer RQ2 we benchmark every operation at every width on seven operating-system and
+architecture targets, and compare \lib{} against \cmp{}, SafeInt, and Intel
+safe-arithmetic, and across seven of its own response policies.
+Through 64 bits on 64-bit hosts the median overhead is 1.00x to 1.16x of native
+arithmetic.
+On a vectorizable loop the cost is set by the class of response rather than by the
+library: a response that yields a value vectorizes and runs at 0.7x to 1.3x of native,
+while one that exits the loop early costs 3x to 6x.
+To answer RQ3 we time memory-bound streaming kernels and compute-bound operation chains
+under CUDA on an NVIDIA GPU and under SYCL on a CPU device.
+On the GPU's memory-bound streaming kernels the checks are free above 8 bits apart from
+128-bit multiplication and \code{f64} division, and on the vectorizing SYCL
+device the branch-free deferred response brings compute-bound floating-point chains from
+up to 235x of native to 1.1x to 2.9x.
+
 Our contributions are:
 \begin{enumerate}
-\item A reproducible CVE corpus of 140 NVD-sourced vulnerabilities across five CWE
-classes, each reduced to a self-contained test with a machine-readable metadata block, and a python script that
-programmatically regenerates every statistic in this paper (Section~\ref{sec:design-rq1}).
-\item A per-operation cost model for checked arithmetic across seven host targets and
-two heterogeneous compute back ends, measured on the non-violating path against a native baseline.
-We also include a semantic probe matrix and a cost comparison against three other
-checked-integer libraries as well as an ablation over the library's own response policies
-(Sections~\ref{sec:results-rq2} and~\ref{sec:results-rq3}).
-\item Evidence that decoupling detection from response is not a convenience but the
-enabling mechanism for checked arithmetic on devices, a measurement showing that
-replacing the response leaves the non-violating path unchanged (Sections~\ref{sec:library-policy},~\ref{sec:results-rq2},
-and~\ref{sec:discussion}).
+\item \lib{}, an open-source, header-only C++20 library of checked 8- to 128-bit integer,
+floating-point, and bounded types whose detection of a fault is decoupled from the response
+to it, so one set of types serves throwing host code, exception-free code, vectorized
+loops, and CUDA and SYCL kernels, with the detection algorithms proven sound in 195 Why3
+lemmas (Section~\ref{sec:library}).
+\item A reproducible corpus of 140 NVD-sourced CVEs across four integer weakness classes
+and a negative control, each reduced to a self-contained test with machine-readable
+metadata, and a script that regenerates every corpus statistic (Section~\ref{sec:design-rq1}).
+\item A per-operation cost model for checked arithmetic on the non-violating path across
+seven host targets and two heterogeneous back ends, with a semantic probe matrix and a cost
+comparison against three other checked-integer libraries (Sections~\ref{sec:results-rq2}
+and~\ref{sec:results-rq3}).
+\item An ablation over the library's own response policies showing that the class of the
+response, a value or an early exit, sets the cost rather than the detection code, which
+makes the decoupling the enabling mechanism for vectorized loops and device kernels
+(Sections~\ref{sec:results-rq2} and~\ref{sec:discussion}).
 \item Lessons for practitioners on where checked arithmetic is free and how to choose a
 response (Section~\ref{sec:discussion}).
 \end{enumerate}
 
-The library, the test corpus, the benchmark sources, and the Why3 proofs are all open source and distributed freely
-under the Boost Software License~\cite{safenumbers}.
+The library, corpus, benchmarks, and Why3 proofs are open source under the Boost Software
+License~\cite{safenumbers}.
 
 \section{Background and Motivation}
 \label{sec:background}
@@ -184,74 +269,70 @@ We consider four weakness classes whose root cause is a fixed-width integer comp
 In CVE-2002-0639 the OpenSSH challenge-response handler computed
 \code{nresp * sizeof(char*)} in 32 bits, an attacker-controlled \code{nresp} of $2^{30}$
 wrapped the product to zero, and the subsequent writes overflowed the heap.
-\emph{CWE-191, Integer Underflow}, goes the other way.
-Typically a length minus a header size that wraps from zero to a huge value.
+\emph{CWE-191, Integer Underflow}, goes the other way, typically a length minus a header
+size that wraps from zero to a huge value.
 \emph{CWE-681, Incorrect Conversion Between Numeric Types}, covers signedness confusion
-and truncation.
-A negative signed length compared against an unsigned bound passes the check because the comparison converts it to a large positive value.
-\emph{CWE-369, Divide by Zero}, generally occurs where an untrusted divisor reaches a division or modulo.
-
-In each, a representable, but wrong value propagates to a memory operation that gets assigned the
-CVE number, however; the arithmetic upstream is the root cause.
+and truncation: a negative signed length compared against an unsigned bound passes the
+check because the comparison converts it to a large positive value.
+\emph{CWE-369, Divide by Zero}, occurs where an untrusted divisor reaches a division or modulo.
+In each, a representable but wrong value propagates to a memory operation, and the CVE is
+filed against that operation; the arithmetic upstream is the root cause.
 
 \subsection{Why the Language Does Not Help}
 
 Consider the comparison below.
 
 \begin{lstlisting}
--99 < 340282366920938463463374607431768211408
+-1 < 1U
 \end{lstlisting}
 
 Intuitively the result is \code{true}.
-In C++ the signed operand converts to the unsigned 128-bit type of the literal and the result is \code{false}, legally and without a warning.
+In C++ the signed operand converts to \code{unsigned int}, so the expression is
+\code{false}: the conversion is well defined, and it is diagnosed only when
+\code{-Wsign-compare} is enabled.
 The hardware already computes carry and overflow flags on every arithmetic instruction; what is missing is a type that consults them.
-
-\subsection{The Incumbent Library: \cmp{}}
-
-\cmp{}~\cite{ramey2019} is the Boost library in this space and the natural comparator.
-Under its default \code{native} promotion policy operands follow C++ promotion rules
-before the check, so \code{safe<uint8\_t>(255) + safe<uint8\_t>(1)} yields 256 as an
-\code{int}.
-Its range types enforce bounds on construction but not on arithmetic results, and it has neither floating-point nor 128-bit types.
-That semantics gap motivated our rigid fixed-width design,
-and makes RQ2 a question of cost-effectiveness rather than cost alone.
 
 \section{\lib{}}
 \label{sec:library}
 
-This section describes the library as the engineered artifact under evaluation.
-We focus on the decisions that impact the responses to the research questions.
+This section presents the design of \lib{}: each decision, the gap in the existing
+mitigations it closes (Section~\ref{sec:intro}), and what it costs.
 The full reference is available online~\cite{safenumbers}.
 
 \subsection{Explicit Over Implicit}
 
 The library prohibits implicit conversion in every direction: between safe and built-in
 types, between safe types of different widths, and between signed and unsigned safe types.
-These are all handled as compile-time errors.
-Construction from \code{bool} and unary minus on unsigned types are also rejected at compile-time with a
-\code{static\_assert}.
-The cost is verbosity at type boundaries.
-A \code{static\_cast} is required, but the benefit is that every conversion is obvious in the source.
-It also has a verification payoff.
-Every operation is simply an endomorphism on one residue class $\mathbb{Z}/2^n\mathbb{Z}$,
-which removes widening and narrowing from the proof obligations.
+These are all compile-time errors, as are construction from \code{bool} and unary minus
+on unsigned types.
+This closes the promotion gap of \cmp{}: an operation on two \code{u8} values is checked
+as an 8-bit operation and yields a \code{u8}, and a signedness confusion (CWE-681) no
+longer compiles, so it is found without a test input that reaches it.
+The cost is verbosity at type boundaries, where a \code{static\_cast} is required, but
+every conversion becomes visible in the source.
+It also has a verification payoff: every operation stays within a single ring
+$\mathbb{Z}/2^n\mathbb{Z}$, which removes widening and narrowing from the proof obligations.
 
 \subsection{Fail as Early as Possible}
 
-Every operation is \code{constexpr} or \code{consteval}.
-The error path by default contains a \code{throw} expression, which is not permitted in a constant
-expression.
-An overflow that occurs during constant evaluation then becomes a compile-time error rather than a run-time exception.
-This allows the developer to write one expression and in return receive the strongest guarantee the context allows.
+Every operation is \code{constexpr}.
+The default error path contains a \code{throw} expression, which is not permitted in a
+constant expression, so an overflow during constant evaluation becomes a compile-time
+error rather than a run-time exception.
+The developer writes one expression and receives the strongest guarantee the context
+allows: a build failure where the operands are known, a check where they are not.
 
 \subsection{Detection Decoupled from Response}
 \label{sec:library-policy}
 
-An arithmetic fault can be divided into two parts: detection and handling.
-The library implements detection once per operation, classifying the outcome into an
-\code{error\_kind} (\code{overflow}, \code{underflow}, \code{divide\_by\_zero}, and additionally for
+Handling an arithmetic fault has two parts: detecting it and responding to it.
+The mitigations in Section~\ref{sec:intro} either fix the response or leave it to each
+call site, so none fits both a server that must recover and a kernel that cannot throw.
+\lib{} implements detection once per operation, classifying the outcome into an
+\code{error\_kind} (\code{overflow}, \code{underflow}, \code{divide\_by\_zero}, and for
 floating point \code{nan\_operation} and \code{invalid\_operation}), and routes the
 classification to a response chosen independently.
+The detection code, and the proofs that cover it, are therefore shared by every response.
 Three API surfaces expose that choice to the developer.
 
 \emph{Default operators} throw a typed standard exception
@@ -262,9 +343,9 @@ is only the arithmetic, the check, and a branch.
 \emph{Call-site families}, named after Rust's primitive-type methods~\cite{rustnum},
 select the response per operation without changing the type:
 \code{checked\_add} returns \code{std::optional}, \code{saturating\_add} clamps,
-\code{overflowing\_add} returns a tuple with the (possibly wrapped) value with a flag,
-\code{strict\_add} immediately terminates with \code{std::abort},
-and \code{widening\_add} promotes to the next width (e.g. \code{u32 + u32} yield \code{u64}).
+\code{overflowing\_add} returns a \code{std::pair} of the (possibly wrapped) value and a flag,
+\code{strict\_add} immediately terminates with \code{std::exit},
+and \code{widening\_add} promotes to the next width (e.g.\ \code{u32 + u32} yields \code{u64}).
 
 \emph{Type-level policies} carry the response in the type for every operator:
 \code{sat\_u8} saturates, \code{strict\_i32} terminates, and
@@ -278,12 +359,14 @@ non-throwing handler yields non-throwing arithmetic.
 
 \subsection{Bounded Domains as a Precondition Layer}
 
-\code{bounded\_uint<Min, Max>}, \code{bounded\_int}, and \code{bounded\_float} express a
-value's legal domain in the type and enforce it on construction and on every arithmetic result.
-This provides an earlier line of defense modeled on Ada's range subtypes~\cite{spark}.
+The bounded types express a value's legal domain in the type
+(\code{bounded\_uint<Min, Max>}, \code{bounded\_int}, and \code{bounded\_float}) and
+enforce it on construction and on every arithmetic result, unlike the range types of \cmp{}, which check only construction.
+This provides an earlier line of defense modeled on Ada's range subtypes~\cite{spark}, and
+it reaches faults that no width check can see.
 A correct addition whose result is one past the end of a 150-element table does not
 overflow, but \code{bounded\_uint<0, 149>} rejects it when the value is formed,
-before a bad-memory access could even occur.
+before a bad-memory access could occur.
 Whenever a bounded value is converted out of its type, the declared domain is still provided
 to the optimizer as an assumption, so checks on the receiving type that the domain makes
 impossible are deleted (Section~\ref{sec:results-rq2}).
@@ -291,8 +374,9 @@ impossible are deleted (Section~\ref{sec:results-rq2}).
 \subsection{Device Execution}
 \label{sec:library-device}
 
-All integer, floating-point, and bounded types compile with NVCC and with the Intel's
-oneAPI DPC++ compiler for execution inside CUDA and SYCL kernels.
+All integer, floating-point, and bounded types compile with NVCC and with Intel's
+oneAPI DPC++ compiler for execution inside CUDA and SYCL kernels, so host and device code
+share one set of checked types.
 Device code cannot throw, so only the response half of handling a fault changes.
 A \code{device\_error\_context} contains a shared error record (CUDA \code{\_\_managed\_\_}
 memory; a SYCL \code{device\_global}) into which the first faulting work item writes the
@@ -349,8 +433,9 @@ soundness of the detection logic, not verification of the shipped source.
 CVEs were fetched from the NVD via their REST API 2.0~\cite{nvdapi}, by CWE identifier, on 19 August 2026.
 Sampling using the arithmetic CWEs means every entry sits in a category the NVD assigned, not one we provided.
 Four primary categories (CWE-190, CWE-191, CWE-681, CWE-369) were sampled with thirty relevant examples each.
-CWE-682, Incorrect Calculation, serves as our a negative control.
-Many of its defects are in-range logical errors that no arithmetic check can catch, therefore, we expect a lower rate of detection.
+CWE-682, Incorrect Calculation, serves as a negative control with twenty examined entries:
+many of its defects are in-range logic errors that no arithmetic check can catch, so we
+expect a lower rate.
 
 \subsubsection{Reproduction}
 For each CVE we extracted the computation that the disclosure and its patch identify as
@@ -360,24 +445,21 @@ disclosure describes, a safe part that computes the identical expression with th
 types and asserts the fault (a thrown exception of the expected type, or a compile
 failure), and a bounded part that declares the value's documented domain with a bounded
 type and asserts rejection at construction.
-Where the original used platform-dependent widths we model using the width the advisory publishes
-and record it.
-96 of the 130 in-scope entries model a 32-bit width, and the 30 CWE-681 entries utilize a variety of mixed signed and unsigned operands.
+Where the original used platform-dependent widths we model the width the advisory
+publishes and record it.
+96 of the 130 in-scope entries model a 32-bit width, and the 30 CWE-681 entries use a
+variety of mixed signed and unsigned operands.
 
-\subsubsection{Testing Outcome Categorization}
-Every examined CVE can be categorized by outcome:
-\begin{enumerate}
-\item \code{PREVENTED\_RUNTIME}: the safe computation throws at the faulting operation
-\item \code{PREVENTED\_COMPILETIME}: the port is ill-formed and is committed as a compile-fail test
-\item \code{PREVENTED\_BOUNDED}: the declared domain rejects the input before the arithmetic
-\item \code{NOT\_PREVENTED}: a genuine arithmetic CVE whose faulting value is in range; counted in the denominator)
-\item \code{OUT\_OF\_SCOPE}: not a fixed-width integer fault on reduction; recorded with a reason and reported separately
-\end{enumerate}
-
-Each test carries a machine-readable metadata block.
-A dependency-free script cross-checks these metadata blocks against test outcomes,
-and regenerates every table, exiting non-zero on any inconsistency.
-This ensures that the corpus is validated in our continuous integration system.
+\subsubsection{Outcome categories}
+Each examined CVE receives one outcome: prevented at run time (the safe computation throws
+at the faulting operation), prevented at compile time (the port is ill-formed and is
+committed as a compile-fail test), prevented by a bound (the declared domain rejects the
+input before the arithmetic), not prevented (a genuine arithmetic CVE whose faulting value
+is in range, counted in the denominator), or out of scope (not a fixed-width integer fault
+on reduction, recorded with a reason and reported separately).
+Each test carries a machine-readable metadata block, and a dependency-free script
+cross-checks the blocks against the test outcomes and regenerates every corpus table,
+exiting non-zero on any inconsistency, so the corpus is validated in continuous integration.
 
 \subsubsection{Statistics}
 The primary metric per category is the prevention rate, prevented over in scope, with a
@@ -386,27 +468,24 @@ The native baseline detects zero faults as expected, so every prevented case is 
 discordant pair and the exact McNemar test~\cite{mcnemar1947} reduces to
 $p = \min(1, 2 \cdot 0.5^{b})$ for $b$ prevented.
 This $p$ value is the ceiling by design.
-
-\subsubsection{The Claim with Caveat}
-We reproduce the arithmetic fault, but we do not re-run the original programs.
-Our tests are done over the reductions to root-cause computations.
-Had these computations been written with our library under its default policy, the fault would have surfaced differently.
-We make no claim the whole program would have executed without fault when using our library.
+We reproduce the root-cause computation, not the original program, so the claim is that
+the fault would have surfaced at the faulting operation, not that the whole program would
+have run correctly (Section~\ref{sec:threats}).
 
 \subsection{RQ2: Host Benchmark Grid}
 \label{sec:design-rq2}
 
-The benchmarks are running using Google Benchmark~\cite{gbench}.
-Each benchmark first fills a vector of one million random values once, and then
-for every operation evaluates \code{op(vec[i], vec[i+1])} across this vector, passing each
-result through \code{DoNotOptimize} so the work is not elided, and still contains the same inlining.
+The benchmarks use Google Benchmark~\cite{gbench}.
+Each benchmark fills a vector of one million random values once, then for every operation
+evaluates \code{op(vec[i], vec[i+1])} across the vector, passing each result through
+\code{DoNotOptimize} so the work is not elided.
 Code is compiled at \code{-O2}, or the MSVC Release equivalent.
-Integer operands are drawn for a uniform distribution covering $[1, w-1]$ for width $w$ and sorted in
-descending order so that addition, subtraction, multiplication, division, and modulo all
-stay on the non-overflowing, non-throwing path.
-For simplicity, floating-point operands are drawn from a uniform distribution spanning $[1, 100]$.
-These choices allow the measurement to reflect the cost of the checks, not the cost of throwing (which is known to be high).
-We then runs five repetitions to smooth out any small variances, and we report the median time per element.
+Integer operands are drawn from a uniform distribution over $[1, w-1]$ for a $w$-bit type and
+sorted in descending order so that all five operations stay on the non-overflowing path;
+floating-point operands are drawn uniformly from $[1, 100]$.
+The measurement therefore reflects the cost of the checks that production code pays on
+every operation, not the cost of throwing, which is paid only on a fault.
+We run five repetitions and report the median time per element.
 
 Three contenders are compared at each width: the built-in type as baseline, the library
 type, and \cmp{}'s \code{safe<T>} with its default template arguments, that is, the
@@ -417,7 +496,8 @@ The grid ran on seven GitHub Actions runners: Linux x64 and ARM64 (GCC 14), Linu
 32-bit (MSVC), all at C++20.
 
 \subsubsection{Semantics of the comparators}
-Cost is only meaningful relative to what is checked, so we first establish what each
+RQ2 is a question of cost-effectiveness rather than cost alone, because \cmp{} checks
+promoted rather than declared widths by default, so we first establish what each
 comparator detects with ten semantic probes, each a single arithmetic situation with
 runtime operands (Table~\ref{tab:probes}), expressed idiomatically in \lib{}, \cmp{},
 Microsoft SafeInt~\cite{safeint}, and Intel safe-arithmetic~\cite{intelsafe}, all in their
@@ -435,13 +515,17 @@ operands through \code{match} and performs the proven operation unchecked (unsig
 subtraction on equal intervals is not expressible and is omitted).
 
 \subsubsection{Ablation over response policies}
-A third benchmark isolates the response half of the architecture.
+A third benchmark isolates the response half of the architecture, testing the claim that
+the choice of response, not the shared detection code, sets the cost.
 For 8-, 32-, 64-, and 128-bit unsigned and 32- and 128-bit signed widths it runs the five
-operations on the built-in type and on eight responses: the default throwing operators,
+operations on the built-in type and on seven responses: the default throwing operators,
 the saturating and strict aliases, two user-defined handlers (a \code{noexcept} handler
 returning the wrapped fallback, and one throwing a user exception type), the deferred
 \code{overflowing\_*} family with its flag folded without a branch, and the
 \code{checked\_*} family unwrapped with a fallback.
+A further pair of rows measures what a declared domain buys: the default operators on
+operands validated into a bounded type at ingress, against a built-in loop over the same
+one-byte operands.
 
 \subsubsection{Two kernel shapes}
 The host grid times a \emph{scalar} shape in which every element's result passes through
@@ -466,10 +550,9 @@ Two kernel shapes are measured: \emph{streaming}, \code{out[i] = a[i] op b[i]} o
 4\,194\,304 elements, the shape of real element-wise kernels, memory bound on a discrete
 GPU; and a \emph{compute-bound chain} in which 65\,536 threads each evolve one
 register-resident value through 256 cycles of eight to nine checked operations.
-The integer chain is a fixed mixed sequence including division and modulo, which cannot be
-reassociated, because the optimizer can legally fold a run of wrapping additions for the
-native baseline; floating-point chains are per operation, since IEEE arithmetic is not
-associative.
+The integer chain mixes in division and modulo so that the optimizer cannot fold the
+native baseline's wrapping additions; floating-point chains are per operation, since IEEE
+arithmetic is not associative.
 Every family also runs the non-throwing forms against the same baseline: a saturating
 addition streaming row, saturating and overflowing integer chains, and deferred
 floating-point chains whose flags are accumulated and folded into the result.
@@ -490,55 +573,34 @@ associativity and would let the native chains fold, the build pins
 \subsection{RQ1: Prevention of Disclosed CVEs}
 \label{sec:results-rq1}
 
-Table~\ref{tab:funnel} is the disposition funnel and Table~\ref{tab:rates} the prevention
-rates.
+Table~\ref{tab:rates} gives the disposition and prevention rate of every category.
 Of 140 examined CVEs, 10 were out of scope, all in the CWE-682 control, for reasons
 recorded in the corpus.
 The 130 in-scope entries span 2002 to 2022 across products from the Linux kernel to
 LibTIFF, QEMU, and FreeType.
+The exact McNemar $p$ is $1.9\times10^{-9}$ for each primary category, $0.031$ for the
+control, and $2.4\times10^{-38}$ pooled.
 
 \begin{table}[t]
 \centering
-\caption{Disposition funnel. Nothing examined is dropped; out-of-scope entries are
-reported and removed from the denominator.}
-\label{tab:funnel}
-\footnotesize
-\setlength{\tabcolsep}{4pt}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{@{}lrrrrr@{}}
-\toprule
-Category & Examined & Out of scope & In scope & Prevented & Not prev. \\
-\midrule
-CWE-190 & 30 & 0 & 30 & 30 & 0 \\
-CWE-191 & 30 & 0 & 30 & 30 & 0 \\
-CWE-681 & 30 & 0 & 30 & 30 & 0 \\
-CWE-369 & 30 & 0 & 30 & 30 & 0 \\
-CWE-682 (control) & 20 & 10 & 10 & 6 & 4 \\
-\midrule
-All & 140 & 10 & 130 & 126 & 4 \\
-\bottomrule
-\end{tabular}}
-\end{table}
-
-\begin{table}[t]
-\centering
-\caption{Prevention rate by category. ``Default'' counts the checked types alone;
-``Incl. bounded'' adds cases prevented once the domain is declared with a bounded type.
-The interval is the 95\% Wilson score interval on the latter.}
+\caption{Disposition and prevention rate by category. Nothing examined is dropped;
+out-of-scope entries are reported and removed from the denominator. ``Default'' counts the
+checked types alone; ``Bnd.'' adds cases prevented once the domain is declared with a
+bounded type. The rate, in percent, is on the latter with its 95\% Wilson score interval.}
 \label{tab:rates}
 \footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}lrrrlr@{}}
+\begin{tabular}{@{}lrrrrrl@{}}
 \toprule
-CWE & In scope & Default & Incl. bnd. & Rate (95\% CI) & McNemar $p$ \\
+Category & Exam. & Out & In & Default & Bnd. & Rate (95\% CI) \\
 \midrule
-190 & 30 & 29 & 30 & 100.0\% (88.6 to 100.0) & $1.9\times10^{-9}$ \\
-191 & 30 & 30 & 30 & 100.0\% (88.6 to 100.0) & $1.9\times10^{-9}$ \\
-681 & 30 & 30 & 30 & 100.0\% (88.6 to 100.0) & $1.9\times10^{-9}$ \\
-369 & 30 & 30 & 30 & 100.0\% (88.6 to 100.0) & $1.9\times10^{-9}$ \\
-682 & 10 & 3 & 6 & 60.0\% (31.3 to 83.2) & $0.031$ \\
+CWE-190 & 30 & 0 & 30 & 29 & 30 & 100.0 (88.6 to 100.0) \\
+CWE-191 & 30 & 0 & 30 & 30 & 30 & 100.0 (88.6 to 100.0) \\
+CWE-681 & 30 & 0 & 30 & 30 & 30 & 100.0 (88.6 to 100.0) \\
+CWE-369 & 30 & 0 & 30 & 30 & 30 & 100.0 (88.6 to 100.0) \\
+CWE-682 (ctrl.) & 20 & 10 & 10 & 3 & 6 & 60.0 (31.3 to 83.2) \\
 \midrule
-Pooled & 130 & 122 & 126 & 96.9\% (92.4 to 98.8) & $2.4\times10^{-38}$ \\
+All & 140 & 10 & 130 & 122 & 126 & 96.9 (92.4 to 98.8) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -553,24 +615,22 @@ comparison or arithmetic between a signed and an unsigned quantity, and porting 
 expression to \code{i32} and \code{u32} makes it ill-formed; the remaining 13 are
 truncating conversions that throw on the explicit narrowing cast.
 One CWE-190 entry is prevented only through the bounded arm: in CVE-2018-13785 (libpng)
-an oversized image width flows into a row-factor calculation that overflows and then
-divides by zero; the width is a representable \code{u32}, but libpng documents a width
-limit and declaring it as a \code{bounded\_uint} rejects the value at the boundary.
-The downstream faults would also have been caught at runtime; the entry is classified as
-bounded on purpose, to keep the ``default'' column strict.
+an oversized but representable image width overflows a row-factor calculation, and
+declaring libpng's documented width limit as a \code{bounded\_uint} rejects it at the
+boundary; the downstream faults would also have been caught at runtime, but the entry is
+classified as bounded to keep the ``default'' column strict.
 
 \subsubsection{The negative control}
 CWE-682 behaves as a control should.
-Three of ten in-scope cases are prevented by the default types (divide-by-zero and shift
-faults the NVD tagged as calculation errors), and declaring domains with bounded types
-prevents three more: an off-by-one index into a fixed-size table (CVE-2011-3062), a length
-that exceeds the real available space (CVE-2011-1573), and a file offset past a known line
-buffer (CVE-2018-11790), each a wrong result used against a buffer of independently known
-size.
-The remaining four stay unprevented because their wrong result is a valid in-domain value
-(a rounded time, a wrong elliptic-curve point, a mishandled floating-point number, a wrong
-cipher-reset output); no bound applies, which is exactly the library's limit and why the
-control is informative.
+The default types prevent three of ten in-scope cases (divide-by-zero and shift faults
+the NVD tagged as calculation errors), and declared domains prevent three more
+(CVE-2011-3062, CVE-2011-1573, CVE-2018-11790), each a wrong index, length, or offset used
+against a buffer of independently known size.
+The remaining four stay unprevented because their wrong result is a valid in-domain value:
+three are integer divisions that truncate where the formula needed rounding or a ceiling
+(CVE-2016-7433, CVE-2017-8932, CVE-2018-14439), and one is an index one past the end with
+no independently known bound to declare (CVE-2018-20999).
+No bound applies, which is exactly the library's limit and why the control is informative.
 
 \subsubsection{Answer to RQ1}
 Among disclosed CVEs whose root cause reduces to a fixed-width integer arithmetic fault,
@@ -578,6 +638,7 @@ the checked types convert the fault into a typed, catchable failure in every sam
 of the four primary classes, bounded domains extend prevention to in-range faults the
 operation-level checks cannot see, and the pooled rate is 96.9\% (92.4\% to 98.8\%),
 bounded below by the honest failures in the control.
+The explicit-conversion rule catches 17 of the conversion faults with no test input at all.
 
 \subsection{RQ2: Host Overhead}
 \label{sec:results-rq2}
@@ -614,8 +675,9 @@ Windows x86 32-bit & MSVC      & 1.26 / 1.16 / 5.69 & 1.08 / 1.03 / 2.00  & 1.97
 \subsubsection{Through 64 bits}
 On every 64-bit host the median per-operation overhead of the checked integer types lies
 between 1.00x and 1.16x, and the geometric mean between 1.03x and 1.14x.
-Division and modulo are at parity almost everywhere (on Linux x64, 17 of 18 rows within
-5\%), because the only check is a compare against a divisor already in flight.
+Division and modulo are at parity almost everywhere (on Linux x64 all 16 division and
+modulo rows through 64 bits are at 1.00x), because the only check is a compare against a
+divisor already in flight.
 Addition and subtraction cost about 1.2x on GCC x64 and are at parity on MSVC.
 Multiplication is the most expensive check, up to 1.7x with GCC and 2.36x for signed
 64-bit multiplication on Windows ARM64, because the overflow test needs a wide product or
@@ -632,28 +694,26 @@ floating-point classifier costs 1.7x to 4.7x.
 \subsubsection{128-bit and floating-point}
 The 128-bit types cost 1.01x to 1.48x by geometric mean on GCC and Clang hosts; their
 multiplication check, computed from 64-bit limbs because there is no wider arithmetic to
-lift into, is the one genuinely expensive check in the library (3.05x to 7.73x).
+lift into, is the one genuinely expensive check in the library, peaking at 3.05x to 7.73x
+on every host except Linux x64 and ARM64, where GCC keeps it at parity.
 The floating-point classifiers cost 1.18x on GCC x64, are at parity on Apple Clang and
-MSVC x64, and reach 1.5x on the two ARM64 compilers.
+MSVC x64, and reach 1.5x under GCC on Linux ARM64 and MSVC on Windows ARM64.
 
 \subsubsection{Against the comparators: semantics}
 Table~\ref{tab:probes} gives the outcome of the ten semantic probes; the four libraries
 embody three models.
-\lib{} and SafeInt check at the declared width at runtime and agree on every runtime
-fault (P1 to P5 and P7); at the type boundary \lib{} rejects mixed signedness, mixed
-width, and \code{bool} construction at compile time, while SafeInt compares mixed
-signedness correctly (P6), accepts \code{bool}, and rejects mixed \code{SafeInt} widths
-only through an overload ambiguity.
-\cmp{} under its default promotion detects the 32-bit faults but widens the 8-bit
-overflow to 256 (P1), lets a bounded result escape its range (P10), and throws on a
-mixed-signedness comparison instead of comparing.
-Intel safe-arithmetic, explicitly pre-release, rejects at compile time everything its
-interval logic can see, including a zero-containing divisor and a narrowing store, and
-is the one comparator whose bounded type enforces on results (P10); it accepts
+\lib{} and SafeInt check at the declared width at runtime and agree on every runtime fault
+(P1 to P5 and P7); at the type boundary \lib{} rejects mixed signedness, mixed width, and
+\code{bool} construction at compile time, while SafeInt compares mixed signedness correctly
+(P6), accepts \code{bool}, and rejects mixed widths only through an overload ambiguity.
+\cmp{} under its default promotion widens the 8-bit overflow to 256 (P1), lets a bounded
+result escape its range (P10), and throws on a mixed-signedness comparison instead of
+comparing.
+Intel safe-arithmetic rejects at compile time everything its interval logic can see and is
+the one comparator whose bounded type enforces on results (P10), but it accepts
 \code{bool}, and its division interval ignores the sign of the quotient, so
 \code{INT\_MIN / -1} compiles and returns \code{INT\_MIN} (P4).
-Only \lib{} converts every one of the ten situations into a compile-time or runtime
-fault.
+Only \lib{} converts every one of the ten situations into a compile-time or runtime fault.
 
 \begin{table*}[t]
 \centering
@@ -687,40 +747,32 @@ cost follows the response class rather than the library.
 The three libraries that detect at the declared width and throw, \lib{}, \cmp{}, and
 SafeInt, form one class: on unsigned 32-bit addition, subtraction, and multiplication
 they cost 2.6x to 4.4x, on unsigned 64-bit 1.3x to 1.6x (with one \cmp{} addition
-outlier at 2.5x), and all three are at parity on division and modulo.
-Intel safe-arithmetic is the cheapest contender at 0.95x to 1.35x on 32 bits.
-Is that comparison fair?
-Intel's runtime work per element is not smaller than ours, only differently placed: two
-range checks on the inputs rather than one on the result, with a fallback value rather than
-an exit.
-Two controls in the same benchmark isolate the effect.
-Giving \code{match} a throwing fallback, so that the same checks end in an early exit,
-moves Intel to 3.6x to 5.1x, the class of the throwing libraries; removing the runtime check
-altogether gives 0.95x to 1.3x, so the checks cost at most 0.3x, about what our
-value-returning \code{checked} family costs on addition and subtraction
-(Table~\ref{tab:ablation}).
+outlier at 2.5x), and all three are at parity on unsigned division and modulo.
+Intel safe-arithmetic is the cheapest contender at 0.95x to 1.34x on 32 bits, but its
+runtime work is not smaller, only differently placed: two range checks on the inputs with
+a fallback value, rather than one check on the result with an exit.
+Two controls isolate the effect.
+Giving \code{match} a throwing fallback moves Intel to 3.6x to 5.1x, the class of the
+throwing libraries, and removing its runtime check gives 0.95x to 1.3x, so the checks
+themselves cost at most 0.3x, about what our value-returning \code{checked} family costs
+on addition and subtraction (Table~\ref{tab:ablation}).
 Interval reasoning is genuinely cheaper only for multiplication, where a bound check on two
 inputs vectorizes and a check on the high half of the product does not (1.34x against 4.0x
-to 5.2x for our unsigned value forms); the bounded ingress rows of Table~\ref{tab:ablation}
-show the same reasoning recovered inside our model when a domain is declared.
-The contracts differ too: Intel enforces a declared input domain and cannot express a
-full-width addition whose overflow is detected, while we check the result of any operation
-at its declared width; the two coincide only when the domain is known, which is what this
-benchmark constructs.
+to 5.2x for our unsigned saturating, overflowing, and checked forms).
+The contracts also differ: Intel enforces a declared input domain and cannot express a
+full-width addition whose overflow is detected, so the two coincide only when the domain is
+known, which is what this benchmark constructs.
 
-Signed 32-bit arithmetic is where the comparison earned its keep.
+Signed 32-bit arithmetic is where the comparison improved the library.
 In our first run \lib{} cost 10.1x to 13.3x on signed addition, subtraction, and
-multiplication and 2.0x on signed division, against 4.5x and parity for SafeInt.
-The disassembly gave the cause: Clang declined to inline every signed throwing operator
-(cost 320 against a threshold of 225), so the loop paid a call per element, while the
-unsigned operators and the \code{strict} and handler variants of the signed ones inlined to
-an \code{adds} and a branch.
-The error path was the culprit, not the detection: constructing the exception, its message,
-and its source location inline enlarged the body.
-Outlining that path into a cold, non-inlined function restored inlining for all twenty
-signed operators, and Table~\ref{tab:libs} reports the library after that fix: 4.0x to
-6.1x on signed 32-bit, the same class as SafeInt (3.4x to 4.5x), and parity on signed
-division; \cmp{} remains at 10.0x to 13.1x.
+multiplication, against 4.5x for SafeInt.
+Clang had declined to inline every signed throwing operator (cost 320 against a threshold
+of 225), because constructing the exception, its message, and its source location inline
+enlarged the body.
+Outlining that error path into the cold, non-inlined function of
+Section~\ref{sec:library-policy} restored inlining for all twenty signed operators;
+Table~\ref{tab:libs} reports the library after the fix, 4.0x to 6.1x on signed 32-bit, the
+class of SafeInt (3.4x to 4.5x), while \cmp{} remains at 10.0x to 13.1x.
 
 \begin{table}[t]
 \centering
@@ -751,36 +803,33 @@ Type & Library & Add & Sub & Mul & Div & Mod & Gmean \\
 Table~\ref{tab:ablation} is the ablation on the stream shape, where the built-in 32-bit
 loops vectorize four lanes wide and the 64-bit loops two.
 The responses split into two classes, and the compiler's own diagnostics say why.
-Every response that must act at the exact faulting element (throw, a throwing handler,
-or \code{strict}'s \code{std::exit}) is an early exit from the loop and draws the remark
-``cannot vectorize early exit loop with writes to memory''.
-The default throwing operators and \code{strict} cost 2.8x to 5.1x for 32-bit addition,
-subtraction, and multiplication, signed and unsigned alike, falling to 1.3x to 1.4x at 64
-bits where only two lanes are lost.
+Every response that must act at the exact faulting element (throw, a throwing handler, or
+\code{strict}'s termination) is an early exit and draws the remark ``cannot vectorize
+early exit loop with writes to memory''; these cost 2.8x to 5.1x for 32-bit addition,
+subtraction, and multiplication, falling to 1.3x to 1.4x at 64 bits where only two lanes
+are lost.
 Every response whose result is a value keeps the loop straight-line and vectorizes: the
 wrapping handler (0.74x to 1.32x), saturating addition and subtraction, which lower to the
-native saturating vector instructions (0.74x to 1.00x), the deferred \code{overflowing}
-family with its flag folded by an OR reduction (0.96x to 1.16x for addition and
-subtraction), and \code{checked} unwrapped with a fallback (0.99x to 1.29x).
+native saturating vector instructions (0.74x to 1.00x), and the deferred
+\code{overflowing} family and \code{checked} unwrapped with a fallback (0.96x to 1.29x for
+addition and subtraction).
 Multiplication is the exception: the unsigned overflow test needs the high half of the
-product, which has no vector form at 32 bits on this target, so unsigned saturating,
-overflowing, and checked multiplication cost 4.0x to 5.2x, as much as the throwing
-operator, while the signed deferred and checked forms stay at 1.4x to 1.6x.
+product, which has no 32-bit vector form on this target, so unsigned saturating,
+overflowing, and checked multiplication, and signed saturating multiplication, cost 4.0x
+to 5.2x, while the signed deferred and checked forms stay at 1.4x to 1.6x.
 Division and modulo are at parity for every response because the built-in loop does not
 vectorize them either.
-At 128 bits, where the basis type is a two-word class rather than a machine word, the
-value responses and the default operators stay within 1.25x (unsigned) and 1.6x (signed)
-on addition, subtraction, division, and modulo, and the multiplication check costs 1.7x
-unsigned and 3.2x signed, or 7x to 9x for the deferred and checked forms.
+At 128 bits, where the basis type is a two-word class, the default operators and value
+responses stay within 1.25x (unsigned) and 1.6x (signed) except for multiplication, where
+the throwing and saturating responses cost 1.6x to 1.8x unsigned and 3.2x to 3.3x signed,
+and the deferred and checked forms 7x to 9x.
 
 The bounded ingress rows show what a declared domain buys.
 Because the bounded types hand their domain to the optimizer as an assumption whenever a
 value leaves the type, operands validated into \code{bounded\_uint<1,31>} and widened to
 \code{u32} carry the fact that they lie in $[1, 31]$, and Clang deletes every check that
-fact makes impossible before vectorizing: against a built-in loop over the same one-byte
-operands the default throwing operators cost 0.9x to 1.35x on 32-bit addition and
-multiplication and 0.81x to 1.07x at 128 bits, where the multiplication check had cost
-1.7x and 3.2x.
+fact makes impossible before vectorizing: the default throwing operators cost 1.02x to
+1.36x on 32-bit addition and multiplication and 0.81x to 1.07x at 128 bits.
 Unsigned subtraction keeps its check (5.8x) because $[1, 31] - [1, 31]$ can underflow;
 the optimizer removes exactly what the declared facts justify.
 
@@ -788,18 +837,17 @@ The result corrects an expectation we held going in: \code{strict}, modeled on R
 panic on overflow, does not vectorize, because termination at the faulting element is an
 early exit exactly as a throw is (Rust's release-mode arithmetic vectorizes because it
 wraps, not because it panics).
-What vectorizes is detection whose response is a value, the property that made the
-deferred family the enabling mechanism on devices in Section~\ref{sec:results-rq3}.
-Replacing the handler with one of the same class leaves the cost where the class puts it:
-the user throwing handler matches the default operators within noise for unsigned 32-bit
-(3.70x against 3.67x for addition) and the wrapping handler matches the built-in type.
-The one exception is instructive: the signed user throwing handler costs 9.2x to 11.5x
-because its inline \code{throw} pushes the larger signed operator over Clang's inline
-threshold (cost 235 against 225), the same mechanism the library itself exhibited before
-this study; a handler that throws should call a cold, non-inlined function instead, which
-restores inlining.
-In the scalar shape, where nothing vectorizes, all eight responses fall within 1.0x to
-1.2x of one another except for cells affected by the artifact reported next.
+What vectorizes is detection whose response is a value, the property that makes the
+deferred family the enabling mechanism on devices (Section~\ref{sec:results-rq3}).
+Replacing a response with another of the same class leaves the cost where the class puts
+it: the user throwing handler matches the default operators for unsigned 32-bit (3.70x
+against 3.67x for addition), and the wrapping handler matches the built-in type.
+The signed user throwing handler (9.2x to 11.5x) is the inlining failure above again: its
+inline \code{throw} pushes the operator over Clang's threshold (235 against 225), so a user
+handler that throws should, like the library, call a cold, non-inlined function.
+In the scalar shape, where nothing vectorizes, all seven responses fall within 1.0x to
+1.2x of one another apart from cells affected by a harness artifact
+(Section~\ref{sec:threats}).
 
 \begin{table}[t]
 \centering
@@ -836,33 +884,18 @@ Type & Response & Add & Sub & Mul & Div & Mod & Gmean \\
 \end{tabular}
 \end{table}
 
-\subsubsection{A harness artifact worth reporting}
-In one build of the scalar shape the default throwing \code{u32} and \code{u64} measured
-4.3x to 4.9x while every other response, including a user handler that also throws,
-measured parity, with hot loops identical except for stack layout: the throwing variant's
-larger frame placed the two spill slots that per-element \code{DoNotOptimize} forces
-adjacently, and the AArch64 load/store optimizer merged their reloads into one \code{ldp}
-straddling two prior stores, defeating store-to-load forwarding on every iteration.
-Disabling that pass (\code{-mllvm -aarch64-enable-ldst-opt=false}) returned the type to
-1.01x; in a later build the built-in loop was the one hit.
-The host grid uses the scalar shape, so any single cell of Table~\ref{tab:host} can carry
-such an artifact; read it by medians.
-
 \subsubsection{Answer to RQ2}
 On 64-bit hosts, always-on checking at the declared width costs a median of 1.00x to
 1.16x per operation through 64 bits, with division and modulo free and multiplication the
-most expensive at up to about 1.7x on GCC and Clang.
-The exceptions are 32-bit targets, 128-bit multiplication, and floating-point
-classification on some ARM64 compilers, and we quantify each.
-Relative to the existing Boost library the cost is comparable where the semantics are
-comparable, and \lib{} detects faults that library's default configuration silently
-absorbs.
-Across four libraries and eight response policies on a vectorizable loop, the cost is set
-by the class of the response: detection whose response is a value vectorizes and runs at
-0.7x to 1.3x of native, and detection whose response leaves the loop at the faulting
-element does not vectorize and costs 3x to 6x at 32 bits regardless of which library
-implements it; the comparison also exposed, and led us to fix, an inlining failure that had
-put the signed throwing operators at 10x to 13x.
+most expensive; the exceptions (32-bit targets, 128-bit multiplication, and floating-point
+classification on some ARM64 compilers) are quantified above.
+That cost supports leaving the checks on in release builds, the premise of placing them in
+the type.
+Relative to \cmp{} the cost is comparable where the semantics are comparable, and \lib{}
+detects faults that library's default configuration silently absorbs.
+On a vectorizable loop the class of the response sets the cost regardless of library: a
+response that is a value vectorizes at 0.7x to 1.3x of native, and an early exit costs 3x
+to 6x at 32 bits.
 
 \subsection{RQ3: Device Execution}
 \label{sec:results-rq3}
@@ -872,12 +905,13 @@ Table~\ref{tab:stream} gives selected streaming rows for both devices.
 On the GPU the checks are essentially free: the kernels are bound by memory bandwidth and
 the checks execute in the shadow of the loads; the rows above parity are the 8-bit types
 (up to 1.23x), \code{f64} division (1.44x), and 128-bit multiplication (6.8x).
-The SYCL CPU device tells the same story from 32 bits up (0 to 7\%) but not at 8 bits:
+The SYCL CPU device tells the same story for 32- to 128-bit integers (within 11\%),
+but not for \code{f32} (1.3x to 1.7x) or below 32 bits (up to 1.9x at 16 bits):
 four million one-byte elements fit in cache, the kernels are compute bound, a CPU device
 executes a kernel by vectorizing it across work items, and the per-operation reporting
 branch inhibits exactly that, so the 8-bit rows reach 11.6x.
-\code{saturating\_add} compiles to the native saturating vector instructions and returns
-even those rows to parity.
+\code{saturating\_add} compiles to the native saturating vector instructions, returning
+\code{u8} to parity and \code{i8} to 1.5x.
 
 \begin{table}[t]
 \centering
@@ -912,15 +946,16 @@ On the GPU the throwing integer types cost 1.30x to 2.93x through 64 bits and 7.
 throwing operator already compiles to a well-predicted branch.
 On the CPU device the dominant cost is lost vectorization: where the baseline cannot
 vectorize either the throwing types cost 1.05x to 1.88x, and where it can (\code{i16},
-\code{i32}) the gap is the SIMD width times the check cost, 8.8x to 9.4x.
+\code{i32}) the gap is the SIMD width times the check cost, 8.8x to 9.4x, with
+\code{u32} between the two at 4.3x.
 
 \subsubsection{Compute-bound floating-point chains}
 Table~\ref{tab:fchain} is the central result of RQ3.
 A floating-point chain's baseline operation is a single hardware instruction, so the
 fixed cost of the classifier multiplies it.
-On the GPU the throwing \code{f32} chains cost 8.7x to 18.3x and the \code{f64} chains
-1.5x to 4.0x, and the deferred family cuts \code{f32} to 2.7x to 5.4x with division at
-parity.
+On the GPU the throwing \code{f32} chains cost 2.2x (division) to 18.3x and the
+\code{f64} chains 1.5x to 4.0x, and the deferred family cuts \code{f32} to 2.7x to 5.4x
+with division at parity.
 On the CPU device the throwing chains lose vectorization entirely and cost 17x to 235x.
 The deferred family, whose \code{overflowing\_*} operations are branch-free, vectorizes
 with the baseline and lands the same chains at 1.05x to 2.85x, two orders of magnitude
@@ -952,10 +987,11 @@ Type & Op & Throwing & Deferred & Throwing & Deferred \\
 \subsubsection{Answer to RQ3}
 No comparator we surveyed runs in CUDA or SYCL code, so the baseline is the raw basis
 type.
-Two response mechanisms make device execution possible: a shared device-side error record
-with host-side rethrow, which preserves the throwing model across the kernel boundary, and
-a branch-free deferred family, which preserves vectorization.
-In the memory-bound regime typical of real kernels the checks are free above 8 bits.
+Two responses built on the same detection code make device execution possible: a shared
+device-side error record with host-side rethrow, which preserves the throwing model across
+the kernel boundary, and a branch-free deferred family, which preserves vectorization.
+In the memory-bound regime typical of real kernels the GPU checks are free above 8 bits
+apart from 128-bit multiplication and \code{f64} division.
 In the compute-bound regime the throwing types cost 1.3x to 2.9x for integers through 64
 bits on a GPU, and the deferred family is what makes checked floating point viable on a
 vectorizing device, at 1.1x to 2.9x instead of up to 235x.
@@ -974,26 +1010,22 @@ hides.
 SafeInt, the other fixed-width comparator, agrees with the library on every runtime probe.
 Practitioners choosing a checked type should ask at which width the check is applied,
 not only how fast it is.
-
-\subsection{Where Checking Is Free and Where It Is Not}
-Division and modulo are free everywhere; addition and subtraction cost one predictable
-branch, about 20\% on GCC and nothing measurable on MSVC; multiplication is the check to
-watch, because it needs a wide product or a division.
+Within a width, division and modulo are free, addition and subtraction cost one predictable
+branch (about 20\% on GCC, nothing measurable on MSVC), and multiplication, which needs a
+wide product or a division, is the check to watch.
 
 \subsection{Decoupling Detection from Response Is the Enabling Mechanism}
 On the host, offering saturating, checked, and overflowing families beside the throwing
-operators looks like convenience.
-On a device it is the difference between a library that works and one that does not.
+operators looks like convenience; on a device it is the difference between a library that
+works and one that does not.
 Exceptions do not exist in a kernel, so the response must be relocated to the host
-(\code{device\_error\_context}) or deferred to a boundary (\code{deferred\_errors}).
-The detection code is untouched in both cases.
-The floating-point chain result (Table~\ref{tab:fchain}) is the sharpest illustration:
-the same classifier, with the branch moved from every operation to once per work item,
-goes from unusable to under 3x.
-The host ablation says the same thing in the compiler's words: a response that leaves the
-loop is an early exit the vectorizer refuses, and a response that is a value is not, so
-the same detection code runs at 3x to 6x or at parity depending only on that choice.
-We suggest the same lesson applies to any checked-arithmetic design intended for
+(\code{device\_error\_context}) or deferred to a boundary (\code{deferred\_errors}), with
+the detection code untouched in both cases.
+The floating-point chains (Table~\ref{tab:fchain}) are the sharpest illustration: the same
+classifier, with the branch moved from every operation to once per work item, goes from
+unusable to under 3x on the vectorizing device, and the host ablation shows the same split
+in the vectorizer's diagnostics.
+We suggest the lesson applies to any checked-arithmetic design intended for
 performance-sensitive code: make the response a policy, and make at least one policy a
 value.
 
@@ -1005,10 +1037,10 @@ point the value is formed; the bound must come from that independent quantity, n
 the correct answer.
 
 \subsection{Alignment with the Contracts Model}
-Table~\ref{tab:contracts} is not a claim of novelty for replaceable handlers but a claim
-that a library adopted today will not need redesign when contracts arrive: the response
-spectrum already has the shape P2900~\cite{p2900} standardizes, and a program-wide handler
-policy can be expressed as a type-level handler now.
+Replaceable handlers are not new; the claim is that a library adopted today will not need
+redesign when contracts arrive, because the response spectrum already has the shape
+P2900~\cite{p2900} standardizes and a program-wide handler policy can be expressed as a
+type-level handler now.
 Table~\ref{tab:ablation} shows the cost is set by the class of the response rather than
 by who wrote the handler, so a team can change the response without re-measuring the code
 that never faults.
@@ -1032,17 +1064,20 @@ actually throwing is not measured and is deliberately out of scope.
 The comparators were measured in their default configurations.
 
 \subsubsection{Internal validity}
-Reproduction fidelity is the central threat to RQ1: we port only the operation the patch
-cites, at the width the advisory assumes, assert the specific disclosed wrong value, and
-commit every arm as a test that runs in CI.
+Reproduction fidelity is the central threat to RQ1: we do not re-run the original
+programs but port only the operation the patch cites, at the width the advisory assumes,
+assert the specific disclosed wrong value, and commit every arm as a test that runs in CI.
 For RQ2, the host numbers come from shared CI runners and reflect a single run each;
 five repetitions with median reporting stabilize the central figure but cannot remove
 the variance of a shared virtual machine, so differences of a few percent should be read
 as noise.
-The grid's scalar shape forces a per-element spill whose micro-architectural cost depends
-on stack layout (Section~\ref{sec:results-rq2}), so an isolated outlier cell may reflect
-the harness rather than a check; the stream-shape comparisons do not share this
-exposure.
+The grid's scalar shape forces a per-element spill whose cost depends on stack layout: in
+one build the throwing \code{u32} and \code{u64} measured 4.3x to 4.9x because the AArch64
+load/store optimizer merged two adjacent spill reloads into one \code{ldp} straddling two
+prior stores, defeating store-to-load forwarding, and disabling that pass returned them to
+1.01x.
+An isolated outlier cell of Table~\ref{tab:host} may therefore reflect the harness rather
+than a check; the stream-shape comparisons do not share this exposure.
 The stream-shape ratios on vectorized 32-bit loops rest on baselines near 0.1 ns per
 element and vary by up to 30\% between runs, so their second digit is not meaningful.
 For RQ3, each device is a single machine and a single run.
@@ -1055,9 +1090,8 @@ not-prevented cases carry the credibility, not a claim of random sampling.
 The device results come from one consumer GPU and one CPU OpenCL device.
 
 \subsubsection{Conclusion validity}
-We report Wilson intervals rather than point estimates because $n$ is small and the
-observed rate is at the ceiling.
-The McNemar $p$ values are ceilinged by design; the rate and its interval are the result.
+Because $n$ is small and the observed rate is at the ceiling, the rate and its Wilson
+interval are the result; the McNemar $p$ values are ceilinged by design.
 
 \section{Related Work}
 \label{sec:related}
@@ -1069,14 +1103,12 @@ checks~\cite{ubsan}.
 KINT~\cite{wang2012}, RICH~\cite{brumley2007}, and SmartFuzz~\cite{molnar2009} find
 integer errors statically, by binary instrumentation, and by test generation; Coker and
 Hafiz~\cite{coker2013} and IntPatch~\cite{zhang2010} repair them by transformation.
-These are diagnostic or repair tools; our contribution is a production type whose checks
-are always on, evaluated against the CVE record those studies characterized.
+These tools find or repair faults in code that is already written; \lib{} is a type whose
+checks stay on in the shipped program, and we evaluate it against the CVE record those
+studies characterized.
 
 \subsubsection{Compiler and language mechanisms}
-\code{-ftrapv}~\cite{gccmanual} traps on signed overflow only and UBSan's unsigned
-overflow check~\cite{ubsan} is a test-time configuration; the
-\code{\_\_builtin\_*\_overflow} intrinsics~\cite{gccmanual} are what the library compiles
-to, applied at every operation of a type rather than at hand-chosen call sites.
+Section~\ref{sec:intro} discusses \code{-ftrapv}, UBSan, and the overflow intrinsics.
 Rust~\cite{rustnum} panics on overflow in debug builds and wraps in release, with the
 \code{checked\_}, \code{saturating\_}, \code{wrapping\_}, and \code{overflowing\_} methods
 the library's call-site families follow by name; Ada and SPARK~\cite{spark} provide range
@@ -1108,26 +1140,25 @@ though our bounds are checked dynamically.
 \section{Conclusion and Future Work}
 \label{sec:conclusion}
 
-We evaluated a shipped C++20 library of checked fixed-width numeric types against three
-measurable claims.
-It prevents 126 of 130 in-scope CVEs, with every primary category at 100\% and a negative
-control at 60\% that marks its limit; its median per-operation cost on 64-bit hosts is
-1.00x to 1.16x through 64 bits, with the exceptions quantified; and on CUDA and SYCL
-devices the same types run unchanged, where decoupling detection from response lets a
-branch-free deferred family bring compute-bound floating-point chains from two orders of
-magnitude slower than native to under 3x.
-Against three other libraries the same response class, value or early exit, decides
-whether a loop vectorizes; the comparison also exposed an inlining failure in the signed
-throwing operators, since fixed, and an artifact in the per-element benchmark shape.
-Three hardening steps follow from the threats above: a random corpus draw with complete
-classification, a controlled-machine replication of the host grid with dispersion
-statistics, and a discrete-GPU SYCL run.
-It also produced a change: the bounded types now hand their declared domain to the
-optimizer as an assumption, deleting the checks it makes impossible.
+We designed and implemented \lib{}, a C++20 library of checked fixed-width numeric types
+that keeps its checks in the shipped program, checks at the declared width, and decouples
+the detection of a fault from the response to it, and we evaluated each decision against a
+measurable claim.
+It prevents 126 of 130 in-scope CVEs; its median per-operation cost on 64-bit hosts is
+1.00x to 1.16x through 64 bits; and on CUDA and SYCL devices the same types run unchanged,
+with a branch-free deferred response bringing compute-bound floating-point chains on a
+vectorizing SYCL device from two orders of magnitude slower than native to under 3x.
+Building and evaluating the library together improved both: the evaluation exposed an
+inlining failure in the signed throwing operators, now fixed, and an artifact in the
+per-element benchmark shape, and it led the bounded types to hand their declared domain to
+the optimizer.
+Future work is a random corpus draw with complete classification, a controlled-machine
+replication of the host grid with dispersion statistics, and a discrete-GPU SYCL run.
 
 \section*{Acknowledgment}
-% TODO: funding, reviewers, and the maintainers of the compared libraries.
-The authors thank the C++ Alliance for supporting this work.
+The first author is an employee of The C++ Alliance, which funded the development of
+\lib{} and the evaluation reported here.
+The authors thank the Alliance for its continued support of open-source C++ libraries and tools.
 
 \balance
 

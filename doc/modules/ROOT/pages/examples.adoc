@@ -931,7 +931,7 @@ include::example$sycl_error_handling.cpp[]
 Output:
 ----
 Running on: Intel(R) Data Center GPU
-Caught expected device error on the host: Device error on thread 0 at .../boost/safe_numbers/include/boost/safe_numbers/bounded_integers.hpp:215: bounded_uint addition result out of range
+Caught expected device error on the host: Device error on thread 0 at .../boost/safe_numbers/include/boost/safe_numbers/bounded_integers.hpp:251: bounded_uint addition result out of range
 ----
 ====
 

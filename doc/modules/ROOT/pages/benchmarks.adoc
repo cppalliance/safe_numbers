@@ -215,9 +215,11 @@ A CPU device executes a kernel by vectorizing it across work items, and that sha
 | `f64` | 1.05 | 1.05 | 1.05 | 1.12 | n/a | n/a
 |===
 
-For 32 bits and up the streaming results match the CUDA picture: the arrays no longer fit in cache, the kernels are bound by memory, and the checks cost 0 to 7 percent.
+For integers of 32 bits and up the streaming results match the CUDA picture: the arrays no longer fit in cache, the kernels are bound by memory, and the checks cost at most 5 percent, apart from 128-bit signed multiplication at 11 percent.
+The floating point rows cost more: 5 to 12 percent for `f64`, and 1.3x to 1.7x for `f32`.
 The 8-bit rows stand out (up to 11.6x) because four million 1-byte elements fit inside the processor's cache: those kernels are compute bound, so they measure the vectorization gap rather than memory bandwidth.
-The saturating addition column shows the escape hatch: `saturating_add` compiles to the native saturating vector instructions, so even the 8-bit rows return to parity.
+The 16-bit rows sit between the two regimes, at 1.03x to 1.87x for `u16` and 1.44x to 1.59x for `i16`, consistent with three 8 MB arrays that only partly fit in the processor's 16 MB L3 cache.
+The saturating addition column shows the escape hatch: `saturating_add` compiles to the native saturating vector instructions, so the `u8` and 16-bit rows return to within 7 percent of parity and the `i8` row drops from about 10x to 1.5x.
 
 .Compute-bound integer chain (SYCL CPU device): throwing operators and non-throwing forms against the raw chain
 [cols="1,>1,>1,>1,>1,>1,>1,>1",options="header"]
@@ -250,11 +252,12 @@ The saturating addition column shows the escape hatch: `saturating_add` compiles
 |===
 
 In the chains the dominant cost on a CPU device is lost vectorization rather than the check instructions themselves.
-Where the baseline cannot vectorize either (the 64-bit and 128-bit chains, and the 8-bit chains whose narrow division defeats the vectorizer), the throwing types cost 1.0x to 1.9x, in line with the host benchmarks.
-Where the baseline vectorizes and the throwing chain does not (`i16`, `i32`, and every floating point chain), the gap is the SIMD width times the check cost, up to roughly 235x for the `f64` chains.
+Where the baseline cannot vectorize either (the 64-bit and 128-bit chains, the 8-bit chains whose narrow division defeats the vectorizer, and the `u16` chain), the throwing types cost 1.0x to 1.9x, in line with the host benchmarks.
+Where the baseline vectorizes and the throwing chain does not (`u32`, `i16`, `i32`, and every floating point chain), the gap is the SIMD width times the check cost: 4.3x for `u32`, 8.8x to 9.4x for `i16` and `i32`, and up to roughly 235x for the `f64` chains.
 
 The deferred family recovers that gap almost entirely for floats: the branch-free `overflowing_*` operations vectorize with the baseline, so the same chains land at 1.1x to 2.9x, two orders of magnitude better than the throwing operators, while still detecting every error at the boundary (see xref:floats.adoc#floats_overflowing_arithmetic[Overflowing Arithmetic] and the `deferred_errors` accumulator in xref:sycl.adoc[]).
-The integer `saturating_*` and `overflowing_*` chains improve `i16`/`i32` from about 9x to about 6x; the remaining gap is the divide by zero check that division and modulo still raise eagerly, which keeps a reporting branch in the kernel body.
+The integer `saturating_*` and `overflowing_*` chains improve `u32` from 4.3x to about 3.2x and `i16`/`i32` from about 9x to about 6x; the remaining gap is the divide by zero check that division and modulo still raise eagerly, which keeps a reporting branch in the kernel body.
+`i128` is the exception: its non-throwing chains (2.1x to 2.2x) are slower than the throwing one (1.5x).
 
 NOTE: The device numbers come from one machine and a single run each, so treat small differences as noise. On a discrete GPU a SYCL build should behave like the CUDA column; this machine only exposes the CPU device.
 
