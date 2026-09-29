@@ -7,6 +7,19 @@ import-search /boost/config/checks ;
 import config : requires ;
 import modules ;
 import testing ;
+import pch ;
+import feature ;
+import os ;
+
+# Private switch: the tests take the pch as a source, the pch target itself must not
+feature.feature safe-numbers-pch : on off ;
+
+# MSVC on an ARM64 host fails to map the pch now and then (C3859)
+local msvc-arm64-pch ;
+if [ os.platform ] = ARM64
+{
+    msvc-arm64-pch = <toolset>msvc:<pch>off ;
+}
 
 project : requirements
 
@@ -50,7 +63,21 @@ project : requirements
     <toolset>gcc:<warnings-as-errors>on
 
   [ requires cxx20_hdr_bit cxx20_hdr_compare cxx20_hdr_concepts ]
+
+    # Precompile boost/safe_numbers.hpp once per variant and force-include it into every test
+    # A test which defines a library macro or links a library with usage defines opts out with <pch>off
+    # A test which disables MSVC C4702/C4723 before its includes opts out on msvc: MSVC takes the
+    # warning state at the end of the generated function, which the pch places before the disable
+    <safe-numbers-pch>on:<source>pch
+    # GCC pch is broken on MinGW (Boost.Math turns it off there too) and unproven on Cygwin
+    <toolset>gcc,<target-os>windows:<pch>off
+    <toolset>gcc,<target-os>cygwin:<pch>off
+    # b2 passes the classic icc pch flags, which icpx silently ignores
+    <toolset>intel:<pch>off
+    $(msvc-arm64-pch)
   ;
+
+cpp-pch pch : pch.hpp : <safe-numbers-pch>off ;
 
 run quick.cpp ;
 
@@ -60,7 +87,8 @@ run test_float_construction.cpp ;
 run test_float_addition.cpp ;
 run test_float_subtraction.cpp ;
 run test_float_mul.cpp ;
-run test_float_div.cpp ;
+run test_float_div.cpp
+  : : : <toolset>msvc:<pch>off ;
 run test_float_overflowing.cpp ;
 run test_float_streaming.cpp ;
 run test_float_std_format.cpp ;
@@ -76,7 +104,7 @@ run test_float_rounding.cpp ;
 run test_float_manip.cpp ;
 run test_float_classification.cpp ;
 run test_float_int_rounding.cpp ;
-run test_float_charconv.cpp : : : <library>/boost/charconv//boost_charconv ;
+run test_float_charconv.cpp : : : <library>/boost/charconv//boost_charconv <pch>off ;
 run test_hash.cpp ;
 compile-fail compile_fail_float_mixed_ops.cpp ;
 compile compile_integer_type_properties.cpp ;
@@ -96,7 +124,9 @@ run test_unsigned_addition.cpp ;
 compile-fail compile_fail_unsigned_addition.cpp ;
 # benchmark_{unsigned,signed,float}_operations.cpp use Google Benchmark and are
 # built only via CMake with -DBOOST_SAFE_NUMBERS_BUILD_BENCHMARKS=ON.
-run-fail benchmarks/benchmark_boost.cpp ;
+# Its warning pragmas for Multiprecision and safe_numerics must come before any of our headers
+run-fail benchmarks/benchmark_boost.cpp
+  : : : <pch>off ;
 run test_limits.cpp ;
 run limits_link_1.cpp limits_link_2.cpp limits_link_3.cpp ;
 compile-fail compile_fail_unsigned_construction_from_bool.cpp ;
@@ -131,7 +161,7 @@ compile-fail compile_fail_unsigned_unary_operators.cpp ;
 # 'error' attribute entirely, MSVC has no __builtin_constant_p, and the Intel (icpx)
 # toolset rejects the -ip flag that b2 passes for <optimization>speed. GCC coverage is
 # sufficient since it is the reference toolset for the feature.
-local ca-req = <optimization>speed <inlining>full <define>BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT ;
+local ca-req = <optimization>speed <inlining>full <define>BOOST_SAFE_NUMBERS_ENABLE_COMPILE_ASSERT <pch>off ;
 local ca-gcc-only = <toolset>clang:<build>no <toolset>msvc:<build>no <toolset>intel-linux:<build>no ;
 
 # The compile-assert mechanism relies on the optimizer folding the constant and eliminating
@@ -203,13 +233,15 @@ run-fail test_signed_strict_mod.cpp ;
 # Type-level policy tests (second template parameter on the basis templates)
 run test_unsigned_sat_type_arithmetic.cpp ;
 run test_signed_sat_type_arithmetic.cpp ;
-run test_float_sat_type_arithmetic.cpp ;
+run test_float_sat_type_arithmetic.cpp
+  : : : <toolset>msvc:<pch>off ;
 run test_policy_type_traits.cpp ;
 run-fail test_unsigned_strict_type_addition.cpp ;
 run-fail test_unsigned_strict_type_division.cpp ;
 run-fail test_signed_strict_type_addition.cpp ;
 run-fail test_signed_strict_type_division.cpp ;
-run test_user_defined_handler.cpp ;
+run test_user_defined_handler.cpp
+  : : : <toolset>msvc:<pch>off ;
 compile-fail compile_fail_handler_stateful.cpp ;
 compile-fail compile_fail_handler_bad_signature.cpp ;
 compile-fail compile_fail_handler_mixed_policy.cpp ;
@@ -232,7 +264,8 @@ run test_unsigned_bounded_multiplication.cpp ;
 run test_unsigned_bounded_division.cpp ;
 run test_unsigned_bounded_modulo.cpp ;
 run test_unsigned_bounded_unary.cpp ;
-run test_unsigned_bounded_conversions.cpp ;
+run test_unsigned_bounded_conversions.cpp
+  : : : <toolset>msvc:<pch>off ;
 run test_unsigned_bounded_charconv.cpp ;
 run test_unsigned_bounded_fmt_format.cpp ;
 run test_unsigned_bounded_std_format.cpp ;
@@ -309,19 +342,29 @@ run test_unsigned_random.cpp ;
 run test_signed_random.cpp ;
 
 # Compile Tests
-compile compile_tests/compile_test_unsigned_integers.cpp ;
-compile compile_tests/compile_test_iostream.cpp ;
-compile compile_tests/compile_test_main_header.cpp ;
-compile compile_tests/compile_test_format.cpp ;
-compile compile_tests/compile_test_limits.cpp ;
-compile compile_tests/compile_test_literals.cpp ;
-compile compile_tests/compile_test_charconv.cpp ;
-compile compile_tests/compile_test_signed_integers.cpp ;
-compile compile_tests/compile_test_floats.cpp ;
+# Each separate header must build on its own, so these opt out of the pch
+compile compile_tests/compile_test_unsigned_integers.cpp
+  : <pch>off ;
+compile compile_tests/compile_test_iostream.cpp
+  : <pch>off ;
+compile compile_tests/compile_test_main_header.cpp
+  : <pch>off ;
+compile compile_tests/compile_test_format.cpp
+  : <pch>off ;
+compile compile_tests/compile_test_limits.cpp
+  : <pch>off ;
+compile compile_tests/compile_test_literals.cpp
+  : <pch>off ;
+compile compile_tests/compile_test_charconv.cpp
+  : <pch>off ;
+compile compile_tests/compile_test_signed_integers.cpp
+  : <pch>off ;
+compile compile_tests/compile_test_floats.cpp
+  : <pch>off ;
 
 # Run the examples
 run ../examples/basic_usage.cpp ;
-run ../examples/basic_usage_stacktrace.cpp : : : <architecture>x86:<target-os>linux:<library>/boost/stacktrace//boost_stacktrace_from_exception ;
+run ../examples/basic_usage_stacktrace.cpp : : : <architecture>x86:<target-os>linux:<library>/boost/stacktrace//boost_stacktrace_from_exception <pch>off ;
 compile-fail ../examples/compile_fail_basic_usage_constexpr.cpp ;
 run ../examples/debugger.cpp ;
 run ../examples/construction_and_conversion.cpp ;
@@ -351,7 +394,7 @@ run ../examples/random.cpp ;
 run ../examples/basic_bounded_usage.cpp ;
 compile-fail ../examples/compile_fail_basic_bounded_usage_constexpr.cpp ;
 run ../examples/safety_profile.cpp : : : : safety_profile_off ;
-run ../examples/safety_profile.cpp : : : <define>BOOST_SAFE_NUMBERS_INTEGER_SAFETY_PROFILE : safety_profile_on ;
+run ../examples/safety_profile.cpp : : : <define>BOOST_SAFE_NUMBERS_INTEGER_SAFETY_PROFILE <pch>off : safety_profile_on ;
 
 # ---------------------------------------------------------------------------
 # CVE corpus. One self-contained translation unit per real-world integer-fault
