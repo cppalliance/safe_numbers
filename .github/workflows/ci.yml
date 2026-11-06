@@ -46,6 +46,7 @@ jobs:
       # Test only the oldest and the newest standard of each compiler to stay within the job timeout
       exclude_jobs: |
         cxxstd: 23, compiler: 'gcc-15,gcc-16,clang-18,clang-19,clang-20,clang-21,clang-22,icpx-2025'
+        type: cmake, name: 'Min. CMake'  # boost-ci builds CMake 3.x from source with the runner's CMake 4, which rejects it
     # Example of customization:
     # with:
     #   enable_reflection: true

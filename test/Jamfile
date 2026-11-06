@@ -72,6 +72,12 @@ project : requirements
     # GCC pch is broken on MinGW (Boost.Math turns it off there too) and unproven on Cygwin
     <toolset>gcc,<target-os>windows:<pch>off
     <toolset>gcc,<target-os>cygwin:<pch>off
+    # GCC 14 and older drop the headers' #pragma GCC diagnostic state from the pch (fixed in GCC 15)
+    <toolset>gcc-10:<pch>off
+    <toolset>gcc-11:<pch>off
+    <toolset>gcc-12:<pch>off
+    <toolset>gcc-13:<pch>off
+    <toolset>gcc-14:<pch>off
     # b2 passes the classic icc pch flags, which icpx silently ignores
     <toolset>intel:<pch>off
     $(msvc-arm64-pch)
