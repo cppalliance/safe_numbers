@@ -27,10 +27,12 @@
 // Warning suppression required for safe_numerics
 #if defined (__clang__)
 #  pragma clang diagnostic ignored "-Wold-style-cast"
+#  pragma clang diagnostic ignored "-Wsign-conversion"
 #elif defined(__GNUC__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wold-style-cast"
 #  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
 #  if __GNUC__ >= 16
 #    pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #  endif

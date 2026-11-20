@@ -95,6 +95,12 @@ public:
 
     BOOST_SAFE_NUMBERS_HOST_DEVICE explicit constexpr bounded_float(const underlying_type val) : bounded_float{basis_type{val}} {}
 
+    // Narrowing may overflow to inf by design; the result is checked afterwards
+    #ifdef _MSC_VER
+    #  pragma warning(push)
+    #  pragma warning(disable:4756)
+    #endif
+
     template <typename OtherBasis>
         requires (detail::is_compatible_float_type<OtherBasis>)
     BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] explicit constexpr operator OtherBasis() const
@@ -135,6 +141,10 @@ public:
         const auto raw {static_cast<underlying_type>(basis_)};
         return bounded_float<Min2, Max2>{target_basis{static_cast<target_underlying>(raw)}};
     }
+
+    #ifdef _MSC_VER
+    #  pragma warning(pop)
+    #endif
 
     BOOST_SAFE_NUMBERS_HOST_DEVICE [[nodiscard]] constexpr auto to_basis() const noexcept -> basis_type { return basis_; }
 
