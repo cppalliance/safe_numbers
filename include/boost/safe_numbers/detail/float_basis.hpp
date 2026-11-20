@@ -543,7 +543,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_cmath_overflow(const char* c
     }
     else
     {
-        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, cmath_error_msg<BasisType>("Overflow", op));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, cmath_error_msg<BasisType>("Overflow", op).c_str());
     }
     #else
     BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::overflow_error, op);
@@ -567,7 +567,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_cmath_underflow(const char* 
     }
     else
     {
-        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, cmath_error_msg<BasisType>("Underflow", op));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, cmath_error_msg<BasisType>("Underflow", op).c_str());
     }
     #else
     BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::underflow_error, op);
@@ -591,7 +591,7 @@ BOOST_SAFE_NUMBERS_HOST_DEVICE constexpr auto throw_cmath_domain(const char* con
     }
     else
     {
-        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, cmath_error_msg<BasisType>("Domain error", op));
+        BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, cmath_error_msg<BasisType>("Domain error", op).c_str());
     }
     #else
     BOOST_SAFE_NUMBERS_THROW_EXCEPTION(std::domain_error, op);

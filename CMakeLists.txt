@@ -16,6 +16,7 @@ target_link_libraries(boost_safe_numbers
         INTERFACE
         Boost::charconv
         Boost::core
+        Boost::int128
         Boost::throw_exception
 )
 

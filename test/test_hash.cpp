@@ -36,8 +36,8 @@ void test_type()
     BOOST_TEST(h(a) == h(b));
 
     // Matches the underlying built-in hash for every type that has one (all but 128-bit)
-    if constexpr (!(std::is_same_v<underlying_type, boost::int128::uint128_t> ||
-                    std::is_same_v<underlying_type, boost::int128::int128_t>))
+    if constexpr (!(std::is_same_v<underlying_type, boost::int128::uint128> ||
+                    std::is_same_v<underlying_type, boost::int128::int128>))
     {
         BOOST_TEST(h(a) == std::hash<underlying_type>{}(static_cast<underlying_type>(a)));
     }

@@ -120,7 +120,7 @@ def builtin_label(category, bits):
     if category == "float":
         return "float" if bits == 32 else "double"
     prefix = "uint" if category == "unsigned" else "int"
-    return f"{prefix}128_t" if bits == 128 else f"std::{prefix}{bits}_t"
+    return f"boost::int128::{prefix}128" if bits == 128 else f"std::{prefix}{bits}_t"
 
 
 def sn_label(category, bits):

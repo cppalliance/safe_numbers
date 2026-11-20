@@ -264,6 +264,14 @@ These compile to efficient hardware instructions (typically a single arithmetic 
 The target is a runtime penalty of less than 2x compared to builtin types.
 This is achievable because the overflow check is a single branch on a flag that the hardware already computes as part of the arithmetic instruction.
 
+The error path of the throwing policy (the exception object, its message, and the source location) is outlined into a cold, non-inlined function, so that an operator's body is only the arithmetic, the check, and a branch.
+This keeps every operator under the compiler's inline cost threshold: a checked operation inside a loop compiles to the same instructions as the builtin operation plus one conditional branch to the cold call, rather than to a call per element.
+Compilers also decline to vectorize a loop that can leave early through that branch, so for element-wise loops the `saturating_*`, `overflowing_*`, and `checked_*` families, whose response is a value, vectorize where the throwing operators do not.
+
+The bounded types hand their declared domain to the optimizer as an assumption whenever a value leaves the type (every conversion to a basis type, to an underlying type, or to another bounded type).
+A value validated into `bounded_uint<1, 31>` at ingress and then widened to `u32` therefore carries the fact that it lies in `[1, 31]`, and the overflow check of a following `u32` addition or multiplication, which that fact makes impossible, is deleted by the optimizer along with its branch; the loop then vectorizes as if the operands were unchecked.
+The domain invariant of the bounded type itself is unchanged: arithmetic between bounded values still checks every result against the declared range.
+
 == Inspiration from Other Languages
 
 Much of the recent discourse over the direction pass:[C++] should take in terms of safety revolves around Rust.

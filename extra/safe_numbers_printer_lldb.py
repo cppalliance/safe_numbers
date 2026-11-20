@@ -180,7 +180,7 @@ def bounded_uint_summary(valobj, internal_dict):
         basis = val.GetChildMemberWithName("basis_")
         inner_basis = basis.GetChildMemberWithName("basis_")
 
-        # Check if the inner basis is a uint128_t (has low/high members)
+        # Check if the inner basis is a uint128 (has low/high members)
         low_member = inner_basis.GetChildMemberWithName("low")
         if low_member.IsValid():
             low = low_member.GetValueAsUnsigned()
@@ -310,7 +310,7 @@ def bounded_int_summary(valobj, internal_dict):
         basis = val.GetChildMemberWithName("basis_")
         inner_basis = basis.GetChildMemberWithName("basis_")
 
-        # Check if the inner basis is an int128_t (has low/high members)
+        # Check if the inner basis is an int128 (has low/high members)
         low_member = inner_basis.GetChildMemberWithName("low")
         if low_member.IsValid():
             low = low_member.GetValueAsUnsigned()
@@ -364,13 +364,13 @@ def __lldb_init_module(debugger, internal_dict):
     u16_pattern = r"^(const )?(boost::safe_numbers::detail::unsigned_integer_basis<unsigned short(, [^>]+)?>|([A-Za-z0-9_]+::)*(sat_|strict_)?u16)( &| \*)?$"
     u32_pattern = r"^(const )?(boost::safe_numbers::detail::unsigned_integer_basis<unsigned int(, [^>]+)?>|([A-Za-z0-9_]+::)*(sat_|strict_)?u32)( &| \*)?$"
     u64_pattern = r"^(const )?(boost::safe_numbers::detail::unsigned_integer_basis<unsigned long(, [^>]+)?>|boost::safe_numbers::detail::unsigned_integer_basis<unsigned long long(, [^>]+)?>|([A-Za-z0-9_]+::)*(sat_|strict_)?u64)( &| \*)?$"
-    u128_pattern = r"^(const )?(boost::safe_numbers::detail::unsigned_integer_basis<boost::int128::uint128_t(, [^>]+)?>|([A-Za-z0-9_]+::)*(sat_|strict_)?u128)( &| \*)?$"
+    u128_pattern = r"^(const )?(boost::safe_numbers::detail::unsigned_integer_basis<boost::int128::uint128(, [^>]+)?>|([A-Za-z0-9_]+::)*(sat_|strict_)?u128)( &| \*)?$"
     bounded_uint_pattern = r"^(const )?boost::safe_numbers::bounded_uint<[^>]+>( &| \*)?$"
     i8_pattern = r"^(const )?(boost::safe_numbers::detail::signed_integer_basis<signed char(, [^>]+)?>|([A-Za-z0-9_]+::)*(sat_|strict_)?i8)( &| \*)?$"
     i16_pattern = r"^(const )?(boost::safe_numbers::detail::signed_integer_basis<short(, [^>]+)?>|([A-Za-z0-9_]+::)*(sat_|strict_)?i16)( &| \*)?$"
     i32_pattern = r"^(const )?(boost::safe_numbers::detail::signed_integer_basis<int(, [^>]+)?>|([A-Za-z0-9_]+::)*(sat_|strict_)?i32)( &| \*)?$"
     i64_pattern = r"^(const )?(boost::safe_numbers::detail::signed_integer_basis<long(, [^>]+)?>|boost::safe_numbers::detail::signed_integer_basis<long long(, [^>]+)?>|([A-Za-z0-9_]+::)*(sat_|strict_)?i64)( &| \*)?$"
-    i128_pattern = r"^(const )?(boost::safe_numbers::detail::signed_integer_basis<boost::int128::int128_t(, [^>]+)?>|([A-Za-z0-9_]+::)*(sat_|strict_)?i128)( &| \*)?$"
+    i128_pattern = r"^(const )?(boost::safe_numbers::detail::signed_integer_basis<boost::int128::int128(, [^>]+)?>|([A-Za-z0-9_]+::)*(sat_|strict_)?i128)( &| \*)?$"
     bounded_int_pattern = r"^(const )?boost::safe_numbers::bounded_int<[^>]+>( &| \*)?$"
     f32_pattern = r"^(const )?(boost::safe_numbers::detail::float_basis<float(, [^>]+)?>|([A-Za-z0-9_]+::)*(sat_)?f32)( &| \*)?$"
     f64_pattern = r"^(const )?(boost::safe_numbers::detail::float_basis<double(, [^>]+)?>|([A-Za-z0-9_]+::)*(sat_)?f64)( &| \*)?$"

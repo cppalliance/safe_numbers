@@ -5,7 +5,7 @@
 #ifndef BOOST_SAFE_NUMBERS_LITERALS_HPP
 #define BOOST_SAFE_NUMBERS_LITERALS_HPP
 
-#include <boost/safe_numbers/detail/int128/literals.hpp>
+#include <boost/int128/literals.hpp>
 #include <boost/safe_numbers/detail/throw_exception.hpp>
 #include <boost/safe_numbers/unsigned_integers.hpp>
 #include <boost/safe_numbers/signed_integers.hpp>
@@ -67,7 +67,7 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u64(const unsigned long lon
 
 BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_u128(const char* str) -> u128
 {
-    int128::uint128_t result;
+    int128::uint128 result;
     const auto r {int128::detail::from_chars(str, str + int128::detail::strlen(str), result)};
 
     switch (r)
@@ -125,7 +125,7 @@ BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_i64(const unsigned long lon
 
 BOOST_SAFE_NUMBERS_EXPORT constexpr auto operator ""_i128(const char* str) -> i128
 {
-    int128::int128_t result;
+    int128::int128 result;
     const auto r {int128::detail::from_chars(str, str + int128::detail::strlen(str), result)};
 
     switch (r)

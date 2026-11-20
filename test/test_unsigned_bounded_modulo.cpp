@@ -23,7 +23,7 @@
 #include <cstdint>
 
 using namespace boost::safe_numbers;
-using boost::int128::uint128_t;
+using boost::int128::uint128;
 
 // -----------------------------------------------
 // u8 basis: bounded_uint with Max <= 255
@@ -214,48 +214,48 @@ void test_u64_throwing_modulo()
 
 void test_u128_valid_modulo()
 {
-    constexpr auto max_val = uint128_t{1, 0};
-    using b128 = bounded_uint<uint128_t{0}, max_val>;
+    constexpr auto max_val = uint128{1, 0};
+    using b128 = bounded_uint<uint128{0}, max_val>;
 
-    const b128 a {u128{uint128_t{10000}}};
-    const b128 b {u128{uint128_t{3000}}};
+    const b128 a {u128{uint128{10000}}};
+    const b128 b {u128{uint128{3000}}};
     const auto c {a % b};
-    const b128 expected_c {u128{uint128_t{1000}}};  // 10000 % 3000 = 1000
+    const b128 expected_c {u128{uint128{1000}}};  // 10000 % 3000 = 1000
     BOOST_TEST(c == expected_c);
 
     // Modulo by one = 0
-    const b128 one {u128{uint128_t{1}}};
+    const b128 one {u128{uint128{1}}};
     const auto d {a % one};
-    const b128 expected_d {u128{uint128_t{0}}};
+    const b128 expected_d {u128{uint128{0}}};
     BOOST_TEST(d == expected_d);
 
     // Full u128 range
-    constexpr auto u128_max = uint128_t{UINT64_MAX, UINT64_MAX};
-    using b128_full = bounded_uint<uint128_t{0}, u128_max>;
+    constexpr auto u128_max = uint128{UINT64_MAX, UINT64_MAX};
+    using b128_full = bounded_uint<uint128{0}, u128_max>;
 
-    const b128_full e {u128{uint128_t{3'000'000}}};
-    const b128_full f {u128{uint128_t{1'000'000}}};
+    const b128_full e {u128{uint128{3'000'000}}};
+    const b128_full f {u128{uint128{1'000'000}}};
     const auto g {e % f};
-    const b128_full expected_g {u128{uint128_t{0}}};
+    const b128_full expected_g {u128{uint128{0}}};
     BOOST_TEST(g == expected_g);
 }
 
 void test_u128_throwing_modulo()
 {
-    constexpr auto max_val = uint128_t{1, 0};
-    using b128 = bounded_uint<uint128_t{0}, max_val>;
+    constexpr auto max_val = uint128{1, 0};
+    using b128 = bounded_uint<uint128{0}, max_val>;
 
     // Modulo by zero
-    const b128 a {u128{uint128_t{100}}};
-    const b128 zero {u128{uint128_t{0}}};
+    const b128 a {u128{uint128{100}}};
+    const b128 zero {u128{uint128{0}}};
     BOOST_TEST_THROWS(a % zero, std::domain_error);
 
     // Non-zero min: [1000, 2^64]: 1500 % 1000 = 500 < 1000
-    constexpr auto min_val = uint128_t{1000};
+    constexpr auto min_val = uint128{1000};
     using b128_ranged = bounded_uint<min_val, max_val>;
 
-    const b128_ranged b {u128{uint128_t{1500}}};
-    const b128_ranged c {u128{uint128_t{1000}}};
+    const b128_ranged b {u128{uint128{1500}}};
+    const b128_ranged c {u128{uint128{1000}}};
     BOOST_TEST_THROWS(b % c, std::domain_error);
 }
 

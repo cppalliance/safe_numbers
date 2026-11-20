@@ -177,26 +177,26 @@ void test_ilog_u64()
 
 void test_ilog_u128()
 {
-    using boost::int128::uint128_t;
+    using boost::int128::uint128;
 
     // Small values
-    BOOST_TEST_EQ(ilog(u128{uint128_t{1}}, u128{uint128_t{2}}), 0);
-    BOOST_TEST_EQ(ilog(u128{uint128_t{100}}, u128{uint128_t{10}}), 2);
+    BOOST_TEST_EQ(ilog(u128{uint128{1}}, u128{uint128{2}}), 0);
+    BOOST_TEST_EQ(ilog(u128{uint128{100}}, u128{uint128{10}}), 2);
 
     // 2^64
-    const auto two_pow_64 = uint128_t{1} << 64U;
-    BOOST_TEST_EQ(ilog(u128{two_pow_64}, u128{uint128_t{2}}), 64);
+    const auto two_pow_64 = uint128{1} << 64U;
+    BOOST_TEST_EQ(ilog(u128{two_pow_64}, u128{uint128{2}}), 64);
 
     // 2^127
-    const auto two_pow_127 = uint128_t{1} << 127U;
-    BOOST_TEST_EQ(ilog(u128{two_pow_127}, u128{uint128_t{2}}), 127);
+    const auto two_pow_127 = uint128{1} << 127U;
+    BOOST_TEST_EQ(ilog(u128{two_pow_127}, u128{uint128{2}}), 127);
 
     // Base 10 large
-    const auto ten_pow_20 = uint128_t{UINT64_C(10000000000)} * uint128_t{UINT64_C(10000000000)};
-    BOOST_TEST_EQ(ilog(u128{ten_pow_20}, u128{uint128_t{10}}), 20);
+    const auto ten_pow_20 = uint128{UINT64_C(10000000000)} * uint128{UINT64_C(10000000000)};
+    BOOST_TEST_EQ(ilog(u128{ten_pow_20}, u128{uint128{10}}), 20);
 
     // Base 10^10
-    BOOST_TEST_EQ(ilog(u128{ten_pow_20}, u128{uint128_t{UINT64_C(10000000000)}}), 2);
+    BOOST_TEST_EQ(ilog(u128{ten_pow_20}, u128{uint128{UINT64_C(10000000000)}}), 2);
 
     // Large base equal to value
     BOOST_TEST_EQ(ilog(u128{two_pow_64}, u128{two_pow_64}), 1);

@@ -7,7 +7,7 @@
 
 #include <boost/safe_numbers/detail/unsigned_integer_basis.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
-#include <boost/safe_numbers/detail/int128/fmt_format.hpp>
+#include <boost/int128/fmt_format.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 

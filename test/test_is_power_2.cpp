@@ -65,22 +65,22 @@ void test_is_power_2_true_u64()
 
 void test_is_power_2_true_u128()
 {
-    using boost::int128::uint128_t;
+    using boost::int128::uint128;
 
-    BOOST_TEST(is_power_2(u128{uint128_t{1}}));
-    BOOST_TEST(is_power_2(u128{uint128_t{2}}));
-    BOOST_TEST(is_power_2(u128{uint128_t{UINT64_C(4294967296)}}));
+    BOOST_TEST(is_power_2(u128{uint128{1}}));
+    BOOST_TEST(is_power_2(u128{uint128{2}}));
+    BOOST_TEST(is_power_2(u128{uint128{UINT64_C(4294967296)}}));
 
     // 2^64
-    const auto two_pow_64 = uint128_t{1} << 64;
+    const auto two_pow_64 = uint128{1} << 64;
     BOOST_TEST(is_power_2(u128{two_pow_64}));
 
     // 2^100
-    const auto two_pow_100 = uint128_t{1} << 100;
+    const auto two_pow_100 = uint128{1} << 100;
     BOOST_TEST(is_power_2(u128{two_pow_100}));
 
     // 2^127
-    const auto two_pow_127 = uint128_t{1} << 127;
+    const auto two_pow_127 = uint128{1} << 127;
     BOOST_TEST(is_power_2(u128{two_pow_127}));
 }
 
@@ -123,16 +123,16 @@ void test_is_power_2_false_u64()
 
 void test_is_power_2_false_u128()
 {
-    using boost::int128::uint128_t;
+    using boost::int128::uint128;
 
-    BOOST_TEST(!is_power_2(u128{uint128_t{3}}));
+    BOOST_TEST(!is_power_2(u128{uint128{3}}));
 
     // 2^64 + 1
-    const auto two_pow_64_plus_1 = (uint128_t{1} << 64) + uint128_t{1};
+    const auto two_pow_64_plus_1 = (uint128{1} << 64) + uint128{1};
     BOOST_TEST(!is_power_2(u128{two_pow_64_plus_1}));
 
     // 2^100 - 1
-    const auto two_pow_100_minus_1 = (uint128_t{1} << 100) - uint128_t{1};
+    const auto two_pow_100_minus_1 = (uint128{1} << 100) - uint128{1};
     BOOST_TEST(!is_power_2(u128{two_pow_100_minus_1}));
 }
 

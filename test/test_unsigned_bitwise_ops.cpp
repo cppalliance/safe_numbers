@@ -399,7 +399,7 @@ void test_compound_right_shift()
 }
 
 // =============================================
-// u128 specific tests (boost::random supports uint128_t)
+// u128 specific tests (boost::random supports uint128)
 // =============================================
 
 void test_bitwise_not_u128()

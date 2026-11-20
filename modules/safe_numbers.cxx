@@ -8,6 +8,7 @@ module;
 #include <boost/throw_exception.hpp>
 #include <boost/config.hpp>
 #include <boost/assert.hpp>
+#include <boost/int128.hpp>
 
 #include <limits>
 #include <concepts>

@@ -6,10 +6,10 @@
 #define BOOST_SAFE_NUMBERS_FORMAT_HPP
 
 #include <boost/safe_numbers/detail/unsigned_integer_basis.hpp>
-#include <boost/safe_numbers/detail/int128/format.hpp>
+#include <boost/int128/format.hpp>
 #include <boost/safe_numbers/detail/type_traits.hpp>
 
-#ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_FORMAT
+#ifdef BOOST_INT128_HAS_FORMAT
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
 

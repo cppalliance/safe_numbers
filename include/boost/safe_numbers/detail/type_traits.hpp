@@ -6,7 +6,7 @@
 #define BOOST_SAFE_NUMBERS_DETAIL_TYPE_TRAITS_HPP
 
 #include <boost/safe_numbers/detail/config.hpp>
-#include <boost/safe_numbers/detail/int128/int128.hpp>
+#include <boost/int128/int128.hpp>
 #include <boost/safe_numbers/overflow_policy.hpp>
 
 #ifndef BOOST_SAFE_NUMBERS_BUILD_MODULE
@@ -23,10 +23,10 @@ namespace boost::safe_numbers::detail {
 namespace impl {
 
 template <typename T>
-struct is_fundamental_unsigned_integral : std::bool_constant<std::is_unsigned_v<T> || std::is_same_v<std::remove_cv_t<T>, int128::uint128_t>> {};
+struct is_fundamental_unsigned_integral : std::bool_constant<std::is_unsigned_v<T> || std::is_same_v<std::remove_cv_t<T>, int128::uint128>> {};
 
 template <typename T>
-struct is_fundamental_signed_integral : std::bool_constant<std::is_signed_v<T> || std::is_same_v<std::remove_cv_t<T>, int128::int128_t>> {};
+struct is_fundamental_signed_integral : std::bool_constant<std::is_signed_v<T> || std::is_same_v<std::remove_cv_t<T>, int128::int128>> {};
 
 template <typename T>
 struct is_compatible_float_type : std::bool_constant<std::is_same_v<float, std::remove_cv_t<T>> || std::is_same_v<double, std::remove_cv_t<T>>> {};
@@ -530,20 +530,20 @@ struct underlying<bounded_float<Min, Max>>
 } // namespace impl
 
 // Promotes an unsigned integer to the next higher type
-// uint128_t becomes bool so that we can static_assert on bool check that we can't widen uint128_t
+// uint128 becomes bool so that we can static_assert on bool check that we can't widen uint128
 template <fundamental_unsigned_integral T>
 using promoted_type = std::conditional_t<std::is_same_v<T, std::uint8_t>, std::uint16_t,
                           std::conditional_t<std::is_same_v<T, std::uint16_t>, std::uint32_t,
                               std::conditional_t<std::is_same_v<T, std::uint32_t>, std::uint64_t,
-                                  std::conditional_t<std::is_same_v<T, std::uint64_t>, int128::uint128_t, bool>>>>;
+                                  std::conditional_t<std::is_same_v<T, std::uint64_t>, int128::uint128, bool>>>>;
 
 // Promotes a signed integer to the next higher type
-// int128_t becomes bool so that we can static_assert on bool check that we can't widen int128_t
+// int128 becomes bool so that we can static_assert on bool check that we can't widen int128
 template <fundamental_signed_integral T>
 using signed_promoted_type = std::conditional_t<std::is_same_v<T, std::int8_t>, std::int16_t,
                                  std::conditional_t<std::is_same_v<T, std::int16_t>, std::int32_t,
                                      std::conditional_t<std::is_same_v<T, std::int32_t>, std::int64_t,
-                                         std::conditional_t<std::is_same_v<T, std::int64_t>, int128::int128_t, bool>>>>;
+                                         std::conditional_t<std::is_same_v<T, std::int64_t>, int128::int128, bool>>>>;
 
 } // namespace boost::safe_numbers::detail
 

@@ -158,22 +158,22 @@ void test_ipow_u64()
 
 void test_ipow_u128()
 {
-    using boost::int128::uint128_t;
+    using boost::int128::uint128;
 
     // 2^64
-    const auto two_pow_64 = uint128_t{UINT64_C(1)} << 64U;
-    BOOST_TEST_EQ(ipow(u128{uint128_t{2}}, u128{uint128_t{64}}), u128{two_pow_64});
+    const auto two_pow_64 = uint128{UINT64_C(1)} << 64U;
+    BOOST_TEST_EQ(ipow(u128{uint128{2}}, u128{uint128{64}}), u128{two_pow_64});
 
     // 10^20 = 10^10 * 10^10
-    const auto ten_pow_20 = uint128_t{UINT64_C(10000000000)} * uint128_t{UINT64_C(10000000000)};
-    BOOST_TEST_EQ(ipow(u128{uint128_t{10}}, u128{uint128_t{20}}), u128{ten_pow_20});
+    const auto ten_pow_20 = uint128{UINT64_C(10000000000)} * uint128{UINT64_C(10000000000)};
+    BOOST_TEST_EQ(ipow(u128{uint128{10}}, u128{uint128{20}}), u128{ten_pow_20});
 
     // 2^100
-    const auto two_pow_100 = uint128_t{UINT64_C(1)} << 100U;
-    BOOST_TEST_EQ(ipow(u128{uint128_t{2}}, u128{uint128_t{100}}), u128{two_pow_100});
+    const auto two_pow_100 = uint128{UINT64_C(1)} << 100U;
+    BOOST_TEST_EQ(ipow(u128{uint128{2}}, u128{uint128{100}}), u128{two_pow_100});
 
     // Small: 3^3 = 27
-    BOOST_TEST_EQ(ipow(u128{uint128_t{3}}, u128{uint128_t{3}}), u128{uint128_t{27}});
+    BOOST_TEST_EQ(ipow(u128{uint128{3}}, u128{uint128{3}}), u128{uint128{27}});
 }
 
 // =============================================================================

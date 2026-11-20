@@ -126,7 +126,7 @@ void test_exhaustive_overflowing_sub()
 
             // Wrapping subtraction: (lhs - rhs + 256) % 256
             const auto wide_diff {static_cast<std::int32_t>(lhs_val) - static_cast<std::int32_t>(rhs_val)};
-            const auto expected_result {static_cast<std::uint8_t>((wide_diff + 256) & 0xFFU)};
+            const auto expected_result {static_cast<std::uint8_t>(static_cast<std::uint32_t>(wide_diff + 256) & 0xFFU)};
             const auto expected_underflow {rhs_val > lhs_val};
 
             const auto [result, underflowed] {overflowing_sub(lhs, rhs)};

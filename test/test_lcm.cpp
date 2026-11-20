@@ -159,19 +159,19 @@ void test_lcm_u64()
 
 void test_lcm_u128()
 {
-    using boost::int128::uint128_t;
+    using boost::int128::uint128;
 
     // Small values
-    BOOST_TEST_EQ(lcm(u128{uint128_t{4}}, u128{uint128_t{6}}), u128{uint128_t{12}});
-    BOOST_TEST_EQ(lcm(u128{uint128_t{12}}, u128{uint128_t{18}}), u128{uint128_t{36}});
+    BOOST_TEST_EQ(lcm(u128{uint128{4}}, u128{uint128{6}}), u128{uint128{12}});
+    BOOST_TEST_EQ(lcm(u128{uint128{12}}, u128{uint128{18}}), u128{uint128{36}});
 
     // Large values: powers of 2
-    const auto two_pow_64 = uint128_t{UINT64_C(1)} << 64U;
-    const auto two_pow_32 = uint128_t{UINT64_C(1)} << 32U;
+    const auto two_pow_64 = uint128{UINT64_C(1)} << 64U;
+    const auto two_pow_32 = uint128{UINT64_C(1)} << 32U;
     BOOST_TEST_EQ(lcm(u128{two_pow_64}, u128{two_pow_32}), u128{two_pow_64});
 
     // Coprime pair
-    BOOST_TEST_EQ(lcm(u128{uint128_t{7}}, u128{uint128_t{11}}), u128{uint128_t{77}});
+    BOOST_TEST_EQ(lcm(u128{uint128{7}}, u128{uint128{11}}), u128{uint128{77}});
 }
 
 // =============================================================================

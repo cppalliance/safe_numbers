@@ -10,7 +10,7 @@ import boost.safe_numbers;
 
 #include <boost/safe_numbers.hpp>
 
-#ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_FORMAT
+#ifdef BOOST_INT128_HAS_FORMAT
 
 #include <format>
 
@@ -18,7 +18,7 @@ import boost.safe_numbers;
 
 #endif
 
-#ifdef BOOST_SAFE_NUMBERS_DETAIL_INT128_HAS_FORMAT
+#ifdef BOOST_INT128_HAS_FORMAT
 
 #include <boost/core/lightweight_test.hpp>
 

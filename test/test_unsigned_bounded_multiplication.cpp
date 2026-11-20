@@ -23,7 +23,7 @@
 #include <cstdint>
 
 using namespace boost::safe_numbers;
-using boost::int128::uint128_t;
+using boost::int128::uint128;
 
 // -----------------------------------------------
 // u8 basis: bounded_uint with Max <= 255
@@ -211,45 +211,45 @@ void test_u64_throwing_multiplication()
 
 void test_u128_valid_multiplication()
 {
-    constexpr auto max_val = uint128_t{1, 0};
-    using b128 = bounded_uint<uint128_t{0}, max_val>;
+    constexpr auto max_val = uint128{1, 0};
+    using b128 = bounded_uint<uint128{0}, max_val>;
 
-    const b128 a {u128{uint128_t{100}}};
-    const b128 b {u128{uint128_t{200}}};
+    const b128 a {u128{uint128{100}}};
+    const b128 b {u128{uint128{200}}};
     const auto c {a * b};
-    const b128 expected_c {u128{uint128_t{20000}}};
+    const b128 expected_c {u128{uint128{20000}}};
     BOOST_TEST(c == expected_c);
 
     // Multiply by one
-    const b128 one {u128{uint128_t{1}}};
+    const b128 one {u128{uint128{1}}};
     const auto d {a * one};
     BOOST_TEST(d == a);
 
     // Multiply by zero
-    const b128 zero {u128{uint128_t{0}}};
+    const b128 zero {u128{uint128{0}}};
     const auto e {a * zero};
-    const b128 expected_e {u128{uint128_t{0}}};
+    const b128 expected_e {u128{uint128{0}}};
     BOOST_TEST(e == expected_e);
 
     // Full u128 range
-    constexpr auto u128_max = uint128_t{UINT64_MAX, UINT64_MAX};
-    using b128_full = bounded_uint<uint128_t{0}, u128_max>;
+    constexpr auto u128_max = uint128{UINT64_MAX, UINT64_MAX};
+    using b128_full = bounded_uint<uint128{0}, u128_max>;
 
-    const b128_full f {u128{uint128_t{1'000}}};
-    const b128_full g {u128{uint128_t{2'000}}};
+    const b128_full f {u128{uint128{1'000}}};
+    const b128_full g {u128{uint128{2'000}}};
     const auto h {f * g};
-    const b128_full expected_h {u128{uint128_t{2'000'000}}};
+    const b128_full expected_h {u128{uint128{2'000'000}}};
     BOOST_TEST(h == expected_h);
 }
 
 void test_u128_throwing_multiplication()
 {
-    constexpr auto max_val = uint128_t{1, 0};
-    using b128 = bounded_uint<uint128_t{0}, max_val>;
+    constexpr auto max_val = uint128{1, 0};
+    using b128 = bounded_uint<uint128{0}, max_val>;
 
     // Result exceeds bounded max
     const b128 a {u128{max_val}};
-    const b128 b {u128{uint128_t{2}}};
+    const b128 b {u128{uint128{2}}};
     BOOST_TEST_THROWS(a * b, std::domain_error);
 }
 

@@ -156,21 +156,21 @@ void test_gcd_u64()
 
 void test_gcd_u128()
 {
-    using boost::int128::uint128_t;
+    using boost::int128::uint128;
 
     // Small values
-    BOOST_TEST_EQ(gcd(u128{uint128_t{12}}, u128{uint128_t{8}}), u128{uint128_t{4}});
-    BOOST_TEST_EQ(gcd(u128{uint128_t{100}}, u128{uint128_t{75}}), u128{uint128_t{25}});
+    BOOST_TEST_EQ(gcd(u128{uint128{12}}, u128{uint128{8}}), u128{uint128{4}});
+    BOOST_TEST_EQ(gcd(u128{uint128{100}}, u128{uint128{75}}), u128{uint128{25}});
 
     // Large values: powers of 2
-    const auto two_pow_64 = uint128_t{UINT64_C(1)} << 64U;
-    const auto two_pow_32 = uint128_t{UINT64_C(1)} << 32U;
+    const auto two_pow_64 = uint128{UINT64_C(1)} << 64U;
+    const auto two_pow_32 = uint128{UINT64_C(1)} << 32U;
     BOOST_TEST_EQ(gcd(u128{two_pow_64}, u128{two_pow_32}), u128{two_pow_32});
 
     // Large values: multiples
-    const auto big_a = uint128_t{UINT64_C(1000000000000)} * uint128_t{UINT64_C(1000000)};
-    const auto big_b = uint128_t{UINT64_C(1000000000000)} * uint128_t{UINT64_C(500000)};
-    const auto big_gcd = uint128_t{UINT64_C(1000000000000)} * uint128_t{UINT64_C(500000)};
+    const auto big_a = uint128{UINT64_C(1000000000000)} * uint128{UINT64_C(1000000)};
+    const auto big_b = uint128{UINT64_C(1000000000000)} * uint128{UINT64_C(500000)};
+    const auto big_gcd = uint128{UINT64_C(1000000000000)} * uint128{UINT64_C(500000)};
     BOOST_TEST_EQ(gcd(u128{big_a}, u128{big_b}), u128{big_gcd});
 }
 

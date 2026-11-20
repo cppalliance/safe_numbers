@@ -27,7 +27,18 @@
 
 #else
 
-#define BOOST_SAFE_NUMBERS_THROW_EXCEPTION(exc_type, msg) BOOST_THROW_EXCEPTION(exc_type(msg))
+namespace boost::safe_numbers::detail {
+
+template <typename Exception>
+[[noreturn]] BOOST_SAFE_NUMBERS_NOINLINE BOOST_SAFE_NUMBERS_COLD
+void throw_exception_outlined(const char* const msg, const boost::source_location& loc)
+{
+    boost::throw_exception(Exception(msg), loc);
+}
+
+} // namespace boost::safe_numbers::detail
+
+#define BOOST_SAFE_NUMBERS_THROW_EXCEPTION(exc_type, msg) boost::safe_numbers::detail::throw_exception_outlined<exc_type>(msg, BOOST_CURRENT_LOCATION)
 
 #endif // BOOST_SAFE_NUMBERS_HAS_GPU_SUPPORT
 

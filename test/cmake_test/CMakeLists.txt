@@ -29,6 +29,7 @@ else()
             charconv
             config
             core
+            int128
             multiprecision
             random
             safe_numerics

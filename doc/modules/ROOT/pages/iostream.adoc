@@ -50,7 +50,7 @@ auto operator>>(std::basic_istream<charT, traits>& is, LibType& v)
 | Converted to the underlying type and written directly
 
 | `u128`
-| Converted to the underlying `uint128_t` and written using its stream support
+| Converted to the underlying `uint128` and written using its stream support
 
 | `f32`, `f64`
 | Converted to the underlying `float` or `double` and written using the standard floating-point insertion

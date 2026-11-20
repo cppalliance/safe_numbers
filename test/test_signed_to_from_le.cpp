@@ -296,7 +296,7 @@ int main()
     test_round_trip<i16>();
     test_round_trip<i32>();
     test_round_trip<i64>();
-    // i128 skipped: boost::core::byteswap does not support int128_t
+    // i128 skipped: boost::core::byteswap does not support int128
 
     // to_le matches byteswap on big-endian, identity on little-endian
     test_to_le_matches_byteswap<i8>();
@@ -315,7 +315,7 @@ int main()
     test_double_to_le_is_identity<i16>();
     test_double_to_le_is_identity<i32>();
     test_double_to_le_is_identity<i64>();
-    // i128 skipped: boost::core::byteswap does not support int128_t
+    // i128 skipped: boost::core::byteswap does not support int128
 
     // Known byte patterns
     test_known_byte_patterns();

@@ -116,8 +116,32 @@ Sources for the compared projects:
 https://www.boost.org/doc/libs/release/libs/safe_numerics/doc/html/index.html[Boost.SafeNumerics],
 https://github.com/davidstone/bounded-integer[`bounded::integer`],
 https://github.com/foonathan/type_safe[`type_safe`],
-https://docs.adacore.com/spark2014-docs/html/ug/[SPARK User's Guide], and
-https://doc.rust-lang.org/std/num/[Rust numeric types].
+https://docs.adacore.com/spark2014-docs/html/ug/[SPARK User's Guide],
+https://doc.rust-lang.org/std/num/[Rust numeric types],
+https://github.com/intel/safe-arithmetic[Intel safe-arithmetic], and
+https://github.com/dcleblanc/SafeInt[Microsoft SafeInt].
+
+[#comparisons_probes]
+== Semantic Probes
+
+The feature matrix describes documented behavior.
+The table below records what four libraries actually do with ten arithmetic situations, each written idiomatically for the library with runtime operands and each library in its default configuration: Boost.SafeNumbers, Boost.SafeNumerics, https://github.com/intel/safe-arithmetic[Intel safe-arithmetic], and https://github.com/dcleblanc/SafeInt[Microsoft SafeInt].
+A driver compiles every (library, probe) pair, records a compile failure as a compile-time rejection, and otherwise runs the binary and records the value it printed or the exception it threw.
+The probes and the driver live in `doc/paper/probes/`.
+
+include::partial$probe_results.adoc[]
+
+Three models appear in the table.
+Boost.SafeNumbers and SafeInt check at the declared width at runtime and agree on every runtime fault (P1 to P5 and P7); at the type boundary Boost.SafeNumbers rejects mixed signedness, mixed width, and construction from `bool` at compile time, while SafeInt compares mixed signedness correctly (P6), accepts `bool`, and rejects mixed `SafeInt` widths only through an overload ambiguity.
+Boost.SafeNumerics under its default promotion policy detects the 32-bit faults but widens the 8-bit overflow to 256 (P1), lets a bounded result escape its range (P10), and throws on a mixed-signedness comparison instead of comparing.
+Intel safe-arithmetic proves interval containment at compile time and rejects everything its interval logic can see, including a divisor whose interval contains zero and a narrowing store, and it is the one other library whose bounded type enforces on results (P10); it accepts `bool`, and its division interval does not account for the sign of the quotient, so `INT_MIN / -1` compiles and returns `INT_MIN` (P4).
+The library describes itself as pre-release.
+Only Boost.SafeNumbers converts every one of the ten situations into a compile-time or runtime fault.
+
+Its model also differs from the others in what the declared interval means.
+An Intel `var<T, ival<1, 31>>` plus another has type `var<T, ival<2, 62>>`: the result interval widens, the declared interval is a precondition on inputs and on storage, and storing a wider result back is a compile error until the value is narrowed.
+A Boost.SafeNumbers `bounded_uint<Min, Max>` keeps its interval as an invariant of every value and checks every result against it at runtime, which is what catches an off-by-one index into a table of known size.
+The cost side of this comparison is in xref:benchmarks.adoc#library_comparison[the benchmarks].
 
 The remainder of this page compares Boost.SafeNumbers and Boost.SafeNumerics in detail.
 
@@ -162,7 +186,7 @@ The remainder of this page compares Boost.SafeNumbers and Boost.SafeNumerics in 
 | `safe_unsigned_range<Min, Max>` only enforces bounds on construction and assignment. Arithmetic results are promoted and can silently exceed the declared range (e.g. `60 + 50 = 110` on a `[0, 100]` range succeeds).
 
 | *128-bit integer types*
-| Yes: `u128` and `i128` wrap `boost::int128::uint128_t` and `int128_t` with the full safe API.
+| Yes: `u128` and `i128` wrap `boost::int128::uint128` and `int128` with the full safe API.
 | No: `safe<T>` requires a built-in arithmetic base type (it relies on `static_assert(std::is_arithmetic<T>())`), so the 128-bit class types fail to compile.
 
 | *C++ standard required*

@@ -107,6 +107,11 @@ public:
 | Decrement result below Min | `std::domain_error`
 |===
 
+== Domain Assumptions on Conversion
+
+As for xref:bounded_uint.adoc[`bounded_uint`], every conversion out of a `bounded_int` (to a basis type, to an underlying type, or to another `bounded_int`) hands the declared domain to the optimizer as an assumption, so checks on the receiving type that the domain makes impossible are deleted.
+The checks of the bounded type itself are unaffected.
+
 == Mixed-Width Operations
 
 Operations between `bounded_int` types with different bounds are compile-time errors:
