@@ -364,7 +364,7 @@ consteval auto make_byte_reverse_table() -> std::array<std::uint8_t, 256>
 {
     std::array<std::uint8_t, 256> table {};
 
-    for (int i {}; i < 256; ++i)
+    for (std::size_t i {}; i < 256U; ++i)
     {
         table[i] = reverse_byte(static_cast<std::uint8_t>(i));
     }
